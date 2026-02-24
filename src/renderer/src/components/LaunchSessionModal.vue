@@ -14,7 +14,7 @@ const selectedUser = ref<string | null>(null)
 const loading = ref(true)
 
 const autoSendMessage = computed(
-  () => `bonjour, lance toi en tant que l'agent ${props.agent.name} et initie ta session`
+  () => `Bonjour, lance toi en tant que l'agent ${props.agent.name} et initie ta session`
 )
 
 onMounted(async () => {
@@ -120,7 +120,9 @@ function launch() {
             :disabled="loading || (wslUsers.length > 0 && !selectedUser)"
             @click="launch"
           >
-            <span class="text-base leading-none">▶</span>
+            <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
+              <path d="M3.5 2.635a.5.5 0 0 1 .752-.43l9 5.364a.5.5 0 0 1 0 .862l-9 5.365A.5.5 0 0 1 3.5 13.364V2.635z"/>
+            </svg>
             Lancer
           </button>
         </div>

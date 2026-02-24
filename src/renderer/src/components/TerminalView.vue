@@ -84,14 +84,23 @@ onMounted(async () => {
   term.refresh(0, term.rows - 1)
 
   const { cols, rows } = term
-  ptyId = await window.electronAPI.terminalCreate(cols, rows, tasksStore.projectPath ?? undefined)
+  const tab = tabsStore.tabs.find(t => t.id === props.tabId)
+  ptyId = await window.electronAPI.terminalCreate(
+    cols, rows,
+    tasksStore.projectPath ?? undefined,
+    tab?.wslUser ?? undefined
+  )
   tabsStore.setPtyId(props.tabId, ptyId)
 
-  // Rename tab when terminal sets title (OSC 0/2: echo -ne "\033]0;My Title\007")
-  term.onTitleChange(title => tabsStore.renameTab(props.tabId, title))
+  // Rename tab on OSC 0/2 title change — sauf si l'onglet a un agentName fixé
+  // (le shell PROMPT_COMMAND écraserait sinon le nom de l'agent à chaque prompt)
+  term.onTitleChange(title => {
+    if (!tab?.agentName) tabsStore.renameTab(props.tabId, title)
+  })
 
   unsubData = window.electronAPI.onTerminalData(ptyId, (data) => {
     term?.write(data)
+    tabsStore.markTabActive(props.tabId)
   })
 
   unsubExit = window.electronAPI.onTerminalExit(ptyId, () => {
@@ -101,6 +110,15 @@ onMounted(async () => {
   term.onData(data => {
     window.electronAPI.terminalWrite(ptyId!, data)
   })
+
+  // Auto-launch claude with the agent prompt as first message
+  if (tab?.autoSend) {
+    const escaped = tab.autoSend.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    const pid = ptyId
+    setTimeout(() => {
+      window.electronAPI.terminalWrite(pid, `claude "${escaped}"\r`)
+    }, 600)
+  }
 
   resizeObserver = new ResizeObserver(() => {
     doFit()

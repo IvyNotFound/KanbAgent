@@ -5,6 +5,7 @@ export interface Agent {
   perimetre: string | null
   created_at: string
   session_statut?: 'en_cours' | 'terminé' | 'bloqué' | null
+  last_log_at?: string | null
 }
 
 export interface Task {

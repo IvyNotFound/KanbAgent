@@ -129,7 +129,8 @@ export const useTasksStore = defineStore('tasks', () => {
         query<Agent>(`
           SELECT a.*,
             (SELECT s.statut FROM sessions s WHERE s.agent_id = a.id
-             ORDER BY s.started_at DESC LIMIT 1) as session_statut
+             ORDER BY s.started_at DESC LIMIT 1) as session_statut,
+            (SELECT MAX(l.created_at) FROM agent_logs l WHERE l.agent_id = a.id) as last_log_at
           FROM agents a ORDER BY a.name
         `),
         query<Lock>(`

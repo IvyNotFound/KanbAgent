@@ -1,16 +1,30 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import LaunchSessionModal from './LaunchSessionModal.vue'
 import type { Agent } from '@renderer/types'
 
 const store = useTasksStore()
+const tabsStore = useTabsStore()
 
 const launchTarget = ref<Agent | null>(null)
 
+
+function hasOpenTerminal(agentName: string): boolean {
+  return tabsStore.tabs.some(t => t.type === 'terminal' && t.agentName === agentName)
+}
+
+
+
 function openLaunchModal(event: MouseEvent, agent: Agent) {
   event.stopPropagation()
+  const existing = tabsStore.tabs.find(t => t.type === 'terminal' && t.agentName === agent.name)
+  if (existing) {
+    tabsStore.setActive(existing.id)
+    return
+  }
   launchTarget.value = agent
 }
 
@@ -148,20 +162,38 @@ function isLockOld(createdAt: string): boolean {
             ]"
             @click="store.toggleAgentFilter(agent.id)"
           >
-            <span class="relative shrink-0 flex items-center justify-center w-2.5 h-2.5">
+            <span class="relative shrink-0 flex items-center justify-center w-4 h-4">
+              <!-- En cours : spinner -->
+              <svg
+                v-if="tabsStore.isAgentActive(agent.name)"
+                class="w-3.5 h-3.5 animate-spin"
+                viewBox="0 0 16 16" fill="none"
+                :style="{ color: agentFg(agent.name) }"
+              >
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-opacity="0.25"/>
+                <path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <!-- En attente : cercle creux pulsant -->
+              <svg
+                v-else-if="hasOpenTerminal(agent.name) && !tabsStore.isAgentActive(agent.name)"
+                class="w-3.5 h-3.5 animate-pulse"
+                viewBox="0 0 14 14" fill="none"
+                :style="{ color: agentFg(agent.name) }"
+              >
+                <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2"/>
+                <circle cx="7" cy="7" r="2" fill="currentColor"/>
+              </svg>
+              <!-- Par défaut : rond statique -->
               <span
-                v-if="agent.session_statut === 'en_cours'"
-                class="absolute inline-flex w-full h-full rounded-full opacity-60 animate-ping"
-                :style="{ backgroundColor: agentFg(agent.name) }"
-              ></span>
-              <span
-                class="relative w-2.5 h-2.5 rounded-full"
+                v-else
+                class="w-2.5 h-2.5 rounded-full"
                 :style="{ backgroundColor: agentFg(agent.name) }"
               ></span>
             </span>
             <span
               :class="['text-sm truncate font-mono', isAgentSelected(agent.id) ? 'text-zinc-100' : 'text-zinc-400']"
             >{{ agent.name }}</span>
+
           </button>
           <!-- Launch button -->
           <button

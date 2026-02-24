@@ -19,6 +19,23 @@ export const useTabsStore = defineStore('tabs', () => {
   ])
   const activeTabId = ref<string>('board')
 
+  // Activité terminal : true si output reçu dans les 8 dernières secondes
+  const tabActivity = ref<Record<string, boolean>>({})
+  const activityTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+
+  function markTabActive(tabId: string): void {
+    tabActivity.value[tabId] = true
+    if (activityTimers[tabId]) clearTimeout(activityTimers[tabId])
+    activityTimers[tabId] = setTimeout(() => {
+      tabActivity.value[tabId] = false
+    }, 2000)
+  }
+
+  function isAgentActive(agentName: string): boolean {
+    const tab = tabs.value.find(t => t.type === 'terminal' && t.agentName === agentName)
+    return tab ? !!tabActivity.value[tab.id] : false
+  }
+
   const activeTab = computed(() => tabs.value.find(t => t.id === activeTabId.value) ?? tabs.value[0])
 
   function setActive(id: string): void {
@@ -81,5 +98,5 @@ export const useTabsStore = defineStore('tabs', () => {
     }
   }
 
-  return { tabs, activeTabId, activeTab, setActive, addTerminal, setPtyId, closeTab, renameTab, reorderTab, closeAllTerminals }
+  return { tabs, activeTabId, activeTab, setActive, addTerminal, setPtyId, closeTab, renameTab, reorderTab, closeAllTerminals, markTabActive, isAgentActive }
 })
