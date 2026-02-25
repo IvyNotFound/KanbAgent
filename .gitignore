@@ -32,3 +32,15 @@ Thumbs.db
 
 # Project DB (generated)
 .claude/*.db
+
+# Bundled binaries (downloaded at build time)
+resources/bin/*.exe
+resources/bin/*.zip
+
+# Build artifacts
+build/
+tsconfig.node.tsbuildinfo
+
+# Misc
+SELECT
+.claude/project-db

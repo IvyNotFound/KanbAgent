@@ -7,6 +7,31 @@ import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 const store = useTasksStore()
 const task = computed(() => store.selectedTask)
 
+// Normaliser les retours à la ligne (gère le cas où \n est stocké comme texte)
+const normalizedCommentaire = computed(() => {
+  if (!task.value?.commentaire) return ''
+  return task.value.commentaire.replace(/\\n/g, '\n')
+})
+
+// Fusionner le commentaire de la tâche avec les commentaires (comme si c'était le premier)
+const mergedComments = computed(() => {
+  const comments = [...store.taskComments]
+
+  // Ajouter le commentaire de la tâche en premier (simulé comme provenant du créateur)
+  if (normalizedCommentaire.value && task.value) {
+    comments.unshift({
+      id: 0, // ID fictif pour le commentaire de tâche
+      task_id: task.value.id,
+      agent_id: task.value.agent_createur_id,
+      agent_name: task.value.agent_createur_name || '?',
+      contenu: normalizedCommentaire.value,
+      created_at: task.value.created_at
+    })
+  }
+
+  return comments
+})
+
 const PERIMETRE_COLORS: Record<string, string> = {
   'front-vuejs': 'bg-sky-500/15 text-sky-300',
   'back-electron': 'bg-violet-500/15 text-violet-300',
@@ -37,6 +62,11 @@ function formatDateFull(iso: string): string {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
+}
+
+// Normaliser les retours à la ligne
+function normalizeNewlines(text: string): string {
+  return text.replace(/\\n/g, '\n')
 }
 
 function relativeTime(iso: string): string {
@@ -82,7 +112,7 @@ watch(task, (val) => {
       ></div>
 
       <!-- Panel -->
-      <div class="relative w-full max-w-3xl max-h-[84vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex flex-col overflow-hidden mx-4">
+      <div class="relative w-full max-w-3xl max-h-[84vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex flex-col overflow-hidden mx-4 select-text">
 
         <!-- Header -->
         <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-zinc-800 shrink-0">
@@ -116,13 +146,7 @@ watch(task, (val) => {
               <p class="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{{ task.description }}</p>
             </div>
 
-            <!-- Commentaire de la tâche -->
-            <div v-if="task.commentaire">
-              <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Commentaire</p>
-              <p class="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{{ task.commentaire }}</p>
-            </div>
-
-            <p v-if="!task.description && !task.commentaire" class="text-sm text-zinc-600 italic pt-2">
+            <p v-if="!task.description" class="text-sm text-zinc-600 italic pt-2">
               Aucune description.
             </p>
           </div>
@@ -132,14 +156,14 @@ watch(task, (val) => {
             <div class="px-4 py-3 border-b border-zinc-800 shrink-0">
               <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
                 Commentaires
-                <span v-if="store.taskComments.length > 0" class="ml-1 text-zinc-600">({{ store.taskComments.length }})</span>
+                <span v-if="mergedComments.length > 0" class="ml-1 text-zinc-600">({{ mergedComments.length }})</span>
               </p>
             </div>
 
             <div class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
               <!-- Messages conversation -->
               <div
-                v-for="comment in store.taskComments"
+                v-for="comment in mergedComments"
                 :key="comment.id"
                 class="flex flex-col gap-1"
               >
@@ -161,10 +185,10 @@ watch(task, (val) => {
                     backgroundColor: agentBg(comment.agent_name ?? 'unknown'),
                     borderColor: agentBorder(comment.agent_name ?? 'unknown'),
                   }"
-                >{{ comment.contenu }}</div>
+                >{{ normalizeNewlines(comment.contenu) }}</div>
               </div>
 
-              <p v-if="store.taskComments.length === 0" class="text-xs text-zinc-600 italic text-center py-4">
+              <p v-if="mergedComments.length === 0" class="text-xs text-zinc-600 italic text-center py-4">
                 Aucun commentaire
               </p>
             </div>

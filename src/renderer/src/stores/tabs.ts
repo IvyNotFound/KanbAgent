@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export type TabType = 'board' | 'terminal'
+export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'logs'
 
 export interface Tab {
   id: string
@@ -11,15 +11,22 @@ export interface Tab {
   agentName: string | null
   wslUser: string | null
   autoSend: string | null
+  systemPrompt: string | null
+  thinkingMode: string | null
+  filePath?: string
+  dirty?: boolean
+  logsAgentId?: number | null
+  permanent?: boolean
 }
 
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<Tab[]>([
-    { id: 'board', type: 'board', title: 'Board', ptyId: null, agentName: null, wslUser: null, autoSend: null }
+    { id: 'backlog', type: 'backlog', title: 'Backlog', ptyId: null, agentName: null, wslUser: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
+    { id: 'logs',  type: 'logs',  title: 'Log',   ptyId: null, agentName: null, wslUser: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
   ])
-  const activeTabId = ref<string>('board')
+  const activeTabId = ref<string>('backlog')
 
-  // Activité terminal : true si output reçu dans les 8 dernières secondes
+  // Activité terminal : true si output reçu dans les 2.5 dernières secondes
   const tabActivity = ref<Record<string, boolean>>({})
   const activityTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
@@ -28,12 +35,16 @@ export const useTabsStore = defineStore('tabs', () => {
     if (activityTimers[tabId]) clearTimeout(activityTimers[tabId])
     activityTimers[tabId] = setTimeout(() => {
       tabActivity.value[tabId] = false
-    }, 2000)
+    }, 2500)
   }
 
   function isAgentActive(agentName: string): boolean {
     const tab = tabs.value.find(t => t.type === 'terminal' && t.agentName === agentName)
     return tab ? !!tabActivity.value[tab.id] : false
+  }
+
+  function hasAgentTerminal(agentName: string): boolean {
+    return tabs.value.some(t => t.type === 'terminal' && t.agentName === agentName)
   }
 
   const activeTab = computed(() => tabs.value.find(t => t.id === activeTabId.value) ?? tabs.value[0])
@@ -42,7 +53,43 @@ export const useTabsStore = defineStore('tabs', () => {
     activeTabId.value = id
   }
 
-  function addTerminal(agentName?: string, wslUser?: string, autoSend?: string): void {
+  function addExplorer(): void {
+    const existing = tabs.value.find(t => t.type === 'explorer')
+    if (existing) { activeTabId.value = existing.id; return }
+    tabs.value.push({
+      id: 'explorer',
+      type: 'explorer',
+      title: 'Fichiers',
+      ptyId: null,
+      agentName: null,
+      wslUser: null,
+      autoSend: null,
+      systemPrompt: null,
+      thinkingMode: null,
+    })
+    activeTabId.value = 'explorer'
+  }
+
+  function setTabDirty(id: string, dirty: boolean): void {
+    const tab = tabs.value.find(t => t.id === id)
+    if (tab) tab.dirty = dirty
+  }
+
+  function openFile(filePath: string, fileName: string): void {
+    const existing = tabs.value.find(t => t.type === 'file' && t.filePath === filePath)
+    if (existing) { activeTabId.value = existing.id; return }
+    const id = `file-${Date.now()}`
+    tabs.value.push({ id, type: 'file', title: fileName, ptyId: null, agentName: null, wslUser: null, autoSend: null, systemPrompt: null, thinkingMode: null, filePath })
+    activeTabId.value = id
+  }
+
+  function addLogs(agentId?: number | null): void {
+    const logTab = tabs.value.find(t => t.type === 'logs')
+    if (logTab && agentId != null) logTab.logsAgentId = agentId
+    activeTabId.value = 'logs'
+  }
+
+  function addTerminal(agentName?: string, wslUser?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string): void {
     const id = `term-${Date.now()}`
     const n = tabs.value.filter(t => t.type === 'terminal').length + 1
     const title = agentName ?? `WSL ${n}`
@@ -54,6 +101,8 @@ export const useTabsStore = defineStore('tabs', () => {
       agentName: agentName ?? null,
       wslUser: wslUser ?? null,
       autoSend: autoSend ?? null,
+      systemPrompt: systemPrompt ?? null,
+      thinkingMode: thinkingMode ?? null,
     })
     activeTabId.value = id
   }
@@ -64,12 +113,12 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   function closeTab(id: string): void {
-    if (id === 'board') return
+    const tab = tabs.value.find(t => t.id === id)
+    if (!tab || tab.permanent) return
     const idx = tabs.value.findIndex(t => t.id === id)
-    if (idx === -1) return
     tabs.value.splice(idx, 1)
     if (activeTabId.value === id) {
-      activeTabId.value = tabs.value[Math.max(0, idx - 1)]?.id ?? 'board'
+      activeTabId.value = tabs.value[Math.max(0, idx - 1)]?.id ?? 'backlog'
     }
   }
 
@@ -93,10 +142,10 @@ export const useTabsStore = defineStore('tabs', () => {
       if (tab.ptyId) window.electronAPI.terminalKill(tab.ptyId)
     }
     tabs.value = tabs.value.filter(t => t.type !== 'terminal')
-    if (activeTabId.value !== 'board' && !tabs.value.find(t => t.id === activeTabId.value)) {
-      activeTabId.value = 'board'
+    if (activeTabId.value !== 'backlog' && !tabs.value.find(t => t.id === activeTabId.value)) {
+      activeTabId.value = 'backlog'
     }
   }
 
-  return { tabs, activeTabId, activeTab, setActive, addTerminal, setPtyId, closeTab, renameTab, reorderTab, closeAllTerminals, markTabActive, isAgentActive }
+  return { tabs, activeTabId, activeTab, setActive, addTerminal, addLogs, addExplorer, openFile, setTabDirty, setPtyId, closeTab, renameTab, reorderTab, closeAllTerminals, markTabActive, isAgentActive, hasAgentTerminal }
 })

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { Terminal } from 'xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import 'xterm/css/xterm.css'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 
-const props = defineProps<{ tabId: string }>()
+const props = defineProps<{ tabId: string; isActive?: boolean }>()
 
 const tabsStore = useTabsStore()
 const tasksStore = useTasksStore()
@@ -30,11 +30,16 @@ function doFit() {
 }
 
 // Re-fit and refresh when this tab becomes active (was hidden with display:none)
+// scrollToBottom fixes viewport reset to top that happens after fit() on resize
 watch(() => tabsStore.activeTabId, (id) => {
   if (id === props.tabId) {
     requestAnimationFrame(() => {
       doFit()
-      if (term) term.refresh(0, term.rows - 1)
+      if (term) {
+        term.refresh(0, term.rows - 1)
+        term.scrollToBottom()
+        term.focus()
+      }
     })
   }
 })
@@ -72,6 +77,9 @@ onMounted(async () => {
     cursorBlink: true,
     allowTransparency: true,
     scrollback: 5000,
+    // Disable built-in copy/paste — let Electron handle it to avoid character duplication
+    copyOnSelect: false,
+    rightClickSelectsWord: false,
   })
 
   fitAddon = new FitAddon()
@@ -82,14 +90,29 @@ onMounted(async () => {
   await new Promise(r => setTimeout(r, 100))
   fitAddon.fit()
   term.refresh(0, term.rows - 1)
+  term.focus()
 
   const { cols, rows } = term
   const tab = tabsStore.tabs.find(t => t.id === props.tabId)
-  ptyId = await window.electronAPI.terminalCreate(
-    cols, rows,
-    tasksStore.projectPath ?? undefined,
-    tab?.wslUser ?? undefined
-  )
+
+  // If systemPrompt is provided, launch Claude directly with the system prompt
+  // Otherwise, use the traditional approach with autoSend
+  if (tab?.systemPrompt && tab?.autoSend) {
+    ptyId = await window.electronAPI.terminalCreate(
+      cols, rows,
+      tasksStore.projectPath ?? undefined,
+      tab.wslUser ?? undefined,
+      tab.systemPrompt,
+      tab.autoSend,
+      tab.thinkingMode ?? undefined
+    )
+  } else {
+    ptyId = await window.electronAPI.terminalCreate(
+      cols, rows,
+      tasksStore.projectPath ?? undefined,
+      tab?.wslUser ?? undefined
+    )
+  }
   tabsStore.setPtyId(props.tabId, ptyId)
 
   // Rename tab on OSC 0/2 title change — sauf si l'onglet a un agentName fixé
@@ -105,14 +128,49 @@ onMounted(async () => {
 
   unsubExit = window.electronAPI.onTerminalExit(ptyId, () => {
     term?.write('\r\n\x1b[31m[session terminée]\x1b[0m\r\n')
+    // Auto-close agent DB sessions when the terminal exits
+    const tab = tabsStore.tabs.find(t => t.id === props.tabId)
+    if (tab?.agentName && tasksStore.dbPath) {
+      window.electronAPI.closeAgentSessions(tasksStore.dbPath, tab.agentName)
+    }
   })
 
   term.onData(data => {
     window.electronAPI.terminalWrite(ptyId!, data)
   })
 
-  // Auto-launch claude with the agent prompt as first message
-  if (tab?.autoSend) {
+  // Context menu for copy (since copyOnSelect is disabled)
+  container.value?.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+    const selection = term?.getSelection()
+    if (selection) {
+      navigator.clipboard.writeText(selection)
+    }
+  })
+
+  // Ctrl+C and Ctrl+V intercepted by Electron before xterm — handle copy/paste manually
+  term.attachCustomKeyEventHandler((e) => {
+    // Ctrl+V: paste
+    if (e.type === 'keydown' && e.ctrlKey && e.key === 'v') {
+      navigator.clipboard.readText().then(text => {
+        if (text) window.electronAPI.terminalWrite(ptyId!, text)
+      })
+      return false
+    }
+    // Ctrl+C: copy selected text if selection, otherwise let xterm send SIGINT
+    if (e.type === 'keydown' && e.ctrlKey && e.key === 'c') {
+      const selection = term?.getSelection()
+      if (selection) {
+        navigator.clipboard.writeText(selection)
+        return false
+      }
+      return true
+    }
+    return true
+  })
+
+  // Auto-launch claude with the agent prompt as first message (only when NOT using systemPrompt injection)
+  if (tab?.autoSend && !tab?.systemPrompt) {
     const escaped = tab.autoSend.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
     const pid = ptyId
     setTimeout(() => {
@@ -124,6 +182,57 @@ onMounted(async () => {
     doFit()
   })
   resizeObserver.observe(container.value)
+
+  // Pause/resume listeners when terminal becomes inactive/active
+  // This prevents memory leaks when multiple terminals are kept mounted
+  const isActive = computed(() => props.isActive ?? true)
+  let dataHandler: ((data: string) => void) | null = null
+  let exitHandler: (() => void) | null = null
+  let isPaused = false
+
+  function pauseListeners() {
+    if (isPaused || !ptyId) return
+    isPaused = true
+    // Clean up IPC listeners
+    unsubData?.()
+    unsubExit?.()
+    unsubData = null
+    unsubExit = null
+  }
+
+  function resumeListeners() {
+    if (!isPaused || !ptyId) return
+    isPaused = false
+    // Re-subscribe to IPC events
+    unsubData = window.electronAPI.onTerminalData(ptyId, (data) => {
+      term?.write(data)
+      tabsStore.markTabActive(props.tabId)
+    })
+    unsubExit = window.electronAPI.onTerminalExit(ptyId, () => {
+      term?.write('\r\n\x1b[31m[session terminée]\x1b[0m\r\n')
+      const tab = tabsStore.tabs.find(t => t.id === props.tabId)
+      if (tab?.agentName && tasksStore.dbPath) {
+        window.electronAPI.closeAgentSessions(tasksStore.dbPath, tab.agentName)
+      }
+    })
+  }
+
+  watch(() => isActive.value, (active) => {
+    if (active) {
+      resumeListeners()
+      // Re-fit when becoming active
+      requestAnimationFrame(() => {
+        doFit()
+        if (term) {
+          term.refresh(0, term.rows - 1)
+          term.scrollToBottom()
+          term.focus()
+        }
+      })
+    } else {
+      pauseListeners()
+    }
+  }, { immediate: true })
 })
 
 onUnmounted(() => {

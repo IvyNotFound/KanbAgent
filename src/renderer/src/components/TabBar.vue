@@ -6,7 +6,7 @@ import { agentFg, agentBg, agentHue } from '@renderer/utils/agentColor'
 
 const store = useTabsStore()
 
-const terminalTabs = computed(() => store.tabs.filter(t => t.type === 'terminal'))
+const terminalTabs = computed(() => store.tabs.filter(t => !t.permanent))
 
 // ── Drag & drop ──────────────────────────────────────────────────────────────
 const draggedId = ref<string | null>(null)
@@ -40,6 +40,18 @@ function onDragEnd() {
   dropTargetId.value = null
 }
 
+async function handleCloseTab(tab: Tab): Promise<void> {
+  if (tab.type === 'file' && tab.dirty) {
+    const confirmed = await window.electronAPI.showConfirmDialog({
+      title: 'Fermer le fichier',
+      message: `${tab.title} contient des modifications non enregistrées.`,
+      detail: 'Fermer quand même ? Les modifications seront perdues.',
+    })
+    if (!confirmed) return
+  }
+  store.closeTab(tab.id)
+}
+
 // ── Styles dynamiques ────────────────────────────────────────────────────────
 function tabStyle(tab: Tab): Record<string, string> {
   const isActive = store.activeTabId === tab.id
@@ -69,15 +81,15 @@ function indicatorStyle(tab: Tab): Record<string, string> {
 <template>
   <div class="flex items-stretch border-b border-zinc-700 bg-zinc-900 shrink-0 h-10">
 
-    <!-- Onglet Board (fixe, non déplaçable) -->
+    <!-- Onglet Backlog (fixe, non déplaçable) -->
     <button
       :class="[
         'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-zinc-800 shrink-0',
-        store.activeTabId === 'board'
+        store.activeTabId === 'backlog'
           ? 'text-zinc-100 bg-zinc-800'
           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
       ]"
-      @click="store.setActive('board')"
+      @click="store.setActive('backlog')"
     >
       <!-- Icône kanban -->
       <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
@@ -85,10 +97,31 @@ function indicatorStyle(tab: Tab): Record<string, string> {
         <rect x="6"  y="2" width="4" height="8"  rx="1.5"/>
         <rect x="11" y="2" width="4" height="5"  rx="1.5"/>
       </svg>
-      <span>Board</span>
+      <span>Backlog</span>
       <!-- Indicateur actif -->
       <span
-        v-if="store.activeTabId === 'board'"
+        v-if="store.activeTabId === 'backlog'"
+        class="absolute bottom-0 left-0 right-0 h-[2px] bg-zinc-500"
+      ></span>
+    </button>
+
+    <!-- Onglet Log (fixe, non fermable) -->
+    <button
+      :class="[
+        'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-zinc-800 shrink-0',
+        store.activeTabId === 'logs'
+          ? 'text-zinc-100 bg-zinc-800'
+          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+      ]"
+      @click="store.setActive('logs')"
+    >
+      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+        <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
+        <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+      </svg>
+      <span>Log</span>
+      <span
+        v-if="store.activeTabId === 'logs'"
         class="absolute bottom-0 left-0 right-0 h-[2px] bg-zinc-500"
       ></span>
     </button>
@@ -114,18 +147,33 @@ function indicatorStyle(tab: Tab): Record<string, string> {
         @drop="onDrop($event, tab.id)"
         @dragend="onDragEnd"
       >
-        <!-- Icône terminal >_ -->
+        <!-- Icône selon type -->
         <span class="flex items-center justify-center w-5 h-5 rounded shrink-0 bg-black/25">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+          <!-- Fichier -->
+          <svg v-if="tab.type === 'file'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+            <path d="M4 1h5.586a1 1 0 0 1 .707.293l3.414 3.414A1 1 0 0 1 14 5.414V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm5 0v4h4"/>
+          </svg>
+          <!-- Explorateur -->
+          <svg v-else-if="tab.type === 'explorer'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+            <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
+          </svg>
+          <!-- Logs -->
+          <svg v-else-if="tab.type === 'logs'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+            <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
+            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+          </svg>
+          <!-- Terminal (défaut) -->
+          <svg v-else viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
             <polyline points="2,5 6.5,8 2,11"/>
             <line x1="8.5" y1="11" x2="14" y2="11"/>
           </svg>
         </span>
         <span class="max-w-[120px] truncate">{{ tab.title }}</span>
+        <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Modifications non enregistrées" />
         <!-- Fermer -->
         <span
           class="ml-0.5 flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer"
-          @click.stop="store.closeTab(tab.id)"
+          @click.stop="handleCloseTab(tab)"
           title="Fermer"
         >✕</span>
         <!-- Indicateur actif -->

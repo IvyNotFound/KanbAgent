@@ -22,6 +22,9 @@ function createWindow(): void {
 
   win.once('ready-to-show', () => win.show())
 
+  win.on('maximize', () => win.webContents.send('window-state-changed', true))
+  win.on('unmaximize', () => win.webContents.send('window-state-changed', false))
+
   registerIpcHandlers()
   registerTerminalHandlers()
 
