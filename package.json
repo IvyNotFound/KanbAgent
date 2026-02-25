@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "node scripts/download-sqlite3.js && electron-vite build && electron-builder --win",
+    "build:vite": "node scripts/download-sqlite3.js && electron-vite build",
     "build:dir": "node scripts/download-sqlite3.js && electron-vite build && electron-builder --win --dir",
     "preview": "electron-vite preview",
     "lint": "eslint src",

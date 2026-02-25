@@ -43,8 +43,8 @@ echo "=== Pre-release Checks ==="
 echo "Running npm install..."
 npm install --silent 2>/dev/null
 
-echo "Running build..."
-npm run build
+echo "Running build (vite only, no packaging)..."
+npm run build:vite
 
 echo "Running lint..."
 if ! npm run lint 2>&1 | grep -q "error\|warning\|0 warnings"; then
