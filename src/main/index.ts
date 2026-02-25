@@ -1,8 +1,28 @@
+/**
+ * Electron main process entry point for agent-viewer.
+ *
+ * Handles:
+ * - Application lifecycle (ready, activate, quit)
+ * - BrowserWindow creation with security settings
+ * - IPC handler registration
+ * - Terminal handler registration
+ *
+ * @module main
+ */
+
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { registerTerminalHandlers } from './terminal'
 
+/**
+ * Returns the path to the application icon.
+ *
+ * Development: points to build/icon.png in project root
+ * Production: points to resourcesPath in packaged app
+ *
+ * @returns {string | undefined} Icon file path, or undefined if not found
+ */
 function getIconPath(): string | undefined {
   // In packaged app, resources are in process.resourcesPath
   // In development, icons are in the project root build/ folder
@@ -12,6 +32,19 @@ function getIconPath(): string | undefined {
   return join(__dirname, '../../build/icon.png')
 }
 
+/**
+ * Creates the main application window.
+ *
+ * Configures:
+ * - Size: 1400x900 (min 900x600)
+ * - Frameless window with custom title bar
+ * - Dark background (#18181b)
+ * - Security: contextIsolation enabled, nodeIntegration disabled
+ *
+ * Registers IPC and terminal handlers, then loads the renderer.
+ *
+ * @returns {void}
+ */
 function createWindow(): void {
   const iconPath = getIconPath()
 

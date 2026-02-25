@@ -1,3 +1,15 @@
+/**
+ * Pinia store for tab management in the application.
+ *
+ * Manages:
+ * - Multiple tab types: backlog, terminal, explorer, file, logs
+ * - Tab ordering and activation
+ * - Terminal sessions with ptyId tracking
+ * - Activity indicators for terminals
+ *
+ * @module stores/tabs
+ */
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
@@ -19,6 +31,22 @@ export interface Tab {
   permanent?: boolean
 }
 
+/**
+ * Tabs store using Pinia composition API.
+ *
+ * State:
+ * - tabs: Array of open tabs (includes permanent tabs: backlog, logs)
+ * - activeTabId: Currently active tab
+ * - tabActivity: Map of tab IDs to activity status
+ *
+ * Actions:
+ * - setActive: Switch active tab
+ * - addTerminal, closeTab: Tab lifecycle
+ * - addExplorer, openFile: File explorer tabs
+ * - markTabActive: Update activity indicator
+ *
+ * @returns {object} Store instance with state and methods
+ */
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<Tab[]>([
     { id: 'backlog', type: 'backlog', title: 'Backlog', ptyId: null, agentName: null, wslUser: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },

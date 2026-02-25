@@ -1,3 +1,12 @@
+/**
+ * IPC Handlers for agent-viewer
+ *
+ * Provides secure communication between Electron main process and Vue renderer.
+ * All file system and database operations run in the main process.
+ *
+ * @module ipc
+ */
+
 import { ipcMain, dialog, BrowserWindow } from 'electron'
 import { watch, type FSWatcher, readdirSync, existsSync, type Dirent } from 'fs'
 import { readFile, mkdir, writeFile, rename } from 'fs/promises'
@@ -14,6 +23,16 @@ interface FileNode {
 
 const FS_SKIP = new Set(['node_modules', '.git', 'dist', 'dist-electron', '.DS_Store', '__pycache__'])
 
+/**
+ * Builds a directory tree structure for file explorer.
+ *
+ * Recursively scans a directory up to 4 levels deep,
+ * skipping node_modules, .git, dist, and other build artifacts.
+ *
+ * @param dirPath - Root directory path to scan
+ * @param depth - Current recursion depth (default: 0, max: 4)
+ * @returns {FileNode[]} Array of file/directory nodes
+ */
 function buildTree(dirPath: string, depth = 0): FileNode[] {
   if (depth > 4) return []
   let entries: Dirent[]
@@ -31,6 +50,19 @@ function buildTree(dirPath: string, depth = 0): FileNode[] {
     })
 }
 
+/**
+ * Migrates database schema to the latest version.
+ *
+ * Adds missing columns and tables for v2 schema compatibility:
+ * - agents: system_prompt, system_prompt_suffix, thinking_mode, allowed_tools
+ * - config table
+ * - perimetres table
+ * - Migrates legacy 'terminé' status to 'archivé'
+ *
+ * @param dbPath - Path to the SQLite database file
+ * @returns {Promise<{ migrated: number }>} Number of tasks migrated
+ * @throws {Error} If migration fails
+ */
 async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
   const sqlJs = await getSqlJs()
   const buf = await readFile(dbPath)
@@ -126,6 +158,14 @@ let SQL: any = null
 let watcher: FSWatcher | null = null
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+/**
+ * Initializes and returns the sql.js module (SQLite in WebAssembly).
+ *
+ * Singleton pattern - loads sql.js once and caches the module.
+ * Uses WASM for cross-platform SQLite support without native binaries.
+ *
+ * @returns {Promise<typeof import('sql.js')>} Initialized sql.js module
+ */
 async function getSqlJs() {
   if (!SQL) {
     // sql.js: loads SQLite as WASM, reads DB from a Buffer — bypasses all file locking
@@ -139,6 +179,18 @@ async function getSqlJs() {
   return SQL
 }
 
+/**
+ * Executes a read-only SQL query on the database.
+ *
+ * Uses sql.js (WASM) to read the database file without file locking,
+ * allowing concurrent access from multiple processes.
+ *
+ * @param dbPath - Path to the SQLite database file
+ * @param query - SQL query to execute
+ * @param params - Query parameters
+ * @returns {Promise<unknown[]>} Array of result rows
+ * @throws {Error} If query execution fails
+ */
 async function queryLive(dbPath: string, query: string, params: unknown[]): Promise<unknown[]> {
   const sqlJs = await getSqlJs()
   // fs.readFile uses ReadFile() on Windows — NOT subject to SQLite byte-range locks
@@ -159,6 +211,16 @@ async function queryLive(dbPath: string, query: string, params: unknown[]): Prom
   }
 }
 
+/**
+ * Locates a project database file in the given directory.
+ *
+ * Searches for .db files in:
+ * 1. .claude/ directory
+ * 2. Root project directory
+ *
+ * @param projectPath - Path to the project directory
+ * @returns {string | null} Absolute path to database file, or null if not found
+ */
 function findProjectDb(projectPath: string): string | null {
   const claudeDir = join(projectPath, '.claude')
   if (existsSync(claudeDir)) {
@@ -178,12 +240,32 @@ function findProjectDb(projectPath: string): string | null {
   return null
 }
 
+/**
+ * Notifies all renderer windows that the database has changed.
+ *
+ * Sends 'db-changed' event to trigger a refresh in the Vue app.
+ *
+ * @returns {void}
+ */
 function notifyRenderer(): void {
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) win.webContents.send('db-changed')
   }
 }
 
+/**
+ * Registers all IPC handlers for the application.
+ *
+ * Handles communication between renderer and main process:
+ * - Database operations (query, watch, migrate)
+ * - File system operations
+ * - Window controls
+ * - Terminal management
+ * - Agent configuration
+ *
+ * @throws {Error} If handler registration fails
+ * @returns {void}
+ */
 export function registerIpcHandlers(): void {
   ipcMain.handle('select-project-dir', async () => {
     const result = await dialog.showOpenDialog({

@@ -1,3 +1,16 @@
+/**
+ * Pinia store for tasks, agents, and project management.
+ *
+ * Manages:
+ * - Project connection (dbPath, projectPath)
+ * - Tasks CRUD and filtering
+ * - Agents list with session status
+ * - Locks management
+ * - Real-time polling and file watching
+ *
+ * @module stores/tasks
+ */
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Task, Agent, Lock, Stats, TaskComment, FileNode, Perimetre } from '@renderer/types'
@@ -71,6 +84,26 @@ function normalizeRow<T extends Record<string, unknown>>(row: T): T {
   return out
 }
 
+/**
+ * Main tasks store using Pinia composition API.
+ *
+ * State:
+ * - projectPath, dbPath: Current project connection
+ * - tasks, agents, locks: Data from SQLite
+ * - stats: Task counts by status
+ * - selectedTask, taskComments: Current task details
+ *
+ * Actions:
+ * - setProject, selectProject, closeProject: Project lifecycle
+ * - refresh: Fetch latest data from DB
+ * - openTask, closeTask: Task drill-down
+ *
+ * Computed:
+ * - filteredTasks: Tasks filtered by agent/perimetre
+ * - tasksByStatus: Tasks grouped by status
+ *
+ * @returns {object} Store instance with state and methods
+ */
 export const useTasksStore = defineStore('tasks', () => {
   const { push: pushToast } = useToast()
   const projectPath = ref<string | null>(localStorage.getItem('projectPath'))

@@ -1,3 +1,16 @@
+/**
+ * Pinia store for application settings and configuration.
+ *
+ * Manages:
+ * - Theme (dark/light mode)
+ * - Language (fr/en)
+ * - GitHub integration (token, repo URL)
+ * - App info (version, name)
+ * - CLAUDE.md sync status
+ *
+ * @module stores/settings
+ */
+
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -24,6 +37,24 @@ interface ClaudeMdInfo {
   needsUpdate: boolean
 }
 
+/**
+ * Settings store using Pinia composition API.
+ *
+ * State:
+ * - theme: Current theme ('dark' | 'light')
+ * - language: UI language ('fr' | 'en')
+ * - github: GitHub connection settings
+ * - appInfo: Application metadata
+ * - claudeMdInfo: CLAUDE.md sync status
+ *
+ * Actions:
+ * - setTheme, applyTheme: Theme management
+ * - setLanguage: Language switching
+ * - setGitHubToken, setGitHubRepo: GitHub config
+ * - setClaudeMdInfo: Update sync status
+ *
+ * @returns {object} Store instance with state and methods
+ */
 export const useSettingsStore = defineStore('settings', () => {
   // Theme
   const theme = ref<Theme>((localStorage.getItem('theme') as Theme) || 'dark')
