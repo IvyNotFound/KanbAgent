@@ -20,7 +20,10 @@ export default defineConfig({
     },
     plugins: [vue()],
     define: {
-      'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version)
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
+      // Enable JIT message compilation (interpreter-based, no new Function())
+      // Required because Electron CSP blocks 'unsafe-eval' used by the default compiler
+      __INTLIFY_JIT_COMPILATION__: true
     }
   }
 })
