@@ -7,6 +7,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { mount, shallowMount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { nextTick } from 'vue'
+import i18n from '@renderer/plugins/i18n'
 
 // ── xterm mocks — hoisted before imports (vi.mock is hoisted automatically) ──
 // vitest 4: constructor mocks require `function` keyword (arrow functions cannot be used with `new`)
@@ -88,6 +89,7 @@ describe('StatusColumn', () => {
   it('renders the column title', () => {
     const wrapper = shallowMount(StatusColumn, {
       props: { title: 'À faire', statut: 'todo', tasks: [], accentClass: 'bg-amber-500' },
+      global: { plugins: [i18n] },
     })
     expect(wrapper.text()).toContain('À faire')
   })
@@ -96,6 +98,7 @@ describe('StatusColumn', () => {
     const tasks = [makeTask({ id: 1 }), makeTask({ id: 2 })]
     const wrapper = shallowMount(StatusColumn, {
       props: { title: 'À faire', statut: 'todo', tasks, accentClass: 'bg-amber-500' },
+      global: { plugins: [i18n] },
     })
     // The count badge shows tasks.length
     expect(wrapper.text()).toContain('2')
@@ -104,6 +107,7 @@ describe('StatusColumn', () => {
   it('shows 0 in count badge when no tasks', () => {
     const wrapper = shallowMount(StatusColumn, {
       props: { title: 'À faire', statut: 'todo', tasks: [], accentClass: 'bg-amber-500' },
+      global: { plugins: [i18n] },
     })
     expect(wrapper.text()).toContain('0')
   })
@@ -111,6 +115,7 @@ describe('StatusColumn', () => {
   it('shows empty state message when tasks array is empty', () => {
     const wrapper = shallowMount(StatusColumn, {
       props: { title: 'À faire', statut: 'todo', tasks: [], accentClass: 'bg-amber-500' },
+      global: { plugins: [i18n] },
     })
     expect(wrapper.text()).toContain('Aucune tâche')
   })
@@ -119,6 +124,7 @@ describe('StatusColumn', () => {
     const tasks = [makeTask()]
     const wrapper = shallowMount(StatusColumn, {
       props: { title: 'À faire', statut: 'todo', tasks, accentClass: 'bg-amber-500' },
+      global: { plugins: [i18n] },
     })
     expect(wrapper.text()).not.toContain('Aucune tâche')
   })
@@ -127,6 +133,7 @@ describe('StatusColumn', () => {
     const tasks = [makeTask({ id: 1 }), makeTask({ id: 2 }), makeTask({ id: 3 })]
     const wrapper = shallowMount(StatusColumn, {
       props: { title: 'En cours', statut: 'in_progress', tasks, accentClass: 'bg-blue-500' },
+      global: { plugins: [i18n] },
     })
     // shallowMount stubs TaskCard — count stubs
     const cards = wrapper.findAllComponents({ name: 'TaskCard' })
@@ -136,6 +143,7 @@ describe('StatusColumn', () => {
   it('applies accent class to the indicator dot', () => {
     const wrapper = shallowMount(StatusColumn, {
       props: { title: 'Terminé', statut: 'done', tasks: [], accentClass: 'bg-green-500' },
+      global: { plugins: [i18n] },
     })
     const dot = wrapper.find('.w-2.h-2.rounded-full')
     expect(dot.classes()).toContain('bg-green-500')
@@ -152,28 +160,28 @@ describe('BoardView', () => {
 
   it('mounts without error with empty store', () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia()] },
+      global: { plugins: [createTestingPinia(), i18n] },
     })
     expect(wrapper.exists()).toBe(true)
   })
 
   it('renders the backlog tab by default', () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia()] },
+      global: { plugins: [createTestingPinia(), i18n] },
     })
     expect(wrapper.text()).toContain('Backlog')
   })
 
   it('renders the archive tab', () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia()] },
+      global: { plugins: [createTestingPinia(), i18n] },
     })
     expect(wrapper.text()).toContain('Archive')
   })
 
   it('switches active tab when archive is clicked', async () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia()] },
+      global: { plugins: [createTestingPinia(), i18n] },
     })
     const tabs = wrapper.findAll('button').filter(b => b.text().includes('Archive'))
     if (tabs.length > 0) {
@@ -186,7 +194,7 @@ describe('BoardView', () => {
 
   it('renders a search input', () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia()] },
+      global: { plugins: [createTestingPinia(), i18n] },
     })
     const input = wrapper.find('input[type="text"]').exists()
       || wrapper.find('input').exists()
@@ -195,7 +203,7 @@ describe('BoardView', () => {
 
   it('binds searchQuery v-model to the search input', async () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia()] },
+      global: { plugins: [createTestingPinia(), i18n] },
     })
     const input = wrapper.find('input')
     if (input.exists()) {
@@ -207,7 +215,7 @@ describe('BoardView', () => {
 
   it('renders StatusColumn stubs for each board column', () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia()] },
+      global: { plugins: [createTestingPinia(), i18n] },
     })
     const columns = wrapper.findAllComponents({ name: 'StatusColumn' })
     // backlog view: todo, in_progress, done columns (3)
@@ -226,7 +234,7 @@ describe('TaskDetailModal', () => {
   it('does not render the modal panel when selectedTask is null', () => {
     const wrapper = shallowMount(TaskDetailModal, {
       global: {
-        plugins: [createTestingPinia({ initialState: { tasks: { selectedTask: null } } })],
+        plugins: [createTestingPinia({ initialState: { tasks: { selectedTask: null } } }), i18n],
         stubs: { AgentBadge: true, Transition: false },
       },
     })
@@ -239,7 +247,7 @@ describe('TaskDetailModal', () => {
     const task = makeTask()
     const wrapper = shallowMount(TaskDetailModal, {
       global: {
-        plugins: [createTestingPinia({ initialState: { tasks: { selectedTask: task } } })],
+        plugins: [createTestingPinia({ initialState: { tasks: { selectedTask: task } } }), i18n],
         stubs: { AgentBadge: true, Transition: false },
       },
     })
@@ -252,7 +260,7 @@ describe('TaskDetailModal', () => {
     const task = makeTask({ titre: 'Implement dark mode' })
     const wrapper = shallowMount(TaskDetailModal, {
       global: {
-        plugins: [createTestingPinia({ initialState: { tasks: { selectedTask: task } } })],
+        plugins: [createTestingPinia({ initialState: { tasks: { selectedTask: task } } }), i18n],
         stubs: { AgentBadge: true, Transition: false },
       },
     })
@@ -265,7 +273,7 @@ describe('TaskDetailModal', () => {
     const pinia = createTestingPinia({ initialState: { tasks: { selectedTask: task } } })
     const wrapper = shallowMount(TaskDetailModal, {
       global: {
-        plugins: [pinia],
+        plugins: [pinia, i18n],
         stubs: { AgentBadge: true, Transition: false },
       },
     })
@@ -293,7 +301,7 @@ describe('TaskDetailModal', () => {
     const pinia = createTestingPinia({ initialState: { tasks: { selectedTask: task } } })
     shallowMount(TaskDetailModal, {
       global: {
-        plugins: [pinia],
+        plugins: [pinia, i18n],
         stubs: { AgentBadge: true, Transition: false },
       },
     })
@@ -314,19 +322,27 @@ describe('TaskDetailModal', () => {
 // ── TerminalView ──────────────────────────────────────────────────────────────
 
 describe('TerminalView', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     // Mock requestAnimationFrame (not available in jsdom)
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { cb(0); return 0 })
-    // Mock ResizeObserver if not available
-    if (!globalThis.ResizeObserver) {
-      vi.stubGlobal('ResizeObserver', vi.fn().mockImplementation(() => ({
-        observe: vi.fn(),
-        unobserve: vi.fn(),
-        disconnect: vi.fn(),
-      })))
-    }
+    // Always stub ResizeObserver — arrow fn can't be used as constructor; use regular fn
+    vi.stubGlobal('ResizeObserver', vi.fn().mockImplementation(function MockResizeObserver() {
+      this.observe = vi.fn()
+      this.unobserve = vi.fn()
+      this.disconnect = vi.fn()
+    }))
+    // Suppress Vue warns for xterm jsdom limitations (no canvas, no GPU)
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(async () => {
+    await flushPromises()
+    document.body.innerHTML = ''
+    warnSpy.mockRestore()
   })
 
   it('mounts without error', () => {

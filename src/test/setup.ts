@@ -25,6 +25,8 @@ const mockElectronAPI = {
   windowIsMaximized: vi.fn(),
   onWindowStateChange: vi.fn(() => () => {}),
   getWslUsers: vi.fn(),
+  getClaudeProfiles: vi.fn(),
+  getClaudeInstances: vi.fn(),
   terminalCreate: vi.fn(),
   terminalWrite: vi.fn(),
   terminalResize: vi.fn(),

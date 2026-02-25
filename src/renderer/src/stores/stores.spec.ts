@@ -32,8 +32,8 @@ describe('stores/tasks', () => {
     it('should return all tasks when no filter selected', () => {
       const store = useTasksStore()
       store.tasks = [
-        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'a_faire' },
-        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'a_faire' },
+        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'todo' },
+        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'todo' },
       ] as never
 
       const filtered = store.filteredTasks
@@ -43,8 +43,8 @@ describe('stores/tasks', () => {
     it('should filter by agent_id', () => {
       const store = useTasksStore()
       store.tasks = [
-        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'a_faire' },
-        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'a_faire' },
+        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'todo' },
+        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'todo' },
       ] as never
 
       store.selectedAgentId = 1
@@ -57,8 +57,8 @@ describe('stores/tasks', () => {
     it('should filter by perimetre', () => {
       const store = useTasksStore()
       store.tasks = [
-        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'a_faire' },
-        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'a_faire' },
+        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'todo' },
+        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'todo' },
       ] as never
 
       store.selectedPerimetre = 'front-vuejs'
@@ -71,9 +71,9 @@ describe('stores/tasks', () => {
     it('should filter by both agent_id and perimetre', () => {
       const store = useTasksStore()
       store.tasks = [
-        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'a_faire' },
-        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'a_faire' },
-        { id: 3, titre: 'Task 3', agent_assigne_id: 1, perimetre: 'back-electron', statut: 'a_faire' },
+        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front-vuejs', statut: 'todo' },
+        { id: 2, titre: 'Task 2', agent_assigne_id: 2, perimetre: 'back-electron', statut: 'todo' },
+        { id: 3, titre: 'Task 3', agent_assigne_id: 1, perimetre: 'back-electron', statut: 'todo' },
       ] as never
 
       store.selectedAgentId = 1
@@ -89,20 +89,20 @@ describe('stores/tasks', () => {
     it('should group tasks by status', () => {
       const store = useTasksStore()
       store.tasks = [
-        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front', statut: 'a_faire' },
-        { id: 2, titre: 'Task 2', agent_assigne_id: 1, perimetre: 'front', statut: 'a_faire' },
-        { id: 3, titre: 'Task 3', agent_assigne_id: 1, perimetre: 'front', statut: 'en_cours' },
-        { id: 4, titre: 'Task 4', agent_assigne_id: 1, perimetre: 'front', statut: 'terminé' },
-        { id: 5, titre: 'Task 5', agent_assigne_id: 1, perimetre: 'front', statut: 'archivé' },
-        { id: 6, titre: 'Task 6', agent_assigne_id: 1, perimetre: 'front', statut: 'validé' }, // legacy, should count as archivé
+        { id: 1, titre: 'Task 1', agent_assigne_id: 1, perimetre: 'front', statut: 'todo' },
+        { id: 2, titre: 'Task 2', agent_assigne_id: 1, perimetre: 'front', statut: 'todo' },
+        { id: 3, titre: 'Task 3', agent_assigne_id: 1, perimetre: 'front', statut: 'in_progress' },
+        { id: 4, titre: 'Task 4', agent_assigne_id: 1, perimetre: 'front', statut: 'done' },
+        { id: 5, titre: 'Task 5', agent_assigne_id: 1, perimetre: 'front', statut: 'archived' },
+        { id: 6, titre: 'Task 6', agent_assigne_id: 1, perimetre: 'front', statut: 'archived' }, // legacy, should count as archivé
       ] as never
 
       const byStatus = store.tasksByStatus
 
-      expect(byStatus.a_faire).toHaveLength(2)
-      expect(byStatus.en_cours).toHaveLength(1)
-      expect(byStatus.terminé).toHaveLength(1)
-      expect(byStatus.archivé).toHaveLength(2) // archivé + validé
+      expect(byStatus.todo).toHaveLength(2)
+      expect(byStatus.in_progress).toHaveLength(1)
+      expect(byStatus.done).toHaveLength(1)
+      expect(byStatus.archived).toHaveLength(2) // archivé + validé
     })
   })
 
