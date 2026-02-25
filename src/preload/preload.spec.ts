@@ -68,6 +68,7 @@ describe('preload/index', () => {
   it('should expose all required terminal methods', () => {
     const requiredTerminalMethods = [
       'getWslUsers',
+      'getClaudeInstances',
       'terminalCreate',
       'terminalWrite',
       'terminalResize',

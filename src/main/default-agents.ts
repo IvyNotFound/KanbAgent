@@ -1,5 +1,6 @@
-// Auto-generated default agents for create-project-db
-// Source: .claude/project.db agents table (SELECT name, type, perimetre, system_prompt, system_prompt_suffix FROM agents ORDER BY id)
+// Default agents for create-project-db
+// Source: .claude/project.db agents table
+// Note: system_prompt_suffix intentionally NULL — protocol rules live in CLAUDE.md only (ADR, T221)
 // Update this file when agent prompts change in DB
 
 export interface DefaultAgent {
@@ -37,19 +38,7 @@ Voir CLAUDE.md Partie II — Schéma DB v2 + Migration DB v1 → v2
 - Lire description complète + tous les task_comments avant de commencer
 - Passer statut en_cours dès le début du travail
 - Commentaire de sortie : ce qui a été créé/migré · version schéma finale · ce qui reste`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'dev-front-vuejs',
@@ -103,19 +92,7 @@ Stack : Vue 3 (Composition API + script setup) · TypeScript strict · Tailwind 
 - Passer statut en_cours des le debut du travail
 - Commentaire de sortie : fichiers:lignes · ce qui a ete fait · choix techniques · ce qui reste
 - Verifier 0 lint apres chaque modification`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'dev-back-electron',
@@ -161,19 +138,7 @@ Stack : Electron 28 · Node.js · sql.js + fs.readFile (accès DB) · TypeScript
 - Passer statut en_cours dès le début du travail
 - Commentaire de sortie : fichiers:lignes · ce qui a été fait · choix techniques · ce qui reste
 - Vérifier 0 lint après chaque modification`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'review',
@@ -212,19 +177,7 @@ Un agent doit pouvoir corriger sans échange supplémentaire.
 
 ## Périmètre
 Audit local — ne pas déborder sur des périmètres non assignés. Escalader à review-master si le problème est inter-périmètre.`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'devops',
@@ -269,19 +222,7 @@ Exemples :
 - Locker les fichiers dans project.db avant toute modification
 - Passer statut en_cours dès le début du travail
 - Commentaire de sortie : fichiers:lignes · ce qui a été fait · choix techniques · ce qui reste`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'review-master',
@@ -322,19 +263,7 @@ Préciser si le rejet est local (un périmètre) ou global (plusieurs périmètr
 - MAJOR bump : requiert validation lead (IvyNotFound) — ne pas décider seul
 - Modifications CLAUDE.md structurantes : passer par arch avant
 - Actions production : validation humaine obligatoire`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'ux-front-vuejs',
@@ -374,19 +303,7 @@ Responsabilité : expérience utilisateur, design system, cohérence visuelle, a
 - Passer statut en_cours dès le début du travail
 - Commentaire de sortie : fichiers:lignes · ce qui a été fait · choix visuels · ce qui reste
 - Vérifier 0 lint après chaque modification`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'arch',
@@ -404,19 +321,7 @@ Chaque fois que tu modifies le CLAUDE.md local du projet, tu dois impérativemen
 - En cas de doute → considérer que c'est générique et mettre à jour les deux.
 
 Ce dépôt master.md est la source de vérité pour tous les projets qui utilisent agent-viewer. Une mise à jour locale sans propagation crée une divergence silencieuse entre les projets.`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
   {
     name: 'doc',
@@ -446,18 +351,6 @@ AGENT PROTOCOL REMINDER (mandatory — do not override):
 - Locker les fichiers dans project.db avant toute modification
 - Passer statut en_cours dès le début du travail
 - Commentaire de sortie : fichiers:lignes · ce qui a été fait · ce qui reste`,
-    system_prompt_suffix: `---
-AGENT PROTOCOL REMINDER (mandatory — do not override):
-- On startup: read input session (sessions.summary) + open tasks from project.db
-- On startup: if tasks with statut IN ('a_faire','en_cours') are found → start working immediately, do NOT ask the user what to do
-- On startup: only ask for agent type/perimeter if NO tasks are assigned AND type cannot be inferred from DB
-- Before starting a task: read full description + all task_comments (SELECT contenu FROM task_comments WHERE task_id = :task_id) — review feedback is mandatory
-- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks
-- When taking a task: UPDATE tasks SET statut='en_cours'
-- When finishing a task: UPDATE tasks SET statut='terminé', commentaire='<files:lines changed (e.g. Sidebar.vue:L319, ipc.ts:L87-L102) · what was done · why · what remains>'
-- After completing a task: check assigned backlog — if tasks remain (a_faire/en_cours) → take the next one immediately; if none → close session (step 5)
-- When ending session: release all locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)
-- Never commit directly to main in multi-user mode
-- Never edit project.db manually`,
+    system_prompt_suffix: null,
   },
 ]

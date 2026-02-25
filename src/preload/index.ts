@@ -10,8 +10,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   watchDb: (dbPath: string): Promise<void> =>
     ipcRenderer.invoke('watch-db', dbPath),
 
-  unwatchDb: (): Promise<void> =>
-    ipcRenderer.invoke('unwatch-db'),
+  unwatchDb: (dbPath?: string): Promise<void> =>
+    ipcRenderer.invoke('unwatch-db', dbPath),
 
   onDbChanged: (callback: () => void): (() => void) => {
     const handler = () => callback()
@@ -43,15 +43,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getLocksCount: (dbPath: string): Promise<number> =>
     ipcRenderer.invoke('get-locks-count', dbPath),
 
-  // File system
-  fsListDir: (dirPath: string): Promise<unknown[]> =>
-    ipcRenderer.invoke('fs:listDir', dirPath),
+  // File system (with allowedDir for security - restricts access to project directory)
+  fsListDir: (dirPath: string, allowedDir?: string): Promise<unknown[]> =>
+    ipcRenderer.invoke('fs:listDir', dirPath, allowedDir),
 
-  fsReadFile: (filePath: string): Promise<{ success: boolean; content?: string; error?: string }> =>
-    ipcRenderer.invoke('fs:readFile', filePath),
+  fsReadFile: (filePath: string, allowedDir?: string): Promise<{ success: boolean; content?: string; error?: string }> =>
+    ipcRenderer.invoke('fs:readFile', filePath, allowedDir),
 
-  fsWriteFile: (filePath: string, content: string): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('fs:writeFile', filePath, content),
+  fsWriteFile: (filePath: string, content: string, allowedDir?: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('fs:writeFile', filePath, content, allowedDir),
 
   windowMinimize: (): Promise<void> => ipcRenderer.invoke('window-minimize'),
   windowMaximize: (): Promise<void> => ipcRenderer.invoke('window-maximize'),
@@ -67,8 +67,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWslUsers: (): Promise<string[]> =>
     ipcRenderer.invoke('terminal:getWslUsers'),
 
-  terminalCreate: (cols: number, rows: number, projectPath?: string, wslUser?: string, systemPrompt?: string, userPrompt?: string, thinkingMode?: string): Promise<string> =>
-    ipcRenderer.invoke('terminal:create', cols, rows, projectPath, wslUser, systemPrompt, userPrompt, thinkingMode),
+  getClaudeProfiles: (wslUser?: string): Promise<string[]> =>
+    ipcRenderer.invoke('terminal:getClaudeProfiles', wslUser),
+
+  /** Detect WSL distros that have Claude Code installed (replaces raw WSL user selection). */
+  getClaudeInstances: (): Promise<unknown[]> =>
+    ipcRenderer.invoke('terminal:getClaudeInstances'),
+
+  terminalCreate: (cols: number, rows: number, projectPath?: string, wslDistro?: string, systemPrompt?: string, userPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string): Promise<string> =>
+    ipcRenderer.invoke('terminal:create', cols, rows, projectPath, wslDistro, systemPrompt, userPrompt, thinkingMode, claudeCommand, convId),
 
   terminalWrite: (id: string, data: string): Promise<void> =>
     ipcRenderer.invoke('terminal:write', id, data),
@@ -93,6 +100,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.off(channel, handler)
   },
 
+  // Fires once per terminal session when Claude Code's conversation UUID is detected
+  // in the startup banner. Used to store the conv_id for --resume on next launch (task #218).
+  onTerminalConvId: (id: string, cb: (convId: string) => void): (() => void) => {
+    const channel = `terminal:convId:${id}`
+    const handler = (_: unknown, convId: string) => cb(convId)
+    ipcRenderer.on(channel, handler)
+    return () => ipcRenderer.off(channel, handler)
+  },
+
+  setSessionConvId: (dbPath: string, agentId: number, convId: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('session:setConvId', dbPath, agentId, convId),
+
   closeAgentSessions: (dbPath: string, agentName: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('close-agent-sessions', dbPath, agentName),
 
@@ -105,8 +124,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateAgentSystemPrompt: (dbPath: string, agentId: number, systemPrompt: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-agent-system-prompt', dbPath, agentId, systemPrompt),
 
-  buildAgentPrompt: (agentName: string, userPrompt: string): Promise<string> =>
-    ipcRenderer.invoke('build-agent-prompt', agentName, userPrompt),
+  buildAgentPrompt: (agentName: string, userPrompt: string, dbPath?: string, agentId?: number): Promise<string> =>
+    ipcRenderer.invoke('build-agent-prompt', agentName, userPrompt, dbPath, agentId),
 
   getAgentSystemPrompt: (dbPath: string, agentId: number): Promise<{ success: boolean; systemPrompt: string | null; systemPromptSuffix: string | null; thinkingMode: string | null; error?: string }> =>
     ipcRenderer.invoke('get-agent-system-prompt', dbPath, agentId),

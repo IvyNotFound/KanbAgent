@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { runTaskStatusMigration } from './migration'
+import { runTaskStatusMigration, runAddPriorityMigration, runTaskStatutI18nMigration, runAddConvIdToSessionsMigration, runRemoveThinkingModeBudgetTokensMigration, runDropCommentaireColumnMigration } from './migration'
 
 // Mock Database for sql.js
 interface MockDatabase {
@@ -22,7 +22,7 @@ function createMockDb(execResults: Array<{ columns: string[]; values: unknown[][
         const r = execResults[1]
         return r ? [r] : [{ columns: ['count'], values: [[0]] }]
       }
-      if (query.includes("sqlite_master")) {
+      if (query.includes("sqlite_master") && !query.includes('COUNT(*)')) {
         // For sqlite_master: return [] when no table found (values is empty array)
         // return [result] only when values has at least one row
         const r = execResults[2]
@@ -35,6 +35,8 @@ function createMockDb(execResults: Array<{ columns: string[]; values: unknown[][
     getRowsModified: vi.fn().mockReturnValue(0)
   }
 }
+
+// ── runTaskStatusMigration ──────────────────────────────────────────────────────
 
 describe('runTaskStatusMigration', () => {
   let mockDb: MockDatabase
@@ -175,7 +177,7 @@ describe('runTaskStatusMigration', () => {
     expect(result).toBe(2)
   })
 
-  it('should not recreate table when archivé already in CHECK constraint', () => {
+  it('should not recreate table when archivé already in CHECK constraint (French)', () => {
     // New schema: CHECK constraint includes 'archivé' (matches current ipc.ts schema)
     const newSchema = `CREATE TABLE tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,5 +214,512 @@ describe('runTaskStatusMigration', () => {
     expect(mockDb.run).toHaveBeenCalledWith(
       "UPDATE tasks SET statut = 'archivé', updated_at = CURRENT_TIMESTAMP WHERE statut = 'terminé'"
     )
+  })
+
+  it('should not recreate table when archived (English) already in CHECK constraint', () => {
+    // Modern English schema — isArchiveAllowedInCheck must accept 'archived'
+    const englishSchema = `CREATE TABLE tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      titre TEXT NOT NULL,
+      description TEXT,
+      statut TEXT NOT NULL DEFAULT 'todo'
+        CHECK(statut IN ('todo','in_progress','done','archived')),
+      priority TEXT NOT NULL DEFAULT 'normal'
+        CHECK(priority IN ('low','normal','high','critical')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`
+
+    mockDb = createMockDb([
+      { columns: ['count'], values: [[0]] }, // no terminé (already English)
+      { columns: ['count'], values: [[0]] }, // no validé
+      { columns: ['sql'], values: [[englishSchema]] }
+    ])
+
+    const result = runTaskStatusMigration(mockDb as unknown as import('sql.js').Database)
+
+    // No table recreation, no UPDATE — everything already migrated
+    expect(result).toBe(0)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+})
+
+// ── runAddPriorityMigration ─────────────────────────────────────────────────────
+
+describe('runAddPriorityMigration', () => {
+  let mockDb: MockDatabase
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should add priority column when missing', () => {
+    mockDb = {
+      exec: vi.fn().mockReturnValue([{
+        columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'],
+        values: [
+          [0, 'id', 'INTEGER', 1, null, 1],
+          [1, 'titre', 'TEXT', 1, null, 0],
+          [2, 'statut', 'TEXT', 1, "'todo'", 0],
+        ]
+      }]),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0)
+    }
+
+    const result = runAddPriorityMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(true)
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining("ALTER TABLE tasks ADD COLUMN priority")
+    )
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining("DEFAULT 'normal'")
+    )
+  })
+
+  it('should not add priority column when it already exists', () => {
+    mockDb = {
+      exec: vi.fn().mockReturnValue([{
+        columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'],
+        values: [
+          [0, 'id', 'INTEGER', 1, null, 1],
+          [1, 'titre', 'TEXT', 1, null, 0],
+          [2, 'statut', 'TEXT', 1, "'todo'", 0],
+          [3, 'priority', 'TEXT', 1, "'normal'", 0],
+        ]
+      }]),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0)
+    }
+
+    const result = runAddPriorityMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should return false when tasks table does not exist', () => {
+    mockDb = {
+      exec: vi.fn().mockReturnValue([]),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0)
+    }
+
+    const result = runAddPriorityMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+})
+
+// ── runAddConvIdToSessionsMigration ────────────────────────────────────────────
+
+describe('runAddConvIdToSessionsMigration', () => {
+  let mockDb: MockDatabase
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should add claude_conv_id column when it is absent', () => {
+    // PRAGMA table_info(sessions) returns columns without 'claude_conv_id'
+    mockDb = {
+      exec: vi.fn().mockReturnValue([{
+        columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'],
+        values: [
+          [0, 'id',         'INTEGER',  1, null,    1],
+          [1, 'agent_id',   'INTEGER',  1, null,    0],
+          [2, 'started_at', 'DATETIME', 0, null,    0],
+          [3, 'ended_at',   'DATETIME', 0, null,    0],
+          [4, 'statut',     'TEXT',     1, "'en_cours'", 0],
+          [5, 'summary',    'TEXT',     0, null,    0],
+        ]
+      }]),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0)
+    }
+
+    const result = runAddConvIdToSessionsMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(true)
+    expect(mockDb.run).toHaveBeenCalledWith(
+      'ALTER TABLE sessions ADD COLUMN claude_conv_id TEXT'
+    )
+  })
+
+  it('should not add column when claude_conv_id already exists (idempotent)', () => {
+    // PRAGMA table_info(sessions) already includes 'claude_conv_id'
+    mockDb = {
+      exec: vi.fn().mockReturnValue([{
+        columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'],
+        values: [
+          [0, 'id',             'INTEGER',  1, null, 1],
+          [1, 'agent_id',       'INTEGER',  1, null, 0],
+          [2, 'statut',         'TEXT',     1, null, 0],
+          [3, 'summary',        'TEXT',     0, null, 0],
+          [4, 'claude_conv_id', 'TEXT',     0, null, 0],
+        ]
+      }]),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0)
+    }
+
+    const result = runAddConvIdToSessionsMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should return false without crashing when sessions table does not exist', () => {
+    // PRAGMA table_info(sessions) returns empty array (table absent)
+    mockDb = {
+      exec: vi.fn().mockReturnValue([]),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0)
+    }
+
+    const result = runAddConvIdToSessionsMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+})
+
+// ── runTaskStatutI18nMigration ──────────────────────────────────────────────────
+
+describe('runTaskStatutI18nMigration', () => {
+  let mockDb: MockDatabase
+
+  function createI18nMockDb(opts: {
+    schema?: string
+    frenchCount?: number
+    oldColNames?: string[]
+  }): MockDatabase {
+    const { schema = '', frenchCount = 0, oldColNames = ['id', 'titre', 'description', 'statut', 'perimetre', 'effort', 'created_at', 'updated_at'] } = opts
+
+    const pragmaValues = oldColNames.map((name, idx) => [idx, name, 'TEXT', 0, null, 0])
+
+    return {
+      exec: vi.fn().mockImplementation((query: string) => {
+        if (query.includes('sqlite_master') && !query.includes('COUNT(*)')) {
+          if (schema) return [{ columns: ['sql'], values: [[schema]] }]
+          return []
+        }
+        if (query.includes('COUNT(*)') && query.includes("IN ('a_faire'")) {
+          return [{ columns: ['count'], values: [[frenchCount]] }]
+        }
+        if (query.includes('PRAGMA table_info')) {
+          return [{ columns: ['cid','name','type','notnull','dflt_value','pk'], values: pragmaValues }]
+        }
+        return []
+      }),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0)
+    }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should return 0 when schema is already English and no French values', () => {
+    const englishSchema = `CREATE TABLE tasks (statut TEXT DEFAULT 'todo' CHECK(statut IN ('todo','in_progress','done','archived')))`
+    mockDb = createI18nMockDb({ schema: englishSchema, frenchCount: 0 })
+
+    const result = runTaskStatutI18nMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(0)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should return 0 when tasks table does not exist', () => {
+    mockDb = createI18nMockDb({ schema: '', frenchCount: 0 })
+
+    const result = runTaskStatutI18nMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(0)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should recreate table and return frenchCount when French values exist', () => {
+    const frenchSchema = `CREATE TABLE tasks (statut TEXT DEFAULT 'a_faire' CHECK(statut IN ('a_faire','en_cours','terminé','archivé')))`
+    mockDb = createI18nMockDb({ schema: frenchSchema, frenchCount: 7 })
+
+    const result = runTaskStatutI18nMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(7)
+    // Should call ALTER TABLE RENAME TO ...
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining('ALTER TABLE tasks RENAME TO tasks_backup_i18n')
+    )
+    // Should create new table with English CHECK
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining("'todo','in_progress','done','archived'")
+    )
+    // Should create priority column in new table
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining("'low','normal','high','critical'")
+    )
+    // Should INSERT SELECT with CASE expression
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining('CASE COALESCE(statut')
+    )
+    // Should DROP backup table
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining('DROP TABLE tasks_backup_i18n')
+    )
+  })
+
+  it('should recreate table with English schema even when no French data but schema is French', () => {
+    const frenchSchema = `CREATE TABLE tasks (statut TEXT DEFAULT 'a_faire' CHECK(statut IN ('a_faire','en_cours','terminé','archivé')))`
+    // No French data (frenchCount=0) but schema is not English (no 'todo')
+    mockDb = createI18nMockDb({ schema: frenchSchema, frenchCount: 0 })
+
+    const result = runTaskStatutI18nMigration(mockDb as unknown as import('sql.js').Database)
+
+    // Should still recreate the table (schema upgrade needed)
+    expect(result).toBe(0)
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining('ALTER TABLE tasks RENAME TO tasks_backup_i18n')
+    )
+  })
+
+  it('should include terminé → done in CASE mapping', () => {
+    const frenchSchema = `CREATE TABLE tasks (statut TEXT DEFAULT 'a_faire' CHECK(statut IN ('a_faire','en_cours','terminé','archivé')))`
+    mockDb = createI18nMockDb({ schema: frenchSchema, frenchCount: 3 })
+
+    runTaskStatutI18nMigration(mockDb as unknown as import('sql.js').Database)
+
+    const insertCall = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => typeof call[0] === 'string' && call[0].includes('INSERT INTO tasks')
+    )
+    expect(insertCall).toBeDefined()
+    const insertSql = insertCall![0] as string
+    expect(insertSql).toContain("WHEN 'terminé'  THEN 'done'")
+    expect(insertSql).toContain("WHEN 'archivé'  THEN 'archived'")
+    expect(insertSql).toContain("WHEN 'validé'   THEN 'archived'")
+  })
+
+  it('should use existing priority values when column already present', () => {
+    const frenchSchema = `CREATE TABLE tasks (statut TEXT DEFAULT 'a_faire' CHECK(statut IN ('a_faire','en_cours','terminé','archivé')))`
+    const colNames = ['id', 'titre', 'statut', 'priority', 'created_at', 'updated_at']
+    mockDb = createI18nMockDb({ schema: frenchSchema, frenchCount: 2, oldColNames: colNames })
+
+    runTaskStatutI18nMigration(mockDb as unknown as import('sql.js').Database)
+
+    const insertCall = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => typeof call[0] === 'string' && call[0].includes('INSERT INTO tasks')
+    )
+    expect(insertCall).toBeDefined()
+    const insertSql = insertCall![0] as string
+    // priority should be copied from old table (not defaulted)
+    expect(insertSql).toContain('priority,')
+    // The SELECT clause should use 'priority' as a column reference, not the default literal "'normal'"
+    // Extract only the column list between SELECT and FROM to avoid false positives
+    const betweenSelectAndFrom = insertSql.split('SELECT ')[1]?.split(' FROM ')[0] ?? ''
+    expect(betweenSelectAndFrom).toMatch(/\bpriority\b/) // priority = column ref, not literal
+    expect(betweenSelectAndFrom).not.toContain("'normal'") // not using the default literal value
+  })
+})
+
+// ── runRemoveThinkingModeBudgetTokensMigration ──────────────────────────────────
+
+describe('runRemoveThinkingModeBudgetTokensMigration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  function createAgentsMockDb(schema: string, colNames: string[] = ['id', 'name', 'type', 'perimetre', 'system_prompt', 'system_prompt_suffix', 'thinking_mode', 'allowed_tools', 'created_at']) {
+    const pragmaValues = colNames.map((name, idx) => [idx, name, 'TEXT', 0, null, 0])
+    return {
+      exec: vi.fn().mockImplementation((query: string) => {
+        if (query.includes('sqlite_master')) {
+          if (schema) return [{ columns: ['sql'], values: [[schema]] }]
+          return []
+        }
+        if (query.includes('PRAGMA table_info')) {
+          return [{ columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'], values: pragmaValues }]
+        }
+        return []
+      }),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0),
+    }
+  }
+
+  it('should return false when agents table does not exist', () => {
+    const mockDb = {
+      exec: vi.fn().mockReturnValue([]),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0),
+    }
+
+    const result = runRemoveThinkingModeBudgetTokensMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should return false when budget_tokens is NOT in the schema (already migrated)', () => {
+    const modernSchema = `CREATE TABLE agents (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, type TEXT NOT NULL, thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled')))`
+    const mockDb = createAgentsMockDb(modernSchema)
+
+    const result = runRemoveThinkingModeBudgetTokensMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should return true and recreate table when budget_tokens IS in the schema', () => {
+    const oldSchema = `CREATE TABLE agents (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, type TEXT NOT NULL, thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled', 'budget_tokens')))`
+    const mockDb = createAgentsMockDb(oldSchema)
+
+    const result = runRemoveThinkingModeBudgetTokensMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(true)
+    // Should rename old table
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining('ALTER TABLE agents RENAME TO agents_backup_thinking')
+    )
+    // Should create new table with updated CHECK constraint
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining("CHECK(thinking_mode IN ('auto', 'disabled'))")
+    )
+    // New schema must NOT contain budget_tokens
+    const createCall = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('CREATE TABLE agents')
+    )
+    expect(createCall).toBeDefined()
+    expect(createCall![0] as string).not.toContain('budget_tokens')
+    // Should drop backup table
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.stringContaining('DROP TABLE agents_backup_thinking')
+    )
+  })
+
+  it('should convert budget_tokens values to NULL in the INSERT SELECT', () => {
+    const oldSchema = `CREATE TABLE agents (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, type TEXT NOT NULL, thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled', 'budget_tokens')))`
+    const mockDb = createAgentsMockDb(oldSchema)
+
+    runRemoveThinkingModeBudgetTokensMigration(mockDb as unknown as import('sql.js').Database)
+
+    const insertCall = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('INSERT INTO agents')
+    )
+    expect(insertCall).toBeDefined()
+    const insertSql = insertCall![0] as string
+    expect(insertSql).toContain("WHEN 'budget_tokens' THEN NULL")
+  })
+
+  it('should be idempotent: running twice returns false on second call', () => {
+    // First call: schema has budget_tokens → returns true, recreates table
+    // Second call mock: schema is already clean → returns false
+    const oldSchema = `CREATE TABLE agents (thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled', 'budget_tokens')))`
+    const newSchema = `CREATE TABLE agents (thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled')))`
+
+    let callCount = 0
+    const mockDb = {
+      exec: vi.fn().mockImplementation((query: string) => {
+        if (query.includes('sqlite_master')) {
+          callCount++
+          const schema = callCount === 1 ? oldSchema : newSchema
+          return [{ columns: ['sql'], values: [[schema]] }]
+        }
+        if (query.includes('PRAGMA table_info')) {
+          return [{ columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'], values: [[0, 'thinking_mode', 'TEXT', 0, null, 0]] }]
+        }
+        return []
+      }),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(0),
+    }
+
+    const first = runRemoveThinkingModeBudgetTokensMigration(mockDb as unknown as import('sql.js').Database)
+    expect(first).toBe(true)
+
+    const second = runRemoveThinkingModeBudgetTokensMigration(mockDb as unknown as import('sql.js').Database)
+    expect(second).toBe(false)
+  })
+
+  it('should use SAVEPOINT for atomicity', () => {
+    const oldSchema = `CREATE TABLE agents (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, type TEXT NOT NULL, thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled', 'budget_tokens')))`
+    const mockDb = createAgentsMockDb(oldSchema)
+
+    runRemoveThinkingModeBudgetTokensMigration(mockDb as unknown as import('sql.js').Database)
+
+    const calls = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0] as string)
+    expect(calls.some(s => s.includes('SAVEPOINT remove_budget_tokens'))).toBe(true)
+    expect(calls.some(s => s.includes('RELEASE SAVEPOINT remove_budget_tokens'))).toBe(true)
+    // ROLLBACK should NOT have been called on success
+    expect(calls.some(s => s.includes('ROLLBACK TO SAVEPOINT'))).toBe(false)
+  })
+})
+
+// ── runDropCommentaireColumnMigration ────────────────────────────────────────────
+
+describe('runDropCommentaireColumnMigration', () => {
+  function createCommentaireMockDb(columns: string[]): MockDatabase {
+    // Build PRAGMA table_info rows: [cid, name, type, notnull, dflt_value, pk]
+    const pragmaValues = columns.map((name, i) => [i, name, 'TEXT', 0, null, i === 0 ? 1 : 0])
+    return {
+      exec: vi.fn().mockImplementation((query: string) => {
+        if (query.includes('PRAGMA table_info(tasks)')) {
+          if (pragmaValues.length === 0) return []
+          return [{ columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'], values: pragmaValues }]
+        }
+        return []
+      }),
+      run: vi.fn(),
+      getRowsModified: vi.fn().mockReturnValue(3),
+    }
+  }
+
+  it('should return 0 and do nothing when commentaire column is absent', () => {
+    const mockDb = createCommentaireMockDb(['id', 'titre', 'description', 'statut'])
+
+    const result = runDropCommentaireColumnMigration(mockDb as unknown as import('sql.js').Database)
+
+    expect(result).toBe(0)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should migrate rows and drop column when commentaire column exists', () => {
+    const mockDb = createCommentaireMockDb(['id', 'titre', 'commentaire', 'statut'])
+
+    const result = runDropCommentaireColumnMigration(mockDb as unknown as import('sql.js').Database)
+
+    // Returns number of rows migrated (mocked to 3)
+    expect(result).toBe(3)
+    // Should have run INSERT INTO task_comments
+    const runCalls = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0] as string)
+    expect(runCalls.some(s => s.includes('INSERT INTO task_comments'))).toBe(true)
+    expect(runCalls.some(s => s.includes('task_id') && s.includes('commentaire'))).toBe(true)
+    // Should have dropped the column
+    expect(runCalls.some(s => s.includes('ALTER TABLE tasks DROP COLUMN commentaire'))).toBe(true)
+  })
+
+  it('should be idempotent: returns 0 when column is already absent', () => {
+    const mockDb = createCommentaireMockDb(['id', 'titre', 'statut']) // no commentaire
+
+    const first = runDropCommentaireColumnMigration(mockDb as unknown as import('sql.js').Database)
+    expect(first).toBe(0)
+    expect(mockDb.run).not.toHaveBeenCalled()
+
+    const second = runDropCommentaireColumnMigration(mockDb as unknown as import('sql.js').Database)
+    expect(second).toBe(0)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('should filter only non-null and non-empty commentaire values via WHERE clause', () => {
+    const mockDb = createCommentaireMockDb(['id', 'titre', 'commentaire', 'statut'])
+
+    runDropCommentaireColumnMigration(mockDb as unknown as import('sql.js').Database)
+
+    const runCalls = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0] as string)
+    const insertCall = runCalls.find(s => s.includes('INSERT INTO task_comments'))
+    expect(insertCall).toBeDefined()
+    expect(insertCall).toContain('commentaire IS NOT NULL')
+    expect(insertCall).toContain("TRIM(commentaire) != ''")
   })
 })
