@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   projectPath: string
@@ -33,19 +36,21 @@ LANG_CODE   : english
 
 **${projectName.value}** — Décrivez votre projet ici.
 
-## Base de données MCP
+## Base de données
 
-\`.claude/settings.json\` :
-\`\`\`json
-{
-  "mcpServers": {
-    "sqlite": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sqlite", ".claude/project.db"]
-    }
-  }
-}
+\`project.db\` est géré par **agent-viewer** via \`sql.js\` (SQLite WASM).
+Aucune configuration MCP requise — l'accès est automatique via l'interface.
+
+Accès depuis les agents Claude Code :
+\`\`\`bash
+# Lecture
+node scripts/dbq.js "SELECT id, titre, statut FROM tasks LIMIT 10"
+
+# Écriture
+node scripts/dbw.js "UPDATE tasks SET statut='en_cours' WHERE id=1"
 \`\`\`
+
+Voir \`.claude/WORKFLOW.md\` pour le protocole complet.
 `
 
 async function handleSetup() {
@@ -60,7 +65,7 @@ async function handleSetup() {
 
     if (!props.hasCLAUDEmd && generateClaudeMd.value) {
       const claudeMdPath = `${props.projectPath.replace(/\\/g, '/')}/CLAUDE.md`
-      await window.electronAPI.fsWriteFile(claudeMdPath, CLAUDE_MD_TEMPLATE)
+      await window.electronAPI.fsWriteFile(claudeMdPath, CLAUDE_MD_TEMPLATE, props.projectPath)
     }
 
     emit('done', { projectPath: props.projectPath, dbPath: result.dbPath })
@@ -94,7 +99,7 @@ async function handleSetup() {
           </div>
           <div>
             <h2 class="text-base font-semibold text-zinc-100">
-              {{ hasCLAUDEmd ? 'Base de données manquante' : 'Nouveau projet' }}
+              {{ hasCLAUDEmd ? t('setup.missingDb') : t('setup.newProject') }}
             </h2>
             <p class="text-xs text-zinc-500 mt-0.5 font-mono truncate">{{ projectPath }}</p>
           </div>
@@ -107,21 +112,21 @@ async function handleSetup() {
         <!-- Case B: CLAUDE.md present, no DB -->
         <template v-if="hasCLAUDEmd">
           <p class="text-sm text-zinc-400 leading-relaxed">
-            Ce projet possède un <code class="text-violet-300 bg-zinc-800 px-1 rounded text-xs">CLAUDE.md</code>
-            mais aucun fichier <code class="text-violet-300 bg-zinc-800 px-1 rounded text-xs">project.db</code>
-            n'a été trouvé dans <code class="text-zinc-300 bg-zinc-800 px-1 rounded text-xs">.claude/</code>.
+            {{ t('setup.hasCLAUDEmdDesc', {
+              claudeMd: 'CLAUDE.md',
+              projectDb: 'project.db',
+              claudeDir: '.claude/'
+            }) }}
           </p>
           <div class="px-4 py-3 rounded-lg bg-zinc-800/60 border border-zinc-700/50 text-xs text-zinc-400 leading-relaxed">
-            <p>La base sera créée avec le schéma complet (agents, sessions, tâches, logs, périmètres) et les périmètres par défaut.</p>
+            <p>{{ t('setup.hasCLAUDEmdInfo') }}</p>
           </div>
         </template>
 
         <!-- Case A: Neither CLAUDE.md nor DB -->
         <template v-else>
           <p class="text-sm text-zinc-400 leading-relaxed">
-            Ce dossier ne contient ni
-            <code class="text-violet-300 bg-zinc-800 px-1 rounded text-xs">CLAUDE.md</code>
-            ni base de données. Initialisez-le en tant que nouveau projet agent-viewer.
+            {{ t('setup.noFilesDesc', { claudeMd: 'CLAUDE.md' }) }}
           </p>
 
           <!-- Options -->
@@ -132,8 +137,8 @@ async function handleSetup() {
                 <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>
               </svg>
               <div>
-                <p class="text-xs font-medium text-zinc-200">Créer <span class="font-mono">.claude/project.db</span></p>
-                <p class="text-xs text-zinc-500 mt-0.5">Schéma complet avec périmètres par défaut</p>
+                <p class="text-xs font-medium text-zinc-200">{{ t('setup.createProjectDb', { projectDb: '.claude/project.db' }) }}</p>
+                <p class="text-xs text-zinc-500 mt-0.5">{{ t('setup.createProjectDbDesc') }}</p>
               </div>
             </div>
 
@@ -144,13 +149,13 @@ async function handleSetup() {
                 : 'bg-zinc-800/40 border-zinc-700/50 hover:border-zinc-600'"
             >
               <input
-                type="checkbox"
                 v-model="generateClaudeMd"
+                type="checkbox"
                 class="mt-0.5 accent-violet-500 shrink-0"
               />
               <div>
-                <p class="text-xs font-medium text-zinc-200">Générer un <span class="font-mono">CLAUDE.md</span> de base</p>
-                <p class="text-xs text-zinc-500 mt-0.5">Template minimal — à compléter selon votre projet</p>
+                <p class="text-xs font-medium text-zinc-200">{{ t('setup.generateClaudeMd', { claudeMd: 'CLAUDE.md' }) }}</p>
+                <p class="text-xs text-zinc-500 mt-0.5">{{ t('setup.generateClaudeMdDesc') }}</p>
               </div>
             </label>
           </div>
@@ -169,7 +174,7 @@ async function handleSetup() {
           :disabled="creating"
           @click="emit('skip')"
         >
-          Ignorer
+          {{ t('setup.skip') }}
         </button>
         <button
           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600 hover:bg-violet-500 text-white"
@@ -180,7 +185,7 @@ async function handleSetup() {
             <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-opacity="0.25"/>
             <path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          {{ creating ? 'Initialisation…' : hasCLAUDEmd ? 'Créer la base de données' : 'Initialiser le projet' }}
+          {{ creating ? t('setup.creating') : hasCLAUDEmd ? t('setup.createDb') : t('setup.initProject') }}
         </button>
       </div>
 

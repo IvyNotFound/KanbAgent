@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg, agentBorder } from '@renderer/utils/agentColor'
 import type { Agent } from '@renderer/types'
 
+const { t } = useI18n()
 const props = defineProps<{ agent: Agent }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 
@@ -63,7 +65,7 @@ async function save() {
           :style="{ borderLeftColor: agentFg(agent.name), borderLeftWidth: '3px' }"
         >
           <div>
-            <p class="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-0.5">Éditer l'agent</p>
+            <p class="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-0.5">{{ t('agent.editTitle') }}</p>
             <p class="text-base font-mono font-semibold" :style="{ color: agentFg(agent.name) }">
               {{ agent.name }}
             </p>
@@ -79,7 +81,7 @@ async function save() {
 
           <!-- Nom -->
           <div>
-            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Nom</label>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{{ t('sidebar.name') }}</label>
             <input
               v-model="name"
               class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono text-zinc-100 outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors"
@@ -91,7 +93,7 @@ async function save() {
 
           <!-- Thinking mode -->
           <div>
-            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Mode thinking</label>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{{ t('launch.thinkingMode') }}</label>
             <div class="flex gap-2">
               <button
                 :class="[
@@ -101,7 +103,7 @@ async function save() {
                     : 'border-zinc-700 bg-zinc-800/40 text-zinc-400 hover:border-zinc-600'
                 ]"
                 @click="thinkingMode = 'auto'"
-              >Auto</button>
+              >{{ t('launch.auto') }}</button>
               <button
                 :class="[
                   'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
@@ -110,15 +112,15 @@ async function save() {
                     : 'border-zinc-700 bg-zinc-800/40 text-zinc-400 hover:border-zinc-600'
                 ]"
                 @click="thinkingMode = 'disabled'"
-              >Désactivé</button>
+              >{{ t('launch.disabled') }}</button>
             </div>
-            <p class="text-[10px] text-zinc-600 mt-1.5">Désactivé recommandé pour les agents devops, doc, test</p>
+            <p class="text-[10px] text-zinc-600 mt-1.5">{{ t('launch.thinkingNote') }}</p>
           </div>
 
           <!-- Tâches autorisées (--allowedTools) -->
           <div>
             <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-              Outils autorisés
+              {{ t('agent.allowedTools') }}
               <span class="normal-case font-normal text-zinc-600 ml-1">(--allowedTools)</span>
             </label>
             <textarea
@@ -127,7 +129,7 @@ async function save() {
               placeholder="Bash,Edit,Read,Write,Glob,Grep&#10;Laisser vide = tous les outils autorisés"
               class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 placeholder-zinc-600 resize-none outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors leading-relaxed"
             />
-            <p class="text-[10px] text-zinc-600 mt-1.5">Séparés par virgules — injectés comme <code class="bg-zinc-800 px-1 rounded">--allowedTools</code> au lancement</p>
+            <p class="text-[10px] text-zinc-600 mt-1.5">{{ t('agent.allowedToolsNote') }}</p>
           </div>
 
           <!-- Erreur -->
@@ -142,13 +144,13 @@ async function save() {
           <button
             class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors"
             @click="emit('close')"
-          >Annuler</button>
+          >{{ t('common.cancel') }}</button>
           <button
             class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name), borderWidth: '1px' }"
             :disabled="saving || !name.trim()"
             @click="save"
-          >{{ saving ? 'Enregistrement…' : 'Enregistrer' }}</button>
+          >{{ saving ? t('common.saving') : t('common.save') }}</button>
         </div>
 
       </div>

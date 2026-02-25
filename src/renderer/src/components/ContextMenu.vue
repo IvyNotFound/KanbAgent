@@ -7,7 +7,7 @@ export interface ContextMenuItem {
   separator?: boolean
 }
 
-const props = defineProps<{
+defineProps<{
   x: number
   y: number
   items: ContextMenuItem[]

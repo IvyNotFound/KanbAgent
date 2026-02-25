@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import type { AgentLog } from '@renderer/types'
 
@@ -8,31 +10,92 @@ const props = defineProps<{
   initialAgentId?: number | null
 }>()
 
+const { t, locale } = useI18n()
 const store = useTasksStore()
+const tabsStore = useTabsStore()
 
 // ── State ──────────────────────────────────────────────────────────────────
 const logs = ref<AgentLog[]>([])
 const loading = ref(false)
 const filterLevel = ref<string>('all')
 const filterAgentId = ref<number | null>(props.initialAgentId ?? null)
-const expandedIds = ref<Set<number>>(new Set())
+const expandedIds = ref<Record<number, boolean>>({})
+
+// Pagination
+const currentPage = ref(1)
+const pageSize = ref(50)
+const totalCount = ref(0)
+
+const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
+const paginatedLogs = computed(() => logs.value)
+
 let pollTimer: ReturnType<typeof setInterval> | null = null
+
+// Reset page when filters change
+watch([filterLevel, filterAgentId], () => {
+  currentPage.value = 1
+  fetchLogs()
+})
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchLogs()
+  }
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchLogs()
+  }
+}
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function fetchLogs(): Promise<void> {
   if (!store.dbPath) return
   loading.value = true
   try {
-    const rows = await window.electronAPI.queryDb(
+    // Build WHERE clause based on filters
+    const conditions: string[] = []
+    const params: unknown[] = []
+    if (filterLevel.value !== 'all') {
+      conditions.push('l.niveau = ?')
+      params.push(filterLevel.value)
+    }
+    if (filterAgentId.value !== null) {
+      conditions.push('l.agent_id = ?')
+      params.push(filterAgentId.value)
+    }
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+    // Fetch total count
+    const countResult = await window.electronAPI.queryDb(
+      store.dbPath,
+      `SELECT COUNT(*) as total FROM agent_logs l ${whereClause}`,
+      params,
+    ) as { total: number }[]
+    totalCount.value = countResult[0]?.total ?? 0
+
+    // Fetch paginated logs
+    const offset = (currentPage.value - 1) * pageSize.value
+    const result = await window.electronAPI.queryDb(
       store.dbPath,
       `SELECT l.id, l.session_id, l.agent_id, a.name as agent_name, a.type as agent_type,
               l.niveau, l.action, l.detail, l.fichiers, l.created_at
        FROM agent_logs l
        LEFT JOIN agents a ON a.id = l.agent_id
+       ${whereClause}
        ORDER BY l.created_at DESC
-       LIMIT 500`,
-    ) as AgentLog[]
-    logs.value = rows
+       LIMIT ? OFFSET ?`,
+      [...params, pageSize.value, offset],
+    )
+    if (!Array.isArray(result)) {
+      console.warn('[AgentLogsView] Unexpected query result:', result)
+      logs.value = []
+      return
+    }
+    logs.value = result as AgentLog[]
   } finally {
     loading.value = false
   }
@@ -41,36 +104,28 @@ async function fetchLogs(): Promise<void> {
 // ── Filters ────────────────────────────────────────────────────────────────
 const levels = ['all', 'info', 'warn', 'error', 'debug'] as const
 
-const filteredLogs = computed(() => {
-  return logs.value.filter(log => {
-    if (filterLevel.value !== 'all' && log.niveau !== filterLevel.value) return false
-    if (filterAgentId.value !== null && log.agent_id !== filterAgentId.value) return false
-    return true
-  })
-})
-
-const uniqueAgents = computed(() => {
-  const map = new Map<number, string>()
-  for (const log of logs.value) {
-    if (log.agent_id && log.agent_name && !map.has(log.agent_id)) {
-      map.set(log.agent_id, log.agent_name)
-    }
-  }
-  return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]))
-})
+// Use store.agents instead of iterating logs (avoids recompute on every poll)
+const uniqueAgents = computed(() =>
+  store.agents
+    .filter(a => a.type !== 'setup')
+    .map(a => [a.id, a.name] as [number, string])
+    .sort((a, b) => a[1].localeCompare(b[1]))
+)
 
 // ── Timestamps ────────────────────────────────────────────────────────────
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr)
   const now = new Date()
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
   if (d.toDateString() === now.toDateString()) {
-    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })
   }
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+  return d.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit' })
 }
 
 function absoluteTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('fr-FR', {
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
+  return new Date(dateStr).toLocaleString(dateLocale, {
     day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
@@ -98,15 +153,15 @@ const filterLevelConfig: Record<string, string> = {
 
 // ── Detail toggle ─────────────────────────────────────────────────────────
 function toggleExpand(id: number): void {
-  if (expandedIds.value.has(id)) {
-    expandedIds.value.delete(id)
+  if (expandedIds.value[id]) {
+    delete expandedIds.value[id]
   } else {
-    expandedIds.value.add(id)
+    expandedIds.value[id] = true
   }
 }
 
 function isExpanded(id: number): boolean {
-  return expandedIds.value.has(id)
+  return !!expandedIds.value[id]
 }
 
 function parseFichiers(fichiers: string | null): string[] {
@@ -117,7 +172,23 @@ function parseFichiers(fichiers: string | null): string[] {
 // ── Lifecycle ─────────────────────────────────────────────────────────────
 onMounted(async () => {
   await fetchLogs()
-  pollTimer = setInterval(fetchLogs, 4000)
+  // Only start polling if the logs tab is active
+  if (tabsStore.activeTabId === 'logs') {
+    pollTimer = setInterval(fetchLogs, 4000)
+  }
+})
+
+// Watch tab visibility to start/stop polling
+watch(() => tabsStore.activeTabId, (tabId) => {
+  if (tabId === 'logs' && !pollTimer) {
+    // Tab became active - start polling and fetch immediately
+    fetchLogs()
+    pollTimer = setInterval(fetchLogs, 4000)
+  } else if (tabId !== 'logs' && pollTimer) {
+    // Tab became inactive - stop polling
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
 })
 
 onUnmounted(() => {
@@ -158,7 +229,7 @@ watch(() => props.initialAgentId, (v) => {
         v-model.number="filterAgentId"
         class="bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-[11px] font-mono text-zinc-300 outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
       >
-        <option :value="null">Tous les agents</option>
+        <option :value="null">{{ t('logs.allAgents') }}</option>
         <option
           v-for="[id, name] in uniqueAgents"
           :key="id"
@@ -169,14 +240,41 @@ watch(() => props.initialAgentId, (v) => {
       <!-- Spacer -->
       <div class="flex-1" />
 
+      <!-- Pagination controls -->
+      <div v-if="totalPages > 1" class="flex items-center gap-2">
+        <button
+          class="w-6 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          :disabled="currentPage === 1"
+          :title="t('logs.prevPage')"
+          @click="prevPage"
+        >
+          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+            <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+          </svg>
+        </button>
+        <span class="text-[11px] text-zinc-600 font-mono">
+          {{ currentPage }} / {{ totalPages }}
+        </span>
+        <button
+          class="w-6 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          :disabled="currentPage >= totalPages"
+          :title="t('logs.nextPage')"
+          @click="nextPage"
+        >
+          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        </button>
+      </div>
+
       <!-- Compteur + refresh -->
-      <span class="text-[11px] text-zinc-600 font-mono">
-        {{ filteredLogs.length }} / {{ logs.length }}
+      <span v-else class="text-[11px] text-zinc-600 font-mono">
+        {{ paginatedLogs.length }} / {{ totalCount }}
       </span>
       <button
         class="w-6 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
         :class="{ 'animate-spin': loading }"
-        title="Actualiser"
+        :title="t('logs.refresh')"
         @click="fetchLogs"
       >
         <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
@@ -187,23 +285,23 @@ watch(() => props.initialAgentId, (v) => {
     </div>
 
     <!-- ── Liste logs ────────────────────────────────────────────────────── -->
-    <div class="flex-1 overflow-y-auto min-h-0">
+    <div class="flex-1 overflow-y-auto min-h-0" style="contain: strict; will-change: scroll-position;">
 
       <!-- Empty state -->
       <div
-        v-if="filteredLogs.length === 0 && !loading"
+        v-if="paginatedLogs.length === 0 && !loading"
         class="flex flex-col items-center justify-center h-full gap-2"
       >
         <svg viewBox="0 0 16 16" fill="currentColor" class="w-8 h-8 text-zinc-700">
           <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
           <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
         </svg>
-        <p class="text-sm text-zinc-600">Aucun log</p>
+        <p class="text-sm text-zinc-600">{{ t('logs.noLogs') }}</p>
       </div>
 
       <!-- Log rows -->
       <div
-        v-for="log in filteredLogs"
+        v-for="log in paginatedLogs"
         :key="log.id"
         :class="[
           'group border-b border-zinc-800/60 transition-colors',

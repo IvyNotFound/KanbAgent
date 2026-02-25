@@ -1,64 +1,43 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { useTasksStore } from '@renderer/stores/tasks'
 import AgentBadge from './AgentBadge.vue'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
 
+// Configure marked for synchronous rendering
+marked.setOptions({ async: false })
+
+const { t, locale } = useI18n()
 const store = useTasksStore()
 const task = computed(() => store.selectedTask)
 
-// Normaliser les retours à la ligne (gère le cas où \n est stocké comme texte)
-const normalizedCommentaire = computed(() => {
-  if (!task.value?.commentaire) return ''
-  return task.value.commentaire.replace(/\\n/g, '\n')
-})
-
-// Fusionner le commentaire de la tâche avec les commentaires (comme si c'était le premier)
-const mergedComments = computed(() => {
-  const comments = [...store.taskComments]
-
-  // Ajouter le commentaire de la tâche en premier (simulé comme provenant du créateur)
-  if (normalizedCommentaire.value && task.value) {
-    comments.unshift({
-      id: 0, // ID fictif pour le commentaire de tâche
-      task_id: task.value.id,
-      agent_id: task.value.agent_createur_id,
-      agent_name: task.value.agent_createur_name || '?',
-      contenu: normalizedCommentaire.value,
-      created_at: task.value.created_at
-    })
-  }
-
-  return comments
-})
-
-const PERIMETRE_COLORS: Record<string, string> = {
-  'front-vuejs': 'bg-sky-500/15 text-sky-300',
-  'back-electron': 'bg-violet-500/15 text-violet-300',
-  'back-python': 'bg-amber-500/15 text-amber-300',
-  'back-node': 'bg-emerald-500/15 text-emerald-300',
-}
-
-function perimetreColor(p: string | null): string {
-  return p ? (PERIMETRE_COLORS[p] ?? 'bg-zinc-700 text-zinc-300') : 'bg-zinc-700 text-zinc-300'
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  a_faire: 'À faire',
-  en_cours: 'En cours',
-  terminé: 'Terminé',
-  validé: 'Validé',
-}
+const statusLabel = (key: string) => ({
+  todo:        t('columns.todo'),
+  in_progress: t('columns.in_progress'),
+  done:        t('columns.done'),
+  archived:    t('columns.archived'),
+}[key] ?? key)
 
 const STATUS_COLORS: Record<string, string> = {
-  a_faire: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  en_cours: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-  terminé: 'bg-zinc-700/50 text-zinc-300 border-zinc-600/50',
-  validé: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
+  todo:        'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  in_progress: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  done:        'bg-zinc-700/50 text-zinc-300 border-zinc-600/50',
+  archived:    'bg-violet-500/20 text-violet-300 border-violet-500/30',
+}
+
+const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
+const EFFORT_BADGE: Record<number, string> = {
+  1: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  2: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  3: 'bg-red-500/20 text-red-300 border-red-500/30',
 }
 
 function formatDateFull(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
+  return new Date(iso).toLocaleString(dateLocale, {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
@@ -69,10 +48,23 @@ function normalizeNewlines(text: string): string {
   return text.replace(/\\n/g, '\n')
 }
 
+// Render markdown with DOMPurify sanitization
+function renderMarkdown(text: string): string {
+  const normalized = normalizeNewlines(text)
+  const raw = marked.parse(normalized) as string
+  return DOMPurify.sanitize(raw)
+}
+
+// Computed for description
+const renderedDescription = computed(() => {
+  if (!task.value?.description) return ''
+  return renderMarkdown(task.value.description)
+})
+
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const m = Math.floor(diff / 60000)
-  if (m < 1) return 'à l\'instant'
+  if (m < 1) return t('taskDetail.justNow')
   if (m < 60) return `${m}min`
   const h = Math.floor(m / 60)
   if (h < 24) return `${h}h`
@@ -112,7 +104,7 @@ watch(task, (val) => {
       ></div>
 
       <!-- Panel -->
-      <div class="relative w-full max-w-5xl max-h-[84vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex flex-col overflow-hidden mx-4 select-text">
+      <div class="relative w-full max-w-6xl max-h-[90vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex flex-col overflow-hidden mx-4 select-text">
 
         <!-- Header -->
         <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-zinc-800 shrink-0">
@@ -120,13 +112,22 @@ watch(task, (val) => {
             <p class="text-sm font-semibold text-zinc-100 leading-snug mb-2">{{ task.titre }}</p>
             <div class="flex flex-wrap gap-1.5">
               <span :class="['text-xs px-2 py-0.5 rounded-full border font-medium', STATUS_COLORS[task.statut]]">
-                {{ STATUS_LABELS[task.statut] }}
+                {{ statusLabel(task.statut) }}
               </span>
               <span
                 v-if="task.perimetre"
-                :class="['text-xs px-1.5 py-0.5 rounded font-mono', perimetreColor(task.perimetre)]"
+                class="text-xs px-1.5 py-0.5 rounded font-mono border"
+                :style="{
+                  color: perimeterFg(task.perimetre),
+                  backgroundColor: perimeterBg(task.perimetre),
+                  borderColor: perimeterBorder(task.perimetre),
+                }"
               >{{ task.perimetre }}</span>
               <AgentBadge v-if="task.agent_name" :name="task.agent_name" :perimetre="task.agent_perimetre" />
+              <span
+                v-if="task.effort"
+                :class="['text-xs font-bold px-2 py-0.5 rounded font-mono border', EFFORT_BADGE[task.effort]]"
+              >{{ EFFORT_LABEL[task.effort] }}</span>
             </div>
           </div>
           <button
@@ -142,12 +143,12 @@ watch(task, (val) => {
           <div class="flex-1 min-w-0 overflow-y-auto px-5 py-4 space-y-5">
             <!-- Description -->
             <div v-if="task.description">
-              <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Description</p>
-              <p class="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{{ task.description }}</p>
+              <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">{{ t('taskDetail.description') }}</p>
+              <div class="md-content text-sm text-zinc-300 leading-relaxed" v-html="renderedDescription"></div>
             </div>
 
             <p v-if="!task.description" class="text-sm text-zinc-600 italic pt-2">
-              Aucune description.
+              {{ t('taskDetail.noDescription') }}
             </p>
           </div>
 
@@ -155,15 +156,15 @@ watch(task, (val) => {
           <div class="w-72 shrink-0 flex flex-col min-h-0">
             <div class="px-4 py-3 border-b border-zinc-800 shrink-0">
               <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
-                Commentaires
-                <span v-if="mergedComments.length > 0" class="ml-1 text-zinc-600">({{ mergedComments.length }})</span>
+                {{ t('taskDetail.comments') }}
+                <span v-if="store.taskComments.length > 0" class="ml-1 text-zinc-600">({{ store.taskComments.length }})</span>
               </p>
             </div>
 
             <div class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
               <!-- Messages conversation -->
               <div
-                v-for="comment in mergedComments"
+                v-for="comment in store.taskComments"
                 :key="comment.id"
                 class="flex flex-col gap-1"
               >
@@ -179,17 +180,18 @@ watch(task, (val) => {
                 </div>
                 <!-- Bulle -->
                 <div
-                  class="rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap border"
+                  class="md-bubble rounded-lg px-3 py-2 text-xs leading-relaxed break-words border"
                   :style="{
                     color: agentFg(comment.agent_name ?? 'unknown'),
                     backgroundColor: agentBg(comment.agent_name ?? 'unknown'),
                     borderColor: agentBorder(comment.agent_name ?? 'unknown'),
                   }"
-                >{{ normalizeNewlines(comment.contenu) }}</div>
+                  v-html="renderMarkdown(comment.contenu)"
+                ></div>
               </div>
 
-              <p v-if="mergedComments.length === 0" class="text-xs text-zinc-600 italic text-center py-4">
-                Aucun commentaire
+              <p v-if="store.taskComments.length === 0" class="text-xs text-zinc-600 italic text-center py-4">
+                {{ t('taskDetail.noComments') }}
               </p>
             </div>
           </div>
@@ -199,10 +201,10 @@ watch(task, (val) => {
         <div class="px-5 py-3 border-t border-zinc-800 bg-zinc-950/50 flex items-center justify-between gap-4 shrink-0">
           <div class="flex items-center gap-5">
             <p class="text-xs text-zinc-400">
-              <span class="text-zinc-500 mr-1">Créé</span>{{ formatDateFull(task.created_at) }}
+              <span class="text-zinc-500 mr-1">{{ t('taskDetail.created') }}</span>{{ formatDateFull(task.created_at) }}
             </p>
             <p class="text-xs text-zinc-400">
-              <span class="text-zinc-500 mr-1">Modifié</span>{{ formatDateFull(task.updated_at) }}
+              <span class="text-zinc-500 mr-1">{{ t('taskDetail.updated') }}</span>{{ formatDateFull(task.updated_at) }}
             </p>
           </div>
           <span class="text-xs text-zinc-500 font-mono">#{{ task.id }}</span>

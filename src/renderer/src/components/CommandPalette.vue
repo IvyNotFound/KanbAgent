@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg } from '@renderer/utils/agentColor'
 import type { Task } from '@renderer/types'
 
@@ -11,8 +11,8 @@ const emit = defineEmits<{
   (e: 'select-task', task: Task): void
 }>()
 
+const { t } = useI18n()
 const tasksStore = useTasksStore()
-const tabsStore = useTabsStore()
 
 const searchQuery = ref('')
 const debouncedQuery = ref('')
@@ -29,12 +29,12 @@ watch(searchQuery, (val) => {
   debounceTimer = setTimeout(() => { debouncedQuery.value = val }, 300)
 })
 
-const STATUTS = [
-  { key: 'a_faire',  label: 'À faire',  dot: 'bg-amber-500' },
-  { key: 'en_cours', label: 'En cours', dot: 'bg-emerald-500' },
-  { key: 'terminé',  label: 'Terminé',  dot: 'bg-zinc-400' },
-  { key: 'archivé',  label: 'Archivé',  dot: 'bg-violet-500' },
-]
+const STATUTS = computed(() => [
+  { key: 'todo',        label: t('columns.todo'),        dot: 'bg-amber-500' },
+  { key: 'in_progress', label: t('columns.in_progress'), dot: 'bg-emerald-500' },
+  { key: 'done',        label: t('columns.done'),        dot: 'bg-zinc-400' },
+  { key: 'archived',    label: t('columns.archived'),    dot: 'bg-violet-500' },
+])
 
 const filteredTasks = computed<Task[]>(() => {
   const q = debouncedQuery.value.toLowerCase().trim()
@@ -46,7 +46,6 @@ const filteredTasks = computed<Task[]>(() => {
     return (
       t.titre.toLowerCase().includes(q) ||
       t.description?.toLowerCase().includes(q) ||
-      t.commentaire?.toLowerCase().includes(q) ||
       String(t.id) === q
     )
   }).slice(0, 20)
@@ -127,7 +126,7 @@ onMounted(() => window.addEventListener('keydown', handleGlobalKeydown))
 onUnmounted(() => window.removeEventListener('keydown', handleGlobalKeydown))
 
 function statutDot(statut: string): string {
-  return STATUTS.find(s => s.key === statut)?.dot ?? 'bg-zinc-600'
+  return STATUTS.value.find(s => s.key === statut)?.dot ?? 'bg-zinc-600'
 }
 </script>
 
@@ -151,7 +150,7 @@ function statutDot(statut: string): string {
               ref="inputRef"
               v-model="searchQuery"
               type="text"
-              placeholder="Rechercher une tâche par titre, description, #id…"
+              :placeholder="t('commandPalette.placeholder')"
               class="flex-1 bg-transparent text-zinc-100 placeholder-zinc-500 outline-none text-sm"
             >
             <div class="flex items-center gap-2 shrink-0">
@@ -159,7 +158,7 @@ function statutDot(statut: string): string {
                 v-if="hasFilters"
                 class="text-xs text-violet-400 hover:text-violet-300 transition-colors"
                 @click="clearFilters"
-              >reset filtres</button>
+              >{{ t('commandPalette.resetFilters') }}</button>
               <kbd class="px-1.5 py-0.5 text-xs bg-zinc-800 text-zinc-500 rounded border border-zinc-700">ESC</kbd>
             </div>
           </div>
@@ -168,7 +167,7 @@ function statutDot(statut: string): string {
           <div class="px-4 py-2.5 border-b border-zinc-800 shrink-0 space-y-2">
             <!-- Statut chips -->
             <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mr-1">Statut</span>
+              <span class="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.status') }}</span>
               <button
                 v-for="s in STATUTS"
                 :key="s.key"
@@ -187,7 +186,7 @@ function statutDot(statut: string): string {
             <div v-if="tasksStore.agents.length > 0 || tasksStore.perimetresData.length > 0" class="flex items-center gap-3 flex-wrap">
               <!-- Agents -->
               <div v-if="tasksStore.agents.length > 0" class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mr-1">Agent</span>
+                <span class="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.agent') }}</span>
                 <button
                   v-for="agent in tasksStore.agents.slice(0, 8)"
                   :key="agent.id"
@@ -206,7 +205,7 @@ function statutDot(statut: string): string {
 
               <!-- Périmètres -->
               <div v-if="tasksStore.perimetresData.length > 0" class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mr-1">Périmètre</span>
+                <span class="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.perimeter') }}</span>
                 <button
                   v-for="p in tasksStore.perimetresData"
                   :key="p.id"
@@ -232,14 +231,14 @@ function statutDot(statut: string): string {
                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
               </svg>
               <p class="text-sm text-zinc-600">
-                {{ debouncedQuery || hasFilters ? 'Aucun résultat' : 'Aucune tâche chargée' }}
+                {{ debouncedQuery || hasFilters ? t('commandPalette.noResults') : t('commandPalette.noTasksLoaded') }}
               </p>
             </div>
 
             <div v-else>
               <div class="px-4 py-1.5 flex items-center justify-between">
                 <p class="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">
-                  {{ filteredTasks.length }} tâche{{ filteredTasks.length > 1 ? 's' : '' }}
+                  {{ filteredTasks.length }} {{ t('commandPalette.tasks', filteredTasks.length) }}
                 </p>
               </div>
               <div
@@ -288,8 +287,8 @@ function statutDot(statut: string): string {
 
           <!-- Footer -->
           <div class="px-4 py-2 border-t border-zinc-800 flex items-center gap-4 text-xs text-zinc-600 shrink-0">
-            <span><kbd class="px-1 py-0.5 bg-zinc-800 rounded border border-zinc-700">↑↓</kbd> naviguer</span>
-            <span><kbd class="px-1 py-0.5 bg-zinc-800 rounded border border-zinc-700">↵</kbd> ouvrir</span>
+            <span><kbd class="px-1 py-0.5 bg-zinc-800 rounded border border-zinc-700">↑↓</kbd> {{ t('commandPalette.navigate') }}</span>
+            <span><kbd class="px-1 py-0.5 bg-zinc-800 rounded border border-zinc-700">↵</kbd> {{ t('commandPalette.open') }}</span>
             <span class="ml-auto"><kbd class="px-1 py-0.5 bg-zinc-800 rounded border border-zinc-700">Ctrl+K</kbd> toggle</span>
           </div>
 

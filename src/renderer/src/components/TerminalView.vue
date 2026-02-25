@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
-import { Terminal } from 'xterm'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
+import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
-import 'xterm/css/xterm.css'
+import { WebglAddon } from '@xterm/addon-webgl'
+import { CanvasAddon } from '@xterm/addon-canvas'
+import '@xterm/xterm/css/xterm.css'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 
@@ -16,10 +18,11 @@ let term: Terminal | null = null
 let fitAddon: FitAddon | null = null
 let unsubData: (() => void) | null = null
 let unsubExit: (() => void) | null = null
-// Permanent activity listener — never paused, tracks PTY output regardless of tab visibility
-let unsubActivity: (() => void) | null = null
+let unsubConvId: (() => void) | null = null
 let resizeObserver: ResizeObserver | null = null
 let ptyId: string | null = null
+let autoSendTimeout: ReturnType<typeof setTimeout> | null = null
+let fitTimeout: ReturnType<typeof setTimeout> | null = null
 
 function doFit() {
   if (!fitAddon || !term) return
@@ -33,16 +36,22 @@ function doFit() {
 
 // Re-fit and refresh when this tab becomes active (was hidden with display:none)
 // scrollToBottom fixes viewport reset to top that happens after fit() on resize
+// Use setTimeout 200ms + requestAnimationFrame to ensure DOM has proper dimensions before fit
+// fitTimeout is stored so it can be cancelled in onUnmounted if component is destroyed before expiry
 watch(() => tabsStore.activeTabId, (id) => {
   if (id === props.tabId) {
-    requestAnimationFrame(() => {
-      doFit()
-      if (term) {
-        term.refresh(0, term.rows - 1)
-        term.scrollToBottom()
-        term.focus()
-      }
-    })
+    if (fitTimeout) clearTimeout(fitTimeout)
+    fitTimeout = setTimeout(() => {
+      fitTimeout = null
+      requestAnimationFrame(() => {
+        doFit()
+        if (term) {
+          term.refresh(0, term.rows - 1)
+          term.scrollToBottom()
+          term.focus()
+        }
+      })
+    }, 200)
   }
 })
 
@@ -76,9 +85,9 @@ onMounted(async () => {
     fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace',
     fontSize: 13,
     lineHeight: 1.4,
-    cursorBlink: true,
+    cursorBlink: false, // Disabled to prevent ghost cursor effect during frequent terminal updates
     allowTransparency: true,
-    scrollback: 5000,
+    scrollback: 500,
     // Disable built-in copy/paste — let Electron handle it to avoid character duplication
     copyOnSelect: false,
     rightClickSelectsWord: false,
@@ -88,13 +97,32 @@ onMounted(async () => {
   term.loadAddon(fitAddon)
   term.open(container.value)
 
+  // GPU acceleration: try WebGL renderer first, fallback to Canvas2D if GPU unavailable
+  // WebGL: ~60-80% CPU reduction for intensive output; Canvas: stable 2D fallback (VM, GPU-less)
+  try {
+    const webgl = new WebglAddon()
+    webgl.onContextLoss(() => webgl.dispose()) // dispose if GPU context is lost (e.g. sleep/wake)
+    term.loadAddon(webgl)
+  } catch {
+    // WebGL not available (sandboxed env, no GPU driver) — fall back to Canvas2D
+    try {
+      term.loadAddon(new CanvasAddon())
+    } catch { /* Canvas also unavailable — xterm uses DOM renderer */ }
+  }
+
   // Prevent xterm's native paste event — paste is handled exclusively by attachCustomKeyEventHandler
   // (Ctrl+V fires both a keydown and a paste DOM event; blocking paste here prevents double-write)
+  // Use capture phase to run BEFORE xterm's handler, and stopImmediatePropagation to block xterm's handler
   const xtermTextarea = container.value?.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement | null
-  xtermTextarea?.addEventListener('paste', (e) => e.preventDefault())
+  xtermTextarea?.addEventListener('paste', (e) => {
+    e.preventDefault()
+    e.stopImmediatePropagation()
+  }, true) // capture: true = runs before bubble phase handlers (like xterm's)
 
   // Wait for DOM to have proper dimensions before fitting
-  await new Promise(r => setTimeout(r, 100))
+  // Use nextTick + Promise-based delay for more precise timing
+  await nextTick()
+  await new Promise(r => requestAnimationFrame(r))
   fitAddon.fit()
   term.refresh(0, term.rows - 1)
   term.focus()
@@ -104,21 +132,47 @@ onMounted(async () => {
 
   // If systemPrompt is provided, launch Claude directly with the system prompt
   // Otherwise, use the traditional approach with autoSend
-  if (tab?.systemPrompt && tab?.autoSend) {
-    ptyId = await window.electronAPI.terminalCreate(
-      cols, rows,
-      tasksStore.projectPath ?? undefined,
-      tab.wslUser ?? undefined,
-      tab.systemPrompt,
-      tab.autoSend,
-      tab.thinkingMode ?? undefined
-    )
-  } else {
-    ptyId = await window.electronAPI.terminalCreate(
-      cols, rows,
-      tasksStore.projectPath ?? undefined,
-      tab?.wslUser ?? undefined
-    )
+  // convId (task #218): if a previous session UUID exists, pass it for --resume
+  // Wrap in try/catch: backend throws WSL_SPAWN_ERROR if wsl.exe fails (e.g. WSL not started)
+  try {
+    if (tab?.convId) {
+      // Resume mode: skip system prompt injection, Claude restores conversation state
+      ptyId = await window.electronAPI.terminalCreate(
+        cols, rows,
+        tasksStore.projectPath ?? undefined,
+        tab.wslDistro ?? undefined,
+        undefined,
+        undefined,
+        undefined,
+        tab?.claudeCommand ?? undefined,
+        tab.convId
+      )
+    } else if (tab?.systemPrompt && tab?.autoSend) {
+      ptyId = await window.electronAPI.terminalCreate(
+        cols, rows,
+        tasksStore.projectPath ?? undefined,
+        tab.wslDistro ?? undefined,
+        tab.systemPrompt,
+        tab.autoSend,
+        tab.thinkingMode ?? undefined,
+        tab.claudeCommand ?? undefined
+      )
+    } else {
+      ptyId = await window.electronAPI.terminalCreate(
+        cols, rows,
+        tasksStore.projectPath ?? undefined,
+        tab?.wslDistro ?? undefined,
+        undefined,
+        undefined,
+        undefined,
+        tab?.claudeCommand ?? undefined
+      )
+    }
+  } catch (err) {
+    // Display WSL spawn error inline in the terminal (user-friendly ANSI message)
+    term?.write(`\r\n\x1b[31m[Erreur WSL] ${String(err)}\x1b[0m\r\n`)
+    term?.write('\x1b[33mFix: wsl --shutdown puis réessayer\x1b[0m\r\n')
+    return // ptyId stays null — no listeners attached
   }
   tabsStore.setPtyId(props.tabId, ptyId)
   // Immediate agent status refresh after session start (avoids waiting for 1s poll)
@@ -130,18 +184,39 @@ onMounted(async () => {
     if (!tab?.agentName) tabsStore.renameTab(props.tabId, title)
   })
 
-  // Main data listener (paused when tab inactive — writes to xterm canvas)
-  unsubData = window.electronAPI.onTerminalData(ptyId, (data) => {
-    term?.write(data)
-  })
+  // ── Conv ID capture (task #218) ───────────────────────────────────────────
+  // Store the detected conversation UUID in the DB for future --resume launches.
+  // Only active for agent sessions (tab has agentName and tasksStore provides agentId).
+  if (tab?.agentName && tasksStore.dbPath) {
+    const agentRows = await window.electronAPI.queryDb(
+      tasksStore.dbPath,
+      'SELECT id FROM agents WHERE name = ? LIMIT 1',
+      [tab.agentName]
+    ) as Array<{ id: number }>
+    if (agentRows.length > 0) {
+      const agentId = agentRows[0].id
+      unsubConvId = window.electronAPI.onTerminalConvId(ptyId, (convId) => {
+        // Store in DB for future --resume
+        if (tasksStore.dbPath) {
+          window.electronAPI.setSessionConvId(tasksStore.dbPath, agentId, convId)
+            .catch(err => console.warn('[TerminalView] setSessionConvId failed:', err))
+        }
+        // Unsubscribe after first detection
+        unsubConvId?.()
+        unsubConvId = null
+      })
+    }
+  }
 
-  // Permanent activity listener — independent of tab visibility
-  // Fixes: spinner was only active when user had the tab focused
-  unsubActivity = window.electronAPI.onTerminalData(ptyId, () => {
-    tabsStore.markTabActive(props.tabId)
+  // Combined data + activity listener: writes to xterm when active, always marks activity for spinner
+  // Single IPC listener instead of two (reduces 2N to N listeners for N terminals)
+  unsubData = window.electronAPI.onTerminalData(ptyId, (data) => {
+    tabsStore.markTabActive(props.tabId) // always track activity
+    if (!isPaused) term?.write(data)     // only write to xterm when tab is active
   })
 
   unsubExit = window.electronAPI.onTerminalExit(ptyId, () => {
+    term?.clear()
     term?.write('\r\n\x1b[31m[session terminée]\x1b[0m\r\n')
     // Auto-close agent DB sessions when the terminal exits
     const tab = tabsStore.tabs.find(t => t.id === props.tabId)
@@ -188,8 +263,8 @@ onMounted(async () => {
   if (tab?.autoSend && !tab?.systemPrompt) {
     const escaped = tab.autoSend.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
     const pid = ptyId
-    setTimeout(() => {
-      window.electronAPI.terminalWrite(pid, `claude "${escaped}"\r`)
+    autoSendTimeout = setTimeout(() => {
+      if (pid) window.electronAPI.terminalWrite(pid, `claude "${escaped}"\r`)
     }, 600)
   }
 
@@ -208,21 +283,18 @@ onMounted(async () => {
   function pauseListeners() {
     if (isPaused || !ptyId) return
     isPaused = true
-    // Clean up IPC listeners
-    unsubData?.()
+    // Note: unsubData stays subscribed to track activity even when paused
+    // Only unsubExit is cleaned up (terminal not writing anymore)
     unsubExit?.()
-    unsubData = null
     unsubExit = null
   }
 
   function resumeListeners() {
     if (!isPaused || !ptyId) return
     isPaused = false
-    // Re-subscribe to data events (writes to xterm only — activity tracked separately)
-    unsubData = window.electronAPI.onTerminalData(ptyId, (data) => {
-      term?.write(data)
-    })
+    // Re-subscribe exit handler only (unsubData stays active for activity tracking)
     unsubExit = window.electronAPI.onTerminalExit(ptyId, () => {
+      term?.clear()
       term?.write('\r\n\x1b[31m[session terminée]\x1b[0m\r\n')
       const tab = tabsStore.tabs.find(t => t.id === props.tabId)
       if (tab?.agentName && tasksStore.dbPath) {
@@ -251,14 +323,16 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (ptyId) window.electronAPI.terminalKill(ptyId)
+  if (fitTimeout) { clearTimeout(fitTimeout); fitTimeout = null }
+  if (autoSendTimeout) clearTimeout(autoSendTimeout)
   unsubData?.()
   unsubExit?.()
-  unsubActivity?.()
+  unsubConvId?.()
   resizeObserver?.disconnect()
   term?.dispose()
 })
 </script>
 
 <template>
-  <div ref="container" class="w-full h-full bg-[#09090b]" style="transform: translateZ(0)" />
+  <div ref="container" class="w-full h-full bg-[#09090b] pl-2" style="transform: translateZ(0)" />
 </template>

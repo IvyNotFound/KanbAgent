@@ -1,19 +1,86 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import StatusColumn from './StatusColumn.vue'
 
+const { t, locale } = useI18n()
 const store = useTasksStore()
 
 type BoardTab = 'backlog' | 'archive'
 const activeTab = ref<BoardTab>('backlog')
 
-const columns = [
-  { key: 'a_faire' as const,  title: 'À faire',  accentClass: 'bg-amber-500' },
-  { key: 'en_cours' as const, title: 'En cours', accentClass: 'bg-emerald-500' },
-  { key: 'terminé' as const,  title: 'Terminé',  accentClass: 'bg-zinc-500' },
-]
+// Search query
+const searchQuery = ref('')
+const searchInputRef = ref<HTMLInputElement | null>(null)
+
+// Filtered tasks by search query
+const emptyTasks = { todo: [], in_progress: [], done: [], archived: [] }
+const filteredTasksByStatus = computed(() => {
+  const base = store.tasksByStatus ?? emptyTasks
+  const query = searchQuery.value.toLowerCase().trim()
+
+  if (!query) return base
+
+  const filterTask = (task: { titre?: string; description?: string; perimetre?: string; statut?: string; agent_name?: string }) => {
+    if (task.titre?.toLowerCase().includes(query)) return true
+    if (task.description?.toLowerCase().includes(query)) return true
+    if (task.perimetre?.toLowerCase().includes(query)) return true
+    if (task.statut?.toLowerCase().includes(query)) return true
+    if (task.agent_name?.toLowerCase().includes(query)) return true
+    return false
+  }
+
+  return {
+    todo:        (base.todo        || []).filter(filterTask),
+    in_progress: (base.in_progress || []).filter(filterTask),
+    done:        (base.done        || []).filter(filterTask),
+    archived:    (base.archived    || []).filter(filterTask),
+  }
+})
+
+// Auto-switch to Archive tab when backlog is empty but archives exist
+const shouldAutoSwitchToArchive = computed(() => {
+  const tasks = filteredTasksByStatus.value
+  const backlogCount = (tasks.todo?.length || 0) + (tasks.in_progress?.length || 0) + (tasks.done?.length || 0)
+  const archiveCount = tasks.archived?.length || 0
+  return backlogCount === 0 && archiveCount > 0
+})
+
+// Watch for backlog becoming empty and auto-switch to archive
+watch(shouldAutoSwitchToArchive, (shouldSwitch) => {
+  if (shouldSwitch) {
+    activeTab.value = 'archive'
+  }
+})
+
+// Keyboard shortcut: Ctrl+K to focus search
+function handleKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault()
+    searchInputRef.value?.focus()
+  }
+  if (e.key === 'Escape' && document.activeElement === searchInputRef.value) {
+    searchQuery.value = ''
+    searchInputRef.value?.blur()
+  }
+}
+
+// Add global keyboard listener in onMounted, remove in onUnmounted
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+const columns = computed(() => [
+  { key: 'todo'        as const, title: t('columns.todo'),        accentClass: 'bg-amber-500' },
+  { key: 'in_progress' as const, title: t('columns.in_progress'), accentClass: 'bg-emerald-500' },
+  { key: 'done'        as const, title: t('columns.done'),        accentClass: 'bg-zinc-500' },
+])
 
 const activeAgentName = computed(() =>
   store.selectedAgentId !== null
@@ -22,13 +89,21 @@ const activeAgentName = computed(() =>
 )
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
+  return new Date(iso).toLocaleDateString(dateLocale, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+const UNASSIGNED_SENTINEL = '__unassigned__'
+
+// Lazy computed: only compute when archive tab is active
 const archivedByAgent = computed(() => {
-  const groups = new Map<string, typeof store.tasksByStatus.archivé>()
-  for (const task of store.tasksByStatus.archivé) {
-    const key = task.agent_name ?? '(non assigné)'
+  // Only compute if on archive tab to avoid unnecessary recalculations
+  if (activeTab.value !== 'archive') return []
+  const tasks = filteredTasksByStatus?.value?.archived || []
+  if (!tasks || tasks.length === 0) return []
+  const groups = new Map<string, typeof tasks>()
+  for (const task of tasks) {
+    const key = task.agent_name ?? UNASSIGNED_SENTINEL
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key)!.push(task)
   }
@@ -53,8 +128,27 @@ const archivedByAgent = computed(() => {
           ]"
           @click="activeTab = tab"
         >
-          {{ tab === 'backlog' ? 'Backlog' : `Archive (${store.tasksByStatus.archivé.length})` }}
+          {{ tab === 'backlog' ? t('board.backlog') : t('board.archive', { count: filteredTasksByStatus?.archived?.length || 0 }) }}
         </button>
+      </div>
+
+      <!-- Search -->
+      <div class="relative">
+        <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+        </svg>
+        <input
+          ref="searchInputRef"
+          v-model="searchQuery"
+          type="text"
+          :placeholder="t('board.searchPlaceholder')"
+          class="w-48 pl-8 pr-7 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-md text-zinc-200 placeholder-zinc-600 outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors font-mono"
+        />
+        <button
+          v-if="searchQuery"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300 transition-colors"
+          @click="searchQuery = ''"
+        >✕</button>
       </div>
 
       <!-- Active filters -->
@@ -86,7 +180,7 @@ const archivedByAgent = computed(() => {
           :key="col.key"
           :title="col.title"
           :statut="col.key"
-          :tasks="store.tasksByStatus[col.key]"
+          :tasks="filteredTasksByStatus?.[col.key] || []"
           :accent-class="col.accentClass"
         />
       </div>
@@ -94,8 +188,8 @@ const archivedByAgent = computed(() => {
 
     <!-- Archive view -->
     <div v-else class="flex-1 min-h-0 overflow-y-auto px-4 py-3">
-      <div v-if="store.tasksByStatus.archivé.length === 0" class="flex items-center justify-center h-full">
-        <p class="text-sm text-zinc-600 italic">Aucun ticket archivé</p>
+      <div v-if="!filteredTasksByStatus?.archived?.length" class="flex items-center justify-center h-full">
+        <p class="text-sm text-zinc-600 italic">{{ t('board.noArchived') }}</p>
       </div>
       <div v-else class="flex flex-col gap-4">
         <!-- Group by agent -->
@@ -104,11 +198,11 @@ const archivedByAgent = computed(() => {
           <div class="flex items-center gap-2 mb-2">
             <span
               class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-mono border"
-              :style="agentName !== '(non assigné)'
+              :style="agentName !== UNASSIGNED_SENTINEL
                 ? { color: agentFg(agentName), backgroundColor: agentBg(agentName), borderColor: agentBorder(agentName) }
                 : { color: '#71717a', backgroundColor: '#18181b', borderColor: '#3f3f46' }"
-            >{{ agentName }}</span>
-            <span class="text-[10px] text-zinc-600 font-mono">{{ tasks.length }} ticket{{ tasks.length > 1 ? 's' : '' }}</span>
+            >{{ agentName === UNASSIGNED_SENTINEL ? t('board.unassigned') : agentName }}</span>
+            <span class="text-[10px] text-zinc-600 font-mono">{{ tasks.length }} {{ t('board.tickets', tasks.length) }}</span>
           </div>
           <!-- Tasks in group -->
           <div class="space-y-1.5">

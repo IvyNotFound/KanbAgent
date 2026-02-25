@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
 import type { Tab } from '@renderer/stores/tabs'
 import { agentFg, agentBg, agentHue } from '@renderer/utils/agentColor'
 
+const { t } = useI18n()
 const store = useTabsStore()
 
 const terminalTabs = computed(() => store.tabs.filter(t => !t.permanent))
@@ -43,9 +45,9 @@ function onDragEnd() {
 async function handleCloseTab(tab: Tab): Promise<void> {
   if (tab.type === 'file' && tab.dirty) {
     const confirmed = await window.electronAPI.showConfirmDialog({
-      title: 'Fermer le fichier',
-      message: `${tab.title} contient des modifications non enregistrées.`,
-      detail: 'Fermer quand même ? Les modifications seront perdues.',
+      title: t('tabBar.closeFileTitle'),
+      message: t('tabBar.closeFileMessage', { title: tab.title }),
+      detail: t('tabBar.closeFileDetail'),
     })
     if (!confirmed) return
   }
@@ -97,7 +99,7 @@ function indicatorStyle(tab: Tab): Record<string, string> {
         <rect x="6"  y="2" width="4" height="8"  rx="1.5"/>
         <rect x="11" y="2" width="4" height="5"  rx="1.5"/>
       </svg>
-      <span>Backlog</span>
+      <span>{{ t('sidebar.backlog') }}</span>
       <!-- Indicateur actif -->
       <span
         v-if="store.activeTabId === 'backlog'"
@@ -119,7 +121,7 @@ function indicatorStyle(tab: Tab): Record<string, string> {
         <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
         <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
       </svg>
-      <span>Log</span>
+      <span>{{ t('sidebar.logs') }}</span>
       <span
         v-if="store.activeTabId === 'logs'"
         class="absolute bottom-0 left-0 right-0 h-[2px] bg-zinc-500"
@@ -169,12 +171,12 @@ function indicatorStyle(tab: Tab): Record<string, string> {
           </svg>
         </span>
         <span class="max-w-[120px] truncate">{{ tab.title }}</span>
-        <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Modifications non enregistrées" />
+        <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" :title="t('tabBar.unsaved')" />
         <!-- Fermer -->
         <span
           class="ml-0.5 flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer"
+          :title="t('tabBar.closeTab')"
           @click.stop="handleCloseTab(tab)"
-          title="Fermer"
         >✕</span>
         <!-- Indicateur actif -->
         <span
@@ -189,8 +191,8 @@ function indicatorStyle(tab: Tab): Record<string, string> {
     <button
       class="flex items-center gap-1.5 px-3 self-center text-sm font-semibold text-violet-300 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 hover:border-violet-500/50 rounded transition-all mr-2 shrink-0 cursor-pointer"
       style="height: 28px"
+      :title="t('tabBar.newTerminal')"
       @click="store.addTerminal()"
-      title="Nouveau terminal WSL"
     >
       <span class="text-base leading-none">+</span>
       <span>WSL</span>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
@@ -13,6 +14,7 @@ import type { Agent, AgentLog, FileNode, Perimetre } from '@renderer/types'
 
 type Section = 'project' | 'perimetres' | 'agents' | 'tree' | 'backlog' | 'logs'
 
+const { t } = useI18n()
 const store = useTasksStore()
 const tabsStore = useTabsStore()
 const { push: pushToast } = useToast()
@@ -20,8 +22,6 @@ const { push: pushToast } = useToast()
 const launchTarget = ref<Agent | null>(null)
 const showCreateAgent = ref(false)
 const activeSection = ref<Section | null>('agents')
-const renameTarget = ref<Agent | null>(null)
-const renameValue = ref('')
 const isSettingsOpen = ref(false)
 
 // ── Context menu ──────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ async function loadSidebarTree(): Promise<void> {
   sidebarTree.value = []
   sidebarOpenDirs.value = []
   try {
-    const nodes = (await window.electronAPI.fsListDir(store.projectPath)) as FileNode[]
+    const nodes = (await window.electronAPI.fsListDir(store.projectPath, store.projectPath)) as FileNode[]
     sidebarTree.value = nodes
     for (const n of nodes) {
       if (n.isDir) sidebarOpenDirs.value.push(n.path)
@@ -85,14 +85,14 @@ function flattenTree(nodes: FileNode[], depth = 0): Array<{ node: FileNode; dept
 
 const flatSidebarTree = computed(() => flattenTree(sidebarTree.value))
 
-const sectionTitles: Record<Section, string> = {
-  project: 'Projet',
-  perimetres: 'Périmètres',
-  agents: 'Agents',
-  tree: 'Arborescence',
-  backlog: 'Backlog',
-  logs: 'Logs',
-}
+const sectionTitles = computed((): Record<Section, string> => ({
+  project: t('sidebar.project'),
+  perimetres: t('sidebar.perimeters'),
+  agents: t('sidebar.agents'),
+  tree: t('sidebar.tree'),
+  backlog: t('sidebar.backlog'),
+  logs: t('sidebar.logs'),
+}))
 
 // ── Sidebar logs ───────────────────────────────────────────────────────────────
 const sidebarLogs = ref<AgentLog[]>([])
@@ -101,15 +101,19 @@ let logsPollTimer: ReturnType<typeof setInterval> | null = null
 async function fetchSidebarLogs(): Promise<void> {
   if (!store.dbPath) return
   try {
-    const rows = await window.electronAPI.queryDb(
+    const result = await window.electronAPI.queryDb(
       store.dbPath,
       `SELECT l.id, l.session_id, l.agent_id, a.name as agent_name, a.type as agent_type,
               l.niveau, l.action, l.detail, l.fichiers, l.created_at
        FROM agent_logs l
        LEFT JOIN agents a ON a.id = l.agent_id
        ORDER BY l.created_at DESC LIMIT 20`
-    ) as AgentLog[]
-    sidebarLogs.value = rows
+    )
+    if (!Array.isArray(result)) {
+      sidebarLogs.value = []
+      return
+    }
+    sidebarLogs.value = result as AgentLog[]
   } catch { /* silent */ }
 }
 
@@ -145,21 +149,6 @@ function toggleSection(section: Section) {
   if (next === 'tree' && sidebarTree.value.length === 0) {
     loadSidebarTree()
   }
-}
-
-function startRename(event: MouseEvent, agent: Agent) {
-  event.stopPropagation()
-  renameTarget.value = agent
-  renameValue.value = agent.name
-}
-
-async function confirmRename() {
-  if (!renameTarget.value || !renameValue.value.trim() || !store.dbPath) return
-  if (renameValue.value.trim() !== renameTarget.value.name) {
-    await window.electronAPI.renameAgent(store.dbPath, renameTarget.value.id, renameValue.value.trim())
-    await store.refresh()
-  }
-  renameTarget.value = null
 }
 
 function hasOpenTerminal(agentName: string): boolean {
@@ -248,7 +237,7 @@ function isAgentSelected(id: number | string): boolean {
 }
 
 function taskCountFor(perimetre: string): number {
-  return store.tasks.filter(t => t.perimetre === perimetre && t.statut !== 'archivé').length
+  return store.tasks.filter(t => t.perimetre === perimetre && t.statut !== 'archived').length
 }
 
 function agentCountFor(perimetre: string): number {
@@ -321,7 +310,7 @@ async function closeProject() {
 
       <!-- Backlog -->
       <button
-        title="Backlog"
+        :title="t('sidebar.backlog')"
         :class="['rail-btn', activeSection === 'backlog' && 'rail-btn--active']"
         @click="toggleSection('backlog')"
       >
@@ -335,7 +324,7 @@ async function closeProject() {
 
       <!-- Log -->
       <button
-        title="Log"
+        :title="t('sidebar.logs')"
         :class="['rail-btn', activeSection === 'logs' && 'rail-btn--active']"
         @click="toggleSection('logs')"
       >
@@ -351,7 +340,7 @@ async function closeProject() {
 
       <!-- Projet -->
       <button
-        title="Projet"
+        :title="t('sidebar.project')"
         :class="['rail-btn', activeSection === 'project' && 'rail-btn--active']"
         @click="toggleSection('project')"
       >
@@ -363,7 +352,7 @@ async function closeProject() {
 
       <!-- Agents -->
       <button
-        title="Agents"
+        :title="t('sidebar.agents')"
         :class="['rail-btn', activeSection === 'agents' && 'rail-btn--active']"
         @click="toggleSection('agents')"
       >
@@ -375,7 +364,7 @@ async function closeProject() {
 
       <!-- Périmètres -->
       <button
-        title="Périmètres"
+        :title="t('sidebar.perimeters')"
         :class="['rail-btn', activeSection === 'perimetres' && 'rail-btn--active']"
         @click="toggleSection('perimetres')"
       >
@@ -387,7 +376,7 @@ async function closeProject() {
 
       <!-- Arborescence -->
       <button
-        title="Arborescence"
+        :title="t('sidebar.tree')"
         :class="['rail-btn', activeSection === 'tree' && 'rail-btn--active']"
         @click="toggleSection('tree')"
       >
@@ -402,7 +391,7 @@ async function closeProject() {
 
       <!-- Paramètres (bas) -->
       <button
-        title="Paramètres"
+        :title="t('sidebar.settings')"
         :class="['rail-btn mb-1', isSettingsOpen && 'rail-btn--active']"
         @click="isSettingsOpen = true"
       >
@@ -427,7 +416,7 @@ async function closeProject() {
           </p>
           <button
             class="w-5 h-5 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
-            title="Fermer"
+            :title="t('sidebar.close')"
             @click="activeSection = null"
           >
             <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
@@ -443,65 +432,65 @@ async function closeProject() {
             <!-- Compteurs -->
             <div class="flex items-center gap-2">
               <span class="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950/40 border border-amber-800/40 text-amber-400">
-                {{ store.tasksByStatus.a_faire.length }} à faire
+                {{ store.tasksByStatus.todo.length }} {{ t('sidebar.todo') }}
               </span>
               <span class="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/40 border border-emerald-800/40 text-emerald-400">
-                {{ store.tasksByStatus.en_cours.length }} en cours
+                {{ store.tasksByStatus.in_progress.length }} {{ t('sidebar.inProgress') }}
               </span>
               <span class="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-400">
-                {{ store.tasksByStatus.terminé.length }} terminé
+                {{ store.tasksByStatus.done.length }} {{ t('sidebar.done') }}
               </span>
             </div>
 
             <!-- En cours -->
-            <div v-if="store.tasksByStatus.en_cours.length > 0">
-              <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">En cours</p>
-              <div class="space-y-1">
+            <div v-if="store.tasksByStatus.in_progress.length > 0">
+              <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{{ t('columns.in_progress') }}</p>
+              <div class="space-y-1.5">
                 <button
-                  v-for="task in store.tasksByStatus.en_cours"
+                  v-for="task in store.tasksByStatus.in_progress"
                   :key="task.id"
-                  class="w-full text-left px-2 py-1.5 rounded-md hover:bg-zinc-800 transition-colors group"
+                  class="w-full text-left px-2 py-2 rounded-md hover:bg-zinc-800 transition-colors group"
                   @click="store.openTask(task)"
                 >
                   <div class="flex items-start justify-between gap-1 min-w-0">
-                    <span class="text-xs text-zinc-300 truncate leading-snug group-hover:text-zinc-100 transition-colors">{{ task.titre }}</span>
+                    <span class="text-sm text-zinc-300 truncate leading-snug group-hover:text-zinc-100 transition-colors" :title="task.titre">{{ task.titre }}</span>
                     <span class="text-[10px] text-zinc-600 font-mono shrink-0">#{{ task.id }}</span>
                   </div>
-                  <span v-if="task.agent_name" class="text-[10px] font-mono" :style="{ color: agentFg(task.agent_name) }">{{ task.agent_name }}</span>
+                  <span v-if="task.agent_name" class="text-xs font-mono" :style="{ color: agentFg(task.agent_name) }">{{ task.agent_name }}</span>
                 </button>
               </div>
             </div>
 
             <!-- À faire (5 premières) -->
-            <div v-if="store.tasksByStatus.a_faire.length > 0">
-              <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">À faire</p>
-              <div class="space-y-1">
+            <div v-if="store.tasksByStatus.todo.length > 0">
+              <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{{ t('columns.todo') }}</p>
+              <div class="space-y-1.5">
                 <button
-                  v-for="task in store.tasksByStatus.a_faire.slice(0, 5)"
+                  v-for="task in store.tasksByStatus.todo.slice(0, 5)"
                   :key="task.id"
-                  class="w-full text-left px-2 py-1.5 rounded-md hover:bg-zinc-800 transition-colors group"
+                  class="w-full text-left px-2 py-2 rounded-md hover:bg-zinc-800 transition-colors group"
                   @click="store.openTask(task)"
                 >
                   <div class="flex items-start justify-between gap-1 min-w-0">
-                    <span class="text-xs text-zinc-400 truncate leading-snug group-hover:text-zinc-200 transition-colors">{{ task.titre }}</span>
+                    <span class="text-sm text-zinc-400 truncate leading-snug group-hover:text-zinc-200 transition-colors" :title="task.titre">{{ task.titre }}</span>
                     <span class="text-[10px] text-zinc-600 font-mono shrink-0">#{{ task.id }}</span>
                   </div>
-                  <span v-if="task.agent_name" class="text-[10px] font-mono" :style="{ color: agentFg(task.agent_name) }">{{ task.agent_name }}</span>
+                  <span v-if="task.agent_name" class="text-xs font-mono" :style="{ color: agentFg(task.agent_name) }">{{ task.agent_name }}</span>
                 </button>
               </div>
             </div>
 
             <!-- Empty state -->
-            <div v-if="store.tasksByStatus.en_cours.length === 0 && store.tasksByStatus.a_faire.length === 0"
+            <div v-if="store.tasksByStatus.in_progress.length === 0 && store.tasksByStatus.todo.length === 0"
               class="flex items-center justify-center py-8">
-              <p class="text-xs text-zinc-600 italic">Aucune tâche active</p>
+              <p class="text-xs text-zinc-600 italic">{{ t('sidebar.noActiveTasks') }}</p>
             </div>
 
             <!-- Lien board -->
             <button
               class="mt-auto text-xs text-zinc-600 hover:text-zinc-300 transition-colors text-left"
               @click="tabsStore.setActive('backlog'); activeSection = null"
-            >→ Voir le board complet</button>
+            >{{ t('sidebar.seeBoard') }}</button>
           </div>
         </template>
 
@@ -509,7 +498,7 @@ async function closeProject() {
         <template v-else-if="activeSection === 'logs'">
           <div class="flex-1 overflow-y-auto min-h-0 px-3 py-3 flex flex-col gap-1">
             <div v-if="sidebarLogs.length === 0" class="flex items-center justify-center py-8">
-              <p class="text-xs text-zinc-600 italic">Aucun log</p>
+              <p class="text-xs text-zinc-600 italic">{{ t('sidebar.noLogs') }}</p>
             </div>
             <div
               v-for="log in sidebarLogs"
@@ -533,7 +522,7 @@ async function closeProject() {
             <button
               class="mt-2 text-xs text-zinc-600 hover:text-zinc-300 transition-colors text-left px-2"
               @click="tabsStore.setActive('logs'); activeSection = null"
-            >→ Voir tous les logs</button>
+            >{{ t('sidebar.seeLogs') }}</button>
           </div>
         </template>
 
@@ -543,7 +532,7 @@ async function closeProject() {
             <div class="flex items-center justify-between gap-2">
               <button
                 class="flex-1 min-w-0 text-left group transition-colors"
-                :title="store.projectPath ?? 'Sélectionner un projet'"
+                :title="store.projectPath ?? t('sidebar.selectProject')"
                 @click="store.selectProject()"
               >
                 <span
@@ -553,7 +542,7 @@ async function closeProject() {
                       ? 'text-zinc-200 group-hover:text-white'
                       : 'text-zinc-500 group-hover:text-zinc-300 italic'
                   ]"
-                >{{ projectName ?? 'Sélectionner…' }}</span>
+                >{{ projectName ?? t('sidebar.select') }}</span>
                 <span
                   v-if="store.dbPath"
                   class="block text-xs text-zinc-500 group-hover:text-zinc-400 truncate mt-0.5 font-mono transition-colors"
@@ -562,12 +551,12 @@ async function closeProject() {
                 <span
                   v-else-if="store.projectPath && !store.dbPath"
                   class="block text-xs text-amber-500/70 mt-0.5 font-mono"
-                >init en cours…</span>
+                >{{ t('sidebar.initializing') }}</span>
               </button>
               <button
                 v-if="store.projectPath"
                 class="shrink-0 w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors text-xs"
-                title="Fermer le projet"
+                :title="t('sidebar.closeProject')"
                 @click="closeProject"
               >✕</button>
             </div>
@@ -585,12 +574,12 @@ async function closeProject() {
         <template v-else-if="activeSection === 'perimetres'">
           <div class="flex-1 overflow-y-auto min-h-0 px-4 py-3 flex flex-col gap-1">
             <div class="flex items-center justify-between mb-2">
-              <p class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Perimetre</p>
+              <p class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">{{ t('sidebar.perimeters') }}</p>
               <button
                 v-if="store.selectedPerimetre !== null"
                 class="text-xs text-violet-400 hover:text-violet-300 transition-colors"
                 @click="store.selectedPerimetre = null"
-              >reset</button>
+              >{{ t('sidebar.reset') }}</button>
             </div>
 
             <!-- Liste des périmètres depuis la DB -->
@@ -616,13 +605,13 @@ async function closeProject() {
                         v-if="agentCountFor(p.name) > 0"
                         class="text-[10px] font-mono px-1 py-0.5 rounded"
                         :style="{ color: agentFg(p.name), backgroundColor: agentBg(p.name) }"
-                        :title="`${agentCountFor(p.name)} agent(s)`"
+                        :title="t('sidebar.nbAgents', agentCountFor(p.name), { named: { n: agentCountFor(p.name) } })"
                       >{{ agentCountFor(p.name) }}ag</span>
                       <span
                         v-if="taskCountFor(p.name) > 0"
                         class="text-[10px] font-mono px-1 py-0.5 rounded"
                         :style="{ color: agentFg(p.name), backgroundColor: agentBg(p.name) }"
-                        :title="`${taskCountFor(p.name)} tâche(s) actives`"
+                        :title="t('sidebar.nbActiveTasks', taskCountFor(p.name), { named: { n: taskCountFor(p.name) } })"
                       >{{ taskCountFor(p.name) }}t</span>
                     </div>
                   </div>
@@ -641,17 +630,17 @@ async function closeProject() {
               </div>
             </div>
 
-            <div v-if="store.perimetresData.length === 0" class="text-sm text-zinc-600 px-2 py-2">Aucun périmètre</div>
+            <div v-if="store.perimetresData.length === 0" class="text-sm text-zinc-600 px-2 py-2">{{ t('sidebar.noPerimeter') }}</div>
 
             <!-- Bouton ajouter -->
             <button
-              class="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900 transition-colors"
+              class="mt-2 flex items-center gap-2 px-2 py-2 rounded-md text-xs text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900 transition-colors w-full"
               @click="addPerimetre"
             >
               <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
               </svg>
-              Ajouter un périmètre
+              {{ t('sidebar.addPerimeter') }}
             </button>
           </div>
         </template>
@@ -660,13 +649,13 @@ async function closeProject() {
         <template v-else-if="activeSection === 'agents'">
           <div class="flex-1 overflow-y-auto min-h-0 px-4 py-3">
             <div class="flex items-center justify-between mb-3">
-              <p class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Agents</p>
+              <p class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">{{ t('sidebar.agents') }}</p>
               <div class="flex items-center gap-2">
                 <button
                   v-if="store.selectedAgentId !== null"
                   class="text-xs text-violet-400 hover:text-violet-300 transition-colors"
                   @click="store.selectedAgentId = null"
-                >reset</button>
+                >{{ t('sidebar.reset') }}</button>
               </div>
             </div>
             <div class="space-y-0.5">
@@ -717,20 +706,10 @@ async function closeProject() {
                   </button>
                   <!-- Toolbar actions : edit / run -->
                   <div class="absolute right-1 top-1/2 -translate-y-1/2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <!-- edit / rename -->
-                    <button
-                      class="w-6 h-6 flex items-center justify-center rounded transition-colors text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700"
-                      title="Renommer"
-                      @click="startRename($event, agent)"
-                    >
-                      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-                        <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/>
-                      </svg>
-                    </button>
                     <!-- edit agent -->
                     <button
                       class="w-6 h-6 flex items-center justify-center rounded transition-colors text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700"
-                      title="Éditer l'agent"
+                      :title="t('sidebar.editAgent')"
                       @click.stop="editAgentTarget = agent"
                     >
                       <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
@@ -741,7 +720,7 @@ async function closeProject() {
                     <button
                       class="w-6 h-6 flex items-center justify-center rounded transition-colors"
                       :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }"
-                      :title="`Lancer ${agent.name}`"
+                      :title="t('sidebar.launchAgent', { name: agent.name })"
                       @click="openLaunchModal($event, agent)"
                     >
                       <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
@@ -751,17 +730,17 @@ async function closeProject() {
                   </div>
                 </div>
               </div>
-              <div v-if="store.agents.length === 0" class="text-sm text-zinc-600 px-2 py-2">Aucun agent</div>
+              <div v-if="store.agents.length === 0" class="text-sm text-zinc-600 px-2 py-2">{{ t('sidebar.noAgent') }}</div>
             </div>
             <!-- Bouton ajouter -->
             <button
-              class="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900 transition-colors"
+              class="mt-2 flex items-center gap-2 px-2 py-2 rounded-md text-xs text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900 transition-colors w-full"
               @click="showCreateAgent = true"
             >
               <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
               </svg>
-              Ajouter un agent
+              {{ t('sidebar.addAgent') }}
             </button>
           </div>
         </template>
@@ -770,13 +749,13 @@ async function closeProject() {
         <template v-else-if="activeSection === 'tree'">
           <div class="flex-1 overflow-y-auto min-h-0 py-1 min-w-0">
             <div v-if="loadingSidebarTree" class="flex items-center justify-center py-6">
-              <span class="text-xs text-zinc-600 animate-pulse">Chargement…</span>
+              <span class="text-xs text-zinc-600 animate-pulse">{{ t('common.loading') }}</span>
             </div>
             <div v-else-if="!store.projectPath" class="px-4 py-3 text-xs text-zinc-600">
-              Aucun projet ouvert
+              {{ t('common.noProject') }}
             </div>
             <div v-else-if="flatSidebarTree.length === 0 && !loadingSidebarTree" class="px-4 py-3 text-xs text-zinc-600">
-              Dossier vide
+              {{ t('sidebar.emptyFolder') }}
             </div>
             <button
               v-for="item in flatSidebarTree"
@@ -809,7 +788,7 @@ async function closeProject() {
             <button
               class="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
               @click="loadSidebarTree"
-            >↺ Actualiser</button>
+            >↺ {{ t('common.refresh') }}</button>
           </div>
         </template>
 
@@ -817,23 +796,23 @@ async function closeProject() {
 
         <!-- ── Stats tâches (permanent bas) ── -->
         <div v-if="store.projectPath" class="shrink-0 border-t border-zinc-800 px-3 py-2">
-          <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Tâches</p>
+          <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">{{ t('sidebar.tasks') }}</p>
           <div class="grid grid-cols-4 gap-1 text-center">
             <div>
-              <p class="text-[13px] font-mono font-semibold text-amber-400 leading-none">{{ store.stats.a_faire }}</p>
-              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">à faire</p>
+              <p class="text-[13px] font-mono font-semibold text-amber-400 leading-none">{{ store.stats.todo }}</p>
+              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">{{ t('sidebar.todo') }}</p>
             </div>
             <div>
-              <p class="text-[13px] font-mono font-semibold text-emerald-400 leading-none">{{ store.stats.en_cours }}</p>
-              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">en cours</p>
+              <p class="text-[13px] font-mono font-semibold text-emerald-400 leading-none">{{ store.stats.in_progress }}</p>
+              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">{{ t('sidebar.inProgress') }}</p>
             </div>
             <div>
-              <p class="text-[13px] font-mono font-semibold text-zinc-400 leading-none">{{ store.stats.terminé }}</p>
-              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">terminé</p>
+              <p class="text-[13px] font-mono font-semibold text-zinc-400 leading-none">{{ store.stats.done }}</p>
+              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">{{ t('sidebar.done') }}</p>
             </div>
             <div>
-              <p class="text-[13px] font-mono font-semibold text-violet-400 leading-none">{{ store.stats.archivé }}</p>
-              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">archivé</p>
+              <p class="text-[13px] font-mono font-semibold text-violet-400 leading-none">{{ store.stats.archived }}</p>
+              <p class="text-[9px] text-zinc-600 mt-0.5 leading-tight">{{ t('sidebar.archived') }}</p>
             </div>
           </div>
         </div>
@@ -842,15 +821,15 @@ async function closeProject() {
         <div v-if="activeAgents.length > 0" class="shrink-0 border-t border-zinc-800 px-3 py-2">
           <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Sessions ouvertes
+            {{ t('sidebar.openSessions') }}
             <span class="text-zinc-700 font-mono">({{ activeAgents.length }})</span>
           </p>
-          <div class="space-y-1.5">
+          <div class="space-y-1.5 max-h-40 overflow-y-auto">
             <div
               v-for="agent in activeAgents"
               :key="agent.id"
               class="flex items-center gap-2 min-w-0 cursor-pointer group/active"
-              @click="() => { const t = tabsStore.tabs.find(t => t.type === 'terminal' && t.agentName === agent.name); if (t) tabsStore.setActive(t.id) }"
+              @click="() => { const tab = tabsStore.tabs.find(tab => tab.type === 'terminal' && tab.agentName === agent.name); if (tab) tabsStore.setActive(tab.id) }"
             >
               <!-- Indicateur : spinning si activité PTY, pulsing sinon -->
               <span class="relative shrink-0 w-2 h-2 flex items-center justify-center">
@@ -872,7 +851,7 @@ async function closeProject() {
               <div class="flex-1 min-w-0">
                 <p class="text-[11px] font-mono truncate font-medium group-hover/active:underline" :style="{ color: agentFg(agent.name) }">{{ agent.name }}</p>
                 <p class="text-[10px] truncate" :class="tabsStore.isAgentActive(agent.name) ? 'text-emerald-600' : 'text-zinc-600'">
-                  {{ tabsStore.isAgentActive(agent.name) ? 'en activité' : 'en attente' }}
+                  {{ tabsStore.isAgentActive(agent.name) ? t('sidebar.active') : t('sidebar.waiting') }}
                 </p>
               </div>
             </div>
@@ -885,10 +864,10 @@ async function closeProject() {
             <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3 shrink-0 text-zinc-600">
               <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
             </svg>
-            Locks actifs
+            {{ t('sidebar.activeLocks') }}
             <span class="text-zinc-700 font-mono">({{ store.locks.length }})</span>
           </p>
-          <div class="space-y-1">
+          <div class="space-y-1 max-h-40 overflow-y-auto">
             <div
               v-for="lock in store.locks"
               :key="lock.id"
@@ -957,7 +936,7 @@ async function closeProject() {
     >
       <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-5 w-[480px] flex flex-col gap-4">
         <div>
-          <p class="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-0.5">Prompt système</p>
+          <p class="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-0.5">{{ t('sidebar.systemPromptTitle') }}</p>
           <p class="text-sm font-mono font-semibold" :style="{ color: agentFg(systemPromptTarget.name) }">
             {{ systemPromptTarget.name }}
           </p>
@@ -965,7 +944,7 @@ async function closeProject() {
         <textarea
           v-model="systemPromptValue"
           rows="10"
-          placeholder="Prompt système de l'agent (instructions permanentes)…"
+          :placeholder="t('sidebar.systemPromptPlaceholder')"
           class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-xs font-mono text-zinc-200 placeholder-zinc-600 resize-none outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors leading-relaxed"
         />
         <div class="flex items-center gap-1.5 -mt-1">
@@ -973,18 +952,18 @@ async function closeProject() {
             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
             <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
           </svg>
-          <span class="text-[10px] text-zinc-600">Le suffixe de protocole est injecté automatiquement et n'est pas modifiable ici.</span>
+          <span class="text-[10px] text-zinc-600">{{ t('sidebar.systemPromptSuffixNote') }}</span>
         </div>
         <div class="flex gap-2 justify-end">
           <button
             class="px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
             @click="systemPromptTarget = null"
-          >Annuler</button>
+          >{{ t('common.cancel') }}</button>
           <button
             class="px-3 py-1.5 text-xs rounded-md bg-violet-600 hover:bg-violet-500 text-white transition-colors disabled:opacity-40"
             :disabled="savingPrompt"
             @click="saveSystemPrompt"
-          >{{ savingPrompt ? 'Enregistrement…' : 'Enregistrer' }}</button>
+          >{{ savingPrompt ? t('common.saving') : t('common.save') }}</button>
         </div>
       </div>
     </div>
@@ -998,22 +977,22 @@ async function closeProject() {
       @click.self="editPerimetre = null"
     >
       <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-5 w-96 flex flex-col gap-3">
-        <p class="text-sm font-semibold text-zinc-200">Modifier le périmètre</p>
+        <p class="text-sm font-semibold text-zinc-200">{{ t('sidebar.editPerimeter') }}</p>
         <div>
-          <label class="text-xs text-zinc-500 uppercase tracking-wider font-semibold block mb-1">Nom</label>
+          <label class="text-xs text-zinc-500 uppercase tracking-wider font-semibold block mb-1">{{ t('sidebar.name') }}</label>
           <input
             v-model="editPerimetreName"
             class="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-zinc-100 font-mono outline-none focus:ring-1 focus:ring-violet-500"
-            placeholder="nom-du-perimetre"
+            :placeholder="t('sidebar.namePlaceholder')"
             @keydown.esc="editPerimetre = null"
           />
         </div>
         <div>
-          <label class="text-xs text-zinc-500 uppercase tracking-wider font-semibold block mb-1">Description</label>
+          <label class="text-xs text-zinc-500 uppercase tracking-wider font-semibold block mb-1">{{ t('sidebar.description') }}</label>
           <input
             v-model="editPerimetreDesc"
             class="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-zinc-300 outline-none focus:ring-1 focus:ring-violet-500"
-            placeholder="Description courte…"
+            :placeholder="t('sidebar.descriptionPlaceholder')"
             @keydown.enter="savePerimetre"
             @keydown.esc="editPerimetre = null"
           />
@@ -1022,43 +1001,12 @@ async function closeProject() {
           <button
             class="px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
             @click="editPerimetre = null"
-          >Annuler</button>
+          >{{ t('common.cancel') }}</button>
           <button
             class="px-3 py-1.5 text-xs rounded-md bg-violet-600 hover:bg-violet-500 text-white transition-colors disabled:opacity-40"
             :disabled="savingPerimetre || !editPerimetreName.trim()"
             @click="savePerimetre"
-          >{{ savingPerimetre ? 'Enregistrement…' : 'Enregistrer' }}</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <!-- Popup renommage agent -->
-  <Teleport to="body">
-    <div
-      v-if="renameTarget"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-      @click.self="renameTarget = null"
-    >
-      <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-5 w-80">
-        <p class="text-sm font-semibold text-zinc-200 mb-3">Renommer l'agent</p>
-        <input
-          v-model="renameValue"
-          class="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-zinc-100 font-mono outline-none focus:ring-1 focus:ring-violet-500"
-          placeholder="Nouveau nom"
-          autofocus
-          @keydown.enter="confirmRename"
-          @keydown.esc="renameTarget = null"
-        />
-        <div class="flex gap-2 mt-3 justify-end">
-          <button
-            class="px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-            @click="renameTarget = null"
-          >Annuler</button>
-          <button
-            class="px-3 py-1.5 text-xs rounded-md bg-violet-600 hover:bg-violet-500 text-white transition-colors"
-            @click="confirmRename"
-          >Renommer</button>
+          >{{ savingPerimetre ? t('common.saving') : t('common.save') }}</button>
         </div>
       </div>
     </div>
@@ -1066,6 +1014,8 @@ async function closeProject() {
 </template>
 
 <style scoped>
+@reference "../assets/main.css";
+
 .rail-btn {
   @apply relative w-10 h-10 flex items-center justify-center rounded-lg transition-colors text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800;
 }

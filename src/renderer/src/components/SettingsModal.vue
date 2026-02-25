@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
 
@@ -8,12 +9,14 @@ const emit = defineEmits<{
   (e: 'toast', message: string, type: 'success' | 'error'): void
 }>()
 
+const { t } = useI18n()
 const settingsStore = useSettingsStore()
 const store = useTasksStore()
 
 const githubToken = ref('')
 const githubRepo = ref(settingsStore.github.repoUrl)
 const checkingUpdates = ref(false)
+const connectionError = ref('')
 const updateStatus = ref('')
 const updateAvailable = ref(false)
 
@@ -34,20 +37,35 @@ onMounted(async () => {
     if (shaRes.success && shaRes.value) {
       settingsStore.setClaudeMdInfo({ projectCommit: shaRes.value })
     }
+
+    // Silent reconnection if repo already configured
+    if (githubRepo.value) {
+      await testGithubConnection()
+    }
   }
 })
 
 async function saveToken() {
   if (!store.dbPath) return
+  // Don't save empty token
+  if (!githubToken.value.trim()) return
   await window.electronAPI.setConfigValue(store.dbPath, 'github_token', githubToken.value)
+  settingsStore.setGitHubToken(githubToken.value)
 }
 
 async function testGithubConnection() {
   if (!store.dbPath || !githubRepo.value) return
+  // Bug 1 fix: ensure token is saved before testing
+  await saveToken()
+  connectionError.value = ''
   settingsStore.setGitHubRepo(githubRepo.value)
   const result = await window.electronAPI.testGithubConnection(store.dbPath, githubRepo.value)
   settingsStore.setGitHubConnected(result.connected)
-  if (result.connected) {
+  // Bug 2 fix: display error message if connection failed
+  if (!result.connected) {
+    connectionError.value = result.error || 'Connexion échouée'
+  } else {
+    connectionError.value = ''
     await checkClaudeMdStatus()
   }
 }
@@ -149,10 +167,10 @@ function handleKeydown(e: KeyboardEvent) {
       <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-[480px] max-h-[80vh] flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800 shrink-0">
-          <h2 class="text-lg font-semibold text-zinc-100">Paramètres</h2>
+          <h2 class="text-lg font-semibold text-zinc-100">{{ t('settings.title') }}</h2>
           <button
             class="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-            title="Fermer"
+            :title="t('settings.fermer')"
             @click="emit('close')"
           >
             <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
@@ -164,9 +182,34 @@ function handleKeydown(e: KeyboardEvent) {
         <!-- Content -->
         <div class="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
 
+          <!-- Language -->
+          <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3">
+            <p class="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider">{{ t('settings.language') }}</p>
+            <div class="flex gap-2">
+              <button
+                :class="[
+                  'flex-1 py-2 px-3 rounded text-sm font-medium transition-colors',
+                  settingsStore.language === 'fr'
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                ]"
+                @click="settingsStore.setLanguage('fr')"
+              >{{ t('settings.french') }}</button>
+              <button
+                :class="[
+                  'flex-1 py-2 px-3 rounded text-sm font-medium transition-colors',
+                  settingsStore.language === 'en'
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                ]"
+                @click="settingsStore.setLanguage('en')"
+              >{{ t('settings.english') }}</button>
+            </div>
+          </div>
+
           <!-- Theme -->
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3">
-            <p class="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider">Thème</p>
+            <p class="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider">{{ t('settings.theme') }}</p>
             <div class="flex gap-2">
               <button
                 :class="[
@@ -176,7 +219,7 @@ function handleKeydown(e: KeyboardEvent) {
                     : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 ]"
                 @click="settingsStore.setTheme('dark')"
-              >Sombre</button>
+              >{{ t('settings.dark') }}</button>
               <button
                 :class="[
                   'flex-1 py-2 px-3 rounded text-sm font-medium transition-colors',
@@ -185,17 +228,17 @@ function handleKeydown(e: KeyboardEvent) {
                     : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 ]"
                 @click="settingsStore.setTheme('light')"
-              >Clair</button>
+              >{{ t('settings.light') }}</button>
             </div>
           </div>
 
           <!-- GitHub Connection -->
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3">
-            <p class="text-[11px] text-zinc-500 mb-3 uppercase tracking-wider">Connexion GitHub</p>
+            <p class="text-[11px] text-zinc-500 mb-3 uppercase tracking-wider">{{ t('settings.github') }}</p>
 
             <!-- Token input -->
             <div class="mb-3">
-              <label class="block text-xs text-zinc-400 mb-1">Token GitHub (optionnel)</label>
+              <label class="block text-xs text-zinc-400 mb-1">{{ t('settings.tokenLabel') }}</label>
               <input
                 v-model="githubToken"
                 type="password"
@@ -208,7 +251,7 @@ function handleKeydown(e: KeyboardEvent) {
 
             <!-- Repo URL input -->
             <div class="mb-3">
-              <label class="block text-xs text-zinc-400 mb-1">URL du dépôt</label>
+              <label class="block text-xs text-zinc-400 mb-1">{{ t('settings.repoLabel') }}</label>
               <input
                 v-model="githubRepo"
                 type="text"
@@ -220,45 +263,49 @@ function handleKeydown(e: KeyboardEvent) {
 
             <!-- Connection status & test -->
             <div class="flex items-center justify-between">
-              <span class="flex items-center gap-1.5">
-                <span
-                  :class="[
-                    'inline-block w-2 h-2 rounded-full',
-                    settingsStore.github.connected ? 'bg-emerald-400' : 'bg-zinc-600'
-                  ]"
-                />
-                <span
-                  :class="[
-                    'text-sm font-medium',
-                    settingsStore.github.connected ? 'text-emerald-400' : 'text-zinc-500'
-                  ]"
-                >
-                  {{ settingsStore.github.connected ? 'Connecté' : 'Non connecté' }}
+              <div class="flex flex-col">
+                <span class="flex items-center gap-1.5">
+                  <span
+                    :class="[
+                      'inline-block w-2 h-2 rounded-full',
+                      settingsStore.github.connected ? 'bg-emerald-400' : 'bg-zinc-600'
+                    ]"
+                  />
+                  <span
+                    :class="[
+                      'text-sm font-medium',
+                      settingsStore.github.connected ? 'text-emerald-400' : 'text-zinc-500'
+                    ]"
+                  >
+                    {{ settingsStore.github.connected ? t('settings.connected') : t('settings.notConnected') }}
+                  </span>
                 </span>
-              </span>
+                <!-- Bug 2 fix: show error message -->
+                <span v-if="connectionError" class="text-xs text-red-400 mt-1">{{ connectionError }}</span>
+              </div>
               <button
                 class="px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
                 :disabled="!githubRepo"
                 @click="testGithubConnection"
               >
-                Tester
+                {{ t('settings.test') }}
               </button>
             </div>
           </div>
 
           <!-- Check for Updates -->
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3">
-            <p class="text-[11px] text-zinc-500 mb-3 uppercase tracking-wider">Mises à jour</p>
+            <p class="text-[11px] text-zinc-500 mb-3 uppercase tracking-wider">{{ t('settings.updates') }}</p>
             <div class="flex items-center justify-between">
               <span class="text-sm text-zinc-400">
-                Version: <span class="font-mono text-zinc-300">{{ settingsStore.appInfo.version }}</span>
+                {{ t('settings.version') }}: <span class="font-mono text-zinc-300">{{ settingsStore.appInfo.version }}</span>
               </span>
               <button
                 class="px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
                 :disabled="!settingsStore.github.connected || checkingUpdates"
                 @click="checkUpdates"
               >
-                {{ checkingUpdates ? '...' : 'Vérifier' }}
+                {{ checkingUpdates ? '...' : t('settings.check') }}
               </button>
             </div>
             <div v-if="updateStatus" class="mt-2">
@@ -275,31 +322,31 @@ function handleKeydown(e: KeyboardEvent) {
 
           <!-- CLAUDE.md Sync -->
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3">
-            <p class="text-[11px] text-zinc-500 mb-3 uppercase tracking-wider">CLAUDE.md</p>
+            <p class="text-[11px] text-zinc-500 mb-3 uppercase tracking-wider">{{ t('settings.claudeMd') }}</p>
             <div class="text-sm text-zinc-400 space-y-1 mb-3">
-              <p>Projet: <span class="font-mono text-zinc-300 text-xs">{{ settingsStore.claudeMdInfo.projectCommit ? settingsStore.claudeMdInfo.projectCommit.slice(0, 12) : '—' }}</span></p>
-              <p>Master: <span class="font-mono text-zinc-300 text-xs">{{ settingsStore.claudeMdInfo.masterCommit ? settingsStore.claudeMdInfo.masterCommit.slice(0, 12) : '—' }}</span></p>
+              <p>{{ t('settings.project') }}: <span class="font-mono text-zinc-300 text-xs">{{ settingsStore.claudeMdInfo.projectCommit ? settingsStore.claudeMdInfo.projectCommit.slice(0, 12) : '—' }}</span></p>
+              <p>{{ t('settings.master') }}: <span class="font-mono text-zinc-300 text-xs">{{ settingsStore.claudeMdInfo.masterCommit ? settingsStore.claudeMdInfo.masterCommit.slice(0, 12) : '—' }}</span></p>
             </div>
 
             <!-- Status feedback -->
             <div v-if="claudeMdStatus === 'up-to-date'" class="mb-2 text-sm text-emerald-400">
-              À jour
+              {{ t('settings.upToDate') }}
             </div>
             <div v-else-if="claudeMdStatus === 'update-available'" class="mb-2 text-sm text-amber-400">
-              Mise à jour disponible
+              {{ t('settings.updateAvailable') }}
             </div>
             <div v-else-if="claudeMdStatus === 'error'" class="mb-2 text-xs text-red-400 break-all">
               {{ claudeMdError }}
             </div>
 
-            <div v-if="!store.dbPath" class="text-xs text-zinc-500">Aucun projet ouvert</div>
+            <div v-if="!store.dbPath" class="text-xs text-zinc-500">{{ t('settings.noProject') }}</div>
             <div v-else class="flex gap-2">
               <button
                 class="flex-1 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-white rounded-md transition-colors disabled:opacity-50"
                 :disabled="claudeMdChecking || claudeMdApplying"
                 @click="checkClaudeMdStatus"
               >
-                {{ claudeMdChecking ? 'Vérification...' : 'Vérifier' }}
+                {{ claudeMdChecking ? t('settings.checking') : t('settings.check') }}
               </button>
               <button
                 v-if="claudeMdStatus === 'update-available'"
@@ -307,25 +354,25 @@ function handleKeydown(e: KeyboardEvent) {
                 :disabled="claudeMdApplying"
                 @click="applyClaudeMdUpdate"
               >
-                {{ claudeMdApplying ? 'Mise à jour...' : 'Appliquer' }}
+                {{ claudeMdApplying ? t('settings.applying') : t('settings.apply') }}
               </button>
             </div>
           </div>
 
           <!-- About -->
           <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3">
-            <p class="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider">À propos</p>
+            <p class="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider">{{ t('settings.about') }}</p>
             <p class="text-sm text-zinc-300">
               {{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}
             </p>
             <p class="text-xs text-zinc-500 mt-1">
-              Interface desktop pour visualiser les tâches des agents Claude
+              {{ t('settings.aboutDesc') }}
             </p>
           </div>
 
           <!-- DB Info -->
           <div v-if="store.dbPath" class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3">
-            <p class="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider">Base de données</p>
+            <p class="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider">{{ t('settings.database') }}</p>
             <p class="text-sm text-zinc-400 font-mono break-all">{{ store.dbPath }}</p>
           </div>
 

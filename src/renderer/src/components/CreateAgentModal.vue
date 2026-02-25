@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import type { Agent } from '@renderer/types'
 
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   (e: 'toast', message: string, type: 'success' | 'error'): void
 }>()
 
+const { t } = useI18n()
 const isEditMode = computed(() => props.mode === 'edit' && props.agent != null)
 
 const store = useTasksStore()
@@ -87,8 +89,8 @@ async function submit() {
   if (!store.dbPath) return
 
   const trimmed = name.value.trim()
-  if (!trimmed) { nameError.value = 'Le nom est requis'; return }
-  if (!/^[a-z0-9-]+$/.test(trimmed)) { nameError.value = 'Lettres minuscules, chiffres et tirets uniquement'; return }
+  if (!trimmed) { nameError.value = t('agent.nameRequired'); return }
+  if (!/^[a-z0-9-]+$/.test(trimmed)) { nameError.value = t('agent.nameFormat'); return }
 
   loading.value = true
   try {
@@ -156,7 +158,7 @@ function handleKeydown(e: KeyboardEvent) {
       <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-[440px] flex flex-col max-h-[85vh]">
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800 shrink-0">
-          <h2 class="text-base font-semibold text-zinc-100">{{ isEditMode ? 'Éditer l\'agent' : 'Nouvel agent' }}</h2>
+          <h2 class="text-base font-semibold text-zinc-100">{{ isEditMode ? t('agent.editTitle') : t('agent.newTitle') }}</h2>
           <button
             class="w-7 h-7 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
             @click="emit('close')"
@@ -172,7 +174,7 @@ function handleKeydown(e: KeyboardEvent) {
 
           <!-- Nom -->
           <div>
-            <label class="block text-xs text-zinc-400 mb-1">Nom <span class="text-red-400">*</span></label>
+            <label class="block text-xs text-zinc-400 mb-1">{{ t('sidebar.name') }} <span class="text-red-400">*</span></label>
             <input
               v-model="name"
               type="text"
@@ -184,12 +186,12 @@ function handleKeydown(e: KeyboardEvent) {
               ]"
             />
             <p v-if="nameError" class="text-xs text-red-400 mt-1">{{ nameError }}</p>
-            <p v-else class="text-xs text-zinc-600 mt-1">Minuscules, chiffres et tirets</p>
+            <p v-else class="text-xs text-zinc-600 mt-1">{{ t('agent.nameFormatShort') }}</p>
           </div>
 
           <!-- Type -->
           <div>
-            <label class="block text-xs text-zinc-400 mb-1">Type</label>
+            <label class="block text-xs text-zinc-400 mb-1">{{ t('agent.type') }}</label>
             <div class="grid grid-cols-4 gap-1">
               <button
                 v-for="t in ALL_TYPES"
@@ -205,7 +207,7 @@ function handleKeydown(e: KeyboardEvent) {
 
           <!-- Périmètre (scoped only) -->
           <div v-if="isScoped">
-            <label class="block text-xs text-zinc-400 mb-1">Périmètre</label>
+            <label class="block text-xs text-zinc-400 mb-1">{{ t('agent.perimeter') }}</label>
             <input
               v-model="perimetre"
               type="text"
@@ -216,7 +218,7 @@ function handleKeydown(e: KeyboardEvent) {
 
           <!-- Description (pour CLAUDE.md) — create mode uniquement -->
           <div v-if="!isEditMode">
-            <label class="block text-xs text-zinc-400 mb-1">Description <span class="text-zinc-600">(CLAUDE.md)</span></label>
+            <label class="block text-xs text-zinc-400 mb-1">{{ t('sidebar.description') }} <span class="text-zinc-600">(CLAUDE.md)</span></label>
             <input
               v-model="description"
               type="text"
@@ -226,16 +228,16 @@ function handleKeydown(e: KeyboardEvent) {
 
           <!-- Thinking mode -->
           <div>
-            <label class="block text-xs text-zinc-400 mb-1">Thinking mode</label>
+            <label class="block text-xs text-zinc-400 mb-1">{{ t('launch.thinkingMode') }}</label>
             <div class="flex gap-2">
               <button
                 :class="['flex-1 py-1.5 text-xs rounded transition-colors', thinkingMode === 'auto' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700']"
                 @click="thinkingMode = 'auto'"
-              >Auto</button>
+              >{{ t('launch.auto') }}</button>
               <button
                 :class="['flex-1 py-1.5 text-xs rounded transition-colors', thinkingMode === 'disabled' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700']"
                 @click="thinkingMode = 'disabled'"
-              >Désactivé</button>
+              >{{ t('launch.disabled') }}</button>
             </div>
           </div>
 
@@ -248,7 +250,7 @@ function handleKeydown(e: KeyboardEvent) {
               <svg :class="['w-3 h-3 transition-transform', showPrompt ? 'rotate-90' : '']" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M6 3.5l5 4.5-5 4.5V3.5z"/>
               </svg>
-              System prompt {{ isEditMode ? '' : '(optionnel)' }}
+              System prompt {{ isEditMode ? '' : t('agent.systemPromptOptional') }}
             </button>
             <div v-if="showPrompt" class="mt-2 flex flex-col gap-2">
               <textarea
@@ -258,7 +260,7 @@ function handleKeydown(e: KeyboardEvent) {
                 class="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-xs text-zinc-300 font-mono outline-none focus:ring-1 focus:ring-violet-500 resize-none"
               />
               <div v-if="isEditMode">
-                <label class="block text-xs text-zinc-500 mb-1">Suffixe caché <span class="text-zinc-600">(system_prompt_suffix)</span></label>
+                <label class="block text-xs text-zinc-500 mb-1">{{ t('agent.hiddenSuffix') }} <span class="text-zinc-600">({{ t('agent.hiddenSuffixCode') }})</span></label>
                 <textarea
                   v-model="systemPromptSuffix"
                   rows="3"
@@ -272,18 +274,18 @@ function handleKeydown(e: KeyboardEvent) {
 
         <!-- Footer -->
         <div class="px-5 py-3 border-t border-zinc-800 flex items-center justify-between shrink-0">
-          <span class="text-xs text-zinc-600">{{ isEditMode ? 'Ctrl+Entrée pour enregistrer' : 'Ctrl+Entrée pour créer' }}</span>
+          <span class="text-xs text-zinc-600">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
           <div class="flex gap-2">
             <button
               class="px-4 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
               @click="emit('close')"
-            >Annuler</button>
+            >{{ t('common.cancel') }}</button>
             <button
               class="px-4 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
               :disabled="loading || !name.trim()"
               @click="submit"
             >
-              {{ loading ? (isEditMode ? 'Enregistrement...' : 'Création...') : (isEditMode ? 'Enregistrer' : 'Créer') }}
+              {{ loading ? (isEditMode ? t('common.saving') : t('agent.creating')) : (isEditMode ? t('common.save') : t('agent.create')) }}
             </button>
           </div>
         </div>

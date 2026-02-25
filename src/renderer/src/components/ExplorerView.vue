@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import type { FileNode } from '@renderer/types'
 
+const { t } = useI18n()
 const store = useTasksStore()
 
 const tree = ref<FileNode[]>([])
@@ -23,46 +25,12 @@ const isTextFile = (name: string): boolean => {
     'toml', 'sh', 'env', 'py', 'rs', 'go', 'sql', 'prisma', 'gitignore'].includes(ext)
 }
 
-// Icône de fichier selon l'extension
-function getFileIcon(name: string): string {
-  const ext = name.split('.').pop()?.toLowerCase() ?? ''
-  const icons: Record<string, string> = {
-    ts: '🔷', tsx: '🔶', js: '🟨', jsx: '🟧',
-    vue: '💚', svelte: '🧡',
-    json: '📋', yaml: '📝', yml: '📝', toml: '⚙️',
-    md: '📖', txt: '📄',
-    png: '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', svg: '🎨',
-    css: '🎨', scss: '🎨', less: '🎨',
-    html: '🌐', htm: '🌐',
-    py: '🐍', rb: '💎', go: '🔵', rs: '🦀',
-    sh: '💻', bash: '💻', zsh: '💻',
-    env: '⚡', gitignore: '🔀',
-    lock: '🔒', gitmodules: '🔀'
-  }
-  return icons[ext] ?? '📄'
-}
-
-// Couleur de fichier selon l'extension
-function getFileColor(name: string): string {
-  const ext = name.split('.').pop()?.toLowerCase() ?? ''
-  const colors: Record<string, string> = {
-    ts: 'text-blue-400', tsx: 'text-blue-400', js: 'text-yellow-400', jsx: 'text-yellow-400',
-    vue: 'text-green-400', svelte: 'text-orange-400',
-    json: 'text-zinc-300', yaml: 'text-purple-400', yml: 'text-purple-400',
-    md: 'text-blue-300',
-    css: 'text-pink-400', scss: 'text-pink-400', less: 'text-pink-400',
-    html: 'text-orange-400',
-    py: 'text-blue-400', rb: 'text-red-400', go: 'text-cyan-400', rs: 'text-orange-400',
-    sh: 'text-zinc-300', bash: 'text-zinc-300', zsh: 'text-zinc-300',
-  }
-  return colors[ext] ?? 'text-zinc-400'
-}
 
 async function loadTree(): Promise<void> {
   if (!store.projectPath) return
   loadingTree.value = true
   try {
-    tree.value = (await window.electronAPI.fsListDir(store.projectPath)) as FileNode[]
+    tree.value = (await window.electronAPI.fsListDir(store.projectPath, store.projectPath)) as FileNode[]
     // Expand root level dirs by default
     for (const node of tree.value) {
       if (node.isDir) openDirs.value.add(node.path)
@@ -82,14 +50,14 @@ async function selectFile(node: FileNode): Promise<void> {
   fileContent.value = ''
   fileError.value = null
   if (!isTextFile(node.name)) {
-    fileError.value = 'Fichier binaire — aperçu non disponible'
+    fileError.value = t('explorer.binaryFile')
     return
   }
   loadingFile.value = true
   try {
-    const result = await window.electronAPI.fsReadFile(node.path)
+    const result = await window.electronAPI.fsReadFile(node.path, store.projectPath)
     if (result.success) fileContent.value = result.content ?? ''
-    else fileError.value = result.error ?? 'Erreur de lecture'
+    else fileError.value = result.error ?? t('explorer.readError')
   } finally {
     loadingFile.value = false
   }
@@ -107,18 +75,18 @@ onMounted(loadTree)
     <!-- Tree panel -->
     <div class="w-64 shrink-0 border-r border-zinc-800 overflow-y-auto flex flex-col">
       <div class="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800 shrink-0">
-        <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Fichiers</span>
+        <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{{ t('explorer.files') }}</span>
         <button
           class="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-          title="Actualiser"
+          :title="t('common.refresh')"
           @click="loadTree"
         >↺</button>
       </div>
       <div v-if="loadingTree" class="flex-1 flex items-center justify-center">
-        <span class="text-xs text-zinc-600 animate-pulse">Chargement…</span>
+        <span class="text-xs text-zinc-600 animate-pulse">{{ t('explorer.loading') }}</span>
       </div>
       <div v-else-if="!store.projectPath" class="flex-1 flex items-center justify-center px-4">
-        <span class="text-xs text-zinc-600 text-center">Aucun projet ouvert</span>
+        <span class="text-xs text-zinc-600 text-center">{{ t('common.noProject') }}</span>
       </div>
       <div v-else class="flex-1 py-1">
         <FileTreeNode
@@ -137,14 +105,14 @@ onMounted(loadTree)
     <div class="flex-1 flex flex-col overflow-hidden">
       <div class="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-800 shrink-0 min-h-[41px]">
         <span v-if="selectedPath" class="text-xs font-mono text-zinc-300 truncate">{{ selectedName }}</span>
-        <span v-else class="text-xs text-zinc-600">Sélectionner un fichier</span>
+        <span v-else class="text-xs text-zinc-600">{{ t('explorer.selectFile') }}</span>
         <span v-if="fileContent" class="ml-auto text-xs text-zinc-600 shrink-0">
-          {{ lineCount(fileContent) }} lignes
+          {{ lineCount(fileContent) }} {{ t('explorer.lines') }}
         </span>
       </div>
       <div class="flex-1 overflow-auto">
         <div v-if="loadingFile" class="flex items-center justify-center h-full">
-          <span class="text-xs text-zinc-600 animate-pulse">Lecture…</span>
+          <span class="text-xs text-zinc-600 animate-pulse">{{ t('explorer.reading') }}</span>
         </div>
         <div v-else-if="fileError" class="flex items-center justify-center h-full px-8">
           <span class="text-xs text-zinc-500 italic text-center">{{ fileError }}</span>

@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Task } from '@renderer/types'
 import TaskCard from './TaskCard.vue'
 
-const props = defineProps<{
+defineProps<{
   title: string
   statut: string
   tasks: Task[]
   accentClass: string
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -19,9 +22,9 @@ const props = defineProps<{
       </div>
       <span class="text-xs text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">{{ tasks.length }}</span>
     </div>
-    <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
+    <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0" style="contain: content; will-change: scroll-position;">
       <TaskCard v-for="task in tasks" :key="task.id" :task="task" />
-      <div v-if="tasks.length === 0" class="text-xs text-zinc-600 text-center py-8">Aucune tâche</div>
+      <div v-if="tasks.length === 0" class="text-xs text-zinc-600 text-center py-8">{{ t('statusColumn.noTasks') }}</div>
     </div>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 
-const props = defineProps<{
+defineProps<{
   name: string
   active?: boolean
 }>()

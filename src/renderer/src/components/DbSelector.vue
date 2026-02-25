@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 
+const { t } = useI18n()
 const store = useTasksStore()
 const tabsStore = useTabsStore()
 
@@ -57,7 +59,7 @@ async function create() {
       </div>
       <div>
         <h2 class="text-xl font-semibold text-zinc-100 mb-1">agent-viewer</h2>
-        <p class="text-sm text-zinc-500">Visualisez les tâches de vos agents Claude en temps réel.</p>
+        <p class="text-sm text-zinc-500">{{ t('dbSelector.tagline') }}</p>
       </div>
 
       <!-- 2 options -->
@@ -73,8 +75,8 @@ async function create() {
             </svg>
           </div>
           <div>
-            <p class="text-sm font-medium text-zinc-200">Ouvrir</p>
-            <p class="text-xs text-zinc-500 mt-0.5">Projet existant</p>
+            <p class="text-sm font-medium text-zinc-200">{{ t('dbSelector.open') }}</p>
+            <p class="text-xs text-zinc-500 mt-0.5">{{ t('dbSelector.existingProject') }}</p>
           </div>
         </button>
 
@@ -89,8 +91,8 @@ async function create() {
             </svg>
           </div>
           <div>
-            <p class="text-sm font-medium text-violet-300">Créer</p>
-            <p class="text-xs text-zinc-500 mt-0.5">Nouveau projet</p>
+            <p class="text-sm font-medium text-violet-300">{{ t('dbSelector.createNew') }}</p>
+            <p class="text-xs text-zinc-500 mt-0.5">{{ t('setup.newProject') }}</p>
           </div>
         </button>
       </div>
@@ -113,9 +115,9 @@ async function create() {
           <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
             <path fill-rule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H13a1 1 0 110 2H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
           </svg>
-          Retour
+          {{ t('dbSelector.back') }}
         </button>
-        <h2 class="text-base font-semibold text-zinc-100">Nouveau projet</h2>
+        <h2 class="text-base font-semibold text-zinc-100">{{ t('setup.newProject') }}</h2>
       </div>
 
       <!-- Explication -->
@@ -126,12 +128,12 @@ async function create() {
 
       <!-- WSL user -->
       <div>
-        <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Utilisateur WSL</p>
+        <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{{ t('dbSelector.wslUser') }}</p>
 
-        <div v-if="loadingUsers" class="text-sm text-zinc-500 animate-pulse">Chargement…</div>
+        <div v-if="loadingUsers" class="text-sm text-zinc-500 animate-pulse">{{ t('common.loading') }}</div>
 
         <div v-else-if="wslUsers.length === 0" class="text-sm text-zinc-500 italic px-1">
-          Aucun utilisateur détecté — shell WSL par défaut
+          {{ t('dbSelector.noUser') }}
         </div>
 
         <div v-else class="space-y-1.5">
@@ -144,9 +146,9 @@ async function create() {
               : 'border-zinc-700 hover:border-zinc-600 bg-zinc-800/40'"
           >
             <input
+              v-model="selectedUser"
               type="radio"
               :value="user"
-              v-model="selectedUser"
               class="accent-violet-500"
             />
             <span class="text-sm font-mono text-zinc-200">{{ user }}</span>
@@ -167,7 +169,7 @@ async function create() {
         <svg v-else viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
           <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
         </svg>
-        {{ creating ? 'Initialisation…' : 'Sélectionner le dossier et initialiser' }}
+        {{ creating ? t('setup.creating') : t('dbSelector.selectAndInit') }}
       </button>
 
       <p v-if="creatingError" class="text-xs text-red-400 bg-red-950/40 border border-red-800/50 rounded px-3 py-2">
