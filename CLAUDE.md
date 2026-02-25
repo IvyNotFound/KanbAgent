@@ -28,7 +28,7 @@ Globaux: **review-master** (audit global) · **review** (périmètre) · **devop
 
 Scopés: `dev-front-vuejs` (Vue) · `dev-back-electron` (IPC/SQLite) · `test-front-vuejs` · `test-back-electron` · `ux-front-vuejs`
 
-Thinking mode (DB `thinking_mode`, NULL=auto): `test/doc/devops` → disabled · autres → auto (ADR-002).
+Thinking mode (DB `thinking_mode`, NULL=auto): `test/doc/devops` → disabled · autres → auto. Valeurs: `auto | disabled`. Injection: `--settings '{"alwaysThinkingEnabled":false}'` (ADR-002).
 
 ---
 
@@ -51,6 +51,7 @@ SQL détaillé → `.claude/WORKFLOW.md`
 ## Protocole agent (mandatory)
 
 - **Startup**: lire `sessions.summary` + tâches `a_faire/en_cours` → travailler immédiatement; ne demander clarification que si aucune tâche et type non inférable
+- **Accès DB**: `node scripts/dbq.js "<SQL>"` (lecture) · `node scripts/dbw.js "<SQL>"` (écriture) — voir `.claude/WORKFLOW.md`
 - **Avant modification**: vérifier locks → `INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (…)`
 - **Tâche**: `UPDATE tasks SET statut='en_cours'` au début · `statut='terminé'` + commentaire de sortie à la fin
 - **Inter-tâche** : après `terminé`, avant nouvelle tâche → `/clear` (contexte Claude Code) + reset terminal PTY si ouvert
