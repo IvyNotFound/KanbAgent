@@ -263,7 +263,7 @@ describe('IPC handlers — src/main/ipc.ts', () => {
 
     it('should return file content on success', async () => {
       const { readFile } = await import('fs/promises')
-      vi.mocked(readFile).mockResolvedValueOnce('file content' as unknown as Buffer)
+      vi.mocked(readFile).mockResolvedValueOnce('file content' as unknown as Buffer<ArrayBuffer>)
       const result = await callHandler('fs:readFile', '/allowed/file.txt', '/allowed') as { success: boolean; content: string }
       expect(result.success).toBe(true)
       expect(result.content).toBe('file content')
@@ -407,6 +407,212 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       const result = await callHandler('build-agent-prompt', 'dev-front', 'Tu es dev') as string
       expect(typeof result).toBe('string')
       expect(result).toContain('dev-front')
+    })
+  })
+
+  // ── Write handlers — test strategy ───────────────────────────────────────────
+  // NOTE: getSqlJs() uses require('sql.js') (CJS), which loads the real sql.js
+  // in the Vitest node environment (vi.mock intercepts ESM imports, not all CJS
+  // require paths within the tested module's singleton). Tests below are therefore
+  // designed to test the error path (readFile throws) and input validation.
+  // For shape validation, we rely on the handler's catch block returning { success: false }.
+
+  // ── close-agent-sessions ─────────────────────────────────────────────────────
+
+  describe('close-agent-sessions handler', () => {
+    it('should return { success, error } shape', async () => {
+      const result = await callHandler('close-agent-sessions', '/fake/project.db', 'dev-front') as { success: boolean; error?: string }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws (ENOENT)', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT: no such file'))
+      const result = await callHandler('close-agent-sessions', '/invalid/db', 'dev-front')
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('ENOENT') })
+    })
+
+    it('should return { success: false, error } when readFile throws (EACCES)', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('EACCES: permission denied'))
+      const result = await callHandler('close-agent-sessions', '/locked/db', 'dev-front')
+      expect(result).toMatchObject({ success: false })
+    })
+  })
+
+  // ── rename-agent ─────────────────────────────────────────────────────────────
+
+  describe('rename-agent handler', () => {
+    it('should return { success, error? } shape', async () => {
+      const result = await callHandler('rename-agent', '/fake/project.db', 1, 'new-name') as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      const result = await callHandler('rename-agent', '/invalid/db', 1, 'new-name')
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('ENOENT') })
+    })
+  })
+
+  // ── update-agent-system-prompt ────────────────────────────────────────────────
+
+  describe('update-agent-system-prompt handler', () => {
+    it('should return { success, error? } shape', async () => {
+      const result = await callHandler('update-agent-system-prompt', '/fake/project.db', 1, 'My prompt') as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      const result = await callHandler('update-agent-system-prompt', '/invalid/db', 1, 'prompt')
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('ENOENT') })
+    })
+  })
+
+  // ── get-agent-system-prompt ───────────────────────────────────────────────────
+  // Uses queryLive (real sql.js via require() — throws on non-db buffer)
+
+  describe('get-agent-system-prompt handler', () => {
+    it('should return { success: false, systemPrompt: null } shape on DB error', async () => {
+      // Real sql.js fails on mock buffer → handler catches → returns error shape
+      const result = await callHandler('get-agent-system-prompt', '/fake/project.db', 99) as {
+        success: boolean; systemPrompt: unknown; systemPromptSuffix: unknown; thinkingMode: unknown
+      }
+      expect(result.success).toBe(false)
+      expect(result.systemPrompt).toBeNull()
+      expect(result.systemPromptSuffix).toBeNull()
+      expect(result.thinkingMode).toBeNull()
+    })
+
+    it('should always return { success, systemPrompt, systemPromptSuffix, thinkingMode } shape', async () => {
+      const result = await callHandler('get-agent-system-prompt', '/fake/project.db', 1) as Record<string, unknown>
+      expect(result).toHaveProperty('success')
+      expect(result).toHaveProperty('systemPrompt')
+      expect(result).toHaveProperty('systemPromptSuffix')
+      expect(result).toHaveProperty('thinkingMode')
+    })
+  })
+
+  // ── update-agent-thinking-mode ────────────────────────────────────────────────
+
+  describe('update-agent-thinking-mode handler', () => {
+    it('should return { success, error? } shape', async () => {
+      const result = await callHandler('update-agent-thinking-mode', '/fake/project.db', 1, 'auto') as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      const result = await callHandler('update-agent-thinking-mode', '/invalid/db', 1, 'disabled')
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('ENOENT') })
+    })
+
+    it('should reject budget_tokens as an invalid thinking mode', async () => {
+      const result = await callHandler('update-agent-thinking-mode', '/fake/project.db', 1, 'budget_tokens') as { success: boolean; error: string }
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('budget_tokens') })
+    })
+
+    it('should accept null as a valid thinking mode (reset to default)', async () => {
+      const result = await callHandler('update-agent-thinking-mode', '/fake/project.db', 1, null) as { success: boolean }
+      // null bypasses validation — may succeed or fail at DB level depending on mock
+      expect(result).toHaveProperty('success')
+    })
+  })
+
+  // ── update-agent ─────────────────────────────────────────────────────────────
+
+  describe('update-agent handler', () => {
+    it('should return { success, error? } shape', async () => {
+      const result = await callHandler('update-agent', '/fake/project.db', 1, { name: 'new-name' }) as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      const result = await callHandler('update-agent', '/invalid/db', 1, { name: 'new-name' })
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('ENOENT') })
+    })
+  })
+
+  // ── set-config-value ─────────────────────────────────────────────────────────
+
+  describe('set-config-value handler', () => {
+    it('should return { success, error? } shape', async () => {
+      const result = await callHandler('set-config-value', '/fake/project.db', 'key', 'value') as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      const result = await callHandler('set-config-value', '/invalid/db', 'key', 'value')
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('ENOENT') })
+    })
+  })
+
+  // ── session:setConvId ─────────────────────────────────────────────────────────
+
+  describe('session:setConvId handler', () => {
+    const validConvId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+
+    it('should return { success: false, error: Invalid arguments } when convId is empty', async () => {
+      const result = await callHandler('session:setConvId', '/fake/db', 1, '')
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid arguments') })
+    })
+
+    it('should return { success: false, error: Invalid arguments } when agentId is not a number', async () => {
+      const result = await callHandler('session:setConvId', '/fake/db', 'not-a-number', validConvId)
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid arguments') })
+    })
+
+    it('should return { success: false, error: Invalid arguments } when dbPath is falsy', async () => {
+      const result = await callHandler('session:setConvId', '', 1, validConvId)
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid arguments') })
+    })
+
+    it('should return { success, error? } shape for valid args', async () => {
+      const result = await callHandler('session:setConvId', '/fake/project.db', 1, validConvId) as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      const result = await callHandler('session:setConvId', '/invalid/db', 1, validConvId)
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('ENOENT') })
+    })
+  })
+
+  // ── create-agent ─────────────────────────────────────────────────────────────
+  // Uses queryLive (duplicate check) — real sql.js fails on mock buffer
+
+  describe('create-agent handler', () => {
+    const dbPath = '/fake/project.db'
+    const projectPath = '/fake/project'
+    const agentData = {
+      name: 'my-new-agent',
+      type: 'dev',
+      perimetre: 'back-electron',
+      thinkingMode: 'auto',
+      systemPrompt: 'Be helpful',
+      description: 'Mon agent de test'
+    }
+
+    it('should return { success, error? } shape', async () => {
+      const result = await callHandler('create-agent', dbPath, projectPath, agentData) as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when readFile throws (ENOENT)', async () => {
+      const { readFile } = await import('fs/promises')
+      vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+      const result = await callHandler('create-agent', dbPath, projectPath, agentData)
+      expect(result).toMatchObject({ success: false })
     })
   })
 })

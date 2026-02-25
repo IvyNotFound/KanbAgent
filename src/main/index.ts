@@ -10,10 +10,44 @@
  * @module main
  */
 
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { registerTerminalHandlers } from './terminal'
+
+// ── GPU flags for improved rendering performance ─────────────────────────────────
+// These MUST be set BEFORE app.whenReady() to take effect
+// They improve GPU rasterization and reduce CPU usage for animations/terminals
+app.commandLine.appendSwitch('enable-gpu-rasterization')
+app.commandLine.appendSwitch('enable-zero-copy')
+app.commandLine.appendSwitch('disable-software-rasterizer')
+// Optional: uncomment if GPU is blocked by Chromium blocklist
+// app.commandLine.appendSwitch('ignore-gpu-blocklist')
+// app.commandLine.appendSwitch('enable-native-gpu-memory-buffers')
+
+// ── Content Security Policy ───────────────────────────────────────────────────
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'", // Tailwind inline styles
+  "img-src 'self' data:",
+  "connect-src 'self'",
+  "font-src 'self'"
+].join('; ')
+
+/**
+ * Applies Content Security Policy to all requests.
+ */
+function setupCSP(): void {
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [CSP]
+      }
+    })
+  })
+}
 
 /**
  * Returns the path to the application icon.
@@ -61,7 +95,8 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true,
+      backgroundThrottling: false // Keep timers/polling at full speed even when window is in background
     }
   })
 
@@ -80,7 +115,10 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  setupCSP()
+  createWindow()
+})
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
