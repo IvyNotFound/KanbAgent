@@ -39,8 +39,6 @@ const groupedTerminalTabs = computed<TabGroup[]>(() => {
   return entries.map(([agentName, tabs]) => ({ agentName, tabs }))
 })
 
-const showGroupHeaders = computed(() => groupedTerminalTabs.value.length > 1)
-
 function toggleGroup(agentName: string | null): void {
   const key = agentName
   if (collapsedAgents.value.has(key)) {
@@ -54,6 +52,22 @@ function isGroupCollapsed(agentName: string | null): boolean {
   return collapsedAgents.value.has(agentName)
 }
 
+function isGroupActive(group: TabGroup): boolean {
+  return group.tabs.some(t => t.id === store.activeTabId)
+}
+
+function activateAgentGroup(group: TabGroup): void {
+  if (group.tabs.length === 0) return
+  // Expand if collapsed
+  if (isGroupCollapsed(group.agentName)) {
+    collapsedAgents.value.delete(group.agentName)
+  }
+  // Activate first tab if none of this group's tabs is already active
+  if (!isGroupActive(group)) {
+    store.setActive(group.tabs[0].id)
+  }
+}
+
 // Auto-expand group when its tab becomes active; auto-collapse others when groups are shown
 watch(() => store.activeTabId, (newId) => {
   const activeTab = store.tabs.find(t => t.id === newId)
@@ -63,9 +77,9 @@ watch(() => store.activeTabId, (newId) => {
   collapsedAgents.value.delete(agentName)
 })
 
-// When groups first appear, collapse non-active agent groups
-watch(showGroupHeaders, (nowMultiple) => {
-  if (!nowMultiple) { collapsedAgents.value.clear(); return }
+// When multiple groups appear, collapse non-active agent groups
+watch(() => groupedTerminalTabs.value.length, (len) => {
+  if (len <= 1) { collapsedAgents.value.clear(); return }
   const activeAgentName = store.activeTab?.agentName ?? null
   for (const group of groupedTerminalTabs.value) {
     if (group.agentName !== activeAgentName) {
@@ -175,8 +189,7 @@ function onMiddleClick(e: MouseEvent, tab: Tab) {
 }
 
 // ── Styles dynamiques ────────────────────────────────────────────────────────
-// Computed maps to avoid recalculating HSL on every render pass.
-// Invalidated automatically when tabs list, activeTabId, or colorVersion changes.
+// tabStyleMap: styles for sub-tabs (session tabs)
 const tabStyleMap = computed<Map<string, Record<string, string>>>(() => {
   void colorVersion.value // track theme reactivity
   const activeId = store.activeTabId
@@ -199,6 +212,28 @@ const tabStyleMap = computed<Map<string, Record<string, string>>>(() => {
   return map
 })
 
+// agentTabStyleMap: styles for agent-header tabs
+const agentTabStyleMap = computed<Map<string | null, Record<string, string>>>(() => {
+  void colorVersion.value // track theme reactivity
+  const activeId = store.activeTabId
+  const map = new Map<string | null, Record<string, string>>()
+  for (const group of groupedTerminalTabs.value) {
+    const name = group.agentName
+    if (!name) {
+      map.set(name, isDark() ? { color: '#a1a1aa', backgroundColor: '#27272a' } : { color: '#52525b', backgroundColor: '#e4e4e7' })
+      continue
+    }
+    const isActive = group.tabs.some(t => t.id === activeId)
+    const h = agentHue(name)
+    map.set(name, isActive
+      ? { color: agentFg(name), backgroundColor: agentBg(name) }
+      : (isDark()
+        ? { color: `hsla(${h}, 65%, 65%, 0.65)`, backgroundColor: `hsla(${h}, 38%, 16%, 0.55)` }
+        : { color: `hsla(${h}, 55%, 40%, 0.7)`, backgroundColor: `hsla(${h}, 45%, 92%, 0.6)` }))
+  }
+  return map
+})
+
 const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
   void colorVersion.value // track theme reactivity
   const map = new Map<string, Record<string, string>>()
@@ -209,6 +244,10 @@ const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
   }
   return map
 })
+
+function subTabLabel(tab: Tab): string {
+  return tab.taskId ? `#${tab.taskId}` : tab.title
+}
 </script>
 
 <template>
@@ -270,62 +309,68 @@ const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
       </svg>
     </button>
 
-    <!-- Onglets terminaux (déplaçables, scrollable) -->
+    <!-- Onglets terminaux (groupés par agent, scrollable) -->
     <div
       ref="scrollContainer"
       class="flex items-stretch gap-0.5 px-1.5 flex-1 min-w-0 overflow-x-hidden"
       @wheel="onWheel"
       @scroll="updateScrollState"
     >
-      <template v-for="group in groupedTerminalTabs" :key="group.agentName ?? '__misc__'">
-        <!-- En-tête de groupe agent (uniquement si plusieurs agents) -->
+      <!-- Groupe agent -->
+      <div
+        v-for="(group, groupIdx) in groupedTerminalTabs"
+        :key="group.agentName ?? '__misc__'"
+        class="flex items-stretch gap-0.5"
+        :class="groupIdx < groupedTerminalTabs.length - 1 ? 'mr-3' : ''"
+      >
+        <!-- Onglet-agent (bouton principal du groupe) -->
         <button
-          v-if="showGroupHeaders"
-          class="flex items-center gap-1.5 px-2 shrink-0 select-none transition-colors border-r border-edge-subtle hover:bg-surface-secondary/50 cursor-pointer"
-          :title="group.agentName ?? ''"
-          @click="toggleGroup(group.agentName)"
+          class="relative flex items-center gap-1.5 px-3 text-sm font-semibold transition-all select-none rounded-t shrink-0 cursor-pointer"
+          :style="agentTabStyleMap.get(group.agentName)"
+          @click="activateAgentGroup(group)"
         >
-          <span
-            class="w-2 h-2 rounded-full shrink-0"
-            :style="group.agentName
-              ? { backgroundColor: agentFg(group.agentName) }
-              : { backgroundColor: '#71717a' }"
-          ></span>
-          <span
-            class="text-xs font-semibold max-w-[72px] truncate"
-            :style="group.agentName
-              ? { color: agentFg(group.agentName) }
-              : { color: '#a1a1aa' }"
-          >{{ group.agentName ?? '·' }}</span>
+          <!-- Icône terminal -->
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 shrink-0">
+            <polyline points="2,5 6.5,8 2,11"/>
+            <line x1="8.5" y1="11" x2="14" y2="11"/>
+          </svg>
+          <!-- · séparateur -->
+          <span class="opacity-50 select-none">·</span>
+          <!-- Nom de l'agent -->
+          <span class="truncate max-w-[80px]">{{ group.agentName ?? '?' }}</span>
           <!-- Chevron collapse/expand -->
           <svg
             viewBox="0 0 16 16" fill="currentColor"
             class="w-2.5 h-2.5 shrink-0 transition-transform duration-150"
             :class="isGroupCollapsed(group.agentName) ? '-rotate-90' : ''"
-            :style="group.agentName ? { color: agentFg(group.agentName) } : { color: '#71717a' }"
+            @click.stop="toggleGroup(group.agentName)"
           >
             <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
           </svg>
-          <!-- Count badge lorsque collapsé -->
+          <!-- Badge count quand collapsé -->
           <span
             v-if="isGroupCollapsed(group.agentName)"
             class="text-[10px] font-mono opacity-70 shrink-0"
-            :style="group.agentName ? { color: agentFg(group.agentName) } : { color: '#a1a1aa' }"
           >{{ group.tabs.length }}</span>
+          <!-- Indicateur actif (bas de l'onglet-agent) -->
+          <span
+            v-if="isGroupActive(group)"
+            class="absolute bottom-0 left-0 right-0 h-[2px]"
+            :style="group.agentName ? { backgroundColor: agentFg(group.agentName) } : { backgroundColor: '#a78bfa' }"
+          ></span>
         </button>
 
-        <!-- Onglets du groupe (masqués si collapsé) -->
+        <!-- Sous-onglets session (masqués si groupe collapsé) -->
         <template v-if="!isGroupCollapsed(group.agentName)">
           <button
             v-for="tab in group.tabs"
             :key="tab.id"
             draggable="true"
             :class="[
-              'relative flex items-center gap-2 px-3 text-sm font-medium transition-all select-none rounded-t shrink-0',
-              store.activeTabId !== tab.id && !tab.agentName ? 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/60' : '',
+              'relative flex items-center gap-1.5 px-2.5 text-sm font-medium transition-all select-none rounded-t shrink-0 cursor-pointer',
+              store.activeTabId !== tab.id ? 'opacity-70 hover:opacity-90' : '',
               draggedId === tab.id ? 'opacity-40' : '',
               dropTargetId === tab.id && draggedId !== tab.id ? 'ring-1 ring-inset ring-violet-500/50' : '',
-              'cursor-pointer',
             ]"
             :style="tabStyleMap.get(tab.id)"
             @click="store.setActive(tab.id)"
@@ -336,33 +381,11 @@ const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
             @drop="onDrop($event, tab.id)"
             @dragend="onDragEnd"
           >
-            <!-- Icône selon type -->
-            <span class="flex items-center justify-center w-5 h-5 rounded shrink-0 bg-black/25">
-              <!-- Fichier -->
-              <svg v-if="tab.type === 'file'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-                <path d="M4 1h5.586a1 1 0 0 1 .707.293l3.414 3.414A1 1 0 0 1 14 5.414V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm5 0v4h4"/>
-              </svg>
-              <!-- Explorateur -->
-              <svg v-else-if="tab.type === 'explorer'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-                <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
-              </svg>
-              <!-- Logs -->
-              <svg v-else-if="tab.type === 'logs'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-                <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
-                <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
-              </svg>
-              <!-- Terminal (défaut) -->
-              <svg v-else viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-                <polyline points="2,5 6.5,8 2,11"/>
-                <line x1="8.5" y1="11" x2="14" y2="11"/>
-              </svg>
-            </span>
-            <span class="truncate min-w-0">{{ tab.title }}</span>
-            <span v-if="tab.taskId" class="shrink-0 opacity-70 text-xs font-mono">· #{{ tab.taskId }}</span>
+            <span class="font-mono text-xs shrink-0">{{ subTabLabel(tab) }}</span>
             <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" :title="t('tabBar.unsaved')" />
             <!-- Fermer -->
             <span
-              class="ml-0.5 flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer"
+              class="flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer"
               :title="t('tabBar.closeTab')"
               @click.stop="handleCloseTab(tab)"
             >✕</span>
@@ -374,7 +397,7 @@ const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
             ></span>
           </button>
         </template>
-      </template>
+      </div>
     </div>
 
     <!-- Scroll right arrow -->
