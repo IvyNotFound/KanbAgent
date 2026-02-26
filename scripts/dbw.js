@@ -16,7 +16,7 @@
 const initSqlJs = require('sql.js')
 const fs = require('fs')
 const path = require('path')
-const { acquireLock, releaseLock } = require('./dblock')
+const { acquireLock, releaseLock, cleanupOrphanTmp } = require('./dblock')
 
 const sqlArg = process.argv[2]
 
@@ -29,6 +29,7 @@ const dbPath = path.resolve(process.cwd(), '.claude/project.db')
  */
 function run(sql) {
   initSqlJs().then((SQL) => {
+    cleanupOrphanTmp(dbPath)
     const lockPath = acquireLock(dbPath)
     try {
       const buf = fs.readFileSync(dbPath)
