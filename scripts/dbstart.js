@@ -60,6 +60,53 @@ initSqlJs().then((SQL) => {
   const agentRow = db.exec(`SELECT id FROM agents WHERE name = '${agent}'`)
   const agentId = agentRow[0].values[0][0]
 
+  // 2b. Auto-release locks from zombie sessions (started, inactive >60 min)
+  const zombieLocks = db.exec(`
+    SELECT COUNT(*) FROM locks
+    WHERE released_at IS NULL
+      AND session_id IN (
+        SELECT id FROM sessions
+        WHERE statut = 'started'
+          AND ended_at IS NULL
+          AND started_at < datetime('now', '-60 minutes')
+      )
+  `)
+  const zombieLockCount = zombieLocks[0].values[0][0]
+  if (zombieLockCount > 0) {
+    db.run(`
+      UPDATE locks SET released_at = datetime('now')
+      WHERE released_at IS NULL
+        AND session_id IN (
+          SELECT id FROM sessions
+          WHERE statut = 'started'
+            AND ended_at IS NULL
+            AND started_at < datetime('now', '-60 minutes')
+        )
+    `)
+    console.log(`\n[auto-release] ${zombieLockCount} zombie lock(s) released from inactive started sessions (>60 min)`)
+  }
+
+  // 2c. Mark zombie sessions as terminated
+  const zombieSessions = db.exec(`
+    SELECT COUNT(*) FROM sessions
+    WHERE statut = 'started'
+      AND ended_at IS NULL
+      AND started_at < datetime('now', '-60 minutes')
+  `)
+  const zombieSessionCount = zombieSessions[0].values[0][0]
+  if (zombieSessionCount > 0) {
+    db.run(`
+      UPDATE sessions
+      SET statut = 'completed',
+          ended_at = datetime('now'),
+          summary = 'Auto-closed: zombie session (no activity for 60min)'
+      WHERE statut = 'started'
+        AND ended_at IS NULL
+        AND started_at < datetime('now', '-60 minutes')
+    `)
+    console.log(`\n[auto-release] ${zombieSessionCount} zombie session(s) marked as completed`)
+  }
+
   // 3. Check parallel session limit (reads max_sessions from agents table, default 3)
   // Guard: column may not exist if Electron migration v6 hasn't run yet
   const hasMaxSessions =
@@ -100,53 +147,6 @@ initSqlJs().then((SQL) => {
         AND session_id IN (SELECT id FROM sessions WHERE statut = 'completed')
     `)
     console.log(`\n[auto-release] ${orphanCount} orphan lock(s) released from terminated sessions`)
-  }
-
-  // 4c. Auto-release locks from zombie sessions (started, inactive >60 min)
-  const zombieLocks = db.exec(`
-    SELECT COUNT(*) FROM locks
-    WHERE released_at IS NULL
-      AND session_id IN (
-        SELECT id FROM sessions
-        WHERE statut = 'started'
-          AND ended_at IS NULL
-          AND started_at < datetime('now', '-60 minutes')
-      )
-  `)
-  const zombieLockCount = zombieLocks[0].values[0][0]
-  if (zombieLockCount > 0) {
-    db.run(`
-      UPDATE locks SET released_at = datetime('now')
-      WHERE released_at IS NULL
-        AND session_id IN (
-          SELECT id FROM sessions
-          WHERE statut = 'started'
-            AND ended_at IS NULL
-            AND started_at < datetime('now', '-60 minutes')
-        )
-    `)
-    console.log(`\n[auto-release] ${zombieLockCount} zombie lock(s) released from inactive started sessions (>60 min)`)
-  }
-
-  // 4d. Mark zombie sessions as terminated
-  const zombieSessions = db.exec(`
-    SELECT COUNT(*) FROM sessions
-    WHERE statut = 'started'
-      AND ended_at IS NULL
-      AND started_at < datetime('now', '-60 minutes')
-  `)
-  const zombieSessionCount = zombieSessions[0].values[0][0]
-  if (zombieSessionCount > 0) {
-    db.run(`
-      UPDATE sessions
-      SET statut = 'completed',
-          ended_at = datetime('now'),
-          summary = 'Auto-closed: zombie session (no activity for 60min)'
-      WHERE statut = 'started'
-        AND ended_at IS NULL
-        AND started_at < datetime('now', '-60 minutes')
-    `)
-    console.log(`\n[auto-release] ${zombieSessionCount} zombie session(s) marked as completed`)
   }
 
   // Persist writes (atomic: unique tmp + rename, serialized by .wlock)
