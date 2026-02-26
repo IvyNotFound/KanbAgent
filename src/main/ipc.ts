@@ -446,6 +446,22 @@ export function registerIpcHandlers(): void {
       return { success: false, error: `Invalid statut: ${statut}` }
     }
     try {
+      if (statut === 'in_progress') {
+        const blockers = await queryLive(
+          dbPath,
+          `SELECT t.id, t.titre, t.statut
+           FROM task_links tl JOIN tasks t ON t.id = tl.from_task
+           WHERE tl.to_task = ? AND tl.type = 'bloque' AND t.statut NOT IN ('done','archived')
+           UNION
+           SELECT t.id, t.titre, t.statut
+           FROM task_links tl JOIN tasks t ON t.id = tl.to_task
+           WHERE tl.from_task = ? AND tl.type = 'dépend_de' AND t.statut NOT IN ('done','archived')`,
+          [taskId, taskId]
+        ) as Array<{ id: number; titre: string; statut: string }>
+        if (blockers.length) {
+          return { success: false, error: 'TASK_BLOCKED', blockers }
+        }
+      }
       await writeDb(dbPath, (db) => {
         db.run(
           `UPDATE tasks SET statut=?, updated_at=datetime('now') WHERE id=?`,

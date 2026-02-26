@@ -308,4 +308,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Task dependency links
   getTaskLinks: (dbPath: string, taskId: number): Promise<{ success: boolean; links: Array<{ id: number; type: string; from_task: number; to_task: number; from_titre: string; from_statut: string; to_titre: string; to_statut: string }>; error?: string }> =>
     ipcRenderer.invoke('task:getLinks', dbPath, taskId),
+
+  // T518: Collect token stats from JSONL for the latest completed session
+  collectSessionTokens: (dbPath: string, agentName: string): Promise<{ success: boolean; tokens?: { tokensIn: number; tokensOut: number; cacheRead: number; cacheWrite: number }; error?: string }> =>
+    ipcRenderer.invoke('session:collectTokens', dbPath, agentName),
 })
