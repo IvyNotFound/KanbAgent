@@ -56,7 +56,7 @@ SQL détaillé → `.claude/WORKFLOW.md`
 - **Tâche**: `UPDATE tasks SET statut='in_progress'` au début · commentaire de sortie **EN PREMIER** puis `statut='done'` à la fin (ordre strict — évite perte si session expire)
 - **Sessions parallèles** : max **3 sessions actives** par même agent (enforcé par `dbstart.js`, exit code 2 si limite atteinte).
 - **Inter-tâche** : après `done`, enchaîner la tâche suivante **sans fermer la session** → `/clear` contexte + reset terminal PTY si ouvert, puis prendre le prochain ticket `todo`. Ne fermer la session **que si** : aucune tâche restante, ou tâche bloquée (dépendance, lock, attente review).
-- **Fin de session**: libérer locks + `UPDATE sessions SET statut='terminé', summary='Done:T<id>[action]. Pending:T<id>[raison]. Next:T<id> <titre>'` **(max 200 chars)**
+- **Fin de session**: libérer locks + `UPDATE sessions SET statut='completed', summary='Done:T<id>[action]. Pending:T<id>[raison]. Next:T<id> <titre>'` **(max 200 chars)**
 - Jamais push direct sur `main` · Jamais éditer `project.db` manuellement
 
 ---
