@@ -780,6 +780,52 @@ export function runMakeCommentAgentNotNullMigration(db: Database): boolean {
 }
 
 /**
+ * Migration: Creates agent_groups and agent_group_members tables (T556).
+ *
+ * agent_groups: user-defined groupings for agents (name, sort_order).
+ * agent_group_members: links agents to groups (one agent → at most one group, UNIQUE(agent_id)).
+ *
+ * ON DELETE CASCADE is NOT used here — FK enforcement requires PRAGMA foreign_keys = ON
+ * which is not enabled by default in sql.js. Cascades are handled explicitly in handlers.
+ *
+ * Idempotent: returns false if agent_groups already exists.
+ *
+ * @returns true if the tables were created, false if already present.
+ */
+export function runAddAgentGroupsMigration(db: Database): boolean {
+  const tableResult = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_groups'")
+  if (tableResult.length > 0 && tableResult[0].values.length > 0) return false
+
+  db.run('SAVEPOINT add_agent_groups')
+  try {
+    db.run(`
+      CREATE TABLE agent_groups (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `)
+    db.run(`
+      CREATE TABLE agent_group_members (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id   INTEGER NOT NULL REFERENCES agent_groups(id),
+        agent_id   INTEGER NOT NULL REFERENCES agents(id),
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(agent_id)
+      )
+    `)
+    db.run('CREATE INDEX IF NOT EXISTS idx_agm_group ON agent_group_members(group_id)')
+    db.run('RELEASE SAVEPOINT add_agent_groups')
+  } catch (err) {
+    db.run('ROLLBACK TO SAVEPOINT add_agent_groups')
+    db.run('RELEASE SAVEPOINT add_agent_groups')
+    throw err
+  }
+  return true
+}
+
+/**
  * Helper: finds the 'review' agent id, or the first agent id as fallback.
  * Returns null if no agents exist.
  */

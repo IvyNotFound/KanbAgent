@@ -48,6 +48,7 @@ const mockRunDropCommentaireColumnMigration = vi.fn(() => 0)
 const mockRunSessionStatutI18nMigration = vi.fn(() => 0)
 const mockRunMakeAgentAssigneNotNullMigration = vi.fn(() => false)
 const mockRunMakeCommentAgentNotNullMigration = vi.fn(() => false)
+const mockRunAddAgentGroupsMigration = vi.fn(() => false)
 
 vi.mock('./migration', () => ({
   runTaskStatusMigration: (...args: unknown[]) => mockRunTaskStatusMigration(...args),
@@ -60,6 +61,7 @@ vi.mock('./migration', () => ({
   runSessionStatutI18nMigration: (...args: unknown[]) => mockRunSessionStatutI18nMigration(...args),
   runMakeAgentAssigneNotNullMigration: (...args: unknown[]) => mockRunMakeAgentAssigneNotNullMigration(...args),
   runMakeCommentAgentNotNullMigration: (...args: unknown[]) => mockRunMakeCommentAgentNotNullMigration(...args),
+  runAddAgentGroupsMigration: (...args: unknown[]) => mockRunAddAgentGroupsMigration(...args),
 }))
 
 // Mock sql.js — create a factory for mock DB instances
@@ -449,6 +451,7 @@ describe('migrateDb', () => {
     mockRunSessionStatutI18nMigration.mockReturnValue(0)
     mockRunMakeAgentAssigneNotNullMigration.mockReturnValue(false)
     mockRunMakeCommentAgentNotNullMigration.mockReturnValue(false)
+    mockRunAddAgentGroupsMigration.mockReturnValue(false)
   })
 
   /** Build a minimal SQLite DB buffer with all tables migrateDb expects */
@@ -518,6 +521,7 @@ describe('migrateDb', () => {
     expect(mockRunTaskStatusMigration).toHaveBeenCalled()
     expect(mockRunMakeAgentAssigneNotNullMigration).toHaveBeenCalled()
     expect(mockRunMakeCommentAgentNotNullMigration).toHaveBeenCalled()
+    expect(mockRunAddAgentGroupsMigration).toHaveBeenCalled()
     expect(mockRunSessionStatutI18nMigration).toHaveBeenCalled()
   })
 
@@ -547,11 +551,11 @@ describe('migrateDb', () => {
   })
 
   it('T491: should skip migration entirely when schema_version is already current', async () => {
-    // Build a minimal DB buffer with config.schema_version = '6' (CURRENT_SCHEMA_VERSION)
+    // Build a minimal DB buffer with config.schema_version = '7' (CURRENT_SCHEMA_VERSION)
     const sqlJs = await getSqlJs()
     const db = new sqlJs.Database()
     db.run(`CREATE TABLE config (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`)
-    db.run(`INSERT INTO config (key, value) VALUES ('schema_version', '6')`)
+    db.run(`INSERT INTO config (key, value) VALUES ('schema_version', '7')`)
     const buf = Buffer.from(db.export())
     db.close()
 

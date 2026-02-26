@@ -312,4 +312,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // T518: Collect token stats from JSONL for the latest completed session
   collectSessionTokens: (dbPath: string, agentName: string): Promise<{ success: boolean; tokens?: { tokensIn: number; tokensOut: number; cacheRead: number; cacheWrite: number }; error?: string }> =>
     ipcRenderer.invoke('session:collectTokens', dbPath, agentName),
+
+  // T556: Agent groups CRUD
+  agentGroupsList: (dbPath: string): Promise<{ success: boolean; groups: Array<{ id: number; name: string; sort_order: number; created_at: string; members: Array<{ agent_id: number; sort_order: number }> }>; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:list', dbPath),
+
+  agentGroupsCreate: (dbPath: string, name: string): Promise<{ success: boolean; group?: { id: number; name: string; sort_order: number; created_at: string }; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:create', dbPath, name),
+
+  agentGroupsRename: (dbPath: string, groupId: number, name: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:rename', dbPath, groupId, name),
+
+  agentGroupsDelete: (dbPath: string, groupId: number): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:delete', dbPath, groupId),
+
+  agentGroupsSetMember: (dbPath: string, agentId: number, groupId: number | null, sortOrder?: number): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:setMember', dbPath, agentId, groupId, sortOrder),
+
+  agentGroupsReorder: (dbPath: string, groupIds: number[]): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:reorder', dbPath, groupIds),
 })

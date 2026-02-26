@@ -19,7 +19,8 @@ import {
   runDropCommentaireColumnMigration,
   runSessionStatutI18nMigration,
   runMakeAgentAssigneNotNullMigration,
-  runMakeCommentAgentNotNullMigration
+  runMakeCommentAgentNotNullMigration,
+  runAddAgentGroupsMigration
 } from './migration'
 
 // ── T282: Registry of allowed DB paths ────────────────────────────────────────
@@ -268,7 +269,7 @@ async function queryLiveAttempt(
 // ── Migration ────────────────────────────────────────────────────────────────
 
 /** Current schema version — bump when adding migrations or indexes. */
-const CURRENT_SCHEMA_VERSION = '6'
+const CURRENT_SCHEMA_VERSION = '7'
 
 /**
  * Run all pending schema migrations on a project database.
@@ -457,6 +458,13 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
     if (commentAgentMigrated) {
       changed = true
       console.log('[migrateDb] made agent_id NOT NULL on task_comments table')
+    }
+
+    // --- T556: agent_groups + agent_group_members ---
+    const agentGroupsMigrated = runAddAgentGroupsMigration(db)
+    if (agentGroupsMigrated) {
+      changed = true
+      console.log('[migrateDb] created agent_groups and agent_group_members tables')
     }
 
     // --- sessions: statut French → English (T329) ---
