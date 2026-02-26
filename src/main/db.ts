@@ -177,7 +177,17 @@ export async function writeDb<T = void>(dbPath: string, fn: (db: any) => T): Pro
       const newBuf = Buffer.from(exported)
       const tmpPath = dbPath + '.tmp'
       await writeFile(tmpPath, newBuf)
-      await rename(tmpPath, dbPath)
+      // On Windows, rename over a locked file throws EPERM — fall back to copyFile + unlink
+      try {
+        await rename(tmpPath, dbPath)
+      } catch (err: unknown) {
+        if ((err as NodeJS.ErrnoException).code === 'EPERM') {
+          await copyFile(tmpPath, dbPath)
+          await unlink(tmpPath)
+        } else {
+          throw err
+        }
+      }
       // Update cache: refresh buffer + recreate DB instance from exported data
       // so the next queryLive doesn't need to reinstantiate (~10-50ms saved)
       const statResult = await stat(dbPath)
