@@ -45,6 +45,11 @@ watch(type, () => {
 
 watch(name, () => { nameError.value = '' })
 
+function onNameInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value
+  name.value = raw.toLowerCase().replace(/ /g, '-')
+}
+
 function defaultDescription(t: string): string {
   const map: Record<string, string> = {
     dev: 'Implémentation / nouvelles fonctionnalités',
@@ -201,10 +206,11 @@ function handleKeydown(e: KeyboardEvent) {
           <div>
             <label class="block text-xs text-content-muted mb-1">{{ t('sidebar.name') }} <span class="text-red-400">*</span></label>
             <input
-              v-model="name"
+              :value="name"
               type="text"
               autofocus
               placeholder="dev-back-api"
+              @input="onNameInput"
               :class="[
                 'w-full bg-surface-secondary border rounded-md px-3 py-2 text-sm text-content-primary font-mono outline-none focus:ring-1 focus:ring-violet-500 transition-colors',
                 nameError ? 'border-red-500' : 'border-edge-default'
@@ -301,14 +307,18 @@ function handleKeydown(e: KeyboardEvent) {
         <div class="px-5 py-3 border-t border-edge-subtle flex flex-col gap-2 shrink-0">
           <p v-if="deleteError" class="text-xs text-red-400">{{ deleteError }}</p>
           <div class="flex items-center justify-between">
-            <span class="text-xs text-content-faint">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
-            <div class="flex gap-2">
+            <!-- Left: destructive action isolated from primary actions -->
+            <div class="flex items-center gap-3">
               <button
                 v-if="isEditMode"
                 class="px-4 py-1.5 text-sm bg-red-700 hover:bg-red-600 text-white rounded-md transition-colors disabled:opacity-50"
                 :disabled="deleting || loading"
                 @click="deleteAgent"
               >{{ deleting ? t('agent.deleting') : t('agent.deleteAgent') }}</button>
+              <span class="text-xs text-content-faint">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
+            </div>
+            <!-- Right: primary actions -->
+            <div class="flex gap-2">
               <button
                 class="px-4 py-1.5 text-sm text-content-muted hover:text-content-secondary transition-colors"
                 @click="emit('close')"
