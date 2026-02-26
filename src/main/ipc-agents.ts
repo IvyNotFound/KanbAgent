@@ -283,7 +283,13 @@ export function registerAgentHandlers(): void {
     systemPromptSuffix?: string | null
     autoLaunch?: boolean
     permissionMode?: 'default' | 'auto' | null
+    maxSessions?: number
   }) => {
+    if (updates.maxSessions !== undefined) {
+      if (!Number.isInteger(updates.maxSessions) || updates.maxSessions < 1) {
+        return { success: false, error: `Invalid maxSessions value: ${updates.maxSessions}. Must be an integer >= 1.` }
+      }
+    }
     try {
       assertDbPathAllowed(dbPath)
       await writeDb(dbPath, (db) => {
@@ -313,6 +319,9 @@ export function registerAgentHandlers(): void {
         }
         if (updates.permissionMode !== undefined) {
           db.run('UPDATE agents SET permission_mode = ? WHERE id = ?', [updates.permissionMode || null, agentId])
+        }
+        if (updates.maxSessions !== undefined) {
+          db.run('UPDATE agents SET max_sessions = ? WHERE id = ?', [updates.maxSessions, agentId])
         }
       })
       return { success: true }

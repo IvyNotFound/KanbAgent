@@ -101,6 +101,7 @@ async function buildSchema(): Promise<any> {
     allowed_tools TEXT,
     auto_launch INTEGER NOT NULL DEFAULT 1,
     permission_mode TEXT CHECK(permission_mode IN ('default', 'auto')) DEFAULT 'default',
+    max_sessions INTEGER NOT NULL DEFAULT 3,
     created_at TEXT DEFAULT (datetime('now'))
   )`)
 
@@ -519,6 +520,75 @@ describe('task:setAssignees — validation guards', () => {
 
     expect(result.success).toBe(false)
     expect(result.error).toContain('assignees must be an array')
+  })
+})
+
+// ── Tests: update-agent maxSessions ──────────────────────────────────────────
+
+describe('update-agent — maxSessions (T468)', () => {
+  it('valid maxSessions=5 → persisted in DB', async () => {
+    const agentId = await insertAgent('agent-max-sessions-valid')
+
+    const result = await handlers['update-agent'](
+      null,
+      TEST_DB_PATH,
+      agentId,
+      { maxSessions: 5 }
+    ) as { success: boolean }
+
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT max_sessions FROM agents WHERE id = ?', [agentId]) as Array<{ max_sessions: number }>
+    expect(rows[0].max_sessions).toBe(5)
+  })
+
+  it('maxSessions=0 → {success:false, error}', async () => {
+    const agentId = await insertAgent('agent-max-sessions-zero')
+
+    const result = await handlers['update-agent'](
+      null,
+      TEST_DB_PATH,
+      agentId,
+      { maxSessions: 0 }
+    ) as { success: boolean; error: string }
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('maxSessions')
+  })
+
+  it('maxSessions=-1 → {success:false, error}', async () => {
+    const agentId = await insertAgent('agent-max-sessions-neg')
+
+    const result = await handlers['update-agent'](
+      null,
+      TEST_DB_PATH,
+      agentId,
+      { maxSessions: -1 }
+    ) as { success: boolean; error: string }
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('maxSessions')
+  })
+
+  it('maxSessions=1.5 (float) → {success:false, error}', async () => {
+    const agentId = await insertAgent('agent-max-sessions-float')
+
+    const result = await handlers['update-agent'](
+      null,
+      TEST_DB_PATH,
+      agentId,
+      { maxSessions: 1.5 }
+    ) as { success: boolean; error: string }
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('maxSessions')
+  })
+
+  it('default max_sessions=3 on fresh agent', async () => {
+    const agentId = await insertAgent('agent-default-max-sessions')
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT max_sessions FROM agents WHERE id = ?', [agentId]) as Array<{ max_sessions: number }>
+    expect(rows[0].max_sessions).toBe(3)
   })
 })
 

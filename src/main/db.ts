@@ -258,7 +258,7 @@ async function queryLiveAttempt(
 // ── Migration ────────────────────────────────────────────────────────────────
 
 /** Current schema version — bump when adding migrations or indexes. */
-const CURRENT_SCHEMA_VERSION = '5'
+const CURRENT_SCHEMA_VERSION = '6'
 
 /**
  * Run all pending schema migrations on a project database.
@@ -330,6 +330,11 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
       db.run("ALTER TABLE agents ADD COLUMN permission_mode TEXT CHECK(permission_mode IN ('default', 'auto')) DEFAULT 'default'")
       changed = true
       console.log('[migrateDb] added permission_mode column to agents')
+    }
+    if (!existingCols.has('max_sessions')) {
+      db.run('ALTER TABLE agents ADD COLUMN max_sessions INTEGER NOT NULL DEFAULT 3')
+      changed = true
+      console.log('[migrateDb] added max_sessions column to agents')
     }
 
     const tableResult = db.exec("SELECT name FROM sqlite_master WHERE type='table'")

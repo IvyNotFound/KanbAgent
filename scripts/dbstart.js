@@ -54,16 +54,17 @@ initSqlJs().then((SQL) => {
   const agentRow = db.exec(`SELECT id FROM agents WHERE name = '${agent}'`)
   const agentId = agentRow[0].values[0][0]
 
-  // 3. Check parallel session limit (max 3 active per agent)
-  const MAX_PARALLEL_SESSIONS = 3
+  // 3. Check parallel session limit (reads max_sessions from agents table, default 3)
+  const maxSessionsRow = db.exec(`SELECT max_sessions FROM agents WHERE id = ${agentId}`)
+  const maxSessions = maxSessionsRow[0]?.values[0]?.[0] ?? 3
   const activeRow = db.exec(
     `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'started'`
   )
   const activeCount = activeRow[0].values[0][0]
-  if (activeCount >= MAX_PARALLEL_SESSIONS) {
+  if (activeCount >= maxSessions) {
     db.close()
     console.error(
-      `ERREUR: ${agent} a déjà ${activeCount} session(s) active(s) (max ${MAX_PARALLEL_SESSIONS}). Terminer une session avant d'en ouvrir une nouvelle.`
+      `ERREUR: ${agent} a déjà ${activeCount} session(s) active(s) (max ${maxSessions}). Terminer une session avant d'en ouvrir une nouvelle.`
     )
     process.exit(2)
   }

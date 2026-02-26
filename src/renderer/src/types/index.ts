@@ -21,6 +21,8 @@ export interface Agent {
   auto_launch: number
   /** Permission mode for Claude Code launches: 'default' (approval prompts) or 'auto' (--dangerously-skip-permissions). */
   permission_mode: string | null
+  /** Maximum number of parallel active sessions for this agent. DEFAULT 3. */
+  max_sessions: number
   created_at: string
   /** Session statut (English, migrated from French in T329). */
   session_statut?: 'started' | 'completed' | 'blocked' | null
