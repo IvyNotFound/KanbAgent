@@ -52,6 +52,7 @@ const mockElectronAPI = {
   setSessionConvId: vi.fn().mockResolvedValue(undefined),
   getTaskAssignees: vi.fn().mockResolvedValue({ success: true, assignees: [] }),
   setTaskAssignees: vi.fn().mockResolvedValue({ success: true }),
+  getTaskLinks: vi.fn().mockResolvedValue({ success: true, links: [] }),
   tasksGetArchived: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
   tasksUpdateStatus: vi.fn().mockResolvedValue({ success: true }),
   deleteAgent: vi.fn().mockResolvedValue({ success: true, hasHistory: false }),

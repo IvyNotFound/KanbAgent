@@ -64,6 +64,13 @@
   --md-hr: #3f3f46;
 }
 
+/* ── Dev mode — slightly purple surface tint to distinguish dev from prod ──── */
+.dark.dev-mode {
+  --surface-base:      #090611;  /* zinc-950 + purple tint */
+  --surface-primary:   #0d0a14;  /* zinc-900 + purple tint */
+  --surface-secondary: #16112a;  /* zinc-800 + purple tint */
+}
+
 @theme inline {
   --color-surface-base: var(--surface-base);
   --color-surface-primary: var(--surface-primary);

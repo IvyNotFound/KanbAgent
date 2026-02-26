@@ -22,6 +22,11 @@ if ((localStorage.getItem('theme') || 'dark') === 'dark') {
   document.documentElement.classList.remove('dark')
 }
 
+// Dev mode indicator: slightly purple background to distinguish dev from prod
+if (import.meta.env.DEV) {
+  document.documentElement.classList.add('dev-mode')
+}
+
 const app = createApp(App)
 app.use(createPinia())
 app.use(i18n)
