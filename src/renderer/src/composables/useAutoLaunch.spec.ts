@@ -18,7 +18,7 @@ const api = {
   buildAgentPrompt: vi.fn().mockResolvedValue('final prompt'),
   terminalWrite: vi.fn().mockResolvedValue(undefined),
   terminalKill: vi.fn().mockResolvedValue(undefined),
-  // queryDb: returns a terminé session by default (used by scheduleClose poller)
+  // queryDb: returns a completed session by default (used by scheduleClose poller)
   queryDb: vi.fn().mockResolvedValue([{ id: 1 }]),
 }
 
@@ -62,7 +62,7 @@ describe('composables/useAutoLaunch', () => {
     testIndex++
     vi.setSystemTime(new Date(2026, 0, 1, 0, testIndex * 10, 0))
 
-    // Default: queryDb returns a terminé session (agent is done, safe to close)
+    // Default: queryDb returns a completed session (agent is done, safe to close)
     api.queryDb.mockResolvedValue([{ id: 1 }])
 
     tasks = ref<Task[]>([])
@@ -103,7 +103,7 @@ describe('composables/useAutoLaunch', () => {
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
   })
 
-  it('should schedule close when task transitions to done (polls DB for terminé)', async () => {
+  it('should schedule close when task transitions to done (polls DB for completed)', async () => {
     useAutoLaunch({ tasks, agents, dbPath })
 
     // Seed with in_progress task
@@ -126,7 +126,7 @@ describe('composables/useAutoLaunch', () => {
     // Advance timers to fire the immediate 0ms poll, flush promises
     await vi.advanceTimersByTimeAsync(1)
 
-    // Ctrl+C should have been sent (terminé session found in DB)
+    // Ctrl+C should have been sent (completed session found in DB)
     expect(api.terminalWrite).toHaveBeenCalledWith('pty-123', '\x03')
 
     // Advance past kill delay (2s)
@@ -135,8 +135,8 @@ describe('composables/useAutoLaunch', () => {
     expect(api.terminalKill).toHaveBeenCalledWith('pty-123')
   })
 
-  it('should wait for terminé before closing (no early close when session still active)', async () => {
-    // queryDb returns no terminé session (agent still running)
+  it('should wait for completed before closing (no early close when session still active)', async () => {
+    // queryDb returns no completed session (agent still running)
     api.queryDb.mockResolvedValue([])
 
     useAutoLaunch({ tasks, agents, dbPath })
@@ -154,23 +154,23 @@ describe('composables/useAutoLaunch', () => {
     tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
     await nextTick()
 
-    // Poll fires — but no terminé session yet
+    // Poll fires — but no completed session yet
     await vi.advanceTimersByTimeAsync(1)
     expect(api.terminalWrite).not.toHaveBeenCalled()
 
-    // More polls fire — still no terminé
+    // More polls fire — still no completed
     await vi.advanceTimersByTimeAsync(5_000)
     expect(api.terminalWrite).not.toHaveBeenCalled()
 
-    // Session becomes terminé
+    // Session becomes completed
     api.queryDb.mockResolvedValue([{ id: 42 }])
     await vi.advanceTimersByTimeAsync(5_000)
 
     expect(api.terminalWrite).toHaveBeenCalledWith('pty-waiting', '\x03')
   })
 
-  it('should force-close after fallback timeout even if session never terminates', async () => {
-    // Session never becomes terminé
+  it('should force-close after fallback timeout even if session never completes', async () => {
+    // Session never becomes completed
     api.queryDb.mockResolvedValue([])
 
     useAutoLaunch({ tasks, agents, dbPath })

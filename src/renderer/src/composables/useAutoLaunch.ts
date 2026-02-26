@@ -3,7 +3,7 @@
  *
  * Watches task changes and:
  * - Closes the terminal when the task transitions to 'done', polling the DB
- *   until the agent session reaches statut='terminé' (Option B — robust).
+ *   until the agent session reaches statut='completed' (Option B — robust).
  *   Falls back to force-close after FALLBACK_CLOSE_MS if the session never
  *   terminates on its own.
  * - Launches a review session when done-task count reaches threshold (T341)
@@ -23,7 +23,7 @@ import type { Task, Agent } from '@renderer/types'
 /** How often (ms) to poll the DB for agent session status after task goes done */
 const POLL_INTERVAL_MS = 5_000
 
-/** Fallback delay (ms): force-close terminal if session never reaches 'terminé' */
+/** Fallback delay (ms): force-close terminal if session never reaches 'completed' */
 const FALLBACK_CLOSE_MS = 5 * 60 * 1000
 
 /** Delay (ms) between Ctrl+C and terminalKill */
@@ -139,7 +139,7 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     try {
       const rows = await window.electronAPI.queryDb(
         path,
-        `SELECT id FROM sessions WHERE agent_id = ? AND statut = 'terminé' AND ended_at >= datetime('now', '-10 minutes') ORDER BY id DESC LIMIT 1`,
+        `SELECT id FROM sessions WHERE agent_id = ? AND statut = 'completed' AND ended_at >= datetime('now', '-10 minutes') ORDER BY id DESC LIMIT 1`,
         [agentId]
       ) as { id: number }[]
       if (rows.length > 0) {
