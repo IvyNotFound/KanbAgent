@@ -26,6 +26,15 @@ function hash(name: string): number {
   return Math.abs(h)
 }
 
+/** Maximum entries per cache Map before FIFO eviction kicks in. */
+const CACHE_MAX = 100
+
+/** Insert into a bounded Map, evicting the oldest entry when at capacity. */
+function cacheSet<V>(map: Map<string, V>, key: string, value: V): void {
+  if (map.size >= CACHE_MAX) map.delete(map.keys().next().value as string)
+  map.set(key, value)
+}
+
 const hueCache = new Map<string, number>()
 const satCache = new Map<string, number>()
 
@@ -72,7 +81,7 @@ export function agentHue(name: string): number {
   let hue = hueCache.get(name)
   if (hue === undefined) {
     hue = hash(name) % 360
-    hueCache.set(name, hue)
+    cacheSet(hueCache, name, hue)
   }
   return hue
 }
@@ -88,7 +97,7 @@ function agentSat(name: string): number {
   if (sat === undefined) {
     const SAT_STEPS = [55, 65, 75, 85]
     sat = SAT_STEPS[(hash(name) >> 9) % SAT_STEPS.length]
-    satCache.set(name, sat)
+    cacheSet(satCache, name, sat)
   }
   return sat
 }
@@ -104,7 +113,7 @@ export function agentFg(name: string): string {
     const h = agentHue(name)
     const s = agentSat(name)
     v = isDark() ? `hsl(${h}, ${s}%, 68%)` : `hsl(${h}, ${Math.min(s, 70)}%, 38%)`
-    agentFgCache.set(name, v)
+    cacheSet(agentFgCache, name, v)
   }
   return v
 }
@@ -122,7 +131,7 @@ export function agentBg(name: string): string {
     const sDark = Math.round(s * 0.58)
     const sLight = Math.round(s * 0.72)
     v = isDark() ? `hsl(${h}, ${sDark}%, 18%)` : `hsl(${h}, ${sLight}%, 92%)`
-    agentBgCache.set(name, v)
+    cacheSet(agentBgCache, name, v)
   }
   return v
 }
@@ -138,7 +147,7 @@ export function agentBorder(name: string): string {
     const h = agentHue(name)
     const s = Math.round(agentSat(name) * 0.58)
     v = isDark() ? `hsl(${h}, ${s}%, 32%)` : `hsl(${h}, ${s}%, 78%)`
-    agentBorderCache.set(name, v)
+    cacheSet(agentBorderCache, name, v)
   }
   return v
 }
@@ -156,7 +165,7 @@ export function perimeterFg(name: string): string {
     const sDark = Math.round(s * 0.86)
     const sLight = Math.round(s * 0.79)
     v = isDark() ? `hsl(${h}, ${sDark}%, 70%)` : `hsl(${h}, ${sLight}%, 35%)`
-    perimeterFgCache.set(name, v)
+    cacheSet(perimeterFgCache, name, v)
   }
   return v
 }
@@ -174,7 +183,7 @@ export function perimeterBg(name: string): string {
     const sDark = Math.round(s * 0.43)
     const sLight = Math.round(s * 0.57)
     v = isDark() ? `hsl(${h}, ${sDark}%, 15%)` : `hsl(${h}, ${sLight}%, 93%)`
-    perimeterBgCache.set(name, v)
+    cacheSet(perimeterBgCache, name, v)
   }
   return v
 }
@@ -190,7 +199,7 @@ export function perimeterBorder(name: string): string {
     const h = agentHue(name)
     const s = Math.round(agentSat(name) * 0.43)
     v = isDark() ? `hsl(${h}, ${s}%, 27%)` : `hsl(${h}, ${s}%, 80%)`
-    perimeterBorderCache.set(name, v)
+    cacheSet(perimeterBorderCache, name, v)
   }
   return v
 }
