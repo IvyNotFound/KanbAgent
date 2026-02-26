@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
+## [0.7.0] - 2026-02-26
+
+### Added
+- **Multi-agent assignments:** Multiple agents per task with primary/support/reviewer roles — schema migration v4, IPC `task:getAssignees`/`task:setAssignees`, TaskCard avatars (T412, T414, T415)
+- **Delete agent:** Right-click delete with full cascade (sessions, locks, tasks) + confirmation dialog (T422, T437)
+- **Permission mode per agent:** `--dangerously-skip-permissions` opt-in per agent with visible warning in UI (T426)
+- **Scope selector in AgentEditModal:** Dropdown to assign/change agent scope from the edit modal (T423)
+- **Add scope from AgentEditModal:** Create new perimetres inline without leaving the modal (T438)
+- **Auto-launch terminals:** Parameterizable per agent — configurable per-agent auto-launch behavior (T411)
+- **Archive pagination:** Paginated archive view (50 tasks/page), excluded from main refresh for perf (T429)
+
+### UX
+- **Archive cards:** Visual redesign of archive task cards (T427)
+- **AgentLogsView:** Full visual redesign of the agent logs view (T430)
+
+### Fixed
+- **dbstart:** Reject purely numeric agent names (exit 3) (T444)
+- **dbstart:** Auto-release zombie session locks on startup (T442)
+- **dbstart:** Use `en_cours` status for parallel session limit check (T441)
+- **auto-close:** DB polling for terminal close — give agents time to write exit comment (T443)
+- **workflow:** Invert exit comment / done order — comment written before `statut=done` (T440)
+- **store:** Re-register dbPath allowlist on app restart (T421)
+
+### Tests
+- `task:getAssignees` / `task:setAssignees` IPC handlers (T416)
+- Multi-agent UI components (T417)
+- `task:setAssignees` in-memory DB tests (T418)
+- `add-perimetre` IPC handler (T424)
+
+### Build
+- **electron-builder.yml:** Windows build configuration (NSIS installer, icon, compression) (T428)
+- **App icon:** New iconcraft icon (741706 bytes, build/icon.png) (T432)
+- **installer.nsh:** NSIS custom hooks — add/remove `resources\bin` from system PATH (sqlite3.exe)
+
+### Docs
+- CONTRIBUTING.md: translated to English, updated IPC handlers table for v0.7 (T431)
+- README.md: translated to English, updated features list and version badge to 0.7.0
+
 ## [0.6.0] - 2026-02-26
 
 ### Security
@@ -226,7 +264,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial prototype with Tauri
 - Basic task board view
 
-[Unreleased]: https://github.com/IvyNotFound/agent-viewer/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/IvyNotFound/agent-viewer/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/IvyNotFound/agent-viewer/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/IvyNotFound/agent-viewer/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/IvyNotFound/agent-viewer/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/IvyNotFound/agent-viewer/compare/v0.4.0...v0.5.0
