@@ -58,24 +58,24 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
   >
     <!-- Overlay -->
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       @click.self="emit('close')"
     >
       <!-- Card -->
-      <div class="bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl w-80 p-6 flex flex-col gap-5">
+      <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl w-80 p-6 flex flex-col gap-5">
 
         <!-- Header -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center shrink-0">
-              <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-zinc-300">
+            <div class="w-8 h-8 rounded-lg bg-surface-secondary flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-content-tertiary">
                 <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
               </svg>
             </div>
-            <h2 class="text-sm font-semibold text-zinc-100">Projet actif</h2>
+            <h2 class="text-sm font-semibold text-content-primary">Projet actif</h2>
           </div>
           <button
-            class="w-6 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700 transition-colors"
+            class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors"
             title="Fermer"
             @click="emit('close')"
           >
@@ -87,12 +87,12 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
 
         <!-- Project info -->
         <div class="space-y-1">
-          <p class="text-sm font-medium text-zinc-100 truncate" :title="store.projectPath ?? undefined">
+          <p class="text-sm font-medium text-content-primary truncate" :title="store.projectPath ?? undefined">
             {{ projectName }}
           </p>
           <p
             v-if="store.dbPath"
-            class="text-xs text-zinc-400 font-mono truncate"
+            class="text-xs text-content-muted font-mono truncate"
             :title="store.dbPath"
           >
             {{ store.dbPath }}
@@ -110,7 +110,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
         <!-- Actions -->
         <div class="flex flex-col gap-2">
           <button
-            class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-zinc-700 hover:bg-zinc-600 text-zinc-100 transition-colors"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-surface-secondary hover:bg-surface-tertiary text-content-primary transition-colors"
             @click="handleChangeProject"
           >
             <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
@@ -131,7 +131,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
         </div>
 
         <!-- Version -->
-        <p class="text-[11px] text-zinc-600 font-mono text-right">v{{ appVersion }}</p>
+        <p class="text-[11px] text-content-faint font-mono text-right">v{{ appVersion }}</p>
       </div>
     </div>
   </Transition>
