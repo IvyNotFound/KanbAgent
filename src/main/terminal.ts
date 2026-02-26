@@ -609,7 +609,7 @@ export function registerTerminalHandlers(): void {
     let convIdBytesRead = 0
     const CONV_ID_SCAN_LIMIT = 8192
 
-    pty.onData(data => {
+    const onDataDisposable = pty.onData(data => {
       if (event.sender.isDestroyed()) {
         // Renderer is gone but PTY is still running → kill it gracefully.
         gracefulKillPty(id)
@@ -651,6 +651,7 @@ export function registerTerminalHandlers(): void {
     })
 
     pty.onExit(({ exitCode }) => {
+      onDataDisposable.dispose()
       ptys.delete(id)
       webContentsPtys.get(wcId)?.delete(id)
       // Clean up temp script file written for system prompt injection (T278)

@@ -12,8 +12,9 @@ vi.mock('electron', () => ({
 }))
 
 // Mock node-pty — provide default export for CJS/ESM interop
+const mockDispose = vi.fn()
 const mockPty = {
-  onData: vi.fn(),
+  onData: vi.fn().mockReturnValue({ dispose: mockDispose }),
   onExit: vi.fn(),
   write: vi.fn(),
   resize: vi.fn(),
@@ -1320,6 +1321,36 @@ describe('terminal utilities', () => {
       expect(evt.sender.send).toHaveBeenCalledWith(`terminal:exit:${id}`, expect.objectContaining({
         canResume: true, resumeConvId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       }))
+    })
+  })
+
+  // ── T563: onData disposable cleanup on natural exit ─────────────────────────
+
+  describe('pty.onData disposable cleanup on natural exit (T563)', () => {
+    it('should call dispose() on the onData listener when PTY exits naturally', async () => {
+      mockDispose.mockClear()
+
+      const { find } = await getHandlers()
+      const evt = makeEvent(200)
+      snapshotPtyCallbacks()
+      await find('terminal:create')(evt, 80, 24)
+
+      ;lastOnExit()({ exitCode: 0 })
+
+      expect(mockDispose).toHaveBeenCalled()
+    })
+
+    it('should call dispose() on onData listener even on crash exit (exitCode !== 0)', async () => {
+      mockDispose.mockClear()
+
+      const { find } = await getHandlers()
+      const evt = makeEvent(201)
+      snapshotPtyCallbacks()
+      await find('terminal:create')(evt, 80, 24, undefined, undefined, 'prompt', 'start', undefined)
+
+      ;lastOnExit()({ exitCode: 137 })
+
+      expect(mockDispose).toHaveBeenCalled()
     })
   })
 
