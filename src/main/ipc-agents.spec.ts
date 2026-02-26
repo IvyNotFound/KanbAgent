@@ -16,10 +16,18 @@ let dbMtime = 1000
 
 // ── Mock fs/promises ─────────────────────────────────────────────────────────
 // writeDb: readFile → dbBuffer, writeFile → update dbBuffer, stat → {mtimeMs}
+// jsonlMockContent: used by tests to inject JSONL content for .jsonl reads
+let jsonlMockContent: string | Error | null = null
+
+// readFileMockImpl uses vi.hoisted so it is available when vi.mock is hoisted
+const { readFileMockImpl } = vi.hoisted(() => ({
+  readFileMockImpl: vi.fn(),
+}))
+
 vi.mock('fs/promises', () => ({
   default: {
     stat: vi.fn(async () => ({ mtimeMs: dbMtime })),
-    readFile: vi.fn(async () => dbBuffer),
+    readFile: readFileMockImpl,
     writeFile: vi.fn(async (_path: string, data: Buffer) => {
       dbBuffer = data
       dbMtime += 1
@@ -33,7 +41,7 @@ vi.mock('fs/promises', () => ({
     unlink: vi.fn().mockResolvedValue(undefined),
   },
   stat: vi.fn(async () => ({ mtimeMs: dbMtime })),
-  readFile: vi.fn(async () => dbBuffer),
+  readFile: readFileMockImpl,
   writeFile: vi.fn(async (_path: string, data: Buffer) => {
     dbBuffer = data
     dbMtime += 1
@@ -85,6 +93,9 @@ vi.mock('./claude-md', () => ({
 import { getSqlJs, registerDbPath, clearDbCacheEntry, queryLive, writeDb } from './db'
 import { registerAgentHandlers } from './ipc-agents'
 
+// readFileMock: alias for readFileMockImpl used in T581 session token tests
+const readFileMock = readFileMockImpl
+
 // ── Schema builder ────────────────────────────────────────────────────────────
 async function buildSchema(): Promise<any> {
   const sqlJs = await getSqlJs()
@@ -133,7 +144,11 @@ async function buildSchema(): Promise<any> {
     updated_at TEXT,
     statut TEXT,
     summary TEXT,
-    claude_conv_id TEXT
+    claude_conv_id TEXT,
+    tokens_in INTEGER NOT NULL DEFAULT 0,
+    tokens_out INTEGER NOT NULL DEFAULT 0,
+    tokens_cache_read INTEGER NOT NULL DEFAULT 0,
+    tokens_cache_write INTEGER NOT NULL DEFAULT 0
   )`)
 
   db.run(`CREATE TABLE task_comments (
@@ -200,6 +215,23 @@ async function buildSchema(): Promise<any> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_task_agents_task_id ON task_agents(task_id)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_task_agents_agent_id ON task_agents(agent_id)`)
 
+  db.run(`CREATE TABLE agent_groups (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`)
+
+  db.run(`CREATE TABLE agent_group_members (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id   INTEGER NOT NULL REFERENCES agent_groups(id),
+    agent_id   INTEGER NOT NULL REFERENCES agents(id),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(agent_id)
+  )`)
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_agm_group ON agent_group_members(group_id)`)
+
   return db
 }
 
@@ -208,8 +240,19 @@ const TEST_DB_PATH = '/test/ipc-agents-test.db'
 // ── Test setup ────────────────────────────────────────────────────────────────
 beforeEach(async () => {
   vi.clearAllMocks()
+  jsonlMockContent = null
   clearDbCacheEntry(TEST_DB_PATH)
   dbMtime = 1000
+
+  // Restore readFileMockImpl implementation after clearAllMocks resets it
+  readFileMockImpl.mockImplementation(async (path: string) => {
+    if (typeof path === 'string' && path.endsWith('.jsonl')) {
+      if (jsonlMockContent instanceof Error) throw jsonlMockContent
+      if (jsonlMockContent !== null) return jsonlMockContent
+      throw new Error('ENOENT: no such file')
+    }
+    return dbBuffer
+  })
 
   // Build fresh DB and export to shared buffer
   const db = await buildSchema()
@@ -1012,5 +1055,415 @@ describe('agent:duplicate handler', () => {
 
     const afterRows = await queryLive(TEST_DB_PATH, 'SELECT COUNT(*) as n FROM agents', []) as Array<{ n: number }>
     expect(Number(afterRows[0].n)).toBe(before + 1)
+  })
+})
+
+// ── Tests: agent-groups handlers (T580) ──────────────────────────────────────
+
+async function insertGroup(name: string): Promise<number> {
+  const result = await handlers['agent-groups:create'](null, TEST_DB_PATH, name) as { success: boolean; group?: { id: number } }
+  if (!result.success || !result.group) throw new Error(`Failed to create group '${name}'`)
+  return result.group.id
+}
+
+describe('agent-groups:list', () => {
+  it('returns { success: true, groups: [] } for empty DB', async () => {
+    const result = await handlers['agent-groups:list'](null, TEST_DB_PATH) as { success: boolean; groups: unknown[] }
+    expect(result.success).toBe(true)
+    expect(result.groups).toEqual([])
+  })
+
+  it('returns groups with members after create + setMember', async () => {
+    const agentId = await insertAgent('member-agent')
+    const groupId = await insertGroup('Team Alpha')
+    await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, groupId, 0)
+
+    const result = await handlers['agent-groups:list'](null, TEST_DB_PATH) as {
+      success: boolean; groups: Array<{ id: number; name: string; members: Array<{ agent_id: number }> }>
+    }
+    expect(result.success).toBe(true)
+    expect(result.groups).toHaveLength(1)
+    expect(result.groups[0].name).toBe('Team Alpha')
+    expect(result.groups[0].members).toHaveLength(1)
+    expect(result.groups[0].members[0].agent_id).toBe(agentId)
+  })
+
+  it('returns { success: false, error: DB_PATH_NOT_ALLOWED } for unregistered dbPath', async () => {
+    const result = await handlers['agent-groups:list'](null, '/evil/unregistered.db') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+})
+
+describe('agent-groups:create', () => {
+  it('creates a group and returns { success: true, group: { id, name, sort_order, created_at } }', async () => {
+    const result = await handlers['agent-groups:create'](null, TEST_DB_PATH, 'My Group') as {
+      success: boolean; group?: { id: number; name: string; sort_order: number; created_at: string }
+    }
+    expect(result.success).toBe(true)
+    expect(result.group).toBeDefined()
+    expect(result.group!.name).toBe('My Group')
+    expect(typeof result.group!.id).toBe('number')
+    expect(typeof result.group!.sort_order).toBe('number')
+    expect(typeof result.group!.created_at).toBe('string')
+  })
+
+  it('returns { success: false, error: "Invalid group name" } for empty name', async () => {
+    const result = await handlers['agent-groups:create'](null, TEST_DB_PATH, '') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid group name')
+  })
+
+  it('returns { success: false, error: "Invalid group name" } for whitespace-only name', async () => {
+    const result = await handlers['agent-groups:create'](null, TEST_DB_PATH, '   ') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid group name')
+  })
+
+  it('returns { success: false, error: "Invalid group name" } for non-string name', async () => {
+    const result = await handlers['agent-groups:create'](null, TEST_DB_PATH, 42 as unknown as string) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid group name')
+  })
+
+  it('returns { success: false, error: DB_PATH_NOT_ALLOWED } for unregistered dbPath', async () => {
+    const result = await handlers['agent-groups:create'](null, '/evil/db.db', 'G') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+
+  it('allows duplicate names (no UNIQUE constraint on agent_groups.name)', async () => {
+    await handlers['agent-groups:create'](null, TEST_DB_PATH, 'DupeGroup')
+    const result = await handlers['agent-groups:create'](null, TEST_DB_PATH, 'DupeGroup') as { success: boolean; group?: { id: number } }
+    // Schema has no UNIQUE on name — duplicates are allowed, two distinct rows inserted
+    expect(result.success).toBe(true)
+    expect(result.group).toBeDefined()
+
+    const rows = await queryLive(TEST_DB_PATH, "SELECT id FROM agent_groups WHERE name = 'DupeGroup'", []) as unknown[]
+    expect(rows).toHaveLength(2)
+  })
+})
+
+describe('agent-groups:rename', () => {
+  it('renames a group successfully → { success: true }', async () => {
+    const groupId = await insertGroup('OldName')
+    const result = await handlers['agent-groups:rename'](null, TEST_DB_PATH, groupId, 'NewName') as { success: boolean }
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT name FROM agent_groups WHERE id = ?', [groupId]) as Array<{ name: string }>
+    expect(rows[0].name).toBe('NewName')
+  })
+
+  it('returns { success: false, error: "Invalid groupId" } for float groupId', async () => {
+    const result = await handlers['agent-groups:rename'](null, TEST_DB_PATH, 1.5, 'X') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid groupId')
+  })
+
+  it('returns { success: false, error: "Invalid groupId" } for string groupId', async () => {
+    const result = await handlers['agent-groups:rename'](null, TEST_DB_PATH, 'abc' as unknown as number, 'X') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid groupId')
+  })
+
+  it('returns { success: false, error: "Invalid group name" } for empty name', async () => {
+    const groupId = await insertGroup('ValidGroup')
+    const result = await handlers['agent-groups:rename'](null, TEST_DB_PATH, groupId, '') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid group name')
+  })
+
+  it('returns { success: false, error: DB_PATH_NOT_ALLOWED } for unregistered dbPath', async () => {
+    const result = await handlers['agent-groups:rename'](null, '/evil/db.db', 1, 'X') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+})
+
+describe('agent-groups:delete', () => {
+  it('deletes a group successfully → { success: true }', async () => {
+    const groupId = await insertGroup('ToDelete')
+    const result = await handlers['agent-groups:delete'](null, TEST_DB_PATH, groupId) as { success: boolean }
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT id FROM agent_groups WHERE id = ?', [groupId]) as unknown[]
+    expect(rows).toHaveLength(0)
+  })
+
+  it('also deletes members when group is deleted', async () => {
+    const agentId = await insertAgent('member-to-remove')
+    const groupId = await insertGroup('GroupWithMember')
+    await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, groupId, 0)
+
+    await handlers['agent-groups:delete'](null, TEST_DB_PATH, groupId)
+
+    const members = await queryLive(TEST_DB_PATH, 'SELECT id FROM agent_group_members WHERE group_id = ?', [groupId]) as unknown[]
+    expect(members).toHaveLength(0)
+  })
+
+  it('returns { success: false, error: "Invalid groupId" } for float groupId', async () => {
+    const result = await handlers['agent-groups:delete'](null, TEST_DB_PATH, 2.7) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid groupId')
+  })
+
+  it('returns { success: false, error: "Invalid groupId" } for string groupId', async () => {
+    const result = await handlers['agent-groups:delete'](null, TEST_DB_PATH, 'bad' as unknown as number) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid groupId')
+  })
+
+  it('returns { success: false, error: DB_PATH_NOT_ALLOWED } for unregistered dbPath', async () => {
+    const result = await handlers['agent-groups:delete'](null, '/evil/db.db', 1) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+})
+
+describe('agent-groups:setMember', () => {
+  it('assigns agent to group → { success: true } and row exists in agent_group_members', async () => {
+    const agentId = await insertAgent('set-member-agent')
+    const groupId = await insertGroup('SetMemberGroup')
+
+    const result = await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, groupId, 0) as { success: boolean }
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT group_id FROM agent_group_members WHERE agent_id = ?', [agentId]) as Array<{ group_id: number }>
+    expect(rows).toHaveLength(1)
+    expect(rows[0].group_id).toBe(groupId)
+  })
+
+  it('setMember twice same agent/group → only 1 row (idempotent)', async () => {
+    const agentId = await insertAgent('idempotent-agent')
+    const groupId = await insertGroup('IdempotentGroup')
+
+    await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, groupId, 0)
+    await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, groupId, 1)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT id FROM agent_group_members WHERE agent_id = ?', [agentId]) as unknown[]
+    expect(rows).toHaveLength(1)
+  })
+
+  it('groupId = null removes agent from all groups', async () => {
+    const agentId = await insertAgent('remove-from-group-agent')
+    const groupId = await insertGroup('RemoveGroup')
+    await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, groupId, 0)
+
+    const result = await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, null) as { success: boolean }
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT id FROM agent_group_members WHERE agent_id = ?', [agentId]) as unknown[]
+    expect(rows).toHaveLength(0)
+  })
+
+  it('returns { success: false, error: "Invalid agentId" } for float agentId', async () => {
+    const result = await handlers['agent-groups:setMember'](null, TEST_DB_PATH, 1.5, null) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid agentId')
+  })
+
+  it('returns { success: false, error: "Invalid groupId" } for non-null non-integer groupId', async () => {
+    const agentId = await insertAgent('bad-group-agent')
+    const result = await handlers['agent-groups:setMember'](null, TEST_DB_PATH, agentId, 'bad' as unknown as number) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid groupId')
+  })
+
+  it('returns { success: false, error: DB_PATH_NOT_ALLOWED } for unregistered dbPath', async () => {
+    const result = await handlers['agent-groups:setMember'](null, '/evil/db.db', 1, null) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+})
+
+describe('agent-groups:reorder', () => {
+  it('reorders groups → sort_order updated in DB', async () => {
+    const g1 = await insertGroup('Reorder-A')
+    const g2 = await insertGroup('Reorder-B')
+    const g3 = await insertGroup('Reorder-C')
+
+    // Reverse order: [g3, g1, g2]
+    const result = await handlers['agent-groups:reorder'](null, TEST_DB_PATH, [g3, g1, g2]) as { success: boolean }
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT id, sort_order FROM agent_groups ORDER BY sort_order', []) as Array<{ id: number; sort_order: number }>
+    expect(rows[0].id).toBe(g3)
+    expect(rows[1].id).toBe(g1)
+    expect(rows[2].id).toBe(g2)
+  })
+
+  it('empty array → { success: true } (nothing to do)', async () => {
+    const result = await handlers['agent-groups:reorder'](null, TEST_DB_PATH, []) as { success: boolean }
+    expect(result.success).toBe(true)
+  })
+
+  it('returns { success: false, error } for non-array input', async () => {
+    const result = await handlers['agent-groups:reorder'](null, TEST_DB_PATH, 'not-array' as unknown as number[]) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('groupIds must be an array of integers')
+  })
+
+  it('returns { success: false, error } for array with non-integer values', async () => {
+    const result = await handlers['agent-groups:reorder'](null, TEST_DB_PATH, [1, 2.5, 3]) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('groupIds must be an array of integers')
+  })
+
+  it('returns { success: false, error: DB_PATH_NOT_ALLOWED } for unregistered dbPath', async () => {
+    const result = await handlers['agent-groups:reorder'](null, '/evil/db.db', [1]) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+})
+
+// ── Tests: session token handlers (T581) ─────────────────────────────────────
+
+const VALID_CONV_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+
+// Helper JSONL with 2 finalized assistant messages
+const VALID_JSONL = [
+  JSON.stringify({ type: 'assistant', message: { stop_reason: 'tool_use', usage: { input_tokens: 100, output_tokens: 50, cache_read_input_tokens: 10, cache_creation_input_tokens: 5 } } }),
+  JSON.stringify({ type: 'assistant', message: { stop_reason: null, usage: { input_tokens: 99, output_tokens: 1 } } }), // streaming start — should be skipped
+  JSON.stringify({ type: 'assistant', message: { stop_reason: 'end_turn', usage: { input_tokens: 200, output_tokens: 80, cache_read_input_tokens: 0, cache_creation_input_tokens: 20 } } }),
+  'not-valid-json-line', // malformed — should be skipped
+].join('\n')
+
+async function insertSession(agentId: number, convId?: string): Promise<number> {
+  await writeDb<void>(TEST_DB_PATH, (db) => {
+    db.run('INSERT INTO sessions (agent_id, statut, claude_conv_id) VALUES (?, ?, ?)', [agentId, 'completed', convId ?? null])
+  })
+  const rows = await queryLive(TEST_DB_PATH, 'SELECT id FROM sessions WHERE agent_id = ? ORDER BY id DESC LIMIT 1', [agentId]) as Array<{ id: number }>
+  return rows[0].id
+}
+
+describe('session:parseTokens (T581)', () => {
+  it('returns DB_PATH_NOT_ALLOWED for unregistered dbPath', async () => {
+    const result = await handlers['session:parseTokens'](null, '/evil/db.db', VALID_CONV_ID) as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+
+  it('returns { success: false } for empty convId', async () => {
+    const result = await handlers['session:parseTokens'](null, TEST_DB_PATH, '') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBeDefined()
+  })
+
+  it('returns { success: false, error: "Invalid convId format" } for non-UUID convId', async () => {
+    const result = await handlers['session:parseTokens'](null, TEST_DB_PATH, 'not-a-uuid') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid convId format')
+  })
+
+  it('parses valid JSONL and returns summed token counts', async () => {
+    const agentId = await insertAgent('parse-tokens-agent')
+    await insertSession(agentId, VALID_CONV_ID)
+    ;(readFileMock as ReturnType<typeof vi.fn>).mockResolvedValueOnce(VALID_JSONL)
+
+    const result = await handlers['session:parseTokens'](null, TEST_DB_PATH, VALID_CONV_ID, '/mnt/c/project') as {
+      success: boolean; tokensIn?: number; tokensOut?: number; cacheRead?: number; cacheWrite?: number
+    }
+    expect(result.success).toBe(true)
+    // streaming start (stop_reason=null) skipped → only 2 finalized messages counted
+    expect(result.tokensIn).toBe(300)   // 100 + 200
+    expect(result.tokensOut).toBe(130)  // 50 + 80
+    expect(result.cacheRead).toBe(10)   // 10 + 0
+    expect(result.cacheWrite).toBe(25)  // 5 + 20
+  })
+
+  it('returns { success: false } when JSONL file not found', async () => {
+    ;(readFileMock as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('ENOENT: no such file'))
+    const result = await handlers['session:parseTokens'](null, TEST_DB_PATH, VALID_CONV_ID, '/mnt/c/project') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('ENOENT')
+  })
+
+  it('ignores malformed JSON lines without crashing', async () => {
+    const jsonlWithGarbage = 'garbage-line\n' + JSON.stringify({ type: 'assistant', message: { stop_reason: 'end_turn', usage: { input_tokens: 10, output_tokens: 5 } } })
+    const agentId = await insertAgent('malformed-jsonl-agent')
+    await insertSession(agentId, VALID_CONV_ID)
+    ;(readFileMock as ReturnType<typeof vi.fn>).mockResolvedValueOnce(jsonlWithGarbage)
+
+    const result = await handlers['session:parseTokens'](null, TEST_DB_PATH, VALID_CONV_ID, '/mnt/c/project') as { success: boolean; tokensIn?: number }
+    expect(result.success).toBe(true)
+    expect(result.tokensIn).toBe(10)
+  })
+})
+
+describe('session:syncAllTokens (T581)', () => {
+  it('returns DB_PATH_NOT_ALLOWED for unregistered dbPath', async () => {
+    const result = await handlers['session:syncAllTokens'](null, '/evil/db.db') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+
+  it('returns { success: true, updated: 0 } when no sessions have convId', async () => {
+    const agentId = await insertAgent('sync-no-conv-agent')
+    await insertSession(agentId) // no convId
+
+    const result = await handlers['session:syncAllTokens'](null, TEST_DB_PATH, '/mnt/c/project') as { success: boolean; updated: number }
+    expect(result.success).toBe(true)
+    expect(result.updated).toBe(0)
+  })
+
+  it('updates sessions with convId and nonzero tokens, returns updated count', async () => {
+    const agentId = await insertAgent('sync-tokens-agent')
+    const sessionId = await insertSession(agentId, VALID_CONV_ID)
+    ;(readFileMock as ReturnType<typeof vi.fn>).mockResolvedValueOnce(VALID_JSONL)
+
+    const result = await handlers['session:syncAllTokens'](null, TEST_DB_PATH, '/mnt/c/project') as { success: boolean; updated: number; errors: string[] }
+    expect(result.success).toBe(true)
+    expect(result.updated).toBe(1)
+    expect(result.errors).toHaveLength(0)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT tokens_in FROM sessions WHERE id = ?', [sessionId]) as Array<{ tokens_in: number }>
+    expect(rows[0].tokens_in).toBe(300)
+  })
+
+  it('skips sessions where JSONL file is missing (error captured, not thrown)', async () => {
+    const agentId = await insertAgent('sync-missing-jsonl-agent')
+    await insertSession(agentId, VALID_CONV_ID)
+    ;(readFileMock as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('ENOENT'))
+
+    const result = await handlers['session:syncAllTokens'](null, TEST_DB_PATH, '/mnt/c/project') as { success: boolean; updated: number; errors: string[] }
+    expect(result.success).toBe(true)
+    expect(result.updated).toBe(0)
+    expect(result.errors).toHaveLength(1)
+    expect(result.errors[0]).toContain('ENOENT')
+  })
+})
+
+describe('session:collectTokens (T581)', () => {
+  it('returns DB_PATH_NOT_ALLOWED for unregistered dbPath', async () => {
+    const result = await handlers['session:collectTokens'](null, '/evil/db.db', 'myagent') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('DB_PATH_NOT_ALLOWED')
+  })
+
+  it('returns { success: false } for empty agentName', async () => {
+    const result = await handlers['session:collectTokens'](null, TEST_DB_PATH, '') as { success: boolean; error?: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toBeDefined()
+  })
+
+  it('returns { success: true, tokens: null } when agent has no sessions with convId', async () => {
+    await insertAgent('collect-no-session-agent')
+    const result = await handlers['session:collectTokens'](null, TEST_DB_PATH, 'collect-no-session-agent') as { success: boolean; tokens: unknown }
+    expect(result.success).toBe(true)
+    expect(result.tokens).toBeNull()
+  })
+
+  it('returns aggregated tokens for agent with convId session', async () => {
+    const agentId = await insertAgent('collect-tokens-agent')
+    await insertSession(agentId, VALID_CONV_ID)
+    ;(readFileMock as ReturnType<typeof vi.fn>).mockResolvedValueOnce(VALID_JSONL)
+
+    const result = await handlers['session:collectTokens'](null, TEST_DB_PATH, 'collect-tokens-agent') as {
+      success: boolean; tokens: { tokensIn: number; tokensOut: number } | null
+    }
+    expect(result.success).toBe(true)
+    expect(result.tokens).not.toBeNull()
+    expect(result.tokens!.tokensIn).toBe(300)
+    expect(result.tokens!.tokensOut).toBe(130)
   })
 })
