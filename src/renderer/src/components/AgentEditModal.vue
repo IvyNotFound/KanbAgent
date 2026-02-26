@@ -20,6 +20,7 @@ const permissionMode = ref<'default' | 'auto'>(
 )
 const allowedTools = ref(props.agent.allowed_tools ?? '')
 const autoLaunch = ref(props.agent.auto_launch !== 0)
+const maxSessions = ref(props.agent.max_sessions ?? 3)
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref<string | null>(null)
@@ -89,6 +90,7 @@ async function save() {
       allowedTools: allowedTools.value.trim() || null,
       autoLaunch: autoLaunch.value,
       permissionMode: permissionMode.value,
+      maxSessions: maxSessions.value,
     })
     if (!result.success) {
       error.value = result.error ?? 'Erreur inconnue'
@@ -206,6 +208,21 @@ async function save() {
             </button>
           </div>
 
+          <!-- Max sessions parallèles -->
+          <div>
+            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.maxSessions') }}</label>
+            <input
+              v-model.number="maxSessions"
+              type="number"
+              min="1"
+              max="20"
+              class="w-full bg-surface-secondary border border-edge-default rounded-lg px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+              :class="{ 'border-red-500 focus:ring-red-500 focus:border-red-500': maxSessions < 1 || !Number.isInteger(maxSessions) }"
+            />
+            <p class="text-[10px] text-content-faint mt-1.5">{{ t('agent.maxSessionsNote') }}</p>
+            <p v-if="maxSessions < 1 || !Number.isInteger(maxSessions)" class="text-[10px] text-red-400 mt-1">{{ t('agent.maxSessionsError') }}</p>
+          </div>
+
           <!-- Permission mode -->
           <div>
             <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.permissionMode') }}</label>
@@ -284,7 +301,7 @@ async function save() {
             <button
               class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name), borderWidth: '1px' }"
-              :disabled="saving || deleting || !name.trim()"
+              :disabled="saving || deleting || !name.trim() || maxSessions < 1 || !Number.isInteger(maxSessions)"
               @click="save"
             >{{ saving ? t('common.saving') : t('common.save') }}</button>
           </div>
