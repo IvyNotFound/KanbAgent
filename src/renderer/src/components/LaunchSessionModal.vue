@@ -84,6 +84,12 @@ onMounted(async () => {
   loading.value = false
 })
 
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    emit('close')
+  }
+}
+
 async function launch() {
   launching.value = true
   try {
@@ -143,6 +149,7 @@ async function launch() {
     <div
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       @click.self="emit('close')"
+      @keydown="handleKeydown"
     >
       <!-- Modal -->
       <div class="w-96 bg-surface-primary border border-edge-default rounded-xl shadow-2xl flex flex-col overflow-hidden">
