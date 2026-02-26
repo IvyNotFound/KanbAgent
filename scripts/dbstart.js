@@ -55,8 +55,13 @@ initSqlJs().then((SQL) => {
   const agentId = agentRow[0].values[0][0]
 
   // 3. Check parallel session limit (reads max_sessions from agents table, default 3)
-  const maxSessionsRow = db.exec(`SELECT max_sessions FROM agents WHERE id = ${agentId}`)
-  const maxSessions = maxSessionsRow[0]?.values[0]?.[0] ?? 3
+  // Guard: column may not exist if Electron migration v6 hasn't run yet
+  const hasMaxSessions =
+    db.exec("SELECT COUNT(*) FROM pragma_table_info('agents') WHERE name='max_sessions'")[0]
+      .values[0][0] > 0
+  const maxSessions = hasMaxSessions
+    ? (db.exec(`SELECT max_sessions FROM agents WHERE id = ${agentId}`)[0]?.values[0]?.[0] ?? 3)
+    : 3
   const activeRow = db.exec(
     `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'started'`
   )
