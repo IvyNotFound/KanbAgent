@@ -2,7 +2,7 @@
  * Agent color utilities for agent-viewer.
  *
  * Generates deterministic HSL colors from agent names using a hash function.
- * Each agent always gets the same hue, ensuring consistent visual identity
+ * Each agent always gets the same hue + saturation, ensuring consistent visual identity
  * across the UI (badges, borders, sidebar dots).
  *
  * Theme-aware: returns different lightness/saturation values for dark vs light mode.
@@ -26,6 +26,7 @@ function hash(name: string): number {
 }
 
 const hueCache = new Map<string, number>()
+const satCache = new Map<string, number>()
 
 // Color string caches — keyed by agent/perimeter name, invalidated on theme change.
 const agentFgCache = new Map<string, string>()
@@ -76,6 +77,22 @@ export function agentHue(name: string): number {
 }
 
 /**
+ * Returns a deterministic saturation (55|65|75|85 %) for a given name.
+ * Uses higher bits of the hash to be independent from agentHue.
+ * @param name - Agent or perimeter name.
+ * @returns Saturation value in percent.
+ */
+function agentSat(name: string): number {
+  let sat = satCache.get(name)
+  if (sat === undefined) {
+    const SAT_STEPS = [55, 65, 75, 85]
+    sat = SAT_STEPS[(hash(name) >> 9) % SAT_STEPS.length]
+    satCache.set(name, sat)
+  }
+  return sat
+}
+
+/**
  * Primary foreground color for an agent (text, dots).
  * Dark: bright text (68% L) · Light: darker text (38% L) for contrast on white.
  */
@@ -84,7 +101,8 @@ export function agentFg(name: string): string {
   let v = agentFgCache.get(name)
   if (v === undefined) {
     const h = agentHue(name)
-    v = isDark() ? `hsl(${h}, 70%, 68%)` : `hsl(${h}, 65%, 38%)`
+    const s = agentSat(name)
+    v = isDark() ? `hsl(${h}, ${s}%, 68%)` : `hsl(${h}, ${Math.min(s, 70)}%, 38%)`
     agentFgCache.set(name, v)
   }
   return v
@@ -99,7 +117,10 @@ export function agentBg(name: string): string {
   let v = agentBgCache.get(name)
   if (v === undefined) {
     const h = agentHue(name)
-    v = isDark() ? `hsl(${h}, 40%, 18%)` : `hsl(${h}, 50%, 92%)`
+    const s = agentSat(name)
+    const sDark = Math.round(s * 0.58)
+    const sLight = Math.round(s * 0.72)
+    v = isDark() ? `hsl(${h}, ${sDark}%, 18%)` : `hsl(${h}, ${sLight}%, 92%)`
     agentBgCache.set(name, v)
   }
   return v
@@ -114,7 +135,8 @@ export function agentBorder(name: string): string {
   let v = agentBorderCache.get(name)
   if (v === undefined) {
     const h = agentHue(name)
-    v = isDark() ? `hsl(${h}, 40%, 32%)` : `hsl(${h}, 40%, 78%)`
+    const s = Math.round(agentSat(name) * 0.58)
+    v = isDark() ? `hsl(${h}, ${s}%, 32%)` : `hsl(${h}, ${s}%, 78%)`
     agentBorderCache.set(name, v)
   }
   return v
@@ -129,7 +151,10 @@ export function perimeterFg(name: string): string {
   let v = perimeterFgCache.get(name)
   if (v === undefined) {
     const h = agentHue(name)
-    v = isDark() ? `hsl(${h}, 60%, 70%)` : `hsl(${h}, 55%, 35%)`
+    const s = agentSat(name)
+    const sDark = Math.round(s * 0.86)
+    const sLight = Math.round(s * 0.79)
+    v = isDark() ? `hsl(${h}, ${sDark}%, 70%)` : `hsl(${h}, ${sLight}%, 35%)`
     perimeterFgCache.set(name, v)
   }
   return v
@@ -144,7 +169,10 @@ export function perimeterBg(name: string): string {
   let v = perimeterBgCache.get(name)
   if (v === undefined) {
     const h = agentHue(name)
-    v = isDark() ? `hsl(${h}, 30%, 15%)` : `hsl(${h}, 40%, 93%)`
+    const s = agentSat(name)
+    const sDark = Math.round(s * 0.43)
+    const sLight = Math.round(s * 0.57)
+    v = isDark() ? `hsl(${h}, ${sDark}%, 15%)` : `hsl(${h}, ${sLight}%, 93%)`
     perimeterBgCache.set(name, v)
   }
   return v
@@ -159,7 +187,8 @@ export function perimeterBorder(name: string): string {
   let v = perimeterBorderCache.get(name)
   if (v === undefined) {
     const h = agentHue(name)
-    v = isDark() ? `hsl(${h}, 30%, 27%)` : `hsl(${h}, 30%, 80%)`
+    const s = Math.round(agentSat(name) * 0.43)
+    v = isDark() ? `hsl(${h}, ${s}%, 27%)` : `hsl(${h}, ${s}%, 80%)`
     perimeterBorderCache.set(name, v)
   }
   return v
