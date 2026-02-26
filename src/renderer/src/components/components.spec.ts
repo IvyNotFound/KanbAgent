@@ -8,6 +8,7 @@ import { mount, shallowMount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { nextTick } from 'vue'
 import i18n from '@renderer/plugins/i18n'
+import { mockElectronAPI } from '../../../test/setup'
 
 // ── xterm mocks — hoisted before imports (vi.mock is hoisted automatically) ──
 // vitest 4: constructor mocks require `function` keyword (arrow functions cannot be used with `new`)
@@ -51,7 +52,9 @@ import BoardView from '@renderer/components/BoardView.vue'
 import TerminalView from '@renderer/components/TerminalView.vue'
 import TaskDetailModal from '@renderer/components/TaskDetailModal.vue'
 import StatusColumn from '@renderer/components/StatusColumn.vue'
+import StreamView from '@renderer/components/StreamView.vue'
 import type { Task } from '@renderer/types'
+import type { StreamEvent } from '@renderer/components/StreamView.vue'
 
 // ── Shared mock task factory ──────────────────────────────────────────────────
 
@@ -3773,5 +3776,168 @@ describe('TaskDetailModal — multi-agents', () => {
     })
     await nextTick()
     expect(wrapper.text()).not.toContain('Tâche bloquée')
+  })
+})
+
+// ── StreamView (T578 — POC affichage structuré stream-json) ──────────────────
+
+describe('StreamView', () => {
+  // Helper to mount StreamView and inject stream events via the IPC callback
+  function mountStream(events: StreamEvent[] = []) {
+    vi.mocked(mockElectronAPI.onTerminalStreamMessage).mockReset()
+    vi.mocked(mockElectronAPI.onTerminalStreamMessage).mockReturnValue(() => {})
+    vi.mocked(mockElectronAPI.agentSendMessage).mockReset()
+    vi.mocked(mockElectronAPI.agentSendMessage).mockResolvedValue(undefined)
+
+    const wrapper = mount(StreamView, {
+      props: { terminalId: 'test-terminal-1' },
+    })
+
+    // Inject events via the IPC callback captured at mount
+    const [, callback] = vi.mocked(mockElectronAPI.onTerminalStreamMessage).mock.calls[0] ?? []
+    if (callback) {
+      events.forEach((e) => (callback as (e: StreamEvent) => void)(e))
+    }
+
+    return { wrapper }
+  }
+
+  it('shows empty state when no events', () => {
+    const { wrapper } = mountStream()
+    expect(wrapper.find('[data-testid="empty-state"]').exists()).toBe(true)
+  })
+
+  it('renders text block (assistant message)', async () => {
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'text', text: 'Bonjour depuis Claude !' }],
+      },
+    }
+    const { wrapper } = mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-text"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('Bonjour depuis Claude !')
+  })
+
+  it('renders thinking block (collapsed by default capable)', async () => {
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'thinking', text: 'Je réfléchis…' }],
+      },
+    }
+    const { wrapper } = mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-thinking"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('Thinking…')
+  })
+
+  it('renders tool_use block with tool name', async () => {
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'tool_use', name: 'Bash', input: { command: 'ls -la' } }],
+      },
+    }
+    const { wrapper } = mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-tool-use"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('Bash')
+  })
+
+  it('renders tool_result block with output text', async () => {
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'tool_result', content: 'drwxr-xr-x 5 user user 4096 Feb 27 00:00 .' }],
+      },
+    }
+    const { wrapper } = mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-tool-result"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('drwxr-xr-x')
+  })
+
+  it('renders result block with cost and turns', async () => {
+    const event: StreamEvent = {
+      type: 'result',
+      cost_usd: 0.0042,
+      num_turns: 3,
+      duration_ms: 5200,
+    }
+    const { wrapper } = mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-result"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('3')
+    expect(block.text()).toContain('$0.0042')
+  })
+
+  it('shows streaming indicator while last event is assistant (no result yet)', async () => {
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'En cours…' }] },
+    }
+    const { wrapper } = mountStream([event])
+    await nextTick()
+    expect(wrapper.find('[data-testid="streaming-indicator"]').exists()).toBe(true)
+  })
+
+  it('hides streaming indicator after result event', async () => {
+    const assistant: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'Réponse' }] },
+    }
+    const result: StreamEvent = { type: 'result', cost_usd: 0.001, num_turns: 1 }
+    const { wrapper } = mountStream([assistant, result])
+    await nextTick()
+    expect(wrapper.find('[data-testid="streaming-indicator"]').exists()).toBe(false)
+  })
+
+  it('send button is disabled when input is empty', () => {
+    const { wrapper } = mountStream()
+    const btn = wrapper.find('[data-testid="send-button"]')
+    expect((btn.element as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('calls agentSendMessage IPC when send button is clicked with text', async () => {
+    const { wrapper } = mountStream()
+    const textarea = wrapper.find('textarea')
+    await textarea.setValue('Hello agent')
+    const btn = wrapper.find('[data-testid="send-button"]')
+    await btn.trigger('click')
+    expect(mockElectronAPI.agentSendMessage).toHaveBeenCalledWith('test-terminal-1', 'Hello agent')
+  })
+
+  it('clears input after send', async () => {
+    const { wrapper } = mountStream()
+    const textarea = wrapper.find('textarea')
+    await textarea.setValue('Mon message')
+    const btn = wrapper.find('[data-testid="send-button"]')
+    await btn.trigger('click')
+    await nextTick()
+    expect((textarea.element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('registers system:init session_id', async () => {
+    const initEvent: StreamEvent = {
+      type: 'system',
+      subtype: 'init',
+      session_id: 'abc123-session-id',
+    }
+    const { wrapper } = mountStream([initEvent])
+    await nextTick()
+    const systemBlock = wrapper.find('[data-testid="block-system-init"]')
+    expect(systemBlock.exists()).toBe(true)
+    expect(systemBlock.text()).toContain('Session démarrée')
   })
 })

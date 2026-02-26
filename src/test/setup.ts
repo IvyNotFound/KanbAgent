@@ -57,6 +57,9 @@ const mockElectronAPI = {
   tasksUpdateStatus: vi.fn().mockResolvedValue({ success: true }),
   deleteAgent: vi.fn().mockResolvedValue({ success: true, hasHistory: false }),
   addPerimetre: vi.fn().mockResolvedValue({ success: true, id: 1 }),
+  // stream-json IPC (ADR-009 — T578 POC)
+  onTerminalStreamMessage: vi.fn(() => () => {}),
+  agentSendMessage: vi.fn().mockResolvedValue(undefined),
 }
 
 // Make it available globally (jsdom only — node environment has no window)
