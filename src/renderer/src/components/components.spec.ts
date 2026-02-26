@@ -3438,4 +3438,46 @@ describe('TaskDetailModal — multi-agents', () => {
 
     vi.useRealTimers()
   })
+
+  // ── T520: valideurAgent computed ──────────────────────────────────────────
+  it('affiche le badge valideurAgent quand agent_valideur_id est renseigné (T520)', async () => {
+    const valideurAgent = { id: 99, name: 'review-master', type: 'review', perimetre: null,
+      system_prompt: null, system_prompt_suffix: null, thinking_mode: null as null,
+      allowed_tools: null, auto_launch: 0, permission_mode: null, max_sessions: 1, created_at: '2026-01-01' }
+    const task = makeTask({ id: 10, agent_valideur_id: 99 })
+    const pinia = createTestingPinia({
+      initialState: { tasks: { selectedTask: null, agents: [valideurAgent], dbPath: '/p/db', taskComments: [], taskAssignees: [] } },
+    })
+    const wrapper = shallowMount(TaskDetailModal, {
+      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false } },
+    })
+    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const store = useTasksStore()
+    store.selectedTask = task
+    await flushPromises()
+
+    // Badge valideurAgent section should be visible (i18n key 'taskDetail.validator' → 'Valideur' in fr)
+    expect(wrapper.text()).toContain('Valideur')
+    // The AgentBadge stub for the valideur agent should be in the DOM
+    const valideurBadge = wrapper.findAll('agentbadge-stub')
+      .find(b => b.attributes('name') === 'review-master')
+    expect(valideurBadge).toBeDefined()
+  })
+
+  it("n'affiche pas la section valideur quand agent_valideur_id est null (T520)", async () => {
+    const task = makeTask({ id: 11, agent_valideur_id: null })
+    const pinia = createTestingPinia({
+      initialState: { tasks: { selectedTask: null, agents: [], dbPath: '/p/db', taskComments: [], taskAssignees: [] } },
+    })
+    const wrapper = shallowMount(TaskDetailModal, {
+      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false } },
+    })
+    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const store = useTasksStore()
+    store.selectedTask = task
+    await flushPromises()
+
+    // Validator section should not be rendered (i18n key 'taskDetail.validator' → 'Valideur' in fr)
+    expect(wrapper.text()).not.toContain('Valideur')
+  })
 })
