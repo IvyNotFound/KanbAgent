@@ -416,7 +416,16 @@ export const useTasksStore = defineStore('tasks', () => {
 
   async function setTaskStatut(taskId: number, statut: 'in_progress'): Promise<void> {
     if (!dbPath.value) return
-    await window.electronAPI.tasksUpdateStatus(dbPath.value, taskId, statut)
+    // Optimistic update — move card instantly, rollback if IPC fails
+    const task = tasks.value.find(t => t.id === taskId)
+    const previousStatut = task?.statut
+    if (task) task.statut = statut
+    try {
+      await window.electronAPI.tasksUpdateStatus(dbPath.value, taskId, statut)
+    } catch (err) {
+      if (task && previousStatut !== undefined) task.statut = previousStatut
+      throw err
+    }
   }
 
   function startWatching(path: string): void {
