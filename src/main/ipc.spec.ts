@@ -110,6 +110,16 @@ vi.mock('fs/promises', () => {
   }
 })
 
+// ── T552: mock ./db to intercept queryLive (CJS require bypasses sql.js vi.mock) ──
+vi.mock('./db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./db')>()
+  return {
+    ...actual,
+    queryLive: vi.fn().mockRejectedValue(new Error('file is not a database')),
+  }
+})
+import { queryLive as mockedQueryLive } from './db'
+
 // ── Import ipc.ts AFTER mocks are set up ───────────────────────────────────────
 // This triggers registerIpcHandlers() side effects via the mock above
 import { registerIpcHandlers, registerDbPath, registerProjectPath } from './ipc'
@@ -127,6 +137,8 @@ describe('IPC handlers — src/main/ipc.ts', () => {
   beforeEach(() => {
     // Register all handlers before each test
     vi.clearAllMocks()
+    // T552: Restore queryLive default (throw on mock buffer) after clearAllMocks
+    vi.mocked(mockedQueryLive).mockRejectedValue(new Error('file is not a database'))
     // Re-register handlers (they are cleared by clearAllMocks on ipcMain.handle)
     registerIpcHandlers()
     // T282: Register test DB paths as allowed for write operations
@@ -1236,6 +1248,49 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       const result = await callHandler('tasks:updateStatus', '/fake/project.db', 99, 'archived') as Record<string, unknown>
       expect(result).toHaveProperty('success')
       expect(typeof result.success).toBe('boolean')
+    })
+
+    // ── T552: blocker check for in_progress ──────────────────────────────────
+    it('T552: should return TASK_BLOCKED when unresolved blockers exist (type bloque)', async () => {
+      vi.mocked(mockedQueryLive).mockResolvedValueOnce([
+        { id: 42, titre: 'Blocker task', statut: 'in_progress' },
+      ])
+      const result = await callHandler('tasks:updateStatus', '/fake/project.db', 10, 'in_progress') as {
+        success: boolean; error?: string; blockers?: Array<{ id: number; titre: string; statut: string }>
+      }
+      expect(result).toMatchObject({ success: false, error: 'TASK_BLOCKED' })
+      expect(result.blockers).toHaveLength(1)
+      expect(result.blockers?.[0]).toMatchObject({ id: 42, titre: 'Blocker task', statut: 'in_progress' })
+    })
+
+    it('T552: should allow in_progress when no blockers exist', async () => {
+      vi.mocked(mockedQueryLive).mockResolvedValueOnce([])
+      const result = await callHandler('tasks:updateStatus', '/fake/project.db', 10, 'in_progress') as {
+        success: boolean; error?: string
+      }
+      // No TASK_BLOCKED error (may fail on DB write with mock but not due to blockers)
+      if (!result.success && result.error) {
+        expect(result.error).not.toBe('TASK_BLOCKED')
+      }
+    })
+
+    it('T552: should return TASK_BLOCKED with multiple blockers', async () => {
+      vi.mocked(mockedQueryLive).mockResolvedValueOnce([
+        { id: 10, titre: 'Dep A', statut: 'todo' },
+        { id: 11, titre: 'Dep B', statut: 'in_progress' },
+      ])
+      const result = await callHandler('tasks:updateStatus', '/fake/project.db', 20, 'in_progress') as {
+        success: boolean; error?: string; blockers?: Array<{ id: number; titre: string; statut: string }>
+      }
+      expect(result).toMatchObject({ success: false, error: 'TASK_BLOCKED' })
+      expect(result.blockers).toHaveLength(2)
+    })
+
+    it('T552: should not check blockers for statut other than in_progress', async () => {
+      const qSpy = vi.mocked(mockedQueryLive)
+      await callHandler('tasks:updateStatus', '/fake/project.db', 10, 'done')
+      // queryLive must NOT be called for 'done' status
+      expect(qSpy).not.toHaveBeenCalled()
     })
   })
 
