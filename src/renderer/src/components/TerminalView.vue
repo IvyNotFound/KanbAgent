@@ -16,6 +16,7 @@ const container = ref<HTMLElement | null>(null)
 
 let term: Terminal | null = null
 let fitAddon: FitAddon | null = null
+let webglAddon: WebglAddon | null = null
 let unsubData: (() => void) | null = null
 let unsubExit: (() => void) | null = null
 let unsubConvId: (() => void) | null = null
@@ -67,7 +68,7 @@ onMounted(async () => {
     lineHeight: 1.4,
     cursorBlink: false, // Disabled to prevent ghost cursor effect during frequent terminal updates
     allowTransparency: true,
-    scrollback: 500,
+    scrollback: 150,
     // Disable built-in copy/paste — let Electron handle it to avoid character duplication
     copyOnSelect: false,
     rightClickSelectsWord: false,
@@ -79,11 +80,16 @@ onMounted(async () => {
 
   // GPU acceleration: try WebGL renderer first, fallback to Canvas2D if GPU unavailable
   // WebGL: ~60-80% CPU reduction for intensive output; Canvas: stable 2D fallback (VM, GPU-less)
+  // T559: store reference so we can dispose/recreate on tab switch to free GPU texture memory
   try {
-    const webgl = new WebglAddon()
-    webgl.onContextLoss(() => webgl.dispose()) // dispose if GPU context is lost (e.g. sleep/wake)
-    term.loadAddon(webgl)
+    webglAddon = new WebglAddon()
+    webglAddon.onContextLoss(() => {
+      webglAddon?.dispose()
+      webglAddon = null
+    })
+    term.loadAddon(webglAddon)
   } catch {
+    webglAddon = null
     // WebGL not available (sandboxed env, no GPU driver) — fall back to Canvas2D
     try {
       term.loadAddon(new CanvasAddon())
@@ -266,6 +272,11 @@ function pauseListeners() {
   isPaused = true
   unsubExit?.()
   unsubExit = null
+  // T559: dispose WebGL renderer when inactive — releases GPU texture, xterm falls back to DOM
+  if (webglAddon) {
+    webglAddon.dispose()
+    webglAddon = null
+  }
 }
 
 function resumeListeners() {
@@ -282,6 +293,19 @@ function resumeListeners() {
         .catch(err => console.warn('[TerminalView] collectSessionTokens failed:', err))
     }
   })
+  // T559: recreate WebGL renderer when tab becomes active — restores GPU acceleration
+  if (term && !webglAddon) {
+    try {
+      webglAddon = new WebglAddon()
+      webglAddon.onContextLoss(() => {
+        webglAddon?.dispose()
+        webglAddon = null
+      })
+      term.loadAddon(webglAddon)
+    } catch {
+      webglAddon = null // WebGL unavailable — DOM renderer already active, no action needed
+    }
+  }
 }
 
 watch(isActive, (active) => {
@@ -314,6 +338,7 @@ onUnmounted(() => {
   unsubExit?.()
   unsubConvId?.()
   resizeObserver?.disconnect()
+  webglAddon?.dispose()
   term?.dispose()
 })
 </script>
