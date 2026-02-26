@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.10.0] - 2026-02-26
+
+### Changes
+- chore(gitignore): ignore .claude/*.db.bak backup files (cf3b21c)
+- feat(tasks): T575 right-click context menu on in_progress cards to relaunch agent (d2904f6)
+- feat(backlog): T575 right-click context menu on in_progress tasks to relaunch agent (1dd0c26)
+- feat(sidebar): T567 add generic ConfirmModal component (8eac425)
+- refactor(task-detail): T571 make agents section read-only in TaskDetailModal (791ff71)
+- feat(tabbar): T572 replier sous-onglets inactifs en pastilles compactes (05d9469)
+- chore(tabbar): T573 améliorer couleur icône terminal dans header groupe (54092bb)
+- feat(sidebar): T557 T566 add i18n keys for agent groups (46081bc)
+- feat(sidebar): T557 agent groups — editable groups + drag & drop (9a4d573)
+- fix(terminal): T564 remove anonymous event listeners to prevent PerformanceEventTiming leak (7738739)
+- fix(back-electron): T563 dispose onData listener on PTY natural exit (8b34ab2)
+- docs(release): update README and JSDoc for v0.10.0 (ebe7ebc)
+- docs(release): update README and JSDoc for v0.10.0 (7753821)
+- perf(terminal): T559 réduire RAM xterm.js — scrollback 150 + WebGL dispose/recreate (0dffaba)
+- feat(board): T553 afficher et bloquer les tâches avec dépendances non résolues (aeaac46)
+- perf(terminal): T561 libérer systemPrompt/userPrompt après capture convId (2b218fc)
+- feat(security): T547/T550 migrate github_token from build-time to DB runtime (fbe16e1)
+- feat(back-electron): T552/T556 blocker check + agent_groups IPC (4fbfdb9)
+- test(store): T558 add agent groupings unit tests + AgentGroup type (3d4caca)
+- feat(terminal): T518 call collectSessionTokens on session close (a42f0f8)
+- perf(store): T521 batch openTask IPC calls — add taskAssignees (90db6fc)
+- feat(agents): T541 add secu/perf/data to CreateAgentModal type list (03edbcf)
+- test(ipc): T552 add tests for TASK_BLOCKED blocker check in updateStatus (5908033)
+- feat(ipc): T552 block in_progress transition when unresolved dependencies exist (5d44925)
+- fix(task-detail): T520 add missing valideurAgent tests in TaskDetailModal (04e9bf8)
+- feat(tokens): T518 add session:collectTokens IPC handler to persist token counts on session close (8c7ef05)
+- fix(scripts): T539 move zombie cleanup before session limit check (0a08f6e)
+- refactor(sidebar): T554 supprimer section logs et simplifier backlog en navigation directe (7c7d3d5)
+- test(security): fix ipc.spec.ts for T527/T528/T531 security fixes (1a40535)
+- fix(security): T532-fix PTY ownership check in write/resize/kill/relaunch handlers (5f00b84)
+- fix(security): T531-fix fs:writeFile use extension whitelist instead of path blacklist (dbbe976)
+- fix(security): T527-fix T528-fix assertProjectPathAllowed in find-project-db and create-project-db (9c6a93d)
+- fix(board): T537 pagination archives visible — BoardView flex-1 min-h-0 (13028e1)
+- perf(front): T519/T521/T523/T525/T526/T533 réductions allocations computed (078edea)
+- feat(agents): support max_sessions=-1 for unlimited parallel sessions (T534) (50db792)
+- fix(security): T529 add assertDbPathAllowed to 5 unprotected IPC read handlers (73af3eb)
+- test(ipc-fs,useModalEscape): add unit tests for buildTree and useModalEscape composable (63c6414)
 ## [0.8.0] - 2026-02-26
 
 ### Changes
