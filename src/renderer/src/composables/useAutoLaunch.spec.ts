@@ -18,6 +18,8 @@ const api = {
   buildAgentPrompt: vi.fn().mockResolvedValue('final prompt'),
   terminalWrite: vi.fn().mockResolvedValue(undefined),
   terminalKill: vi.fn().mockResolvedValue(undefined),
+  // queryDb: returns a terminé session by default (used by scheduleClose poller)
+  queryDb: vi.fn().mockResolvedValue([{ id: 1 }]),
 }
 
 Object.defineProperty(window, 'electronAPI', { value: api, writable: true })
@@ -60,6 +62,9 @@ describe('composables/useAutoLaunch', () => {
     testIndex++
     vi.setSystemTime(new Date(2026, 0, 1, 0, testIndex * 10, 0))
 
+    // Default: queryDb returns a terminé session (agent is done, safe to close)
+    api.queryDb.mockResolvedValue([{ id: 1 }])
+
     tasks = ref<Task[]>([])
     agents = ref<Agent[]>([makeAgent()])
     dbPath = ref<string | null>('/test/db')
@@ -98,7 +103,7 @@ describe('composables/useAutoLaunch', () => {
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
   })
 
-  it('should schedule close when task transitions to done', async () => {
+  it('should schedule close when task transitions to done (polls DB for terminé)', async () => {
     useAutoLaunch({ tasks, agents, dbPath })
 
     // Seed with in_progress task
@@ -115,19 +120,79 @@ describe('composables/useAutoLaunch', () => {
     tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
     await nextTick()
 
-    // Terminal should still exist (grace period not yet elapsed)
+    // Terminal should still exist (immediate poll is async — not yet resolved)
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)
 
-    // Advance past grace period (5s)
-    vi.advanceTimersByTime(5000)
+    // Advance timers to fire the immediate 0ms poll, flush promises
+    await vi.advanceTimersByTimeAsync(1)
 
-    // Ctrl+C should have been sent
+    // Ctrl+C should have been sent (terminé session found in DB)
     expect(api.terminalWrite).toHaveBeenCalledWith('pty-123', '\x03')
 
     // Advance past kill delay (2s)
-    vi.advanceTimersByTime(2000)
+    await vi.advanceTimersByTimeAsync(2000)
 
     expect(api.terminalKill).toHaveBeenCalledWith('pty-123')
+  })
+
+  it('should wait for terminé before closing (no early close when session still active)', async () => {
+    // queryDb returns no terminé session (agent still running)
+    api.queryDb.mockResolvedValue([])
+
+    useAutoLaunch({ tasks, agents, dbPath })
+
+    // Seed
+    tasks.value = [makeTask({ id: 1, statut: 'in_progress', agent_assigne_id: 10 })]
+    await nextTick()
+
+    const tabsStore = useTabsStore()
+    tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+    const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+    termTab.ptyId = 'pty-waiting'
+
+    // Task transitions to done
+    tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
+    await nextTick()
+
+    // Poll fires — but no terminé session yet
+    await vi.advanceTimersByTimeAsync(1)
+    expect(api.terminalWrite).not.toHaveBeenCalled()
+
+    // More polls fire — still no terminé
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(api.terminalWrite).not.toHaveBeenCalled()
+
+    // Session becomes terminé
+    api.queryDb.mockResolvedValue([{ id: 42 }])
+    await vi.advanceTimersByTimeAsync(5_000)
+
+    expect(api.terminalWrite).toHaveBeenCalledWith('pty-waiting', '\x03')
+  })
+
+  it('should force-close after fallback timeout even if session never terminates', async () => {
+    // Session never becomes terminé
+    api.queryDb.mockResolvedValue([])
+
+    useAutoLaunch({ tasks, agents, dbPath })
+
+    // Seed
+    tasks.value = [makeTask({ id: 1, statut: 'in_progress', agent_assigne_id: 10 })]
+    await nextTick()
+
+    const tabsStore = useTabsStore()
+    tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+    const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+    termTab.ptyId = 'pty-fallback'
+
+    // Task transitions to done
+    tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
+    await nextTick()
+
+    // Advance 5 minutes (fallback timeout)
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+
+    // Force-close should have happened
+    expect(api.terminalWrite).toHaveBeenCalledWith('pty-fallback', '\x03')
   })
 
   it('should reset tracking when dbPath changes', async () => {
@@ -384,9 +449,9 @@ describe('composables/useAutoLaunch', () => {
       tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
       await nextTick()
 
-      // Advance past grace period — no close should happen
-      vi.advanceTimersByTime(5000)
-      vi.advanceTimersByTime(2000)
+      // Advance past poll interval and fallback — no close should happen
+      await vi.advanceTimersByTimeAsync(5000)
+      await vi.advanceTimersByTimeAsync(2000)
 
       expect(api.terminalWrite).not.toHaveBeenCalled()
       expect(api.terminalKill).not.toHaveBeenCalled()
@@ -410,8 +475,8 @@ describe('composables/useAutoLaunch', () => {
       tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
       await nextTick()
 
-      // Advance past grace period
-      vi.advanceTimersByTime(5000)
+      // Advance to fire the immediate poll, flush promises
+      await vi.advanceTimersByTimeAsync(1)
 
       // Tab should be closed directly (no terminalWrite/Kill since no ptyId)
       expect(api.terminalWrite).not.toHaveBeenCalled()
@@ -435,20 +500,21 @@ describe('composables/useAutoLaunch', () => {
       tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
       await nextTick()
 
-      // Advance 3s (not yet at 5s grace period)
-      vi.advanceTimersByTime(3000)
+      // Advance 3s — immediate poll fires (0ms) + resolves: terminé found → doClose called
+      await vi.advanceTimersByTimeAsync(3000)
 
-      // Second done transition
+      // Second done transition (same agent — pendingClose already cleared by doClose)
       tasks.value = [
         makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 }),
         makeTask({ id: 2, statut: 'done', agent_assigne_id: 10 }),
       ]
       await nextTick()
 
-      // Advance remaining 5s from the second trigger
-      vi.advanceTimersByTime(5000)
+      // Advance to fire any new immediate poll
+      await vi.advanceTimersByTimeAsync(5000)
 
       // The key assertion: terminalWrite should have been called at most once
+      // (first doClose found the terminal; subsequent polls find no terminal)
       expect(api.terminalWrite).toHaveBeenCalledTimes(1)
     })
   })
