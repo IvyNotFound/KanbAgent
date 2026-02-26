@@ -92,7 +92,7 @@ export function useLaunchSession() {
         thinkingMode,
         undefined,
         undefined,
-        true,
+        false,
         task.id
       )
 
