@@ -181,11 +181,18 @@ memory=4GB            # Max RAM allocated to WSL (adjust based on available RAM)
 processors=4          # Optional: limit vCPUs
 
 [experimental]
-autoMemoryReclaim=gradual   # WSL 2.0+: gradually reclaims unused memory
-# Alternatives: "dropcache" (aggressive) or "disabled" (default)
+autoMemoryReclaim=gradual   # Recommended for heavy multi-agent sessions (see below)
 ```
 
-> **Note**: After editing, run `wsl --shutdown` in PowerShell to apply changes.
+**`autoMemoryReclaim` modes** (WSL 2.0+, requires `[experimental]` section):
+
+| Mode | Behaviour | When to use |
+|------|-----------|-------------|
+| `gradual` | Progressively reclaims unused pages when WSL is less active — low impact, transparent | **Recommended** for sustained agent workloads (multiple Claude sessions running in parallel) |
+| `dropcache` | Aggressively drops kernel page cache — equivalent to running `sync && echo 3 > /proc/sys/vm/drop_caches` automatically | Use when WSL RAM usage climbs rapidly and `gradual` is not sufficient |
+| `disabled` | Default — WSL never returns RAM to Windows; heap and kernel buffers accumulate indefinitely | Avoid for long-running agent sessions |
+
+> **Note**: After editing, run `wsl --shutdown` in PowerShell to apply changes. The setting takes effect at the next WSL boot.
 
 References: [WSL Documentation](https://learn.microsoft.com/en-us/windows/wsl/wsl-config)
 
