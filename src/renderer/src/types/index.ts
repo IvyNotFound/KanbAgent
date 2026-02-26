@@ -19,6 +19,8 @@ export interface Agent {
   allowed_tools: string | null
   /** Whether to auto-launch a session for this agent (1=yes, 0=no). DEFAULT 1. */
   auto_launch: number
+  /** Permission mode for Claude Code launches: 'default' (approval prompts) or 'auto' (--dangerously-skip-permissions). */
+  permission_mode: string | null
   created_at: string
   /** Session statut (English, migrated from French in T329). */
   session_statut?: 'started' | 'completed' | 'blocked' | null

@@ -86,7 +86,6 @@ import { getSqlJs, registerDbPath, clearDbCacheEntry, queryLive, writeDb } from 
 import { registerAgentHandlers } from './ipc-agents'
 
 // ── Schema builder ────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function buildSchema(): Promise<any> {
   const sqlJs = await getSqlJs()
   const db = new sqlJs.Database()
@@ -101,6 +100,7 @@ async function buildSchema(): Promise<any> {
     thinking_mode TEXT,
     allowed_tools TEXT,
     auto_launch INTEGER NOT NULL DEFAULT 1,
+    permission_mode TEXT CHECK(permission_mode IN ('default', 'auto')) DEFAULT 'default',
     created_at TEXT DEFAULT (datetime('now'))
   )`)
 
@@ -544,5 +544,114 @@ describe('task:getAssignees — validation guards', () => {
 
     expect(result.success).toBe(false)
     expect(result.error).toContain('Invalid taskId')
+  })
+})
+
+// ── Tests: update-agent permissionMode (T436) ─────────────────────────────────
+
+describe('update-agent — permissionMode (T436)', () => {
+  it('set permissionMode=auto → DB reflects auto', async () => {
+    const agentId = await insertAgent('agent-perm-auto')
+
+    const result = await handlers['update-agent'](
+      null,
+      TEST_DB_PATH,
+      agentId,
+      { permissionMode: 'auto' }
+    ) as { success: boolean }
+
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(
+      TEST_DB_PATH,
+      'SELECT permission_mode FROM agents WHERE id = ?',
+      [agentId]
+    ) as Array<{ permission_mode: string | null }>
+
+    expect(rows[0].permission_mode).toBe('auto')
+  })
+
+  it('set permissionMode=default → DB reflects default', async () => {
+    const agentId = await insertAgent('agent-perm-default')
+
+    await handlers['update-agent'](null, TEST_DB_PATH, agentId, { permissionMode: 'auto' })
+
+    const result = await handlers['update-agent'](
+      null,
+      TEST_DB_PATH,
+      agentId,
+      { permissionMode: 'default' }
+    ) as { success: boolean }
+
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(
+      TEST_DB_PATH,
+      'SELECT permission_mode FROM agents WHERE id = ?',
+      [agentId]
+    ) as Array<{ permission_mode: string | null }>
+
+    expect(rows[0].permission_mode).toBe('default')
+  })
+
+  it('permissionMode not provided → existing value unchanged', async () => {
+    const agentId = await insertAgent('agent-perm-unchanged')
+    await writeDb<void>(TEST_DB_PATH, (db) => {
+      db.run('UPDATE agents SET permission_mode = ? WHERE id = ?', ['auto', agentId])
+    })
+
+    await handlers['update-agent'](null, TEST_DB_PATH, agentId, { name: 'agent-perm-unchanged' })
+
+    const rows = await queryLive(
+      TEST_DB_PATH,
+      'SELECT permission_mode FROM agents WHERE id = ?',
+      [agentId]
+    ) as Array<{ permission_mode: string | null }>
+
+    expect(rows[0].permission_mode).toBe('auto')
+  })
+})
+
+// ── Tests: get-agent-system-prompt returns permissionMode (T436) ──────────────
+
+describe('get-agent-system-prompt — permissionMode (T436)', () => {
+  it('returns permissionMode=auto when set', async () => {
+    const agentId = await insertAgent('agent-gsp-auto')
+    await writeDb<void>(TEST_DB_PATH, (db) => {
+      db.run('UPDATE agents SET permission_mode = ? WHERE id = ?', ['auto', agentId])
+    })
+
+    const result = await handlers['get-agent-system-prompt'](
+      null,
+      TEST_DB_PATH,
+      agentId
+    ) as { success: boolean; permissionMode: string | null }
+
+    expect(result.success).toBe(true)
+    expect(result.permissionMode).toBe('auto')
+  })
+
+  it('returns permissionMode=default when not set to auto', async () => {
+    const agentId = await insertAgent('agent-gsp-default')
+
+    const result = await handlers['get-agent-system-prompt'](
+      null,
+      TEST_DB_PATH,
+      agentId
+    ) as { success: boolean; permissionMode: string | null }
+
+    expect(result.success).toBe(true)
+    expect(['default', null]).toContain(result.permissionMode)
+  })
+
+  it('returns permissionMode=null for agent not found', async () => {
+    const result = await handlers['get-agent-system-prompt'](
+      null,
+      TEST_DB_PATH,
+      99999
+    ) as { success: boolean; permissionMode: string | null }
+
+    expect(result.success).toBe(false)
+    expect(result.permissionMode).toBeNull()
   })
 })

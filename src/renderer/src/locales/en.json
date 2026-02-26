@@ -19,7 +19,10 @@
     "noAgentAssigned": "No agent assigned — assign an agent before launching.",
     "agentNotFound": "Agent not found.",
     "launchFailed": "Failed to launch session for {agent}.",
-    "sessionLimitReached": "Session limit ({max}) reached for {agent}"
+    "sessionLimitReached": "Session limit ({max}) reached for {agent}",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {page} / {total} ({count} tasks)"
   },
   "columns": {
     "todo": "To do",
@@ -197,7 +200,11 @@
     "creating": "Creating...",
     "create": "Create",
     "autoLaunch": "Auto-launch",
-    "autoLaunchDesc": "Automatically closes terminal when task transitions to done"
+    "autoLaunchDesc": "Automatically closes terminal when task transitions to done",
+    "permissionMode": "Permission mode",
+    "permissionModeDefault": "Standard",
+    "permissionModeAuto": "Automatic",
+    "permissionModeWarning": "Bypasses all tool approval prompts"
   },
   "dbSelector": {
     "tagline": "View your Claude agents' tasks in real time.",

@@ -19,7 +19,10 @@
     "noAgentAssigned": "Aucun agent assigné — assignez un agent avant de lancer.",
     "agentNotFound": "Agent introuvable.",
     "launchFailed": "Impossible de lancer la session pour {agent}.",
-    "sessionLimitReached": "Limite de {max} sessions atteinte pour {agent}"
+    "sessionLimitReached": "Limite de {max} sessions atteinte pour {agent}",
+    "prevPage": "Précédent",
+    "nextPage": "Suivant",
+    "pageOf": "Page {page} / {total} ({count} tâches)"
   },
   "columns": {
     "todo": "À faire",
@@ -197,7 +200,11 @@
     "creating": "Création...",
     "create": "Créer",
     "autoLaunch": "Lancement auto",
-    "autoLaunchDesc": "Ferme automatiquement le terminal quand la tâche passe en done"
+    "autoLaunchDesc": "Ferme automatiquement le terminal quand la tâche passe en done",
+    "permissionMode": "Mode permissions",
+    "permissionModeDefault": "Standard",
+    "permissionModeAuto": "Automatique",
+    "permissionModeWarning": "Bypass toutes les approbations d'outils"
   },
   "dbSelector": {
     "tagline": "Visualisez les tâches de vos agents Claude en temps réel.",

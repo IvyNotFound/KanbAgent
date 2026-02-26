@@ -59,6 +59,7 @@ interface PtyLaunchParams {
   thinkingMode?: string
   claudeCommand?: string
   convId?: string
+  permissionMode?: string
   detectedConvId?: string  // Captured during the session (for --resume)
 }
 const ptyLaunchParams = new Map<string, PtyLaunchParams>()
@@ -441,7 +442,7 @@ export function registerTerminalHandlers(): void {
     }
   })
 
-  ipcMain.handle('terminal:create', async (event, cols: number, rows: number, projectPath?: string, wslDistro?: string, systemPrompt?: string, userPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string) => {
+  ipcMain.handle('terminal:create', async (event, cols: number, rows: number, projectPath?: string, wslDistro?: string, systemPrompt?: string, userPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, permissionMode?: string) => {
     // Validate claudeCommand if provided
     if (claudeCommand && !CLAUDE_CMD_REGEX.test(claudeCommand)) {
       throw new Error("Invalid claudeCommand: " + claudeCommand)
@@ -482,9 +483,10 @@ export function registerTerminalHandlers(): void {
     // the terminal and the user can re-launch normally from LaunchSessionModal.
     if (validConvId) {
       const cmd = (claudeCommand && CLAUDE_CMD_REGEX.test(claudeCommand)) ? claudeCommand : 'claude'
+      const skipPermissionsFlag = permissionMode === 'auto' ? ' --dangerously-skip-permissions' : ''
       // Inject --settings alwaysThinkingEnabled:false when thinking_mode is 'disabled'
       const thinkingFlag = thinkingMode === 'disabled' ? ` --settings '{"alwaysThinkingEnabled":false}'` : ''
-      const resumeScript = `exec ${cmd} --resume ${validConvId}${thinkingFlag}`
+      const resumeScript = `exec ${cmd}${skipPermissionsFlag} --resume ${validConvId}${thinkingFlag}`
       if (projectPath) {
         args.push('--cd', toWslPath(projectPath), '--', 'bash', '-lc', resumeScript)
       } else {
@@ -507,6 +509,7 @@ export function registerTerminalHandlers(): void {
       const b64System = Buffer.from(systemPrompt).toString('base64')
       const b64User = Buffer.from(userPrompt).toString('base64')
       const cmd = (claudeCommand && CLAUDE_CMD_REGEX.test(claudeCommand)) ? claudeCommand : 'claude'
+      const skipPermissionsFlag = permissionMode === 'auto' ? ' --dangerously-skip-permissions' : ''
       // Inject --settings alwaysThinkingEnabled:false when thinking_mode is 'disabled'
       const thinkingFlag = thinkingMode === 'disabled' ? ` --settings '{"alwaysThinkingEnabled":false}'` : ''
 
@@ -520,7 +523,7 @@ export function registerTerminalHandlers(): void {
       // Both prompts are base64-decoded at runtime to prevent shell injection.
       const scriptName = `agent-prompt-${id}.sh`
       tempScriptWinPath = join(tmpdir(), scriptName)
-      const scriptContent = `#!/bin/bash\nexec ${cmd} --append-system-prompt "$(echo '${b64System}' | base64 -d)"${thinkingFlag} "$(echo '${b64User}' | base64 -d)"\n`
+      const scriptContent = `#!/bin/bash\nexec ${cmd}${skipPermissionsFlag} --append-system-prompt "$(echo '${b64System}' | base64 -d)"${thinkingFlag} "$(echo '${b64User}' | base64 -d)"\n`
       await writeFile(tempScriptWinPath, scriptContent, { encoding: 'utf8' })
       const scriptWslPath = toWslPath(tempScriptWinPath)
 
@@ -586,7 +589,7 @@ export function registerTerminalHandlers(): void {
     ptys.set(id, pty)
 
     // ── T279: Store launch params for crash recovery ─────────────────────
-    ptyLaunchParams.set(id, { cols, rows, projectPath, wslDistro, systemPrompt, userPrompt, thinkingMode, claudeCommand, convId })
+    ptyLaunchParams.set(id, { cols, rows, projectPath, wslDistro, systemPrompt, userPrompt, thinkingMode, claudeCommand, convId, permissionMode })
 
     // ── T279: Start memory monitoring on first PTY ───────────────────────
     startMemoryMonitoring(wcId)
@@ -717,6 +720,7 @@ export function registerTerminalHandlers(): void {
       thinkingMode: params.thinkingMode,
       claudeCommand: params.claudeCommand,
       convId: convId || undefined,
+      permissionMode: params.permissionMode,
     }
   })
 

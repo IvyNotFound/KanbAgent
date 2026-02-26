@@ -15,6 +15,9 @@ const name = ref(props.agent.name)
 const thinkingMode = ref<'auto' | 'disabled'>(
   props.agent.thinking_mode === 'disabled' ? 'disabled' : 'auto'
 )
+const permissionMode = ref<'default' | 'auto'>(
+  props.agent.permission_mode === 'auto' ? 'auto' : 'default'
+)
 const allowedTools = ref(props.agent.allowed_tools ?? '')
 const autoLaunch = ref(props.agent.auto_launch !== 0)
 const saving = ref(false)
@@ -25,6 +28,7 @@ onMounted(async () => {
     const result = await window.electronAPI.getAgentSystemPrompt(store.dbPath, props.agent.id)
     if (result.success) {
       thinkingMode.value = result.thinkingMode === 'disabled' ? 'disabled' : 'auto'
+      permissionMode.value = result.permissionMode === 'auto' ? 'auto' : 'default'
     }
   }
 })
@@ -39,6 +43,7 @@ async function save() {
       thinkingMode: thinkingMode.value,
       allowedTools: allowedTools.value.trim() || null,
       autoLaunch: autoLaunch.value,
+      permissionMode: permissionMode.value,
     })
     if (!result.success) {
       error.value = result.error ?? 'Erreur inconnue'
@@ -153,6 +158,32 @@ async function save() {
                 :class="autoLaunch ? 'translate-x-4' : 'translate-x-0'"
               />
             </button>
+          </div>
+
+          <!-- Permission mode -->
+          <div>
+            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.permissionMode') }}</label>
+            <div class="flex gap-2">
+              <button
+                :class="[
+                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
+                  permissionMode === 'default'
+                    ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300'
+                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
+                ]"
+                @click="permissionMode = 'default'"
+              >{{ t('agent.permissionModeDefault') }}</button>
+              <button
+                :class="[
+                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
+                  permissionMode === 'auto'
+                    ? 'border-red-500/60 bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-300'
+                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
+                ]"
+                @click="permissionMode = 'auto'"
+              >{{ t('agent.permissionModeAuto') }}</button>
+            </div>
+            <p v-if="permissionMode === 'auto'" class="text-[10px] text-red-400 dark:text-red-400 mt-1.5 font-medium">⚠ {{ t('agent.permissionModeWarning') }}</p>
           </div>
 
           <!-- Erreur -->

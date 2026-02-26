@@ -214,31 +214,32 @@ export function registerAgentHandlers(): void {
   })
 
   /**
-   * Fetch system_prompt, system_prompt_suffix, and thinking_mode for an agent.
+   * Fetch system_prompt, system_prompt_suffix, thinking_mode, and permission_mode for an agent.
    * @param dbPath - DB path
    * @param agentId - Agent ID
-   * @returns {{ success: boolean, systemPrompt: string|null, systemPromptSuffix: string|null, thinkingMode: string|null }}
+   * @returns {{ success: boolean, systemPrompt: string|null, systemPromptSuffix: string|null, thinkingMode: string|null, permissionMode: string|null }}
    */
   ipcMain.handle('get-agent-system-prompt', async (_event, dbPath: string, agentId: number) => {
     try {
       const rows = await queryLive(
         dbPath,
-        'SELECT system_prompt, system_prompt_suffix, thinking_mode FROM agents WHERE id = ?',
+        'SELECT system_prompt, system_prompt_suffix, thinking_mode, permission_mode FROM agents WHERE id = ?',
         [agentId]
       )
       if (rows.length === 0) {
-        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null }
+        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null }
       }
-      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null }
+      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null; permission_mode: string | null }
       return {
         success: true,
         systemPrompt: row.system_prompt,
         systemPromptSuffix: row.system_prompt_suffix,
-        thinkingMode: row.thinking_mode
+        thinkingMode: row.thinking_mode,
+        permissionMode: row.permission_mode
       }
     } catch (err) {
       console.error('[IPC get-agent-system-prompt]', err)
-      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null }
+      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null }
     }
   })
 
@@ -281,6 +282,7 @@ export function registerAgentHandlers(): void {
     systemPrompt?: string | null
     systemPromptSuffix?: string | null
     autoLaunch?: boolean
+    permissionMode?: 'default' | 'auto' | null
   }) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -308,6 +310,9 @@ export function registerAgentHandlers(): void {
         }
         if (updates.autoLaunch !== undefined) {
           db.run('UPDATE agents SET auto_launch = ? WHERE id = ?', [updates.autoLaunch ? 1 : 0, agentId])
+        }
+        if (updates.permissionMode !== undefined) {
+          db.run('UPDATE agents SET permission_mode = ? WHERE id = ?', [updates.permissionMode || null, agentId])
         }
       })
       return { success: true }

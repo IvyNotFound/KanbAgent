@@ -116,8 +116,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getClaudeInstances: (): Promise<unknown[]> =>
     ipcRenderer.invoke('terminal:getClaudeInstances'),
 
-  terminalCreate: (cols: number, rows: number, projectPath?: string, wslDistro?: string, systemPrompt?: string, userPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string): Promise<string> =>
-    ipcRenderer.invoke('terminal:create', cols, rows, projectPath, wslDistro, systemPrompt, userPrompt, thinkingMode, claudeCommand, convId),
+  terminalCreate: (cols: number, rows: number, projectPath?: string, wslDistro?: string, systemPrompt?: string, userPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, permissionMode?: string): Promise<string> =>
+    ipcRenderer.invoke('terminal:create', cols, rows, projectPath, wslDistro, systemPrompt, userPrompt, thinkingMode, claudeCommand, convId, permissionMode),
 
   terminalWrite: (id: string, data: string): Promise<void> =>
     ipcRenderer.invoke('terminal:write', id, data),
@@ -164,7 +164,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   terminalRelaunch: (oldId: string, useResume?: boolean): Promise<{
     cols: number; rows: number; projectPath?: string; wslDistro?: string;
     systemPrompt?: string; userPrompt?: string; thinkingMode?: string;
-    claudeCommand?: string; convId?: string;
+    claudeCommand?: string; convId?: string; permissionMode?: string;
   }> => ipcRenderer.invoke('terminal:relaunch', oldId, useResume),
 
   // T279: Dismiss crash recovery (clean up stored launch params)
@@ -219,7 +219,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   buildAgentPrompt: (agentName: string, userPrompt: string, dbPath?: string, agentId?: number): Promise<string> =>
     ipcRenderer.invoke('build-agent-prompt', agentName, userPrompt, dbPath, agentId),
 
-  getAgentSystemPrompt: (dbPath: string, agentId: number): Promise<{ success: boolean; systemPrompt: string | null; systemPromptSuffix: string | null; thinkingMode: string | null; error?: string }> =>
+  getAgentSystemPrompt: (dbPath: string, agentId: number): Promise<{ success: boolean; systemPrompt: string | null; systemPromptSuffix: string | null; thinkingMode: string | null; permissionMode: string | null; error?: string }> =>
     ipcRenderer.invoke('get-agent-system-prompt', dbPath, agentId),
 
   updateAgentThinkingMode: (dbPath: string, agentId: number, thinkingMode: string | null): Promise<{ success: boolean; error?: string }> =>
@@ -234,6 +234,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     systemPrompt?: string | null
     systemPromptSuffix?: string | null
     autoLaunch?: boolean
+    permissionMode?: 'default' | 'auto' | null
   }): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-agent', dbPath, agentId, updates),
 
@@ -280,4 +281,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     filters?: { statut?: string; agent_id?: number; perimetre?: string }
   ): Promise<{ success: boolean; results: unknown[]; error?: string }> =>
     ipcRenderer.invoke('search-tasks', dbPath, query, filters),
+
+  // Archived tasks pagination (lazy, independent of main refresh)
+  tasksGetArchived: (dbPath: string, params: {
+    page: number
+    pageSize: number
+    agentId?: number | null
+    perimetre?: string | null
+  }): Promise<{ rows: unknown[]; total: number }> =>
+    ipcRenderer.invoke('tasks:getArchived', dbPath, params),
 })
