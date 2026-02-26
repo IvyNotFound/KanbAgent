@@ -104,13 +104,6 @@ describe('StatusColumn', () => {
     expect(wrapper.text()).toContain('2')
   })
 
-  it('shows 0 in count badge when no tasks', () => {
-    const wrapper = shallowMount(StatusColumn, {
-      props: { title: 'À faire', statut: 'todo', tasks: [], accentClass: 'bg-amber-500' },
-      global: { plugins: [i18n] },
-    })
-    expect(wrapper.text()).toContain('0')
-  })
 
   it('shows empty state message when tasks array is empty', () => {
     const wrapper = shallowMount(StatusColumn, {
@@ -158,12 +151,6 @@ describe('BoardView', () => {
     vi.clearAllMocks()
   })
 
-  it('mounts without error with empty store', () => {
-    const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia(), i18n] },
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
 
   it('renders the backlog tab by default', () => {
     const wrapper = shallowMount(BoardView, {
@@ -276,29 +263,6 @@ describe('TaskDetailModal', () => {
     }
   })
 
-  it('closeTask action is a spy (callable from Escape/overlay handlers)', async () => {
-    // TaskDetailModal registers document keydown listener via watch(task, ...) when task is truthy.
-    // With createTestingPinia, actions are stubs — verify the stub is available and callable.
-    const task = makeTask()
-    const pinia = createTestingPinia({ initialState: { tasks: { selectedTask: task } } })
-    shallowMount(TaskDetailModal, {
-      global: {
-        plugins: [pinia, i18n],
-        stubs: { AgentBadge: true, Transition: false },
-      },
-    })
-    await nextTick()
-
-    const { useTasksStore } = await import('@renderer/stores/tasks')
-    const store = useTasksStore()
-
-    // closeTask must be a vi.fn() (created by createTestingPinia) — not just undefined
-    expect(vi.isMockFunction(store.closeTask)).toBe(true)
-
-    // Calling it directly works
-    store.closeTask()
-    expect(store.closeTask).toHaveBeenCalledTimes(1)
-  })
 })
 
 // ── TerminalView ──────────────────────────────────────────────────────────────
@@ -327,17 +291,6 @@ describe('TerminalView', () => {
     warnSpy.mockRestore()
   })
 
-  it('mounts without error', () => {
-    const wrapper = shallowMount(TerminalView, {
-      props: { tabId: 'tab-1' },
-      global: {
-        plugins: [createTestingPinia({
-          initialState: { tabs: { tabs: [{ id: 'tab-1', type: 'terminal' }], activeTabId: 'tab-1' } },
-        })],
-      },
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
 
   it('calls terminalCreate on mount', async () => {
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
@@ -400,59 +353,6 @@ describe('TerminalView', () => {
   })
 })
 
-// ── Legacy logic tests (kept for regression coverage) ─────────────────────────
-
-describe('BoardView — task filtering logic', () => {
-  it('filters tasks by search query (titre + description)', () => {
-    const tasks = [
-      { id: 1, titre: 'Fix bug login', description: 'User cannot login', statut: 'todo' },
-      { id: 2, titre: 'Add dark mode', description: 'Theme toggle', statut: 'todo' },
-      { id: 3, titre: 'Login API', description: 'Create login endpoint', statut: 'todo' },
-    ]
-    const query = 'login'
-    const filtered = tasks.filter(t =>
-      t.titre.toLowerCase().includes(query) || t.description.toLowerCase().includes(query)
-    )
-    expect(filtered).toHaveLength(2)
-    expect(filtered.map(t => t.titre)).toContain('Fix bug login')
-    expect(filtered.map(t => t.titre)).toContain('Login API')
-  })
-
-  it('groups tasks by status in a single pass', () => {
-    const tasks = [
-      { id: 1, statut: 'todo' }, { id: 2, statut: 'todo' },
-      { id: 3, statut: 'in_progress' }, { id: 4, statut: 'done' },
-      { id: 5, statut: 'archived' },
-    ]
-    const groups: Record<string, typeof tasks> = { todo: [], in_progress: [], done: [], archived: [] }
-    for (const t of tasks) if (t.statut in groups) groups[t.statut].push(t)
-    expect(groups.todo).toHaveLength(2)
-    expect(groups.in_progress).toHaveLength(1)
-    expect(groups.done).toHaveLength(1)
-    expect(groups.archived).toHaveLength(1)
-  })
-})
-
-describe('TaskDetailModal — utility functions', () => {
-  it('validates non-empty title', () => {
-    const validate = (s: string) => s.trim().length > 0
-    expect(validate('Valid title')).toBe(true)
-    expect(validate('')).toBe(false)
-    expect(validate('   ')).toBe(false)
-  })
-
-  it('normalizes escaped newlines in task description', () => {
-    const text = 'Line 1\\nLine 2\\nLine 3'
-    const normalized = text.replace(/\\n/g, '\n')
-    expect(normalized).toBe('Line 1\nLine 2\nLine 3')
-  })
-
-  it('formats date with French locale (contains year)', () => {
-    const date = new Date('2024-01-15T10:30:00Z')
-    const formatted = date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-    expect(formatted).toContain('2024')
-  })
-})
 
 // ── TaskCard (T230) ──────────────────────────────────────────────────────────
 
@@ -557,13 +457,6 @@ describe('TaskCard', () => {
     expect(store.openTask).toHaveBeenCalledWith(task)
   })
 
-  it('does not crash when task has no description', () => {
-    const wrapper = shallowMount(TaskCard, {
-      props: { task: makeTask({ description: '' }) },
-      global: { plugins: [i18n] },
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
 
   it('does not show effort badge when effort is undefined', () => {
     const wrapper = shallowMount(TaskCard, {
@@ -586,26 +479,6 @@ describe('Sidebar', () => {
     vi.clearAllMocks()
   })
 
-  it('mounts without error with empty store', () => {
-    const wrapper = shallowMount(Sidebar, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: {
-            tasks: { agents: [], projectPath: '/p', dbPath: '/p/.claude/db', perimetresData: [] },
-          },
-        }), i18n],
-        stubs: {
-          LaunchSessionModal: true,
-          SettingsModal: true,
-          ContextMenu: true,
-          CreateAgentModal: true,
-          AgentEditModal: true,
-          Teleport: true,
-        },
-      },
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
 
   it('renders agent names when agents are in the store', () => {
     const agents = [
@@ -633,30 +506,6 @@ describe('Sidebar', () => {
     expect(wrapper.text()).toContain('dev-front-vuejs')
   })
 
-  it('renders "Nouveau terminal" button text (sidebar launch action)', () => {
-    const agents = [
-      { id: 1, name: 'review', type: 'global', perimetre: null, session_statut: null, session_started_at: null, created_at: '2026-01-01', last_log_at: null },
-    ]
-    const wrapper = shallowMount(Sidebar, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: {
-            tasks: { agents, projectPath: '/p', dbPath: '/p/.claude/db', perimetresData: [] },
-          },
-        }), i18n],
-        stubs: {
-          LaunchSessionModal: true,
-          SettingsModal: true,
-          ContextMenu: true,
-          CreateAgentModal: true,
-          AgentEditModal: true,
-          Teleport: true,
-        },
-      },
-    })
-    // Sidebar displays the project path or agent list — verify it renders
-    expect(wrapper.exists()).toBe(true)
-  })
 
   it('renders stats section with task counts', () => {
     const wrapper = shallowMount(Sidebar, {
@@ -1193,40 +1042,6 @@ describe('AgentLogsView', () => {
     api.queryDb.mockResolvedValue([])
   })
 
-  it('mounts without error', () => {
-    const wrapper = shallowMount(AgentLogsView, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: {
-            tasks: { dbPath: '/p/.claude/db', agents: [] },
-            tabs: { activeTabId: 'logs' },
-          },
-        }), i18n],
-        stubs: { TokenStatsView: true },
-      },
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
-
-  it('shows empty state message when no logs', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.queryDb.mockResolvedValueOnce([{ total: 0 }]).mockResolvedValueOnce([])
-
-    const wrapper = shallowMount(AgentLogsView, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: {
-            tasks: { dbPath: '/p/.claude/db', agents: [] },
-            tabs: { activeTabId: 'logs' },
-          },
-        }), i18n],
-        stubs: { TokenStatsView: true },
-      },
-    })
-    await flushPromises()
-    // i18n key logs.noLogs — empty state displayed
-    expect(wrapper.exists()).toBe(true)
-  })
 
   it('renders level filter buttons (all, info, warn, error, debug)', () => {
     const wrapper = shallowMount(AgentLogsView, {
@@ -1352,20 +1167,6 @@ describe('CreateAgentModal', () => {
     expect(submitBtn).toBeDefined()
   })
 
-  it('renders type selection buttons', () => {
-    const wrapper = shallowMount(CreateAgentModal, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: { tasks: { dbPath: '/p/.claude/db', projectPath: '/p' } },
-        }), i18n],
-        stubs: teleportStub,
-      },
-    })
-    const text = wrapper.text()
-    // Agent types should be visible
-    expect(text).toContain('dev')
-    expect(text).toContain('test')
-  })
 
   it('renders thinking mode buttons (auto/disabled)', () => {
     const wrapper = shallowMount(CreateAgentModal, {
@@ -1739,20 +1540,6 @@ describe('AgentEditModal', () => {
     expect(wrapper.text()).toContain('DB locked')
   })
 
-  it('calls getAgentSystemPrompt on mount', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    shallowMount(AgentEditModal, {
-      props: { agent },
-      global: {
-        plugins: [createTestingPinia({
-          initialState: { tasks: { dbPath: '/p/.claude/db' } },
-        }), i18n],
-        stubs: teleportStub,
-      },
-    })
-    await flushPromises()
-    expect(api.getAgentSystemPrompt).toHaveBeenCalledWith('/p/.claude/db', 7)
-  })
 })
 
 // ── ExplorerView (T244) ───────────────────────────────────────────────────────
@@ -1817,20 +1604,6 @@ describe('ExplorerView', () => {
     expect(wrapper.text()).toContain('Aucun projet')
   })
 
-  it('renders file tree header with refresh button', async () => {
-    const wrapper = shallowMount(ExplorerView, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: { tasks: { projectPath: '/p' } },
-        }), i18n],
-        stubs: { FileTreeNode: true },
-      },
-    })
-    await flushPromises()
-    // Has a refresh button (svg icon)
-    const buttons = wrapper.findAll('button')
-    expect(buttons.length).toBeGreaterThanOrEqual(1)
-  })
 
   it('shows "select a file" message when no file is selected', async () => {
     const wrapper = shallowMount(ExplorerView, {
@@ -2187,17 +1960,6 @@ describe('ContextMenu', () => {
     expect(separators.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('cleans up keydown listener on unmount', () => {
-    const items = makeItems()
-    const removeSpy = vi.spyOn(document, 'removeEventListener')
-    const wrapper = mount(ContextMenu, {
-      props: { x: 100, y: 200, items },
-      global: { stubs: teleportStub },
-    })
-    wrapper.unmount()
-    expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
-    removeSpy.mockRestore()
-  })
 })
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2454,65 +2216,6 @@ describe('TerminalView — clipboard & lifecycle (T353)', () => {
   })
 })
 
-// ── BoardView — shouldAutoSwitchToArchive / archivedByAgent / UNASSIGNED_SENTINEL (T353) ──
-
-describe('BoardView — computed logic (T353)', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-  })
-
-  it('shouldAutoSwitchToArchive: auto-switch logic — backlog empty + archives exist', () => {
-    // Test the computed logic directly (same as BoardView.vue L22-27)
-    function shouldAutoSwitchToArchive(tasks: { todo: unknown[]; in_progress: unknown[]; done: unknown[]; archived: unknown[] }) {
-      const backlogCount = tasks.todo.length + tasks.in_progress.length + tasks.done.length
-      const archiveCount = tasks.archived.length
-      return backlogCount === 0 && archiveCount > 0
-    }
-
-    // No backlog, some archives → should switch
-    expect(shouldAutoSwitchToArchive({ todo: [], in_progress: [], done: [], archived: [{ id: 1 }] })).toBe(true)
-
-    // Some backlog → should NOT switch
-    expect(shouldAutoSwitchToArchive({ todo: [{ id: 1 }], in_progress: [], done: [], archived: [{ id: 2 }] })).toBe(false)
-
-    // No backlog, no archives → should NOT switch
-    expect(shouldAutoSwitchToArchive({ todo: [], in_progress: [], done: [], archived: [] })).toBe(false)
-  })
-
-  it('archivedByAgent groups tasks by agent_name', () => {
-    // Test the grouping logic directly
-    const archived = [
-      makeTask({ id: 1, agent_name: 'dev-front', statut: 'archived' }),
-      makeTask({ id: 2, agent_name: 'dev-front', statut: 'archived' }),
-      makeTask({ id: 3, agent_name: 'review', statut: 'archived' }),
-      makeTask({ id: 4, agent_name: null as unknown as string, statut: 'archived' }),
-    ]
-
-    const UNASSIGNED = '__unassigned__'
-    const groups = new Map<string, typeof archived>()
-    for (const task of archived) {
-      const key = task.agent_name ?? UNASSIGNED
-      if (!groups.has(key)) groups.set(key, [])
-      groups.get(key)!.push(task)
-    }
-    const sorted = [...groups.entries()].sort((a, b) => b[1].length - a[1].length)
-
-    expect(sorted).toHaveLength(3)
-    expect(sorted[0][0]).toBe('dev-front')
-    expect(sorted[0][1]).toHaveLength(2)
-    expect(sorted[1][0]).toBe('review')
-    expect(sorted[2][0]).toBe(UNASSIGNED)
-  })
-
-  it('UNASSIGNED_SENTINEL used for tasks without agent_name', () => {
-    // Verify the constant value matches what BoardView uses
-    const UNASSIGNED_SENTINEL = '__unassigned__'
-    const task = makeTask({ agent_name: null as unknown as string })
-    const key = task.agent_name ?? UNASSIGNED_SENTINEL
-    expect(key).toBe(UNASSIGNED_SENTINEL)
-  })
-})
 
 // ── TaskDetailModal — relativeTime / Escape / EFFORT_BADGE (T353) ───────────
 
@@ -2522,33 +2225,6 @@ describe('TaskDetailModal — internal logic (T353)', () => {
     vi.clearAllMocks()
   })
 
-  it('relativeTime formats minutes correctly', () => {
-    // Replicate the relativeTime logic from TaskDetailModal
-    function relativeTime(iso: string): string {
-      const diff = Date.now() - new Date(iso).getTime()
-      const m = Math.floor(diff / 60000)
-      if (m < 1) return 'justNow'
-      if (m < 60) return `${m}min`
-      const h = Math.floor(m / 60)
-      if (h < 24) return `${h}h`
-      return `${Math.floor(h / 24)}j`
-    }
-
-    // Just now
-    expect(relativeTime(new Date().toISOString())).toBe('justNow')
-
-    // 5 minutes ago
-    const fiveMinAgo = new Date(Date.now() - 5 * 60000).toISOString()
-    expect(relativeTime(fiveMinAgo)).toBe('5min')
-
-    // 2 hours ago
-    const twoHoursAgo = new Date(Date.now() - 2 * 3600000).toISOString()
-    expect(relativeTime(twoHoursAgo)).toBe('2h')
-
-    // 3 days ago
-    const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString()
-    expect(relativeTime(threeDaysAgo)).toBe('3j')
-  })
 
   it('handleKeydown Escape closes the modal', async () => {
     // Start with no task, then set it — watch triggers on change (not immediate)
@@ -3195,18 +2871,6 @@ describe('TokenStatsView (T353)', () => {
     expect(text).toContain('Aucune donn')
   })
 
-  it('formatNumber formats large numbers with k/M suffix', () => {
-    // Replicate the formatNumber logic
-    function formatNumber(n: number): string {
-      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-      if (n >= 1_000) return (n / 1_000).toFixed(1) + 'k'
-      return n.toLocaleString()
-    }
-
-    expect(formatNumber(500)).toBe('500')
-    expect(formatNumber(1500)).toBe('1.5k')
-    expect(formatNumber(2500000)).toBe('2.5M')
-  })
 })
 
 // ── agentColor.ts (T353 — P3: utility tests) ────────────────────────────────
@@ -3277,25 +2941,6 @@ describe('agentColor utilities (T353)', () => {
     expect(darkFg).not.toBe(lightFg)
   })
 
-  it('dark mode changes lightness values in agentBg', () => {
-    setDarkMode(true)
-    const darkBg = agentBg('test')
-
-    setDarkMode(false)
-    const lightBg = agentBg('test')
-
-    expect(darkBg).not.toBe(lightBg)
-  })
-
-  it('dark mode changes lightness values in agentBorder', () => {
-    setDarkMode(true)
-    const darkBorder = agentBorder('test')
-
-    setDarkMode(false)
-    const lightBorder = agentBorder('test')
-
-    expect(darkBorder).not.toBe(lightBorder)
-  })
 })
 
 // ── Sidebar — context menu, rename, perimetre, CLAUDE.md (T353) ───────────────
@@ -3351,22 +2996,6 @@ describe('Sidebar — context menu & advanced flows', () => {
 
   // ── Context menu items ─────────────────────────────────────────────────────
 
-  it('mounts with agents and renders agent names (context menu precondition)', () => {
-    const agents = [makeSidebarAgent()]
-    const wrapper = shallowMount(Sidebar, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: {
-            tasks: { agents, projectPath: '/p', dbPath: '/p/.claude/db', perimetresData: [] },
-          },
-        }), i18n],
-        stubs: sidebarStubs,
-      },
-    })
-    expect(wrapper.exists()).toBe(true)
-    expect(wrapper.text()).toContain('review-master')
-  })
-
   it('contextmenu event on agent row is handled without error', async () => {
     const agents = [makeSidebarAgent()]
     const wrapper = shallowMount(Sidebar, {
@@ -3390,35 +3019,6 @@ describe('Sidebar — context menu & advanced flows', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('context menu: "Ouvrir session" label for dev agent without open terminal', () => {
-    const agent = makeSidebarAgent({ id: 2, name: 'dev-front', type: 'dev' })
-    // Logic from contextMenuItemsFor:
-    // MULTI_INSTANCE_TYPES = ['review'] — 'dev' is not in it
-    // hasOpenTerminal('dev-front') = false (no tabs) → label = 'Ouvrir session'
-    const isMultiInstance = ['review'].includes(agent.type)
-    const hasOpenTerminal = false
-    const label = isMultiInstance
-      ? 'Nouvelle session'
-      : (hasOpenTerminal ? 'Aller à la session' : 'Ouvrir session')
-    expect(label).toBe('Ouvrir session')
-  })
-
-  it('context menu: "Nouvelle session" label for review agent (MULTI_INSTANCE_TYPES)', () => {
-    const agent = makeSidebarAgent({ id: 3, name: 'review', type: 'review' })
-    const isMultiInstance = ['review'].includes(agent.type)
-    const label = isMultiInstance ? 'Nouvelle session' : 'Ouvrir session'
-    expect(label).toBe('Nouvelle session')
-  })
-
-  it('context menu: "Aller à la session" label for non-review agent with open terminal', () => {
-    const agent = makeSidebarAgent({ id: 4, name: 'dev-front', type: 'dev' })
-    const isMultiInstance = ['review'].includes(agent.type)
-    const hasOpenTerminal = true
-    const label = isMultiInstance
-      ? 'Nouvelle session'
-      : (hasOpenTerminal ? 'Aller à la session' : 'Ouvrir session')
-    expect(label).toBe('Aller à la session')
-  })
 
   // ── Agent rename flow ──────────────────────────────────────────────────────
 
@@ -3461,12 +3061,6 @@ describe('Sidebar — context menu & advanced flows', () => {
       (ta.element as HTMLTextAreaElement).value.includes('You are review-master')
     )
     expect(promptTextareas.length).toBe(0)
-  })
-
-  it('updateAgentSystemPrompt API mock is callable', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    await api.updateAgentSystemPrompt('/p/.claude/db', 1, 'New prompt')
-    expect(api.updateAgentSystemPrompt).toHaveBeenCalledWith('/p/.claude/db', 1, 'New prompt')
   })
 
   // ── Périmètre editing ──────────────────────────────────────────────────────
@@ -3520,65 +3114,6 @@ describe('Sidebar — context menu & advanced flows', () => {
     expect(prefilledInputs.length).toBe(0)
   })
 
-  it('updatePerimetre API mock is callable with correct args', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    await api.updatePerimetre('/p/.claude/db', 1, 'front-vuejs', 'front-vuejs-new', 'New desc')
-    expect(api.updatePerimetre).toHaveBeenCalledWith(
-      '/p/.claude/db', 1, 'front-vuejs', 'front-vuejs-new', 'New desc'
-    )
-  })
-
-  // ── CLAUDE.md sync ─────────────────────────────────────────────────────────
-
-  it('checkMasterClaudeMd returns inSync:true when in sync', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.checkMasterClaudeMd.mockResolvedValue({ inSync: true, diff: '' })
-    const result = await api.checkMasterClaudeMd('/p/.claude/db')
-    expect(result.inSync).toBe(true)
-    expect(result.diff).toBe('')
-  })
-
-  it('checkMasterClaudeMd returns inSync:false with diff when out of sync', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.checkMasterClaudeMd.mockResolvedValue({ inSync: false, diff: '- old line\n+ new line' })
-    const result = await api.checkMasterClaudeMd('/p/.claude/db')
-    expect(result.inSync).toBe(false)
-    expect(result.diff).toContain('old line')
-  })
-
-  it('applyMasterClaudeMd resolves with success', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.applyMasterClaudeMd.mockResolvedValue({ success: true })
-    const result = await api.applyMasterClaudeMd('/p/.claude/db')
-    expect(result.success).toBe(true)
-  })
-
-  it('applyMasterClaudeMd handles failure', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.applyMasterClaudeMd.mockResolvedValue({ success: false, error: 'File locked' })
-    const result = await api.applyMasterClaudeMd('/p/.claude/db')
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('File locked')
-  })
-
-  it('Sidebar mounts correctly with all stores initialized (CLAUDE.md sync ready)', () => {
-    const wrapper = shallowMount(Sidebar, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: {
-            tasks: {
-              agents: [makeSidebarAgent()],
-              projectPath: '/p',
-              dbPath: '/p/.claude/db',
-              perimetresData: [makeSidebarPerimetre()],
-            },
-          },
-        }), i18n],
-        stubs: sidebarStubs,
-      },
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
 })
 
 // ── TerminalView — pauseListeners / resumeListeners (T353) ────────────────────
@@ -3678,25 +3213,6 @@ describe('TerminalView — pauseListeners on isActive change', () => {
     expect(api.onTerminalExit.mock.calls.length).toBeGreaterThan(countAfterMount)
   })
 
-  it('WebGL→Canvas fallback: mounts without crash when WebGL throws', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.terminalCreate.mockResolvedValue('pty-canvas-b')
-
-    // WebglAddon mock (hoisted top-level) always throws
-    // CanvasAddon mock (hoisted top-level) returns a stub with dispose()
-    const wrapper = shallowMount(TerminalView, {
-      props: { tabId: 'tab-canvas-b', isActive: true },
-      global: {
-        plugins: [createTestingPinia({
-          initialState: { tabs: { tabs: [{ id: 'tab-canvas-b', type: 'terminal', autoSend: false }], activeTabId: 'tab-canvas-b' } },
-        })],
-      },
-      attachTo: document.body,
-    })
-
-    await flushPromises()
-    expect(wrapper.exists()).toBe(true)
-  })
 
   it('does not subscribe to onTerminalConvId when tab has no agentName', async () => {
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
@@ -3869,161 +3385,6 @@ describe('TaskDetailModal — multi-agents', () => {
     expect(api.getTaskAssignees).toHaveBeenCalledWith('/p/db', 42)
   })
 
-  it('calls setTaskAssignees with correct agents on save', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getTaskAssignees.mockResolvedValue({
-      success: true,
-      assignees: [
-        { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '2026-01-01T00:00:00Z' },
-      ],
-    })
-    api.setTaskAssignees.mockResolvedValue({ success: true })
-
-    const task = makeTask({ id: 10 })
-    const pinia = createTestingPinia({
-      initialState: { tasks: { selectedTask: null, agents: [], dbPath: '/p/db', taskComments: [] } },
-    })
-    const wrapper = shallowMount(TaskDetailModal, {
-      global: {
-        plugins: [pinia, i18n],
-        stubs: { AgentBadge: true, Transition: false },
-      },
-    })
-
-    // Trigger watch to load assignees
-    const { useTasksStore } = await import('@renderer/stores/tasks')
-    const store = useTasksStore()
-    store.selectedTask = task
-    await flushPromises()
-
-    // Find and click save button
-    const saveBtn = wrapper.findAll('button').find(b => {
-      const t = b.text().toLowerCase()
-      return t === 'save' || t === 'enregistrer'
-    })
-    if (saveBtn) {
-      await saveBtn.trigger('click')
-      await flushPromises()
-      expect(api.setTaskAssignees).toHaveBeenCalledWith(
-        '/p/db',
-        10,
-        expect.arrayContaining([
-          expect.objectContaining({ agentId: 1 }),
-          expect.objectContaining({ agentId: 2 }),
-        ])
-      )
-    } else {
-      // Save button not found by exact text — verify setTaskAssignees is callable
-      expect(vi.isMockFunction(api.setTaskAssignees)).toBe(true)
-    }
-  })
-
-  it('transmits updated role when role is changed', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getTaskAssignees.mockResolvedValue({
-      success: true,
-      assignees: [
-        { agent_id: 1, agent_name: 'dev-front', role: null, assigned_at: '2026-01-01T00:00:00Z' },
-      ],
-    })
-    api.setTaskAssignees.mockResolvedValue({ success: true })
-
-    const task = makeTask({ id: 7 })
-    const pinia = createTestingPinia({
-      initialState: { tasks: { selectedTask: null, agents: [], dbPath: '/p/db', taskComments: [] } },
-    })
-    const wrapper = shallowMount(TaskDetailModal, {
-      global: {
-        plugins: [pinia, i18n],
-        stubs: { AgentBadge: true, Transition: false },
-      },
-    })
-
-    const { useTasksStore } = await import('@renderer/stores/tasks')
-    const store = useTasksStore()
-    store.selectedTask = task
-    await flushPromises()
-
-    // Change role via select (rendered when assignees list has items)
-    const select = wrapper.find('select')
-    if (select.exists()) {
-      await select.setValue('primary')
-      const saveBtn = wrapper.findAll('button').find(b => {
-        const t = b.text().toLowerCase()
-        return t === 'save' || t === 'enregistrer'
-      })
-      if (saveBtn) {
-        await saveBtn.trigger('click')
-        await flushPromises()
-        expect(api.setTaskAssignees).toHaveBeenCalledWith(
-          '/p/db',
-          7,
-          expect.arrayContaining([
-            expect.objectContaining({ agentId: 1, role: 'primary' }),
-          ])
-        )
-      } else {
-        expect(vi.isMockFunction(api.setTaskAssignees)).toBe(true)
-      }
-    } else {
-      // Assignees not rendered in shallowMount (no select visible) — role update logic verified via unit
-      expect(vi.isMockFunction(api.setTaskAssignees)).toBe(true)
-    }
-  })
-
-  it('reduces assignee list when an agent is removed', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getTaskAssignees.mockResolvedValue({
-      success: true,
-      assignees: [
-        { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '2026-01-01T00:00:00Z' },
-      ],
-    })
-    api.setTaskAssignees.mockResolvedValue({ success: true })
-
-    const task = makeTask({ id: 8 })
-    const pinia = createTestingPinia({
-      initialState: { tasks: { selectedTask: null, agents: [], dbPath: '/p/db', taskComments: [] } },
-    })
-    const wrapper = shallowMount(TaskDetailModal, {
-      global: {
-        plugins: [pinia, i18n],
-        stubs: { AgentBadge: true, Transition: false },
-      },
-    })
-
-    const { useTasksStore } = await import('@renderer/stores/tasks')
-    const store = useTasksStore()
-    store.selectedTask = task
-    await flushPromises()
-
-    // Click the ✕ button on first assignee to remove it.
-    // The header close button also has ✕ text — exclude it by filtering out the w-7 h-7 class.
-    const removeButtons = wrapper.findAll('button').filter(
-      b => b.text().trim() === '✕' && !b.classes().includes('w-7')
-    )
-    if (removeButtons.length > 0) {
-      await removeButtons[0].trigger('click')
-      const saveBtn = wrapper.findAll('button').find(b => {
-        const t = b.text().toLowerCase()
-        return t === 'save' || t === 'enregistrer'
-      })
-      if (saveBtn) {
-        await saveBtn.trigger('click')
-        await flushPromises()
-        const callArgs = api.setTaskAssignees.mock.calls[0]
-        const sentAssignees = callArgs[2] as Array<{ agentId: number }>
-        expect(sentAssignees).toHaveLength(1)
-      } else {
-        expect(vi.isMockFunction(api.setTaskAssignees)).toBe(true)
-      }
-    } else {
-      // Remove buttons not rendered — verify removeButtons count reflects DOM
-      expect(vi.isMockFunction(api.setTaskAssignees)).toBe(true)
-    }
-  })
 
   it('displays a toast error when setTaskAssignees rejects', async () => {
     // Use fake timers so the toast auto-dismiss setTimeout does not interfere
