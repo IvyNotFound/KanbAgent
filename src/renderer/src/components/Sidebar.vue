@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
@@ -10,9 +10,9 @@ import SettingsModal from './SettingsModal.vue'
 import ContextMenu from './ContextMenu.vue'
 import CreateAgentModal from './CreateAgentModal.vue'
 import type { ContextMenuItem } from './ContextMenu.vue'
-import type { Agent, AgentLog, FileNode, Perimetre } from '@renderer/types'
+import type { Agent, FileNode, Perimetre } from '@renderer/types'
 
-type Section = 'project' | 'perimetres' | 'agents' | 'tree' | 'backlog' | 'logs'
+type Section = 'project' | 'perimetres' | 'agents' | 'tree'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -87,52 +87,7 @@ const sectionTitles = computed((): Record<Section, string> => ({
   perimetres: t('sidebar.perimeters'),
   agents: t('sidebar.agents'),
   tree: t('sidebar.tree'),
-  backlog: t('sidebar.backlog'),
-  logs: t('sidebar.logs'),
 }))
-
-// ── Sidebar logs ───────────────────────────────────────────────────────────────
-const sidebarLogs = ref<AgentLog[]>([])
-let isFetchingLogs = false
-
-async function fetchSidebarLogs(): Promise<void> {
-  if (!store.dbPath || isFetchingLogs) return
-  isFetchingLogs = true
-  try {
-    const result = await window.electronAPI.queryDb(
-      store.dbPath,
-      `SELECT l.id, l.session_id, l.agent_id, a.name as agent_name, a.type as agent_type,
-              l.niveau, l.action, l.detail, l.fichiers, l.created_at
-       FROM agent_logs l
-       LEFT JOIN agents a ON a.id = l.agent_id
-       ORDER BY l.created_at DESC LIMIT 20`
-    )
-    if (!Array.isArray(result)) {
-      sidebarLogs.value = []
-      return
-    }
-    sidebarLogs.value = result as AgentLog[]
-  } catch { /* silent */ } finally {
-    isFetchingLogs = false
-  }
-}
-
-// Event-driven refresh — replaces 3s polling (was 20 IPC/min)
-const unsubLogs = window.electronAPI.onDbChanged(() => {
-  if (activeSection.value === 'logs') fetchSidebarLogs()
-})
-onUnmounted(() => unsubLogs())
-watch(() => activeSection.value === 'logs', (active) => {
-  if (active) fetchSidebarLogs()
-}, { immediate: true })
-
-function formatRelativeTime(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (diff < 60) return `${diff}s`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
-  return `${Math.floor(diff / 86400)}j`
-}
 
 function toggleSection(section: Section) {
   const next = activeSection.value === section ? null : section
@@ -329,30 +284,16 @@ async function closeProject() {
     <!-- ── Activity Rail (toujours visible, 48px) ── -->
     <div class="w-12 flex flex-col items-center py-2 gap-1 shrink-0 border-r border-edge-subtle">
 
-      <!-- Backlog -->
+      <!-- Backlog — navigation directe vers l'onglet backlog -->
       <button
         :title="t('sidebar.backlog')"
-        :class="['rail-btn', activeSection === 'backlog' && 'rail-btn--active']"
-        @click="toggleSection('backlog')"
+        class="rail-btn"
+        @click="tabsStore.setActive('backlog')"
       >
-        <span v-if="activeSection === 'backlog'" class="rail-indicator" />
         <svg viewBox="0 0 16 16" fill="currentColor" class="w-[18px] h-[18px]">
           <rect x="1"  y="2" width="4" height="12" rx="1.5"/>
           <rect x="6"  y="2" width="4" height="8"  rx="1.5"/>
           <rect x="11" y="2" width="4" height="5"  rx="1.5"/>
-        </svg>
-      </button>
-
-      <!-- Log -->
-      <button
-        :title="t('sidebar.logs')"
-        :class="['rail-btn', activeSection === 'logs' && 'rail-btn--active']"
-        @click="toggleSection('logs')"
-      >
-        <span v-if="activeSection === 'logs'" class="rail-indicator" />
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-[18px] h-[18px]">
-          <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
-          <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
         </svg>
       </button>
 
@@ -446,109 +387,8 @@ async function closeProject() {
           </button>
         </div>
 
-        <!-- ── Backlog ── -->
-        <template v-if="activeSection === 'backlog'">
-          <div class="flex-1 overflow-y-auto min-h-0 px-4 py-3 flex flex-col gap-3">
-
-            <!-- Compteurs -->
-            <div class="flex items-center gap-2">
-              <span class="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/40 text-amber-700 dark:text-amber-400">
-                {{ store.tasksByStatus.todo.length }} {{ t('sidebar.todo') }}
-              </span>
-              <span class="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400">
-                {{ store.tasksByStatus.in_progress.length }} {{ t('sidebar.inProgress') }}
-              </span>
-              <span class="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-surface-secondary border border-edge-default text-content-muted">
-                {{ store.tasksByStatus.done.length }} {{ t('sidebar.done') }}
-              </span>
-            </div>
-
-            <!-- En cours -->
-            <div v-if="store.tasksByStatus.in_progress.length > 0">
-              <p class="text-xs font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('columns.in_progress') }}</p>
-              <div class="space-y-1.5">
-                <button
-                  v-for="task in store.tasksByStatus.in_progress"
-                  :key="task.id"
-                  class="w-full text-left px-2 py-2 rounded-md hover:bg-surface-secondary transition-colors group"
-                  @click="store.openTask(task)"
-                >
-                  <div class="flex items-start justify-between gap-1 min-w-0">
-                    <span class="text-sm text-content-tertiary truncate leading-snug group-hover:text-content-primary transition-colors" :title="task.titre">{{ task.titre }}</span>
-                    <span class="text-[10px] text-content-faint font-mono shrink-0">#{{ task.id }}</span>
-                  </div>
-                  <span v-if="task.agent_name" class="text-xs font-mono" :style="{ color: agentFg(task.agent_name) }">{{ task.agent_name }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- À faire (5 premières) -->
-            <div v-if="store.tasksByStatus.todo.length > 0">
-              <p class="text-xs font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('columns.todo') }}</p>
-              <div class="space-y-1.5">
-                <button
-                  v-for="task in store.tasksByStatus.todo.slice(0, 5)"
-                  :key="task.id"
-                  class="w-full text-left px-2 py-2 rounded-md hover:bg-surface-secondary transition-colors group"
-                  @click="store.openTask(task)"
-                >
-                  <div class="flex items-start justify-between gap-1 min-w-0">
-                    <span class="text-sm text-content-muted truncate leading-snug group-hover:text-content-secondary transition-colors" :title="task.titre">{{ task.titre }}</span>
-                    <span class="text-[10px] text-content-faint font-mono shrink-0">#{{ task.id }}</span>
-                  </div>
-                  <span v-if="task.agent_name" class="text-xs font-mono" :style="{ color: agentFg(task.agent_name) }">{{ task.agent_name }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Empty state -->
-            <div v-if="store.tasksByStatus.in_progress.length === 0 && store.tasksByStatus.todo.length === 0"
-              class="flex items-center justify-center py-8">
-              <p class="text-xs text-content-faint italic">{{ t('sidebar.noActiveTasks') }}</p>
-            </div>
-
-            <!-- Lien board -->
-            <button
-              class="mt-auto text-xs text-content-faint hover:text-content-tertiary transition-colors text-left"
-              @click="tabsStore.setActive('backlog'); activeSection = null"
-            >{{ t('sidebar.seeBoard') }}</button>
-          </div>
-        </template>
-
-        <!-- ── Logs ── -->
-        <template v-else-if="activeSection === 'logs'">
-          <div class="flex-1 overflow-y-auto min-h-0 px-3 py-3 flex flex-col gap-1">
-            <div v-if="sidebarLogs.length === 0" class="flex items-center justify-center py-8">
-              <p class="text-xs text-content-faint italic">{{ t('sidebar.noLogs') }}</p>
-            </div>
-            <div
-              v-for="log in sidebarLogs"
-              :key="log.id"
-              class="flex flex-col gap-0.5 px-2 py-1.5 rounded-md hover:bg-surface-secondary/60 transition-colors"
-            >
-              <div class="flex items-center gap-1.5 min-w-0">
-                <span :class="[
-                  'text-[9px] font-bold uppercase tracking-wide shrink-0 px-1 rounded',
-                  log.niveau === 'error' ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400' :
-                  log.niveau === 'warn'  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400' :
-                  log.niveau === 'debug' ? 'bg-surface-secondary text-content-faint' :
-                  'bg-surface-secondary text-content-subtle'
-                ]">{{ log.niveau }}</span>
-                <span v-if="log.agent_name" class="text-[10px] font-mono shrink-0" :style="{ color: agentFg(log.agent_name) }">{{ log.agent_name }}</span>
-                <span class="text-[10px] text-content-faint font-mono ml-auto shrink-0">{{ formatRelativeTime(log.created_at) }}</span>
-              </div>
-              <p class="text-[11px] text-content-muted truncate">{{ log.action }}<span v-if="log.detail" class="text-content-faint"> — {{ log.detail }}</span></p>
-            </div>
-            <!-- Lien logs complets -->
-            <button
-              class="mt-2 text-xs text-content-faint hover:text-content-tertiary transition-colors text-left px-2"
-              @click="tabsStore.setActive('logs'); activeSection = null"
-            >{{ t('sidebar.seeLogs') }}</button>
-          </div>
-        </template>
-
         <!-- ── Projet ── -->
-        <template v-else-if="activeSection === 'project'">
+        <template v-if="activeSection === 'project'">
           <div class="px-4 py-3">
             <div class="flex items-center justify-between gap-2">
               <button
