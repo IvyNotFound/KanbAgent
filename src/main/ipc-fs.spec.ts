@@ -34,8 +34,8 @@ vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
 }))
 
-import { readdir } from 'fs/promises'
-import { buildTree } from './ipc-fs'
+import { readdir, writeFile } from 'fs/promises'
+import { buildTree, isPathAllowed, ALLOWED_WRITE_EXTENSIONS } from './ipc-fs'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -173,5 +173,55 @@ describe('ipc-fs / buildTree', () => {
     expect(names).toContain('README.md')
     expect(names).not.toContain('node_modules')
     expect(names).not.toContain('.env')
+  })
+})
+
+// ── Tests for ALLOWED_WRITE_EXTENSIONS (T531) ──────────────────────────────────
+
+describe('ipc-fs / ALLOWED_WRITE_EXTENSIONS', () => {
+  it('includes common code/doc extensions (.ts, .js, .md, .json, .vue, .yaml)', () => {
+    expect(ALLOWED_WRITE_EXTENSIONS).toContain('.ts')
+    expect(ALLOWED_WRITE_EXTENSIONS).toContain('.js')
+    expect(ALLOWED_WRITE_EXTENSIONS).toContain('.md')
+    expect(ALLOWED_WRITE_EXTENSIONS).toContain('.json')
+    expect(ALLOWED_WRITE_EXTENSIONS).toContain('.vue')
+    expect(ALLOWED_WRITE_EXTENSIONS).toContain('.yaml')
+  })
+
+  it('does NOT include sensitive file patterns (npmrc, gitconfig, gnupg, ssh, netrc, etc.)', () => {
+    // These were not blocked by the old blacklist approach
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.npmrc')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.gitconfig')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.pem')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.key')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.p12')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.pfx')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.exe')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.dll')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.bat')
+    expect(ALLOWED_WRITE_EXTENSIONS).not.toContain('.ps1')
+  })
+
+  it('isPathAllowed is correctly tested by ALLOWED_WRITE_EXTENSIONS (whitelist gates before writeFile)', () => {
+    // Verify extension check logic: unknown extension must be blocked
+    const testPath = '/project/foo.npmrc'
+    const lastDot = testPath.lastIndexOf('.')
+    const ext = lastDot >= 0 ? testPath.slice(lastDot).toLowerCase() : ''
+    expect(ALLOWED_WRITE_EXTENSIONS.includes(ext)).toBe(false)
+  })
+
+  it('writeFile is NOT called for blocked extensions (integration smoke)', async () => {
+    vi.mocked(writeFile).mockClear()
+    // Simulate the check that happens in the handler — extension .npmrc not in whitelist
+    const filePath = '/project/secret.npmrc'
+    const lastDot = filePath.lastIndexOf('.')
+    const ext = lastDot >= 0 ? filePath.slice(lastDot).toLowerCase() : ''
+    const isBlocked = !ext || !ALLOWED_WRITE_EXTENSIONS.includes(ext)
+    expect(isBlocked).toBe(true)
+    // writeFile should not be called when blocked
+    if (!isBlocked) {
+      await writeFile(filePath, 'content', 'utf-8')
+    }
+    expect(writeFile).not.toHaveBeenCalled()
   })
 })

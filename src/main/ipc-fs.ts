@@ -57,6 +57,9 @@ export function isPathAllowed(filePath: string, allowedDir: string): boolean {
   return resolved === allowed || resolved.startsWith(allowed + sep)
 }
 
+// T531: Whitelist of file extensions allowed for fs:writeFile
+export const ALLOWED_WRITE_EXTENSIONS = ['.md', '.ts', '.js', '.json', '.txt', '.yaml', '.yml', '.toml', '.vue', '.css', '.html', '.sh', '.py', '.rb', '.go', '.rs', '.java', '.kt', '.swift', '.c', '.cpp', '.h', '.cs', '.php', '.xml', '.env', '.gitignore', '.eslintrc', '.prettierrc']
+
 // ── Handler registration ─────────────────────────────────────────────────────
 
 /** Register filesystem IPC handlers (listDir, readFile, writeFile). */
@@ -130,11 +133,11 @@ export function registerFsHandlers(): void {
       console.warn('[IPC fs:writeFile] Path not in allowed directory:', filePath, allowedDir)
       return { success: false, error: 'Path not in allowed directory. Write is only permitted within the project directory.' }
     }
-    const sensitivePatterns = ['.ssh', '.bashrc', '.profile', '/etc/', '/.aws/']
-    const isSensitive = sensitivePatterns.some(pattern => filePath.includes(pattern))
-    if (isSensitive) {
-      console.warn('[IPC fs:writeFile] Blocked attempt to write sensitive file:', filePath)
-      return { success: false, error: 'Writing to sensitive system files is not allowed' }
+    const lastDot = filePath.lastIndexOf('.')
+    const ext = lastDot >= 0 ? filePath.slice(lastDot).toLowerCase() : ''
+    if (!ext || !ALLOWED_WRITE_EXTENSIONS.includes(ext)) {
+      console.warn('[IPC fs:writeFile] Blocked: file extension not allowed:', filePath)
+      return { success: false, error: 'File type not allowed' }
     }
     try {
       await writeFile(filePath, content, 'utf-8')
