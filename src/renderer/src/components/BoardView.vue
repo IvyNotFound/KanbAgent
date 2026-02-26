@@ -62,6 +62,7 @@ function formatDate(iso: string): string {
 async function onTaskDropped(taskId: number): Promise<void> {
   const task = store.tasks.find(t => t.id === taskId)
   if (!task) return
+  if (task.statut === 'in_progress') return
 
   if (!task.agent_assigne_id) {
     toast.push(t('board.noAgentAssigned'), 'warn')
