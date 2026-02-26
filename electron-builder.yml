@@ -1,0 +1,26 @@
+appId: com.ivynotfound.agent-viewer
+productName: agent-viewer
+copyright: Copyright © 2024-2026 IvyNotFound
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  menuCategory: agent-viewer
+  shortcutName: agent-viewer
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  language: "1036"
+  include: build/installer.nsh
+
+directories:
+  output: dist
+  buildResources: build
