@@ -430,6 +430,33 @@ describe('apply-master-md handler', () => {
     expect(result.success).toBe(false)
     expect(result.error).toContain('permission denied')
   })
+
+  it('atomic write: writeFile(.tmp) then rename, returns { success: true }', async () => {
+    const result = await callHandler('apply-master-md', '/fake/project.db', '/fake/project', '# CLAUDE.md', 'sha-atomic') as {
+      success: boolean
+    }
+    expect(result.success).toBe(true)
+    // writeFile called with .tmp path
+    expect(fsWriteFileMock).toHaveBeenCalledWith(
+      expect.stringContaining('CLAUDE.md.tmp'),
+      '# CLAUDE.md',
+      'utf-8'
+    )
+    // rename called to move .tmp to final path
+    expect(fsRenameMock).toHaveBeenCalledWith(
+      expect.stringContaining('CLAUDE.md.tmp'),
+      expect.stringContaining('CLAUDE.md')
+    )
+  })
+
+  it('updates config.claude_md_commit in DB with the provided SHA', async () => {
+    const { writeDb } = await import('./db')
+    const result = await callHandler('apply-master-md', '/fake/project.db', '/fake/project', 'content', 'target-sha') as {
+      success: boolean
+    }
+    expect(result.success).toBe(true)
+    expect(writeDb).toHaveBeenCalledWith('/fake/project.db', expect.any(Function))
+  })
 })
 
 // ── T582: test-github-connection ──────────────────────────────────────────────
