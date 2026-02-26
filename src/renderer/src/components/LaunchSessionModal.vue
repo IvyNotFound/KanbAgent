@@ -168,7 +168,7 @@ async function launch() {
 
           <!-- Claude Code instance selection -->
           <div>
-            <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('launch.claudeInstance') }}</p>
+            <p class="text-sm font-medium text-content-secondary mb-2">{{ t('launch.claudeInstance') }}</p>
 
             <div v-if="loading" class="text-sm text-content-subtle animate-pulse">{{ t('common.loading') }}</div>
 
@@ -204,7 +204,7 @@ async function launch() {
 
           <!-- Resume session (task #218): shown when a previous conv_id exists -->
           <div v-if="lastConvId">
-            <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('launch.prevSession') }}</p>
+            <p class="text-sm font-medium text-content-secondary mb-2">{{ t('launch.prevSession') }}</p>
             <label class="flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all"
               :class="useResume ? '' : 'border-edge-default bg-surface-secondary/40 hover:border-content-faint'"
               :style="useResume ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '15' } : {}"
@@ -215,17 +215,9 @@ async function launch() {
             <p class="text-[10px] text-content-faint mt-1">{{ t('launch.resumeNote') }}</p>
           </div>
 
-          <!-- System Prompt (affiché) — masqué en mode resume -->
-          <div v-if="fullSystemPrompt && !useResume">
-            <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('launch.systemPrompt') }}</p>
-            <div class="bg-surface-base border border-edge-default rounded-lg px-3 py-2 text-xs font-mono text-content-muted max-h-32 overflow-y-auto">
-              <pre class="whitespace-pre-wrap">{{ fullSystemPrompt }}</pre>
-            </div>
-          </div>
-
           <!-- Thinking mode -->
           <div>
-            <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('launch.thinkingMode') }}</p>
+            <p class="text-sm font-medium text-content-secondary mb-2">{{ t('launch.thinkingMode') }}</p>
             <div class="flex gap-2">
               <button
                 class="flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all"
@@ -251,7 +243,7 @@ async function launch() {
 
           <!-- Profil API Claude (sélecteur masqué si aucun profil alternatif disponible) -->
           <div v-if="activeProfiles.length > 1">
-            <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('launch.apiProfile') }}</p>
+            <p class="text-sm font-medium text-content-secondary mb-2">{{ t('launch.apiProfile') }}</p>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="profile in activeProfiles"
@@ -271,7 +263,7 @@ async function launch() {
 
           <!-- Prompt personnalisé -->
           <div>
-            <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('launch.startPrompt') }}</p>
+            <p class="text-sm font-medium text-content-secondary mb-2">{{ t('launch.startPrompt') }}</p>
             <textarea
               v-model="customPrompt"
               rows="3"

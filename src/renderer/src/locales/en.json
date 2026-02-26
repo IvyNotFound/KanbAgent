@@ -152,7 +152,6 @@
     "prevSession": "Previous session",
     "resume": "Resume conversation ({resume})",
     "resumeNote": "Skips system prompt injection — saves ~2500 tokens",
-    "systemPrompt": "System Prompt (will be injected)",
     "thinkingMode": "Thinking mode",
     "auto": "Auto",
     "disabled": "Disabled",
