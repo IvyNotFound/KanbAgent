@@ -1,131 +1,134 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.5.1-blue)
-![Statut](https://img.shields.io/badge/statut-b%C3%A9ta-orange)
+![Version](https://img.shields.io/badge/version-0.7.0-blue)
+![Status](https://img.shields.io/badge/status-beta-orange)
 
-Interface desktop style Trello/Jira pour visualiser en temps réel les tâches des agents Claude depuis une base SQLite locale. L'application permet de gérer des agents, lancer des sessions, et dispose d'un terminal WSL intégré.
+Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches sessions, and includes an embedded WSL terminal.
 
 ![Board agent-viewer](https://placehold.co/800x400/18181b/white?text=agent-viewer+board)
 
-## Fonctionnalités principales
+## Key Features
 
-- **Board Trello/Jira** : Colonnes par statut (`todo`, `in_progress`, `done`, `archived`), cartes de tâches avec drill-down, badge effort S/M/L et priorité
-- **Gestion des agents** : Création, configuration, édition system prompt, thinking mode (auto/disabled), assignation obligatoire
-- **Terminal WSL intégré** : Sessions multiples, onglets, node-pty + xterm.js, crash recovery avec `--resume`
-- **Auto-launch terminals** : Lancement automatique des sessions agent à la création d'une tâche avec assignation
-- **Auto-trigger review** : Lancement automatique d'une session review quand ≥10 tâches atteignent le statut `done` (seuil configurable, cooldown)
-- **Token stats** : Statistiques globales/quotidiennes/horaires de tokens, barres par agent, table par session
-- **Terminal watchdog** : Détection automatique de crash et recovery avec paramètres de lancement stockés
-- **Multi-instance** : Lancement de plusieurs instances du même agent avec isolation worktree git
-- **Reprise de session** : Les sessions Claude Code sont reprises via `--resume <conv_id>` pour économiser les tokens
-- **Détection multi-distro** : Découverte automatique des distributions WSL avec Claude Code installé
-- **Connexion à un fichier externe** : Ouvre n'importe quel fichier `.claude/project.db`
-- **Explorateur de fichiers** : Navigation et édition de fichiers du projet avec CodeMirror 6
-- **Recherche** : Recherche plein texte dans les tâches avec filtres (statut, agent, périmètre)
-- **Synchronisation CLAUDE.md** : Compare et met à jour depuis un dépôt GitHub master
-- **Mode dark / light** : Thème sombre par défaut, mode clair disponible
-- **Internationalisation** : Interface disponible en français et anglais (vue-i18n)
-- **Token GitHub sécurisé** : Chiffrement OS-level via Electron `safeStorage` (DPAPI Windows / Keychain macOS)
-- **Monitoring mémoire WSL** : Surveillance en temps réel de la RAM WSL avec alertes et libération mémoire
+- **Trello/Jira Board**: Columns by status (`todo`, `in_progress`, `done`, `archived`), task cards with drill-down, S/M/L effort badge and priority
+- **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete
+- **Multi-agent Assignments**: Multiple agents per task (primary / support / reviewer roles), task card avatars
+- **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
+- **Integrated WSL Terminal**: Multiple sessions, tabs, node-pty + xterm.js, crash recovery with `--resume`
+- **Auto-launch Terminals**: Automatic agent session launch on task creation with assignment
+- **Auto-trigger Review**: Automatic review session launch when ≥10 tasks reach `done` status (configurable threshold, cooldown)
+- **Archive Pagination**: Paginated archive view (50 tasks per page), archives excluded from main refresh for better performance
+- **Token Stats**: Global/daily/hourly token statistics, per-agent bars, per-session table
+- **Terminal Watchdog**: Automatic crash detection and recovery with stored launch parameters
+- **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation
+- **Session Resume**: Claude Code sessions resumed via `--resume <conv_id>` to save tokens
+- **Multi-distro Detection**: Automatic discovery of WSL distributions with Claude Code installed
+- **External File Connection**: Open any `.claude/project.db` file
+- **File Explorer**: Project file navigation and editing with CodeMirror 6
+- **Search**: Full-text search in tasks with filters (status, agent, scope)
+- **CLAUDE.md Sync**: Compare and update from a GitHub master repository
+- **Dark / Light Mode**: Dark theme by default, light mode available
+- **Internationalization**: Interface available in French and English (vue-i18n)
+- **Secure GitHub Token**: OS-level encryption via Electron `safeStorage` (DPAPI Windows / Keychain macOS)
+- **WSL Memory Monitoring**: Real-time WSL RAM monitoring with alerts and memory release
 
-## Prérequis
+## Prerequisites
 
-| Logiciel | Version minimale |
+| Software | Minimum Version |
 |----------|-----------------|
 | Node.js | ≥ 20 |
 | npm | ≥ 10 |
-| WSL2 | Pour le terminal intégré |
-| sql.js | ≥ 1.14 (inclus via `npm install`) |
+| WSL2 | For the integrated terminal |
+| sql.js | ≥ 1.14 (included via `npm install`) |
 
 ## Installation
 
 ```bash
-# Clonez le projet
+# Clone the project
 git clone https://github.com/IvyNotFound/agent-viewer.git
 cd agent-viewer
 
-# Installez les dépendances
+# Install dependencies
 npm install
 ```
 
-## Utilisation
+## Usage
 
-### Développement
+### Development
 
 ```bash
 npm run dev
 ```
 
-Lance l'application en mode développement avec hot-reload :
-- Main process Electron
+Launches the application in development mode with hot-reload:
+- Main Electron process
 - Preload scripts
-- Renderer Vue 3 sur http://localhost:5173
+- Vue 3 renderer at http://localhost:5173
 
-### Build desktop (Windows)
+### Desktop Build (Windows)
 
 ```bash
 npm run build
 ```
 
-Productions :
-- `dist/win-unpacked/` — Application décompressée
-- `dist/*.exe` — Installeur (si Wine disponible)
+Outputs:
+- `dist/win-unpacked/` — Unpacked application
+- `dist/*.exe` — Installer (NSIS, multi-language)
 
-### Commandes disponibles
+### Available Commands
 
-| Commande | Description |
-|----------|-------------|
-| `npm run dev` | Démarrage en mode développement |
-| `npm run build` | Build production Windows |
-| `npm run build:dir` | Build sans empaquetage |
-| `npm run lint` | Vérification ESLint |
-| `npm run test` | Exécution des tests (Vitest) |
-| `npm run test:watch` | Tests en mode watch |
-| `npm run test:coverage` | Rapport de couverture |
-| `npm run release` | Release patch (SemVer) |
-| `npm run release:minor` | Release mineure |
-| `npm run release:major` | Release majeure |
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start in development mode |
+| `npm run build` | Windows production build |
+| `npm run build:dir` | Build without packaging |
+| `npm run lint` | ESLint check |
+| `npm run test` | Run tests (Vitest) |
+| `npm run test:watch` | Tests in watch mode |
+| `npm run test:coverage` | Coverage report |
+| `npm run release` | Patch release (SemVer) |
+| `npm run release:minor` | Minor release |
+| `npm run release:major` | Major release |
 
 ## Architecture
 
 ```
 agent-viewer/
 ├── src/
-│   ├── main/                   # Processus principal Electron
-│   │   ├── index.ts            # Point d'entrée, BrowserWindow, CSP
-│   │   ├── ipc.ts              # Handlers IPC core (SQL, window, locks, migrations)
-│   │   ├── ipc-agents.ts       # Handlers IPC agents (CRUD, sessions, recherche)
-│   │   ├── ipc-fs.ts           # Handlers IPC filesystem (listDir, readFile, writeFile)
-│   │   ├── ipc-settings.ts     # Handlers IPC settings (config, GitHub, updates)
-│   │   ├── db.ts               # Utilitaires SQLite (queryLive, writeLive)
-│   │   ├── terminal.ts         # Gestion node-pty + WSL (spawn, resize, kill, memory)
-│   │   ├── claude-md.ts        # Manipulation CLAUDE.md (insertion agents)
-│   │   ├── migration.ts        # Migrations SQLite incrémentales (schéma v2+)
-│   │   ├── seed.ts             # Données de démo pour project.db
-│   │   └── default-agents.ts   # Agents par défaut insérés à la création d'un projet
+│   ├── main/                   # Electron main process
+│   │   ├── index.ts            # Entry point, BrowserWindow, CSP
+│   │   ├── ipc.ts              # Core IPC handlers (SQL, window, locks, migrations)
+│   │   ├── ipc-agents.ts       # Agent IPC handlers (CRUD, sessions, search, assignees)
+│   │   ├── ipc-fs.ts           # Filesystem IPC handlers (listDir, readFile, writeFile)
+│   │   ├── ipc-settings.ts     # Settings IPC handlers (config, GitHub, updates)
+│   │   ├── db.ts               # SQLite utilities (queryLive, writeLive)
+│   │   ├── terminal.ts         # node-pty + WSL management (spawn, resize, kill, memory)
+│   │   ├── claude-md.ts        # CLAUDE.md manipulation (agent insertion)
+│   │   ├── migration.ts        # Incremental SQLite migrations (schema v2+)
+│   │   ├── seed.ts             # Demo data for project.db
+│   │   └── default-agents.ts   # Default agents inserted on project creation
 │   ├── preload/
-│   │   └── index.ts            # contextBridge — expose electronAPI au renderer
-│   └── renderer/               # Application Vue 3
+│   │   └── index.ts            # contextBridge — exposes electronAPI to renderer
+│   └── renderer/               # Vue 3 application
 │       └── src/
-│           ├── main.ts         # Point d'entrée Vue + Pinia + i18n
-│           ├── App.vue         # Composant racine
-│           ├── stores/         # Stores Pinia
-│           │   ├── tasks.ts    # Tâches, agents, locks, projet
-│           │   ├── tabs.ts     # Gestion des onglets (multi-type)
-│           │   └── settings.ts # Thème, langue, GitHub, CLAUDE.md
-│           ├── components/     # Composants Vue (~20 composants)
-│           ├── composables/    # Composables Vue (useAutoLaunch, useConfirmDialog…)
-│           ├── locales/        # Traductions i18n (fr.json, en.json)
-│           ├── utils/          # Utilitaires (agentColor…)
+│           ├── main.ts         # Vue + Pinia + i18n entry point
+│           ├── App.vue         # Root component
+│           ├── stores/         # Pinia stores
+│           │   ├── tasks.ts    # Tasks, agents, locks, project
+│           │   ├── tabs.ts     # Tab management (multi-type)
+│           │   └── settings.ts # Theme, language, GitHub, CLAUDE.md
+│           ├── components/     # Vue components (~20 components)
+│           ├── composables/    # Vue composables (useAutoLaunch, useArchivedPagination…)
+│           ├── locales/        # i18n translations (fr.json, en.json)
+│           ├── utils/          # Utilities (agentColor…)
 │           └── types/
-│               └── index.ts    # Types TypeScript partagés
-├── scripts/                    # Scripts CLI (dbq.js, dbw.js, dbstart.js)
+│               └── index.ts    # Shared TypeScript types
+├── scripts/                    # CLI scripts (dbq.js, dbw.js, dbstart.js)
 ├── electron.vite.config.ts
-├── electron-builder.config.ts
+├── electron-builder.yml
 └── package.json
 ```
 
-### Flux de données
+### Data Flow
 
 ```
 ┌─────────────────┐     IPC (contextBridge)     ┌─────────────────┐
@@ -140,66 +143,66 @@ agent-viewer/
                                                   └─────────────────┘
 ```
 
-### Stack technique
+### Tech Stack
 
-| Catégorie | Technologie |
-|-----------|-------------|
-| Framework desktop | Electron 40 |
+| Category | Technology |
+|----------|------------|
+| Desktop framework | Electron 40 |
 | Build tool | electron-vite 5 |
 | Frontend | Vue 3 + TypeScript 5 |
 | State management | Pinia 2 |
 | CSS | Tailwind CSS v4 (`@tailwindcss/postcss`) |
 | i18n | vue-i18n 9 (FR/EN) |
 | Terminal | node-pty 1 + @xterm/xterm 5 |
-| Base de données | sql.js 1.14 (SQLite WASM, bypass file locks) |
+| Database | sql.js 1.14 (SQLite WASM, bypasses file locks) |
 | Tests | Vitest 4 |
-| Éditeur de code | CodeMirror 6 |
+| Code editor | CodeMirror 6 |
 | Markdown | marked + DOMPurify |
 
 ## Configuration
 
-### Variables d'environnement
+### Environment Variables
 
-Aucune variable d'environnement requise pour le fonctionnement de base.
+No environment variables required for basic operation.
 
-### Configuration WSL 2 recommandée (usage intensif d'agents)
+### Recommended WSL 2 Configuration (heavy agent usage)
 
-WSL 2 tourne dans une VM Hyper-V qui alloue de la RAM dynamiquement mais ne la restitue pas automatiquement à Windows. Par défaut, WSL 2 peut utiliser jusqu'à 50% de la RAM système. Après plusieurs heures d'agents Claude actifs, la VM accumule de la RAM (heap Node.js, buffers kernel, etc.) même si les processus sont terminés.
+WSL 2 runs in a Hyper-V VM that allocates RAM dynamically but does not automatically return it to Windows. By default, WSL 2 can use up to 50% of system RAM. After several hours of active Claude agents, the VM accumulates RAM (Node.js heap, kernel buffers, etc.) even after processes end.
 
-**Créer ou modifier** `C:\Users\<votre-utilisateur>\.wslconfig` :
+**Create or edit** `C:\Users\<your-user>\.wslconfig`:
 
 ```ini
 [wsl2]
-memory=4GB            # Limite max RAM allouée à WSL (adapter selon RAM disponible)
-processors=4          # Optionnel : limiter les vCPUs
+memory=4GB            # Max RAM allocated to WSL (adjust based on available RAM)
+processors=4          # Optional: limit vCPUs
 
 [experimental]
-autoMemoryReclaim=gradual   # WSL 2.0+ : libère la mémoire inutilisée progressivement
-# Alternatives : "dropcache" (agressif) ou "disabled" (défaut)
+autoMemoryReclaim=gradual   # WSL 2.0+: gradually reclaims unused memory
+# Alternatives: "dropcache" (aggressive) or "disabled" (default)
 ```
 
-> **Note** : Après modification, exécuter `wsl --shutdown` dans PowerShell pour appliquer les changements.
+> **Note**: After editing, run `wsl --shutdown` in PowerShell to apply changes.
 
- Références : [Documentation WSL](https://learn.microsoft.com/en-us/windows/wsl/wsl-config)
+References: [WSL Documentation](https://learn.microsoft.com/en-us/windows/wsl/wsl-config)
 
-### Stockage local
+### Local Storage
 
-L'application utilise `localStorage` pour :
-- `projectPath` — Chemin du projet connecté
-- `dbPath` — Chemin vers la DB SQLite
-- `theme` — Thème (`dark` ou `light`)
-- `language` — Langue (`fr` ou `en`)
-- `github_token` — Token GitHub (si configuré, chiffré via `safeStorage` côté main)
-- `github_repo_url` — URL du dépôt GitHub
-- `github_last_check` — Timestamp de la dernière vérification de connexion GitHub
+The application uses `localStorage` for:
+- `projectPath` — Path to the connected project
+- `dbPath` — Path to the SQLite database
+- `theme` — Theme (`dark` or `light`)
+- `language` — Language (`fr` or `en`)
+- `github_token` — GitHub token (if configured, encrypted via `safeStorage` on main side)
+- `github_repo_url` — GitHub repository URL
+- `github_last_check` — Timestamp of the last GitHub connection check
 
-## Contribution
+## Contributing
 
-Voir [CONTRIBUTING.md](./CONTRIBUTING.md) pour :
-- Workflow de développement
-- Conventions de code
-- Procédure de soumission
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+- Development workflow
+- Code conventions
+- Submission procedure
 
-## Licence
+## License
 
 MIT
