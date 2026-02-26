@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
 import type { Tab } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentHue, isDark } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentHue, isDark, colorVersion } from '@renderer/utils/agentColor'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
 
 const { t } = useI18n()
@@ -113,31 +113,40 @@ function onMiddleClick(e: MouseEvent, tab: Tab) {
 }
 
 // ── Styles dynamiques ────────────────────────────────────────────────────────
-function tabStyle(tab: Tab): Record<string, string> {
-  const isActive = store.activeTabId === tab.id
-  if (!tab.agentName) {
-    if (!isActive) return {}
-    return isDark()
-      ? { color: '#f4f4f5', backgroundColor: '#27272a' }
-      : { color: '#18181b', backgroundColor: '#e4e4e7' }
-  }
-  const h = agentHue(tab.agentName)
-  if (isActive) {
-    return {
-      color: agentFg(tab.agentName),
-      backgroundColor: agentBg(tab.agentName),
+// Computed maps to avoid recalculating HSL on every render pass.
+// Invalidated automatically when tabs list, activeTabId, or colorVersion changes.
+const tabStyleMap = computed<Map<string, Record<string, string>>>(() => {
+  void colorVersion.value // track theme reactivity
+  const activeId = store.activeTabId
+  const map = new Map<string, Record<string, string>>()
+  for (const tab of store.tabs) {
+    const isActive = activeId === tab.id
+    if (!tab.agentName) {
+      map.set(tab.id, isActive
+        ? (isDark() ? { color: '#f4f4f5', backgroundColor: '#27272a' } : { color: '#18181b', backgroundColor: '#e4e4e7' })
+        : {})
+      continue
     }
+    const h = agentHue(tab.agentName)
+    map.set(tab.id, isActive
+      ? { color: agentFg(tab.agentName), backgroundColor: agentBg(tab.agentName) }
+      : (isDark()
+        ? { color: `hsla(${h}, 65%, 65%, 0.65)`, backgroundColor: `hsla(${h}, 38%, 16%, 0.55)` }
+        : { color: `hsla(${h}, 55%, 40%, 0.7)`, backgroundColor: `hsla(${h}, 45%, 92%, 0.6)` }))
   }
-  // Inactif mais agent connu : teinte subtile
-  return isDark()
-    ? { color: `hsla(${h}, 65%, 65%, 0.65)`, backgroundColor: `hsla(${h}, 38%, 16%, 0.55)` }
-    : { color: `hsla(${h}, 55%, 40%, 0.7)`, backgroundColor: `hsla(${h}, 45%, 92%, 0.6)` }
-}
+  return map
+})
 
-function indicatorStyle(tab: Tab): Record<string, string> {
-  if (tab.agentName) return { backgroundColor: agentFg(tab.agentName) }
-  return { backgroundColor: '#a78bfa' } // violet-400
-}
+const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
+  void colorVersion.value // track theme reactivity
+  const map = new Map<string, Record<string, string>>()
+  for (const tab of store.tabs) {
+    map.set(tab.id, tab.agentName
+      ? { backgroundColor: agentFg(tab.agentName) }
+      : { backgroundColor: '#a78bfa' }) // violet-400
+  }
+  return map
+})
 </script>
 
 <template>
@@ -217,7 +226,7 @@ function indicatorStyle(tab: Tab): Record<string, string> {
           dropTargetId === tab.id && draggedId !== tab.id ? 'ring-1 ring-inset ring-violet-500/50' : '',
           'cursor-pointer',
         ]"
-        :style="tabStyle(tab)"
+        :style="tabStyleMap.get(tab.id)"
         @click="store.setActive(tab.id)"
         @mousedown="onMiddleClick($event, tab)"
         @dragstart="onDragStart($event, tab.id)"
@@ -260,7 +269,7 @@ function indicatorStyle(tab: Tab): Record<string, string> {
         <span
           v-if="store.activeTabId === tab.id"
           class="absolute bottom-0 left-0 right-0 h-[2px]"
-          :style="indicatorStyle(tab)"
+          :style="indicatorStyleMap.get(tab.id)"
         ></span>
       </button>
     </div>

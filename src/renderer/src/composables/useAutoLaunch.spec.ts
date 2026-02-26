@@ -123,8 +123,8 @@ describe('composables/useAutoLaunch', () => {
     // Terminal should still exist (immediate poll is async — not yet resolved)
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)
 
-    // Advance timers to fire the immediate 0ms poll, flush promises
-    await vi.advanceTimersByTimeAsync(1)
+    // Advance past the 80ms debounce + immediate 0ms poll, flush promises
+    await vi.advanceTimersByTimeAsync(81)
 
     // Ctrl+C should have been sent (completed session found in DB)
     expect(api.terminalWrite).toHaveBeenCalledWith('pty-123', '\x03')
@@ -188,8 +188,8 @@ describe('composables/useAutoLaunch', () => {
     tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
     await nextTick()
 
-    // Advance 5 minutes (fallback timeout)
-    await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+    // Advance 5 minutes + 80ms debounce (fallback timeout starts after debounce fires)
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000 + 80)
 
     // Force-close should have happened
     expect(api.terminalWrite).toHaveBeenCalledWith('pty-fallback', '\x03')
@@ -475,8 +475,8 @@ describe('composables/useAutoLaunch', () => {
       tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
       await nextTick()
 
-      // Advance to fire the immediate poll, flush promises
-      await vi.advanceTimersByTimeAsync(1)
+      // Advance past 80ms debounce + immediate 0ms poll, flush promises
+      await vi.advanceTimersByTimeAsync(81)
 
       // Tab should be closed directly (no terminalWrite/Kill since no ptyId)
       expect(api.terminalWrite).not.toHaveBeenCalled()

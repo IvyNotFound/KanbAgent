@@ -89,10 +89,11 @@ async function onTaskDropped(taskId: number, targetStatut: string): Promise<void
 
 const UNASSIGNED_SENTINEL = '__unassigned__'
 
-// Group current page of archived tasks by agent
-const archivedByAgent = computed(() => {
+// Group and sort archived tasks by agent — depends only on task data, not on page index.
+// Sorting happens here once when the data changes, not on every pagination UI interaction.
+const archivedGroupsSorted = computed(() => {
   const archived = pagination.archivedTasks.value
-  if (!archived.length) return []
+  if (!archived.length) return [] as [string, typeof archived][]
   const groups = new Map<string, typeof archived>()
   for (const task of archived) {
     const key = task.agent_name ?? UNASSIGNED_SENTINEL
@@ -101,6 +102,9 @@ const archivedByAgent = computed(() => {
   }
   return [...groups.entries()].sort((a, b) => b[1].length - a[1].length)
 })
+
+// Expose grouped data for the template — pagination slicing is handled at DB level by loadPage()
+const archivedByAgent = computed(() => archivedGroupsSorted.value)
 </script>
 
 <template>

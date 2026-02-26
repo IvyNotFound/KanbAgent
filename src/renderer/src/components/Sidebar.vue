@@ -93,9 +93,11 @@ const sectionTitles = computed((): Record<Section, string> => ({
 
 // ── Sidebar logs ───────────────────────────────────────────────────────────────
 const sidebarLogs = ref<AgentLog[]>([])
+let isFetchingLogs = false
 
 async function fetchSidebarLogs(): Promise<void> {
-  if (!store.dbPath) return
+  if (!store.dbPath || isFetchingLogs) return
+  isFetchingLogs = true
   try {
     const result = await window.electronAPI.queryDb(
       store.dbPath,
@@ -110,7 +112,9 @@ async function fetchSidebarLogs(): Promise<void> {
       return
     }
     sidebarLogs.value = result as AgentLog[]
-  } catch { /* silent */ }
+  } catch { /* silent */ } finally {
+    isFetchingLogs = false
+  }
 }
 
 // Event-driven refresh — replaces 3s polling (was 20 IPC/min)

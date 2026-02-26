@@ -127,11 +127,11 @@ const AGENT_CTE_SQL = `
   agent_history AS (
     SELECT a.id,
       CASE WHEN (
-        (SELECT COUNT(*) FROM sessions WHERE agent_id = a.id) +
-        (SELECT COUNT(*) FROM tasks WHERE agent_assigne_id = a.id) +
-        (SELECT COUNT(*) FROM task_comments WHERE agent_id = a.id) +
-        (SELECT COUNT(*) FROM agent_logs WHERE agent_id = a.id)
-      ) > 0 THEN 1 ELSE 0 END as has_history
+        EXISTS (SELECT 1 FROM sessions WHERE agent_id = a.id) OR
+        EXISTS (SELECT 1 FROM tasks WHERE agent_assigne_id = a.id) OR
+        EXISTS (SELECT 1 FROM task_comments WHERE agent_id = a.id) OR
+        EXISTS (SELECT 1 FROM agent_logs WHERE agent_id = a.id)
+      ) THEN 1 ELSE 0 END as has_history
     FROM agents a
   )
   SELECT a.*, ls.statut as session_statut, ls.started_at as session_started_at, ml.last_log_at, ah.has_history

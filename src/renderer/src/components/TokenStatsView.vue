@@ -8,7 +8,7 @@ import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 
 interface AgentTokenRow {
   agent_id: number
-  agent_name: string
+  agent_name: string | null
   tokens_in: number
   tokens_out: number
   tokens_cache_read: number
@@ -208,6 +208,7 @@ function barWidth(total: number): string {
           >
             <!-- Agent name -->
             <span
+              v-if="row.agent_name"
               class="shrink-0 w-32 text-[11px] font-mono px-1.5 py-0.5 rounded font-medium truncate text-right"
               :style="{
                 color: agentFg(row.agent_name),
@@ -216,6 +217,7 @@ function barWidth(total: number): string {
               }"
               :title="row.agent_name"
             >{{ row.agent_name }}</span>
+            <span v-else class="shrink-0 w-32 text-[11px] font-mono text-content-dim text-right">—</span>
 
             <!-- Bar -->
             <div class="flex-1 h-5 bg-surface-secondary rounded overflow-hidden relative">

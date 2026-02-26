@@ -20,6 +20,7 @@ import { ref } from 'vue'
  * @returns Non-negative integer hash value.
  */
 function hash(name: string): number {
+  if (!name) return 0
   let h = 0
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) & 0xffffffff
   return Math.abs(h)

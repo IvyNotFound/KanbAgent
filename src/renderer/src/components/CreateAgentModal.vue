@@ -246,10 +246,14 @@ function handleKeydown(e: KeyboardEvent) {
             <label class="block text-xs text-content-muted mb-1">{{ t('agent.perimeter') }}</label>
             <input
               v-model="perimetre"
+              list="perimetres-list"
               type="text"
               placeholder="front-vuejs"
               class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary font-mono outline-none focus:ring-1 focus:ring-violet-500"
             />
+            <datalist id="perimetres-list">
+              <option v-for="p in store.perimetresData" :key="p.id" :value="p.name" />
+            </datalist>
           </div>
 
           <!-- Description (pour CLAUDE.md) — create mode uniquement -->

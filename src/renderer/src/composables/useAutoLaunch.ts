@@ -52,10 +52,14 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
   let previousStatuses = new Map<number, string>()
   /** Pending close pollers keyed by agent name */
   const pendingCloses = new Map<string, PendingClose>()
+  /** Guard: prevents duplicate immediate polls when watch fires rapidly for the same agent */
+  const pendingImmediatePolls = new Set<string>()
   /** Flag: skip first watch trigger (initial load) */
   let initialized = false
   /** Timestamp of last review auto-launch (cooldown prevention) */
   let lastReviewLaunchedAt = 0
+  /** Debounce timer for rapid batch task updates */
+  let debounceId: ReturnType<typeof setTimeout> | null = null
 
   watch(tasks, (newTasks) => {
     if (!dbPath.value) return
@@ -66,26 +70,33 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
       return
     }
 
-    // --- Auto-close on done transition ---
-    if (settingsStore.autoLaunchAgentSessions) {
-      for (const task of newTasks) {
-        const prevStatus = previousStatuses.get(task.id)
-        if (prevStatus && prevStatus !== 'done' && task.statut === 'done' && task.agent_assigne_id) {
-          const agent = agents.value.find(a => a.id === task.agent_assigne_id)
-          if (agent && agent.auto_launch !== 0 && tabsStore.hasAgentTerminal(agent.name)) {
-            scheduleClose(agent.name, agent.id)
+    // Debounce: collapse rapid batch updates into a single handler run (80ms window)
+    if (debounceId !== null) clearTimeout(debounceId)
+    debounceId = setTimeout(() => {
+      debounceId = null
+      const current = tasks.value
+
+      // --- Auto-close on done transition ---
+      if (settingsStore.autoLaunchAgentSessions) {
+        for (const task of current) {
+          const prevStatus = previousStatuses.get(task.id)
+          if (prevStatus && prevStatus !== 'done' && task.statut === 'done' && task.agent_assigne_id) {
+            const agent = agents.value.find(a => a.id === task.agent_assigne_id)
+            if (agent && agent.auto_launch !== 0 && tabsStore.hasAgentTerminal(agent.name)) {
+              scheduleClose(agent.name, agent.id)
+            }
           }
         }
       }
-    }
 
-    // --- T341: Auto-launch review session ---
-    if (settingsStore.autoLaunchAgentSessions && settingsStore.autoReviewEnabled) {
-      checkReviewThreshold(newTasks)
-    }
+      // --- T341: Auto-launch review session ---
+      if (settingsStore.autoLaunchAgentSessions && settingsStore.autoReviewEnabled) {
+        checkReviewThreshold(current)
+      }
 
-    // Update tracking state
-    previousStatuses = new Map(newTasks.map(t => [t.id, t.statut]))
+      // Update tracking state
+      previousStatuses = new Map(current.map(t => [t.id, t.statut]))
+    }, 80)
   }, { deep: false })
 
   // Reset tracking when project changes
@@ -160,8 +171,14 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     const path = dbPath.value
     if (!path) return
 
-    // Immediate poll (0ms delay to keep async, avoids blocking the watcher)
-    setTimeout(() => pollSessionStatus(agentName, agentId, path), 0)
+    // Immediate poll — guarded to prevent N parallel polls when watch fires rapidly
+    if (!pendingImmediatePolls.has(agentName)) {
+      pendingImmediatePolls.add(agentName)
+      setTimeout(() => {
+        pendingImmediatePolls.delete(agentName)
+        pollSessionStatus(agentName, agentId, path)
+      }, 0)
+    }
 
     const intervalId = setInterval(
       () => pollSessionStatus(agentName, agentId, path),
