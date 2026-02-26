@@ -232,7 +232,7 @@ watch(() => props.initialAgentId, (v) => {
           v-for="lvl in levels"
           :key="lvl"
           :class="[
-            'px-2 py-0.5 rounded text-[11px] font-mono font-medium ring-1 transition-all',
+            'px-2 py-0.5 rounded text-xs font-mono font-medium ring-1 transition-all',
             filterLevel === lvl
               ? filterLevelConfig[lvl]
               : 'text-content-subtle bg-transparent ring-transparent hover:text-content-tertiary hover:ring-edge-default'
@@ -247,7 +247,7 @@ watch(() => props.initialAgentId, (v) => {
       <!-- Filtre agent -->
       <select
         v-model.number="filterAgentId"
-        class="bg-surface-secondary border border-edge-default rounded px-2 py-0.5 text-[11px] font-mono text-content-tertiary outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+        class="bg-surface-secondary border border-edge-default rounded px-2 py-0.5 text-xs font-mono text-content-tertiary outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
       >
         <option :value="null">{{ t('logs.allAgents') }}</option>
         <option
@@ -330,17 +330,17 @@ watch(() => props.initialAgentId, (v) => {
         @click="(log.detail || log.parsedFiles.length > 0) && toggleExpand(log.id)"
       >
         <!-- Ligne principale -->
-        <div class="flex items-center gap-3 px-4 py-2 min-w-0">
+        <div class="flex items-center gap-3 px-4 py-2.5 min-w-0">
 
           <!-- Dot niveau -->
           <span
-            :class="['shrink-0 w-1.5 h-1.5 rounded-full', levelCfg(log.niveau).dot]"
+            :class="['shrink-0 w-2 h-2 rounded-full', levelCfg(log.niveau).dot]"
           />
 
           <!-- Badge niveau -->
           <span
             :class="[
-              'shrink-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded',
+              'shrink-0 text-xs font-mono font-semibold px-1.5 py-0.5 rounded',
               levelCfg(log.niveau).text,
               levelCfg(log.niveau).bg
             ]"
@@ -348,21 +348,21 @@ watch(() => props.initialAgentId, (v) => {
 
           <!-- Timestamp -->
           <span
-            class="shrink-0 text-[10px] text-content-subtle font-mono w-10 text-right tabular-nums"
+            class="shrink-0 text-xs text-content-subtle font-mono w-14 text-right tabular-nums"
             :title="absoluteTime(log.created_at)"
           >{{ formatTime(log.created_at) }}</span>
 
           <!-- Agent badge -->
           <span
             v-if="log.agent_name"
-            class="shrink-0 text-[11px] font-mono px-1.5 py-0.5 rounded font-medium"
+            class="shrink-0 text-xs font-mono px-1.5 py-0.5 rounded font-medium"
             :style="{
               color: agentFg(log.agent_name),
               backgroundColor: agentBg(log.agent_name),
               boxShadow: `0 0 0 1px ${agentBorder(log.agent_name)}`
             }"
           >{{ log.agent_name }}</span>
-          <span v-else class="shrink-0 text-[11px] font-mono text-content-dim px-1.5 py-0.5">—</span>
+          <span v-else class="shrink-0 text-xs font-mono text-content-dim px-1.5 py-0.5">—</span>
 
           <!-- Action -->
           <span class="text-sm font-semibold text-content-secondary truncate min-w-0">{{ log.action }}</span>
@@ -388,7 +388,7 @@ watch(() => props.initialAgentId, (v) => {
           <!-- Texte detail -->
           <p
             v-if="log.detail"
-            class="text-[12px] text-content-tertiary leading-relaxed whitespace-pre-wrap break-words"
+            class="text-sm text-content-tertiary leading-relaxed whitespace-pre-wrap break-words"
           >{{ log.detail }}</p>
 
           <!-- Fichiers -->
@@ -396,7 +396,7 @@ watch(() => props.initialAgentId, (v) => {
             <span
               v-for="f in log.parsedFiles"
               :key="f"
-              class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-secondary text-content-subtle border border-edge-default/50"
+              class="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-secondary text-content-subtle border border-edge-default/50"
             >{{ f.split('/').pop() }}</span>
           </div>
         </div>
