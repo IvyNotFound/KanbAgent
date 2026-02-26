@@ -166,6 +166,7 @@ export const useTasksStore = defineStore('tasks', () => {
   const selectedTask = ref<Task | null>(null)
   const taskComments = ref<TaskComment[]>([])
   const taskLinks = ref<TaskLink[]>([])
+  const taskAssignees = ref<TaskAssignee[]>([])
   const setupWizardTarget = ref<{ projectPath: string; hasCLAUDEmd: boolean } | null>(null)
 
   let pollInterval: ReturnType<typeof setInterval> | null = null
@@ -394,6 +395,7 @@ export const useTasksStore = defineStore('tasks', () => {
     selectedTask.value = task
     taskComments.value = []
     taskLinks.value = []
+    taskAssignees.value = []
     const commentsPromise = query<TaskComment>(`
       SELECT tc.*, a.name as agent_name
       FROM task_comments tc
@@ -406,13 +408,19 @@ export const useTasksStore = defineStore('tasks', () => {
           .then(res => { if (res.success) taskLinks.value = res.links as TaskLink[] })
           .catch(() => {})
       : Promise.resolve()
-    await Promise.all([commentsPromise, linksPromise])
+    const assigneesPromise = dbPath.value
+      ? window.electronAPI.getTaskAssignees(dbPath.value, task.id)
+          .then(res => { if (res.success) taskAssignees.value = res.assignees as TaskAssignee[] })
+          .catch(() => {})
+      : Promise.resolve()
+    await Promise.all([commentsPromise, linksPromise, assigneesPromise])
   }
 
   function closeTask(): void {
     selectedTask.value = null
     taskComments.value = []
     taskLinks.value = []
+    taskAssignees.value = []
   }
 
   function closeWizard(): void {
@@ -494,7 +502,7 @@ export const useTasksStore = defineStore('tasks', () => {
     filteredTasks, tasksByStatus,
     setProject, selectProject, closeProject, setProjectPathOnly, watchForDb,
     refresh, agentRefresh, startPolling, stopPolling, query, setTaskStatut,
-    selectedTask, taskComments, taskLinks, openTask, closeTask,
+    selectedTask, taskComments, taskLinks, taskAssignees, openTask, closeTask,
     setupWizardTarget, closeWizard
   }
 })
