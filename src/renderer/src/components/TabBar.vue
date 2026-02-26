@@ -12,6 +12,68 @@ const { confirm } = useConfirmDialog()
 
 const terminalTabs = computed(() => store.tabs.filter(t => !t.permanent))
 
+// ── Groupement par agent ──────────────────────────────────────────────────────
+interface TabGroup {
+  agentName: string | null
+  tabs: Tab[]
+}
+
+const collapsedAgents = ref<Set<string | null>>(new Set())
+
+const groupedTerminalTabs = computed<TabGroup[]>(() => {
+  const activeAgentName = store.activeTab?.agentName ?? null
+  const groupMap = new Map<string | null, Tab[]>()
+  for (const tab of terminalTabs.value) {
+    const key = tab.agentName
+    if (!groupMap.has(key)) groupMap.set(key, [])
+    groupMap.get(key)!.push(tab)
+  }
+  const entries = [...groupMap.entries()]
+  entries.sort(([a], [b]) => {
+    if (a === activeAgentName) return -1
+    if (b === activeAgentName) return 1
+    if (a === null) return 1
+    if (b === null) return -1
+    return a.localeCompare(b)
+  })
+  return entries.map(([agentName, tabs]) => ({ agentName, tabs }))
+})
+
+const showGroupHeaders = computed(() => groupedTerminalTabs.value.length > 1)
+
+function toggleGroup(agentName: string | null): void {
+  const key = agentName
+  if (collapsedAgents.value.has(key)) {
+    collapsedAgents.value.delete(key)
+  } else {
+    collapsedAgents.value.add(key)
+  }
+}
+
+function isGroupCollapsed(agentName: string | null): boolean {
+  return collapsedAgents.value.has(agentName)
+}
+
+// Auto-expand group when its tab becomes active; auto-collapse others when groups are shown
+watch(() => store.activeTabId, (newId) => {
+  const activeTab = store.tabs.find(t => t.id === newId)
+  if (!activeTab) return
+  const agentName = activeTab.agentName ?? null
+  // Always expand the active agent's group
+  collapsedAgents.value.delete(agentName)
+})
+
+// When groups first appear, collapse non-active agent groups
+watch(showGroupHeaders, (nowMultiple) => {
+  if (!nowMultiple) { collapsedAgents.value.clear(); return }
+  const activeAgentName = store.activeTab?.agentName ?? null
+  for (const group of groupedTerminalTabs.value) {
+    if (group.agentName !== activeAgentName) {
+      collapsedAgents.value.add(group.agentName)
+    }
+  }
+}, { immediate: true })
+
 // ── Scroll state ─────────────────────────────────────────────────────────────
 const scrollContainer = ref<HTMLDivElement | null>(null)
 const canScrollLeft = ref(false)
@@ -215,63 +277,104 @@ const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
       @wheel="onWheel"
       @scroll="updateScrollState"
     >
-      <button
-        v-for="tab in terminalTabs"
-        :key="tab.id"
-        draggable="true"
-        :class="[
-          'relative flex items-center gap-2 px-3 text-sm font-medium transition-all select-none rounded-t shrink-0',
-          store.activeTabId !== tab.id && !tab.agentName ? 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/60' : '',
-          draggedId === tab.id ? 'opacity-40' : '',
-          dropTargetId === tab.id && draggedId !== tab.id ? 'ring-1 ring-inset ring-violet-500/50' : '',
-          'cursor-pointer',
-        ]"
-        :style="tabStyleMap.get(tab.id)"
-        @click="store.setActive(tab.id)"
-        @mousedown="onMiddleClick($event, tab)"
-        @dragstart="onDragStart($event, tab.id)"
-        @dragover="onDragOver($event, tab.id)"
-        @dragleave="dropTargetId = null"
-        @drop="onDrop($event, tab.id)"
-        @dragend="onDragEnd"
-      >
-        <!-- Icône selon type -->
-        <span class="flex items-center justify-center w-5 h-5 rounded shrink-0 bg-black/25">
-          <!-- Fichier -->
-          <svg v-if="tab.type === 'file'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-            <path d="M4 1h5.586a1 1 0 0 1 .707.293l3.414 3.414A1 1 0 0 1 14 5.414V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm5 0v4h4"/>
+      <template v-for="group in groupedTerminalTabs" :key="group.agentName ?? '__misc__'">
+        <!-- En-tête de groupe agent (uniquement si plusieurs agents) -->
+        <button
+          v-if="showGroupHeaders"
+          class="flex items-center gap-1.5 px-2 shrink-0 select-none transition-colors border-r border-edge-subtle hover:bg-surface-secondary/50 cursor-pointer"
+          :title="group.agentName ?? ''"
+          @click="toggleGroup(group.agentName)"
+        >
+          <span
+            class="w-2 h-2 rounded-full shrink-0"
+            :style="group.agentName
+              ? { backgroundColor: agentFg(group.agentName) }
+              : { backgroundColor: '#71717a' }"
+          ></span>
+          <span
+            class="text-xs font-semibold max-w-[72px] truncate"
+            :style="group.agentName
+              ? { color: agentFg(group.agentName) }
+              : { color: '#a1a1aa' }"
+          >{{ group.agentName ?? '·' }}</span>
+          <!-- Chevron collapse/expand -->
+          <svg
+            viewBox="0 0 16 16" fill="currentColor"
+            class="w-2.5 h-2.5 shrink-0 transition-transform duration-150"
+            :class="isGroupCollapsed(group.agentName) ? '-rotate-90' : ''"
+            :style="group.agentName ? { color: agentFg(group.agentName) } : { color: '#71717a' }"
+          >
+            <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
           </svg>
-          <!-- Explorateur -->
-          <svg v-else-if="tab.type === 'explorer'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-            <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
-          </svg>
-          <!-- Logs -->
-          <svg v-else-if="tab.type === 'logs'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-            <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
-            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
-          </svg>
-          <!-- Terminal (défaut) -->
-          <svg v-else viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-            <polyline points="2,5 6.5,8 2,11"/>
-            <line x1="8.5" y1="11" x2="14" y2="11"/>
-          </svg>
-        </span>
-        <span class="truncate min-w-0">{{ tab.title }}</span>
-        <span v-if="tab.taskId" class="shrink-0 opacity-70 text-xs font-mono">· #{{ tab.taskId }}</span>
-        <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" :title="t('tabBar.unsaved')" />
-        <!-- Fermer -->
-        <span
-          class="ml-0.5 flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer"
-          :title="t('tabBar.closeTab')"
-          @click.stop="handleCloseTab(tab)"
-        >✕</span>
-        <!-- Indicateur actif -->
-        <span
-          v-if="store.activeTabId === tab.id"
-          class="absolute bottom-0 left-0 right-0 h-[2px]"
-          :style="indicatorStyleMap.get(tab.id)"
-        ></span>
-      </button>
+          <!-- Count badge lorsque collapsé -->
+          <span
+            v-if="isGroupCollapsed(group.agentName)"
+            class="text-[10px] font-mono opacity-70 shrink-0"
+            :style="group.agentName ? { color: agentFg(group.agentName) } : { color: '#a1a1aa' }"
+          >{{ group.tabs.length }}</span>
+        </button>
+
+        <!-- Onglets du groupe (masqués si collapsé) -->
+        <template v-if="!isGroupCollapsed(group.agentName)">
+          <button
+            v-for="tab in group.tabs"
+            :key="tab.id"
+            draggable="true"
+            :class="[
+              'relative flex items-center gap-2 px-3 text-sm font-medium transition-all select-none rounded-t shrink-0',
+              store.activeTabId !== tab.id && !tab.agentName ? 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/60' : '',
+              draggedId === tab.id ? 'opacity-40' : '',
+              dropTargetId === tab.id && draggedId !== tab.id ? 'ring-1 ring-inset ring-violet-500/50' : '',
+              'cursor-pointer',
+            ]"
+            :style="tabStyleMap.get(tab.id)"
+            @click="store.setActive(tab.id)"
+            @mousedown="onMiddleClick($event, tab)"
+            @dragstart="onDragStart($event, tab.id)"
+            @dragover="onDragOver($event, tab.id)"
+            @dragleave="dropTargetId = null"
+            @drop="onDrop($event, tab.id)"
+            @dragend="onDragEnd"
+          >
+            <!-- Icône selon type -->
+            <span class="flex items-center justify-center w-5 h-5 rounded shrink-0 bg-black/25">
+              <!-- Fichier -->
+              <svg v-if="tab.type === 'file'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+                <path d="M4 1h5.586a1 1 0 0 1 .707.293l3.414 3.414A1 1 0 0 1 14 5.414V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm5 0v4h4"/>
+              </svg>
+              <!-- Explorateur -->
+              <svg v-else-if="tab.type === 'explorer'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+                <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
+              </svg>
+              <!-- Logs -->
+              <svg v-else-if="tab.type === 'logs'" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+                <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
+                <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+              </svg>
+              <!-- Terminal (défaut) -->
+              <svg v-else viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                <polyline points="2,5 6.5,8 2,11"/>
+                <line x1="8.5" y1="11" x2="14" y2="11"/>
+              </svg>
+            </span>
+            <span class="truncate min-w-0">{{ tab.title }}</span>
+            <span v-if="tab.taskId" class="shrink-0 opacity-70 text-xs font-mono">· #{{ tab.taskId }}</span>
+            <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" :title="t('tabBar.unsaved')" />
+            <!-- Fermer -->
+            <span
+              class="ml-0.5 flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer"
+              :title="t('tabBar.closeTab')"
+              @click.stop="handleCloseTab(tab)"
+            >✕</span>
+            <!-- Indicateur actif -->
+            <span
+              v-if="store.activeTabId === tab.id"
+              class="absolute bottom-0 left-0 right-0 h-[2px]"
+              :style="indicatorStyleMap.get(tab.id)"
+            ></span>
+          </button>
+        </template>
+      </template>
     </div>
 
     <!-- Scroll right arrow -->
