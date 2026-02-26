@@ -221,12 +221,12 @@ const activeAgents = computed(() =>
   store.agents.filter(a => hasOpenTerminal(a.name))
 )
 
-// ── Review vs regular agents ───────────────────────────────────────────────
+// ── Management (review + task-creator) vs regular agents ───────────────────
 const reviewAgents = computed(() =>
-  store.agents.filter(a => a.name.includes('review') || a.type === 'review')
+  store.agents.filter(a => a.name.includes('review') || a.type === 'review' || a.name === 'task-creator')
 )
 const regularAgents = computed(() =>
-  store.agents.filter(a => !a.name.includes('review') && a.type !== 'review')
+  store.agents.filter(a => !a.name.includes('review') && a.type !== 'review' && a.name !== 'task-creator')
 )
 
 const appVersion = import.meta.env.VITE_APP_VERSION as string ?? '0.0.0'
@@ -687,7 +687,7 @@ async function closeProject() {
 
             <!-- ── Sous-section REVIEW ── -->
             <template v-if="reviewAgents.length > 0">
-              <p class="text-[11px] font-semibold text-amber-500 uppercase tracking-wider mb-1.5 px-1">Review</p>
+              <p class="text-[11px] font-semibold text-amber-500 uppercase tracking-wider mb-1.5 px-1">Management</p>
               <div class="space-y-0.5 mb-2">
                 <div
                   v-for="agent in reviewAgents"
