@@ -76,6 +76,7 @@ declare global {
       deleteAgent(dbPath: string, agentId: number): Promise<{ success: boolean; hasHistory?: boolean; error?: string }>
       addPerimetre(dbPath: string, name: string): Promise<{ success: boolean; id?: number; error?: string }>
       tasksUpdateStatus(dbPath: string, taskId: number, statut: string): Promise<{ success: boolean; error?: string }>
+      duplicateAgent(dbPath: string, agentId: number): Promise<{ success: boolean; agentId?: number; name?: string; error?: string }>
     }
   }
 }

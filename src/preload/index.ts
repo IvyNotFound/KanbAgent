@@ -300,4 +300,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Update task status (drag & drop, etc.)
   tasksUpdateStatus: (dbPath: string, taskId: number, statut: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('tasks:updateStatus', dbPath, taskId, statut),
+
+  // Duplicate an agent (copies all fields, generates unique name <name>-copy)
+  duplicateAgent: (dbPath: string, agentId: number): Promise<{ success: boolean; agentId?: number; name?: string; error?: string }> =>
+    ipcRenderer.invoke('agent:duplicate', dbPath, agentId),
 })

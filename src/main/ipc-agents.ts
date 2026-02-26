@@ -594,4 +594,43 @@ export function registerAgentHandlers(): void {
       return { success: false, error: String(err) }
     }
   })
+
+  /**
+   * Duplicate an agent — copies all fields and generates a unique name (<name>-copy, or -copy-2, etc.)
+   * @param dbPath - Registered DB path
+   * @param agentId - ID of the agent to duplicate
+   * @returns {{ success: boolean, agentId?: number, name?: string, error?: string }}
+   */
+  ipcMain.handle('agent:duplicate', async (_event, dbPath: string, agentId: number) => {
+    try {
+      assertDbPathAllowed(dbPath)
+      const result = await writeDb<{ id: number; name: string }>(dbPath, (db) => {
+        const rows = db.exec(`SELECT name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools FROM agents WHERE id = ${agentId}`)
+        if (!rows.length || !rows[0].values.length) throw new Error('Agent not found')
+        const [name, type, perimetre, thinkingMode, systemPrompt, systemPromptSuffix, allowedTools] = rows[0].values[0]
+
+        // Generate unique name: <name>-copy, then -copy-2, -copy-3, …
+        const baseName = `${name}-copy`
+        const existingRows = db.exec(`SELECT name FROM agents WHERE name LIKE '${baseName.replace(/'/g, "''")}%'`)
+        const existing = new Set<string>(existingRows.length ? existingRows[0].values.map(r => r[0] as string) : [])
+        let newName = baseName
+        let n = 2
+        while (existing.has(newName)) {
+          newName = `${baseName}-${n++}`
+        }
+
+        db.run(
+          'INSERT INTO agents (name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))',
+          [newName, type, perimetre, thinkingMode, systemPrompt, systemPromptSuffix, allowedTools]
+        )
+        const idRows = db.exec('SELECT last_insert_rowid() as id')
+        const newId = idRows[0].values[0][0] as number
+        return { id: newId, name: newName }
+      })
+      return { success: true, agentId: result.id, name: result.name }
+    } catch (err) {
+      console.error('[IPC agent:duplicate]', err)
+      return { success: false, error: String(err) }
+    }
+  })
 }

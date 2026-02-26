@@ -192,7 +192,23 @@ function contextMenuItemsFor(agent: Agent): ContextMenuItem[] {
       label: 'Éditer l\'agent',
       action: () => { editAgentTarget.value = agent }
     },
+    {
+      label: 'Dupliquer l\'agent',
+      action: () => duplicateAgent(agent)
+    },
   ]
+}
+
+async function duplicateAgent(agent: Agent): Promise<void> {
+  const dbPath = store.dbPath
+  if (!dbPath) return
+  const result = await window.electronAPI.duplicateAgent(dbPath, agent.id)
+  if (result.success) {
+    pushToast(`Agent dupliqué : ${result.name}`, 'success')
+    await store.refresh()
+  } else {
+    pushToast(result.error ?? 'Erreur lors de la duplication', 'error')
+  }
 }
 
 // ── Agents actifs ─────────────────────────────────────────────────────────
