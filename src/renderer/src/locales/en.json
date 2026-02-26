@@ -285,6 +285,12 @@
     "descriptionPlaceholder": "Short description…",
     "reset": "reset",
     "nbAgents": "{n} agent | {n} agents",
-    "nbActiveTasks": "{n} active task | {n} active tasks"
+    "nbActiveTasks": "{n} active task | {n} active tasks",
+    "newGroup": "New group",
+    "newGroupPlaceholder": "Group name…",
+    "ungrouped": "Ungrouped",
+    "deleteGroup": "Delete group",
+    "deleteGroupDetail": "Agents will be moved to \"Ungrouped\". Continue?",
+    "dropAgentHere": "Drop here"
   }
 }

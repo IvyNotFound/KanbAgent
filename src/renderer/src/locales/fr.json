@@ -285,6 +285,12 @@
     "descriptionPlaceholder": "Description courte…",
     "reset": "reset",
     "nbAgents": "{n} agent | {n} agents",
-    "nbActiveTasks": "{n} tâche active | {n} tâches actives"
+    "nbActiveTasks": "{n} tâche active | {n} tâches actives",
+    "newGroup": "Nouveau groupe",
+    "newGroupPlaceholder": "Nom du groupe…",
+    "ungrouped": "Non groupés",
+    "deleteGroup": "Supprimer le groupe",
+    "deleteGroupDetail": "Les agents seront déplacés dans « Non groupés ». Continuer ?",
+    "dropAgentHere": "Déposer ici"
   }
 }
