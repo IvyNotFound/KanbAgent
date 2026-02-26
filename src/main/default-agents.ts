@@ -568,7 +568,7 @@ AGENT PROTOCOL REMINDER (mandatory):
 - Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
 - Finishing task: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (?, ?, ?)
 - After task: check backlog, take next or close session
-- Ending session: release locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...'
+- Ending session: release locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...'
 - Never push to main | Never edit project.db manually
 
 ## SQL avec caractères spéciaux
@@ -621,7 +621,7 @@ AGENT PROTOCOL REMINDER (mandatory):
 - Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
 - Finishing task: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (?, ?, ?)
 - After task: check backlog, take next or close session
-- Ending session: release locks + UPDATE sessions SET statut='terminé', summary='Done:... Pending:... Next:...'
+- Ending session: release locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...'
 - Never push to main | Never edit project.db manually
 
 ## SQL avec caractères spéciaux

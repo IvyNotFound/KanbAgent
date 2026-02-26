@@ -57,7 +57,7 @@ initSqlJs().then((SQL) => {
   // 3. Check parallel session limit (max 3 active per agent)
   const MAX_PARALLEL_SESSIONS = 3
   const activeRow = db.exec(
-    `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'en_cours'`
+    `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'started'`
   )
   const activeCount = activeRow[0].values[0][0]
   if (activeCount >= MAX_PARALLEL_SESSIONS) {
@@ -77,25 +77,25 @@ initSqlJs().then((SQL) => {
   const released = db.exec(`
     SELECT COUNT(*) FROM locks
     WHERE released_at IS NULL
-      AND session_id IN (SELECT id FROM sessions WHERE statut = 'terminé')
+      AND session_id IN (SELECT id FROM sessions WHERE statut = 'completed')
   `)
   const orphanCount = released[0].values[0][0]
   if (orphanCount > 0) {
     db.run(`
       UPDATE locks SET released_at = datetime('now')
       WHERE released_at IS NULL
-        AND session_id IN (SELECT id FROM sessions WHERE statut = 'terminé')
+        AND session_id IN (SELECT id FROM sessions WHERE statut = 'completed')
     `)
     console.log(`\n[auto-release] ${orphanCount} orphan lock(s) released from terminated sessions`)
   }
 
-  // 4c. Auto-release locks from zombie sessions (en_cours, inactive >60 min)
+  // 4c. Auto-release locks from zombie sessions (started, inactive >60 min)
   const zombieLocks = db.exec(`
     SELECT COUNT(*) FROM locks
     WHERE released_at IS NULL
       AND session_id IN (
         SELECT id FROM sessions
-        WHERE statut = 'en_cours'
+        WHERE statut = 'started'
           AND ended_at IS NULL
           AND started_at < datetime('now', '-60 minutes')
       )
@@ -107,18 +107,18 @@ initSqlJs().then((SQL) => {
       WHERE released_at IS NULL
         AND session_id IN (
           SELECT id FROM sessions
-          WHERE statut = 'en_cours'
+          WHERE statut = 'started'
             AND ended_at IS NULL
             AND started_at < datetime('now', '-60 minutes')
         )
     `)
-    console.log(`\n[auto-release] ${zombieLockCount} zombie lock(s) released from inactive en_cours sessions (>60 min)`)
+    console.log(`\n[auto-release] ${zombieLockCount} zombie lock(s) released from inactive started sessions (>60 min)`)
   }
 
   // 4d. Mark zombie sessions as terminated
   const zombieSessions = db.exec(`
     SELECT COUNT(*) FROM sessions
-    WHERE statut = 'en_cours'
+    WHERE statut = 'started'
       AND ended_at IS NULL
       AND started_at < datetime('now', '-60 minutes')
   `)
@@ -126,14 +126,14 @@ initSqlJs().then((SQL) => {
   if (zombieSessionCount > 0) {
     db.run(`
       UPDATE sessions
-      SET statut = 'terminé',
+      SET statut = 'completed',
           ended_at = datetime('now'),
           summary = 'Auto-closed: zombie session (no activity for 60min)'
-      WHERE statut = 'en_cours'
+      WHERE statut = 'started'
         AND ended_at IS NULL
         AND started_at < datetime('now', '-60 minutes')
     `)
-    console.log(`\n[auto-release] ${zombieSessionCount} zombie session(s) marked as terminé`)
+    console.log(`\n[auto-release] ${zombieSessionCount} zombie session(s) marked as completed`)
   }
 
   // Persist writes (atomic: tmp + rename)
@@ -150,7 +150,7 @@ initSqlJs().then((SQL) => {
   // 4. Last terminated session
   const session = db.exec(`
     SELECT s.summary, s.ended_at FROM sessions s
-    WHERE s.agent_id = ${agentId} AND s.statut = 'terminé' AND s.id != ${sessionId}
+    WHERE s.agent_id = ${agentId} AND s.statut = 'completed' AND s.id != ${sessionId}
     ORDER BY s.ended_at DESC LIMIT 1
   `)
 
@@ -160,7 +160,7 @@ initSqlJs().then((SQL) => {
     console.log(`ended_at: ${endedAt}`)
     console.log(`summary: ${summary ?? '(aucun)'}`)
   } else {
-    console.log('(aucune session terminée)')
+    console.log('(aucune session completed)')
   }
 
   // 5. Open tasks (todo + in_progress)
