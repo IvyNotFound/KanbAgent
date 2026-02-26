@@ -15,6 +15,8 @@ import { insertAgentIntoClaudeMd } from './claude-md'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 const STANDARD_AGENT_SUFFIX = [
   '---',
   'AGENT PROTOCOL REMINDER (mandatory — do not override):',
@@ -273,6 +275,90 @@ export function registerAgentHandlers(): void {
     } catch (err) {
       console.error('[IPC session:setConvId]', err)
       return { success: false, error: String(err) }
+    }
+  })
+
+  /**
+   * T518: Parse token usage from a completed Claude Code session JSONL and persist to DB.
+   * Reads ~/.claude/projects/<slug>/<convId>.jsonl, sums finalized assistant messages,
+   * and updates sessions.tokens_* WHERE claude_conv_id = convId.
+   *
+   * @param dbPath - Registered DB path
+   * @param convId - Claude Code conversation UUID
+   * @param projectPath - WSL project path (derived from dbPath if omitted)
+   */
+  ipcMain.handle('session:parseTokens', async (_event, dbPath: string, convId: string, projectPath?: string) => {
+    if (!dbPath || !convId) return { success: false, error: 'Invalid arguments' }
+    if (!UUID_REGEX.test(convId)) return { success: false, error: 'Invalid convId format' }
+    try {
+      assertDbPathAllowed(dbPath)
+      const resolvedProjectPath = projectPath ?? projectPathFromDb(dbPath)
+      const counts = await parseConvTokens(resolvedProjectPath, convId)
+      await writeDb(dbPath, (db) => {
+        db.run(
+          `UPDATE sessions
+           SET tokens_in = ?, tokens_out = ?, tokens_cache_read = ?, tokens_cache_write = ?
+           WHERE claude_conv_id = ?`,
+          [counts.tokensIn, counts.tokensOut, counts.cacheRead, counts.cacheWrite, convId]
+        )
+      })
+      console.log(`[IPC session:parseTokens] conv=${convId} in=${counts.tokensIn} out=${counts.tokensOut}`)
+      return { success: true, ...counts }
+    } catch (err) {
+      console.error('[IPC session:parseTokens]', err)
+      return { success: false, error: String(err) }
+    }
+  })
+
+  /**
+   * T518: Retroactively sync token counts for all sessions that have a claude_conv_id
+   * but zero tokens. Useful for populating data from sessions started before T518.
+   *
+   * @param dbPath - Registered DB path
+   * @param projectPath - WSL project path (derived from dbPath if omitted)
+   */
+  ipcMain.handle('session:syncAllTokens', async (_event, dbPath: string, projectPath?: string) => {
+    if (!dbPath) return { success: false, updated: 0, errors: [], error: 'Invalid arguments' }
+    try {
+      assertDbPathAllowed(dbPath)
+      const resolvedProjectPath = projectPath ?? projectPathFromDb(dbPath)
+
+      const rows = await queryLive(
+        dbPath,
+        `SELECT id, claude_conv_id FROM sessions
+         WHERE claude_conv_id IS NOT NULL
+           AND (tokens_in = 0 OR tokens_in IS NULL)
+         ORDER BY id DESC`,
+        []
+      ) as Array<{ id: number; claude_conv_id: string }>
+
+      let updated = 0
+      const errors: string[] = []
+
+      for (const row of rows) {
+        try {
+          const counts = await parseConvTokens(resolvedProjectPath, row.claude_conv_id)
+          if (counts.tokensIn > 0 || counts.tokensOut > 0) {
+            await writeDb(dbPath, (db) => {
+              db.run(
+                `UPDATE sessions
+                 SET tokens_in = ?, tokens_out = ?, tokens_cache_read = ?, tokens_cache_write = ?
+                 WHERE id = ?`,
+                [counts.tokensIn, counts.tokensOut, counts.cacheRead, counts.cacheWrite, row.id]
+              )
+            })
+            updated++
+          }
+        } catch (err) {
+          errors.push(`session ${row.id}: ${String(err)}`)
+        }
+      }
+
+      console.log(`[IPC session:syncAllTokens] updated=${updated}/${rows.length}`)
+      return { success: true, updated, errors }
+    } catch (err) {
+      console.error('[IPC session:syncAllTokens]', err)
+      return { success: false, updated: 0, errors: [], error: String(err) }
     }
   })
 
@@ -702,6 +788,53 @@ export function registerAgentHandlers(): void {
    * @param taskId - Task ID
    * @returns {{ success: boolean, links: TaskLink[], error?: string }}
    */
+  /**
+   * T518: Collect and persist token counts for the most recent session of an agent.
+   * Called after session close. Finds the latest session with a conv_id but no tokens,
+   * parses the JSONL file, and updates sessions.tokens_*.
+   *
+   * @param dbPath - Registered DB path
+   * @param agentName - Agent name to look up
+   */
+  ipcMain.handle('session:collectTokens', async (_event, dbPath: string, agentName: string) => {
+    if (!dbPath || !agentName) return { success: false, error: 'Invalid arguments' }
+    try {
+      assertDbPathAllowed(dbPath)
+      const resolvedProjectPath = projectPathFromDb(dbPath)
+
+      const rows = await queryLive(
+        dbPath,
+        `SELECT s.id, s.claude_conv_id
+         FROM sessions s
+         JOIN agents a ON a.id = s.agent_id
+         WHERE a.name = ?
+           AND s.claude_conv_id IS NOT NULL
+           AND (s.tokens_in = 0 OR s.tokens_in IS NULL)
+         ORDER BY s.id DESC
+         LIMIT 1`,
+        [agentName]
+      ) as Array<{ id: number; claude_conv_id: string }>
+
+      if (rows.length === 0) return { success: true, tokens: null }
+
+      const { id: sessionId, claude_conv_id: convId } = rows[0]
+      const counts = await parseConvTokens(resolvedProjectPath, convId)
+      await writeDb(dbPath, (db) => {
+        db.run(
+          `UPDATE sessions
+           SET tokens_in = ?, tokens_out = ?, tokens_cache_read = ?, tokens_cache_write = ?
+           WHERE id = ?`,
+          [counts.tokensIn, counts.tokensOut, counts.cacheRead, counts.cacheWrite, sessionId]
+        )
+      })
+      console.log(`[IPC session:collectTokens] agent=${agentName} session=${sessionId} in=${counts.tokensIn} out=${counts.tokensOut}`)
+      return { success: true, tokens: counts }
+    } catch (err) {
+      console.error('[IPC session:collectTokens]', err)
+      return { success: false, error: String(err) }
+    }
+  })
+
   ipcMain.handle('task:getLinks', async (_event, dbPath: string, taskId: number) => {
     if (typeof taskId !== 'number' || !Number.isInteger(taskId)) {
       return { success: false, links: [], error: 'Invalid taskId' }
