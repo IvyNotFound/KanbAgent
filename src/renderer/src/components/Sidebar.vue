@@ -30,11 +30,6 @@ const contextMenu = ref<{ x: number; y: number; agent: Agent } | null>(null)
 // ── Agent edit modal ───────────────────────────────────────────────────────────
 const editAgentTarget = ref<Agent | null>(null)
 
-// ── System prompt editor ──────────────────────────────────────────────────────
-const systemPromptTarget = ref<Agent | null>(null)
-const systemPromptValue = ref('')
-const savingPrompt = ref(false)
-
 // ── Périmètre editor ─────────────────────────────────────────────────────────
 const editPerimetre = ref<Perimetre | null>(null)
 const editPerimetreName = ref('')
@@ -197,32 +192,7 @@ function contextMenuItemsFor(agent: Agent): ContextMenuItem[] {
       label: 'Éditer l\'agent',
       action: () => { editAgentTarget.value = agent }
     },
-    {
-      label: 'Éditer prompt système',
-      action: () => openSystemPromptEditor(agent)
-    },
   ]
-}
-
-function openSystemPromptEditor(agent: Agent) {
-  systemPromptTarget.value = agent
-  systemPromptValue.value = agent.system_prompt ?? ''
-}
-
-async function saveSystemPrompt() {
-  if (!systemPromptTarget.value || !store.dbPath) return
-  savingPrompt.value = true
-  try {
-    await window.electronAPI.updateAgentSystemPrompt(
-      store.dbPath,
-      systemPromptTarget.value.id,
-      systemPromptValue.value
-    )
-    await store.refresh()
-  } finally {
-    savingPrompt.value = false
-    systemPromptTarget.value = null
-  }
 }
 
 // ── Agents actifs ─────────────────────────────────────────────────────────
@@ -955,47 +925,6 @@ async function closeProject() {
     @close="contextMenu = null"
   />
 
-  <!-- Modal édition prompt système -->
-  <Teleport to="body">
-    <div
-      v-if="systemPromptTarget"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-      @click.self="systemPromptTarget = null"
-    >
-      <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl p-5 w-[480px] flex flex-col gap-4">
-        <div>
-          <p class="text-xs text-content-subtle uppercase tracking-wider font-semibold mb-0.5">{{ t('sidebar.systemPromptTitle') }}</p>
-          <p class="text-sm font-mono font-semibold" :style="{ color: agentFg(systemPromptTarget.name) }">
-            {{ systemPromptTarget.name }}
-          </p>
-        </div>
-        <textarea
-          v-model="systemPromptValue"
-          rows="10"
-          :placeholder="t('sidebar.systemPromptPlaceholder')"
-          class="w-full bg-surface-secondary border border-edge-default rounded-lg px-3 py-2.5 text-xs font-mono text-content-secondary placeholder-content-faint resize-none outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors leading-relaxed"
-        />
-        <div class="flex items-center gap-1.5 -mt-1">
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3 text-content-faint shrink-0">
-            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-          </svg>
-          <span class="text-[10px] text-content-faint">{{ t('sidebar.systemPromptSuffixNote') }}</span>
-        </div>
-        <div class="flex gap-2 justify-end">
-          <button
-            class="px-3 py-1.5 text-xs rounded-md text-content-muted hover:text-content-secondary hover:bg-surface-secondary transition-colors"
-            @click="systemPromptTarget = null"
-          >{{ t('common.cancel') }}</button>
-          <button
-            class="px-3 py-1.5 text-xs rounded-md bg-violet-600 hover:bg-violet-500 text-white transition-colors disabled:opacity-40"
-            :disabled="savingPrompt"
-            @click="saveSystemPrompt"
-          >{{ savingPrompt ? t('common.saving') : t('common.save') }}</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 
   <!-- Modal édition périmètre -->
   <Teleport to="body">
