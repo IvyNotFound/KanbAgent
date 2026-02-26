@@ -45,7 +45,7 @@ initSqlJs().then((SQL) => {
   // 3. Check parallel session limit (max 3 active per agent)
   const MAX_PARALLEL_SESSIONS = 3
   const activeRow = db.exec(
-    `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'actif'`
+    `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'en_cours'`
   )
   const activeCount = activeRow[0].values[0][0]
   if (activeCount >= MAX_PARALLEL_SESSIONS) {
