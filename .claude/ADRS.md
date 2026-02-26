@@ -605,6 +605,170 @@ setTaskAssignees: (dbPath: string, taskId: number, assignees: Array<{ agentId: n
 
 ---
 
+## ADR-009 — Remplacement node-pty/xterm.js par CLI stream-json
+
+**Date :** 2026-02-26 | **Statut :** accepté (Option B — roadmap v1.x) | **Auteur :** arch
+
+### Contexte
+
+L'architecture actuelle node-pty + xterm.js présente des problèmes récurrents :
+
+| Problème | Tickets |
+|---|---|
+| Fuites mémoire xterm.js | T559, T564 |
+| Vulnérabilités sécurité PTY | T532, T546 |
+| Cycle de vie PTY complexe (listeners orphelins) | T563 |
+| Output non structuré — impossible d'afficher de façon riche | — |
+
+Deux options de remplacement ont été évaluées via spikes dédiés.
+
+---
+
+### Option A — SDK @anthropic-ai/claude-agent-sdk (T574 — REJETÉ v0.x)
+
+**Évaluation :** le SDK est un wrapper autour de l'API Anthropic REST — il appelle `api.anthropic.com` directement, **pas** le CLI `claude` local.
+
+**Contrainte bloquante :** `ANTHROPIC_API_KEY` requis. Or l'authentification de l'environnement de développement est **OAuth CLI** (Claude Pro/Max — abonnement), pas une API key. Ces deux modes sont incompatibles dans le SDK v0.x.
+
+**Décision :** REJETÉ pour v0.x. Maintenir en roadmap v2.0 si Anthropic expose une API SDK compatible OAuth ou un SDK qui délègue au CLI local.
+
+---
+
+### Option B — CLI stream-json via child_process.spawn (T576 — VALIDÉ)
+
+**Hypothèse :** `claude -p --verbose --input-format stream-json --output-format stream-json` avec `stdio: ['pipe', 'pipe', 'pipe']` = remplacement complet sans API key, auth OAuth existante.
+
+#### Résultats du spike T576
+
+| Question | Test | Résultat |
+|---|---|---|
+| Q1 | stream-json sans `-p` (mode interactif pur) | **FAIL** — `--output-format` requiert `-p` |
+| Q1b | stream-json avec `-p --verbose` (baseline) | **PASS** ✓ |
+| Q2 | Multi-turn via stdin `--input-format stream-json` | **PASS** ✓ |
+| Q3 | `--thinking` expose des blocs thinking dans stream-json | **FAIL** — aucun bloc `type:"thinking"` sur claude-sonnet-4-6 |
+| Q4 | `--resume <conv_id>` compatible avec stream-json | **PASS** ✓ |
+
+**Verdict :** PASS partiel — les 3 fonctionnalités critiques (lancement structuré, multi-turn, reprise de session) sont validées. Q3 (thinking) est une limitation documentée, non bloquante.
+
+#### Types de messages JSONL observés
+
+| Type | Sous-type / champs | Moment |
+|---|---|---|
+| `system` | `subtype: "init"`, `session_id` | Démarrage — fournit le `conv_id` |
+| `user` | `message.role: "user"`, `message.content[]` | Écho du message envoyé en stdin |
+| `assistant` | `message.content[]` avec `type:"text"` | Réponse Claude (texte) |
+| `assistant` | `message.content[]` avec `type:"tool_use"` | Appel outil |
+| `result` | `cost_usd`, `num_turns`, `session_id` | Fin de chaque tour |
+
+> **Note Q3 :** `message.content[]` avec `type:"thinking"` absent dans les réponses claude-sonnet-4-6 même avec `--thinking enabled`. Seul Opus pourrait l'exposer (non testé). Contournement : garder le mode thinking PTY actuel (ADR-002) pour les agents qui en ont besoin.
+
+#### Format stdin (multi-turn)
+
+```json
+{
+  "type": "user",
+  "message": {
+    "role": "user",
+    "content": [{ "type": "text", "text": "..." }]
+  }
+}
+```
+
+> Le **premier** message stdin doit être envoyé immédiatement après le `spawn()`, avant même l'événement `system:init`. Les messages suivants sont envoyés après chaque événement `result`.
+
+> Si aucun message stdin prévu → fermer stdin avec `proc.stdin.end()` immédiatement après spawn.
+
+> `--verbose` est **obligatoire** — sans ce flag, les événements `system` et `user` sont absents du flux JSONL.
+
+#### Architecture cible
+
+```
+child_process.spawn('claude', [
+  '-p', '--verbose',
+  '--input-format', 'stream-json',
+  '--output-format', 'stream-json',
+  // optionnel : '--resume', convId
+  // optionnel : '--append-system-prompt', '...'
+], { stdio: ['pipe', 'pipe', 'pipe'] })
+```
+
+**Dans `src/main/ipc.ts` ou `src/main/terminal.ts` :**
+- `stdout` : readline ligne par ligne → parse JSON → émettre via IPC structuré
+- `stdin` : écriture JSONL au format `{ type: "user", message: ... }`
+- `session_id` extrait de l'événement `system:init` → stocké en `sessions.claude_conv_id`
+
+**IPC Electron → Vue (nouveaux channels) :**
+
+```ts
+// agent:stream — émis pour chaque événement JSONL parsé
+interface AgentStreamEvent {
+  terminalId: string
+  event: {
+    type: 'system' | 'user' | 'assistant' | 'result'
+    subtype?: string
+    session_id?: string
+    message?: { role: string; content: Array<{ type: string; text?: string }> }
+    cost_usd?: number
+    num_turns?: number
+  }
+}
+
+// agent:sendMessage — envoi d'un message utilisateur mid-session
+interface AgentSendMessagePayload {
+  terminalId: string
+  text: string
+}
+```
+
+**Vue — composant `AgentStreamView.vue`** (remplace `TerminalView.vue` pour les sessions agents) :
+- Affiche les blocs `assistant.message.content[]` de façon structurée (texte, tool_use)
+- Conserve un historique scrollable des tours
+- Bouton "Envoyer" → IPC `agent:sendMessage`
+
+#### Contrainte abonnement
+
+| Auth | Compatibilité |
+|---|---|
+| OAuth CLI (Claude Pro/Max) | ✓ Compatible — `claude -p` utilise le même auth que CLI interactif |
+| ANTHROPIC_API_KEY | ✓ Compatible (si défini dans l'env) |
+| SDK @anthropic-ai/sdk direct | ✗ Incompatible avec OAuth (voir Option A) |
+
+---
+
+### Décision
+
+**Adopter Option B — CLI stream-json** pour le remplacement de node-pty/xterm.js dans les sessions agents Claude.
+
+**Roadmap :**
+- **v1.x** : implémentation principale — `child_process.spawn + stream-json` dans `terminal.ts` ou nouvel `agent-stream.ts`, IPC structuré, `AgentStreamView.vue`
+- **v2.0** : réévaluer Option A SDK si Anthropic publie un SDK compatible OAuth
+
+### Questions ouvertes (non bloquantes pour v1.x)
+
+1. **Q3 — Thinking blocks :** pas de `type:"thinking"` dans stream-json sur sonnet-4-6. Conserver node-pty pour les agents `thinking_mode:'auto'` jusqu'à résolution, ou accepter l'absence de blocs thinking dans l'UI structurée.
+2. **TerminalView coexistence :** les terminaux génériques (non-agents) continuent à utiliser node-pty + xterm.js. La migration est **additive** — `AgentStreamView` pour les sessions agents, `TerminalView` pour le reste.
+3. **System prompt injection :** avec stream-json, `--append-system-prompt` fonctionne en argument CLI. Valider que les caractères spéciaux (backticks, guillemets) sont correctement escapés.
+
+### Modifications nécessaires
+
+| Fichier | Action | Effort |
+|---|---|---|
+| `src/main/agent-stream.ts` (nouveau) | Spawn + readline + IPC pour CLI stream-json | Élevé |
+| `src/main/ipc.ts` | Enregistrer les handlers `agent:*` | Moyen |
+| `src/preload/index.ts` | Exposer `agentStream`, `agentSendMessage`, `agentKill` | Faible |
+| `src/renderer/src/components/AgentStreamView.vue` (nouveau) | Affichage structuré des events stream-json | Élevé |
+| `src/renderer/src/stores/tabs.ts` | Type de tab `'agent-stream'` | Faible |
+| Tests | `agent-stream.spec.ts` + `AgentStreamView.spec.ts` | Moyen |
+
+### Conséquences
+
+- node-pty + xterm.js conservés pour les terminaux génériques — migration non cassante
+- `sessions.claude_conv_id` peuplé depuis `system:init.session_id` — aucun changement de schéma
+- `--resume` validé — la reprise de session fonctionne avec stream-json
+- Tickets d'implémentation à créer par `review` : `agent-stream.ts` (back-electron) + `AgentStreamView.vue` (front-vuejs) + tests
+
+---
+
 ## ADR-007 — Support Windows natif pour les sessions Claude Code
 
 **Date :** 2026-02-26 | **Statut :** accepté | **Auteur :** arch
