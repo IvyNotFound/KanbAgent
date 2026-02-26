@@ -77,8 +77,9 @@ async function onTaskDropped(taskId: number, targetStatut: string): Promise<void
     }
 
     // Check session limit BEFORE changing DB
-    if (!canLaunchSession(agent.name)) {
-      toast.push(t('board.sessionLimitReached', { agent: agent.name, max: MAX_AGENT_SESSIONS }), 'warn')
+    if (!canLaunchSession(agent)) {
+      const max = agent.max_sessions ?? MAX_AGENT_SESSIONS
+      toast.push(t('board.sessionLimitReached', { agent: agent.name, max }), 'warn')
       return
     }
 

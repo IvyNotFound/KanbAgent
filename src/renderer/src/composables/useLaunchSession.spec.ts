@@ -44,7 +44,7 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
   return {
     id: 10, name: 'dev-front-vuejs', type: 'dev', perimetre: 'front-vuejs',
     system_prompt: null, system_prompt_suffix: null, thinking_mode: 'auto',
-    allowed_tools: null, created_at: '',
+    allowed_tools: null, created_at: '', auto_launch: 1, permission_mode: null, max_sessions: 3,
     ...overrides
   } as Agent
 }
@@ -154,26 +154,43 @@ describe('composables/useLaunchSession', () => {
   describe('canLaunchSession', () => {
     it('should return true when agent has no terminals', () => {
       const { canLaunchSession } = useLaunchSession()
-      expect(canLaunchSession('dev-front-vuejs')).toBe(true)
+      expect(canLaunchSession(makeAgent())).toBe(true)
     })
 
-    it('should return true when agent has fewer than MAX_AGENT_SESSIONS terminals', () => {
+    it('should return true when agent has fewer than max_sessions terminals', () => {
       const tabsStore = useTabsStore()
       tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
       tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
 
       const { canLaunchSession } = useLaunchSession()
-      expect(canLaunchSession('dev-front-vuejs')).toBe(true)
+      expect(canLaunchSession(makeAgent())).toBe(true)
     })
 
-    it('should return false when agent has reached MAX_AGENT_SESSIONS terminals', () => {
+    it('should return false when agent has reached max_sessions terminals', () => {
       const tabsStore = useTabsStore()
       tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
       tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
       tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
 
       const { canLaunchSession } = useLaunchSession()
-      expect(canLaunchSession('dev-front-vuejs')).toBe(false)
+      expect(canLaunchSession(makeAgent())).toBe(false)
+    })
+
+    it('should return true when agent has max_sessions = -1 (unlimited)', () => {
+      const tabsStore = useTabsStore()
+      for (let i = 0; i < 10; i++) tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+
+      const { canLaunchSession } = useLaunchSession()
+      expect(canLaunchSession(makeAgent({ max_sessions: -1 }))).toBe(true)
+    })
+
+    it('should respect custom max_sessions value', () => {
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+
+      const { canLaunchSession } = useLaunchSession()
+      expect(canLaunchSession(makeAgent({ max_sessions: 2 }))).toBe(false)
     })
 
     it('should not affect other agents', () => {
@@ -183,7 +200,7 @@ describe('composables/useLaunchSession', () => {
       tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
 
       const { canLaunchSession } = useLaunchSession()
-      expect(canLaunchSession('other-agent')).toBe(true)
+      expect(canLaunchSession(makeAgent({ name: 'other-agent' }))).toBe(true)
     })
   })
 

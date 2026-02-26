@@ -56,7 +56,8 @@ export function useLaunchSession() {
     const dbPath = tasksStore.dbPath
     if (!dbPath) return 'error'
 
-    if (agentTerminalCount(agent.name) >= MAX_AGENT_SESSIONS) {
+    const maxSess = agent.max_sessions ?? MAX_AGENT_SESSIONS
+    if (maxSess !== -1 && agentTerminalCount(agent.name) >= maxSess) {
       return 'session-limit'
     }
 
@@ -159,10 +160,13 @@ export function useLaunchSession() {
 
   /**
    * Check whether a new session can be launched for the given agent.
-   * Returns false if the agent has already reached MAX_AGENT_SESSIONS open terminals.
+   * Returns false if the agent has already reached its max_sessions limit.
+   * Agents with max_sessions = -1 are unlimited.
    */
-  function canLaunchSession(agentName: string): boolean {
-    return agentTerminalCount(agentName) < MAX_AGENT_SESSIONS
+  function canLaunchSession(agent: Agent): boolean {
+    const maxSess = agent.max_sessions ?? MAX_AGENT_SESSIONS
+    if (maxSess === -1) return true
+    return agentTerminalCount(agent.name) < maxSess
   }
 
   return { launchAgentTerminal, launchReviewSession, canLaunchSession }

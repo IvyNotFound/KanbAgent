@@ -59,8 +59,9 @@ async function handleRelaunch(): Promise<void> {
     toast.push(t('board.agentNotFound'), 'error')
     return
   }
-  if (!canLaunchSession(agent.name)) {
-    toast.push(t('board.sessionLimitReached', { agent: agent.name, max: MAX_AGENT_SESSIONS }), 'warn')
+  if (!canLaunchSession(agent)) {
+    const max = agent.max_sessions ?? MAX_AGENT_SESSIONS
+    toast.push(t('board.sessionLimitReached', { agent: agent.name, max }), 'warn')
     return
   }
   const result = await launchAgentTerminal(agent, props.task)
