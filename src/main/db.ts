@@ -247,8 +247,8 @@ async function queryLiveAttempt(
     }
     const msg = String(err)
     if (canRetry && (msg.includes('malformed') || msg.includes('not a database'))) {
+      console.warn('[queryLive] Malformed DB buffer — evicting cache and retrying once:', msg)
       dbCache.delete(dbPath)
-      await new Promise((r) => setTimeout(r, 100))
       return queryLiveAttempt(dbPath, query, params, false)
     }
     throw err
