@@ -22,7 +22,7 @@ const isEditMode = computed(() => props.mode === 'edit' && props.agent != null)
 const store = useTasksStore()
 
 const SCOPED_TYPES = ['dev', 'test', 'ux']
-const ALL_TYPES = ['dev', 'test', 'ux', 'review', 'review-master', 'arch', 'devops', 'doc']
+const ALL_TYPES = ['dev', 'test', 'ux', 'review', 'review-master', 'arch', 'devops', 'doc', 'secu', 'perf', 'data']
 
 const name = ref('')
 const type = ref('dev')
