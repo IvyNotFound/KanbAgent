@@ -170,6 +170,18 @@ const hasLinks = computed(() =>
   blocksLinks.value.length > 0 || blockedByLinks.value.length > 0 || relatedLinks.value.length > 0
 )
 
+// ── Blocked status (T553) ─────────────────────────────────────────────────────
+// A task is blocked if it is 'todo' and has unresolved blockers (not done/archived)
+const unresolvedBlockers = computed(() => {
+  if (!task.value || task.value.statut !== 'todo') return []
+  return blockedByLinks.value.filter(link => {
+    const blockerStatut = link.from_task === task.value!.id ? link.to_statut : link.from_statut
+    return blockerStatut !== 'done' && blockerStatut !== 'archived'
+  })
+})
+
+const isBlocked = computed(() => unresolvedBlockers.value.length > 0)
+
 function linkedTaskTitle(link: TaskLink): string {
   if (!task.value) return ''
   return link.from_task === task.value.id ? link.to_titre : link.from_titre
@@ -280,6 +292,24 @@ onUnmounted(() => {
 
           <!-- Colonne droite : assignés + commentaires -->
           <div class="w-72 shrink-0 flex flex-col min-h-0">
+
+            <!-- T553: Blocked indicator -->
+            <div
+              v-if="isBlocked"
+              class="px-4 py-2 border-b border-amber-500/30 bg-amber-500/10 shrink-0"
+            >
+              <p class="text-[10px] font-semibold text-amber-400 uppercase tracking-wider mb-1">{{ t('taskDetail.blockedTitle') }}</p>
+              <ul class="space-y-0.5">
+                <li
+                  v-for="link in unresolvedBlockers"
+                  :key="link.id"
+                  class="text-[10px] text-amber-300/80"
+                >
+                  #{{ link.from_task === task.id ? link.to_task : link.from_task }}
+                  {{ link.from_task === task.id ? link.to_titre : link.from_titre }}
+                </li>
+              </ul>
+            </div>
 
             <!-- Section Agents (créateur / assigné / valideur) -->
             <div class="px-4 py-3 border-b border-edge-subtle shrink-0">

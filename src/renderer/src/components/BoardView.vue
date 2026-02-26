@@ -82,8 +82,17 @@ async function onTaskDropped(taskId: number, targetStatut: string): Promise<void
       return
     }
 
-    // All checks passed → update DB then launch
-    await store.setTaskStatut(taskId, 'in_progress')
+    // All checks passed → update DB then launch (TASK_BLOCKED rolls back optimistic update)
+    try {
+      await store.setTaskStatut(taskId, 'in_progress')
+    } catch (err) {
+      if (err instanceof Error && err.message === 'TASK_BLOCKED') {
+        const blockers = (err as Error & { blockers: Array<{ id: number; titre: string; statut: string }> }).blockers
+        const blockerList = blockers.map(b => `#${b.id} ${b.titre} (${b.statut})`).join(', ')
+        toast.push(t('board.taskBlocked', { blockers: blockerList }), 'warn')
+      }
+      return
+    }
     const result = await launchAgentTerminal(agent, task)
     if (result === 'error') {
       toast.push(t('board.launchFailed', { agent: agent.name }), 'error')

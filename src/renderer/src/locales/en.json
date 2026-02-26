@@ -20,6 +20,7 @@
     "agentNotFound": "Agent not found.",
     "launchFailed": "Failed to launch session for {agent}.",
     "sessionLimitReached": "Session limit ({max}) reached for {agent}",
+    "taskBlocked": "Task blocked by: {blockers}",
     "prevPage": "Previous",
     "nextPage": "Next",
     "pageOf": "Page {page} / {total} ({count} tasks)"
@@ -52,7 +53,8 @@
     "dependencies": "Dependencies",
     "blocks": "Blocks",
     "blockedBy": "Blocked by",
-    "relatedTo": "Related to"
+    "relatedTo": "Related to",
+    "blockedTitle": "Task blocked"
   },
   "logs": {
     "allAgents": "All agents",

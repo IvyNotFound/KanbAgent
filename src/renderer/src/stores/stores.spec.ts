@@ -1830,6 +1830,39 @@ describe('stores/tasks — auto-resume cold start', () => {
   })
 })
 
+// ── setTaskStatut — TASK_BLOCKED (T553) ──────────────────────────────────────
+
+describe('stores/tasks — setTaskStatut TASK_BLOCKED', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('throws TASK_BLOCKED error when IPC returns TASK_BLOCKED (T553)', async () => {
+    const blockers = [{ id: 5, titre: 'Blocker', statut: 'in_progress' }]
+    ;(mockElectronAPI as Record<string, ReturnType<typeof vi.fn>>).tasksUpdateStatus =
+      vi.fn().mockResolvedValue({ success: false, error: 'TASK_BLOCKED', blockers })
+
+    const store = useTasksStore()
+    store.$patch({ dbPath: '/p/db', tasks: [{ id: 1, statut: 'todo', titre: 'T' } as never] })
+
+    await expect(store.setTaskStatut(1, 'in_progress')).rejects.toThrow('TASK_BLOCKED')
+  })
+
+  it('rolls back optimistic update on TASK_BLOCKED (T553)', async () => {
+    const blockers = [{ id: 5, titre: 'Blocker', statut: 'in_progress' }]
+    ;(mockElectronAPI as Record<string, ReturnType<typeof vi.fn>>).tasksUpdateStatus =
+      vi.fn().mockResolvedValue({ success: false, error: 'TASK_BLOCKED', blockers })
+
+    const store = useTasksStore()
+    store.$patch({ dbPath: '/p/db', tasks: [{ id: 1, statut: 'todo', titre: 'T' } as never] })
+
+    try { await store.setTaskStatut(1, 'in_progress') } catch { /* expected */ }
+
+    expect(store.tasks.find(t => t.id === 1)?.statut).toBe('todo')
+  })
+})
+
 // ── agentGroups store logic (T558) ───────────────────────────────────────────
 //
 // These tests validate the business logic for agent grouping:

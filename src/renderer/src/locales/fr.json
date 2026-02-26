@@ -20,6 +20,7 @@
     "agentNotFound": "Agent introuvable.",
     "launchFailed": "Impossible de lancer la session pour {agent}.",
     "sessionLimitReached": "Limite de {max} sessions atteinte pour {agent}",
+    "taskBlocked": "Tâche bloquée par : {blockers}",
     "prevPage": "Précédent",
     "nextPage": "Suivant",
     "pageOf": "Page {page} / {total} ({count} tâches)"
@@ -52,7 +53,8 @@
     "dependencies": "Dépendances",
     "blocks": "Bloque",
     "blockedBy": "Bloqué par",
-    "relatedTo": "Lié à"
+    "relatedTo": "Lié à",
+    "blockedTitle": "Tâche bloquée"
   },
   "logs": {
     "allAgents": "Tous les agents",

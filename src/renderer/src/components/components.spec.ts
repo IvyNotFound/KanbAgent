@@ -3646,4 +3646,60 @@ describe('TaskDetailModal — multi-agents', () => {
     // Validator section should not be rendered (i18n key 'taskDetail.validator' → 'Valideur' in fr)
     expect(wrapper.text()).not.toContain('Valideur')
   })
+
+  // ── T553: blocked indicator ───────────────────────────────────────────────
+  it('shows blocked indicator when task is todo with unresolved blocker (T553)', async () => {
+    const task = makeTask({ id: 1, statut: 'todo' })
+    const blockingLink = {
+      id: 1, type: 'bloque',
+      from_task: 99, to_task: 1,
+      from_titre: 'Blocking task', from_statut: 'in_progress',
+      to_titre: 'task 1', to_statut: 'todo',
+    }
+    const pinia = createTestingPinia({
+      initialState: { tasks: { selectedTask: task, agents: [], dbPath: '/p/db', taskComments: [], taskAssignees: [], taskLinks: [blockingLink] } },
+    })
+    const wrapper = shallowMount(TaskDetailModal, {
+      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false } },
+    })
+    await nextTick()
+    // 'Tâche bloquée' is the fr translation of taskDetail.blockedTitle
+    expect(wrapper.text()).toContain('Tâche bloquée')
+  })
+
+  it('does not show blocked indicator when all blockers are done (T553)', async () => {
+    const task = makeTask({ id: 1, statut: 'todo' })
+    const resolvedLink = {
+      id: 1, type: 'bloque',
+      from_task: 99, to_task: 1,
+      from_titre: 'Done task', from_statut: 'done',
+      to_titre: 'task 1', to_statut: 'todo',
+    }
+    const pinia = createTestingPinia({
+      initialState: { tasks: { selectedTask: task, agents: [], dbPath: '/p/db', taskComments: [], taskAssignees: [], taskLinks: [resolvedLink] } },
+    })
+    const wrapper = shallowMount(TaskDetailModal, {
+      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false } },
+    })
+    await nextTick()
+    expect(wrapper.text()).not.toContain('Tâche bloquée')
+  })
+
+  it('does not show blocked indicator when task is in_progress (T553)', async () => {
+    const task = makeTask({ id: 1, statut: 'in_progress' })
+    const link = {
+      id: 1, type: 'bloque',
+      from_task: 99, to_task: 1,
+      from_titre: 'Other task', from_statut: 'todo',
+      to_titre: 'task 1', to_statut: 'in_progress',
+    }
+    const pinia = createTestingPinia({
+      initialState: { tasks: { selectedTask: task, agents: [], dbPath: '/p/db', taskComments: [], taskAssignees: [], taskLinks: [link] } },
+    })
+    const wrapper = shallowMount(TaskDetailModal, {
+      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false } },
+    })
+    await nextTick()
+    expect(wrapper.text()).not.toContain('Tâche bloquée')
+  })
 })
