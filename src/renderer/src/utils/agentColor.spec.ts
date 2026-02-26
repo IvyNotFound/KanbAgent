@@ -98,14 +98,20 @@ describe('agentColor', () => {
       setDarkMode(false)
       const name = 'my-agent'
       const hue = agentHue(name)
-      expect(agentFg(name)).toBe(`hsl(${hue}, 65%, 38%)`)
+      const fg = agentFg(name)
+      // Lightness 38% in light mode; saturation is variable per name (T464)
+      expect(fg).toMatch(/^hsl\(\d+, \d+%, 38%\)$/)
+      expect(fg).toContain(`hsl(${hue},`)
     })
 
     it('should return dark-mode values when dark class present', () => {
       setDarkMode(true)
       const name = 'my-agent'
       const hue = agentHue(name)
-      expect(agentFg(name)).toBe(`hsl(${hue}, 70%, 68%)`)
+      const fg = agentFg(name)
+      // Lightness 68% in dark mode; saturation is variable per name (T464)
+      expect(fg).toMatch(/^hsl\(\d+, \d+%, 68%\)$/)
+      expect(fg).toContain(`hsl(${hue},`)
     })
   })
 
@@ -172,18 +178,32 @@ describe('agentColor', () => {
       const name = 'test-agent-reactive'
       const hue = agentHue(name)
       setDarkMode(true)
-      expect(agentFg(name)).toBe(`hsl(${hue}, 70%, 68%)`)
+      const darkFg = agentFg(name)
+      // Dark: lightness 68%; saturation variable per name (T464)
+      expect(darkFg).toMatch(/^hsl\(\d+, \d+%, 68%\)$/)
+      expect(darkFg).toContain(`hsl(${hue},`)
       setDarkMode(false)
-      expect(agentFg(name)).toBe(`hsl(${hue}, 65%, 38%)`)
+      const lightFg = agentFg(name)
+      // Light: lightness 38%; saturation variable per name (T464)
+      expect(lightFg).toMatch(/^hsl\(\d+, \d+%, 38%\)$/)
+      expect(lightFg).toContain(`hsl(${hue},`)
+      expect(lightFg).not.toBe(darkFg)
     })
 
     it('perimeterFg returns light values after switching dark→light', () => {
       const name = 'front-vuejs'
       const hue = agentHue(name)
       setDarkMode(true)
-      expect(perimeterFg(name)).toBe(`hsl(${hue}, 60%, 70%)`)
+      const darkFg = perimeterFg(name)
+      // Dark: lightness 70%; saturation variable per name (T464)
+      expect(darkFg).toMatch(/^hsl\(\d+, \d+%, 70%\)$/)
+      expect(darkFg).toContain(`hsl(${hue},`)
       setDarkMode(false)
-      expect(perimeterFg(name)).toBe(`hsl(${hue}, 55%, 35%)`)
+      const lightFg = perimeterFg(name)
+      // Light: lightness 35%; saturation variable per name (T464)
+      expect(lightFg).toMatch(/^hsl\(\d+, \d+%, 35%\)$/)
+      expect(lightFg).toContain(`hsl(${hue},`)
+      expect(lightFg).not.toBe(darkFg)
     })
   })
 
