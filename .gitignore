@@ -37,8 +37,12 @@ Thumbs.db
 resources/bin/*.exe
 resources/bin/*.zip
 
-# Build artifacts
+# Build artifacts (electron-builder output)
 build/
+# Source assets committed in build/
+!build/icon.png
+!build/icon.ico
+!build/installer.nsh
 tsconfig.node.tsbuildinfo
 tsconfig.web.tsbuildinfo
 
