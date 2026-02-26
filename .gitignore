@@ -33,6 +33,7 @@ Thumbs.db
 # Project DB (generated)
 .claude/*.db
 .claude/*.db.tmp
+.claude/*.db.tmp.*
 
 # Bundled binaries (downloaded at build time)
 resources/bin/*.exe
