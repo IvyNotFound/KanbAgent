@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.7.0-blue)
+![Version](https://img.shields.io/badge/version-0.8.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches sessions, and includes an embedded WSL terminal.
@@ -10,9 +10,10 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 ## Key Features
 
 - **Trello/Jira Board**: Columns by status (`todo`, `in_progress`, `done`, `archived`), task cards with drill-down, S/M/L effort badge and priority
-- **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete
+- **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete/duplicate, max sessions limit
 - **Multi-agent Assignments**: Multiple agents per task (primary / support / reviewer roles), task card avatars
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
+- **Kanban Drag & Drop**: Drag task cards between columns to update status directly in the database
 - **Integrated WSL Terminal**: Multiple sessions, tabs, node-pty + xterm.js, crash recovery with `--resume`
 - **Auto-launch Terminals**: Automatic agent session launch on task creation with assignment
 - **Auto-trigger Review**: Automatic review session launch when ≥10 tasks reach `done` status (configurable threshold, cooldown)
@@ -26,6 +27,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **File Explorer**: Project file navigation and editing with CodeMirror 6
 - **Search**: Full-text search in tasks with filters (status, agent, scope)
 - **CLAUDE.md Sync**: Compare and update from a GitHub master repository
+- **Spell Check**: Native spell check on prompt textareas with right-click context menu suggestions
 - **Dark / Light Mode**: Dark theme by default, light mode available
 - **Internationalization**: Interface available in French and English (vue-i18n)
 - **Secure GitHub Token**: OS-level encryption via Electron `safeStorage` (DPAPI Windows / Keychain macOS)

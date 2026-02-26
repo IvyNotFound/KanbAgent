@@ -151,7 +151,8 @@ docs: update README with new commands
 | `add-perimetre` | Creates a new scope in the `perimetres` table |
 | `update-agent-system-prompt` | Updates an agent's system prompt |
 | `update-agent-thinking-mode` | Updates an agent's thinking mode |
-| `update-agent` | Updates agent fields (name, type, scope, permission_mode…) |
+| `update-agent` | Updates agent fields (name, type, scope, permission_mode, max_sessions…) |
+| `agent:duplicate` | Duplicates an agent (copies name, type, scope, prompt, thinking_mode, max_sessions) |
 | `get-agent-system-prompt` | Returns system_prompt, suffix, thinking_mode of an agent |
 | `build-agent-prompt` | Builds the launch prompt with session summary + task context |
 | `create-agent` | Creates an agent + inserts into CLAUDE.md if present |
