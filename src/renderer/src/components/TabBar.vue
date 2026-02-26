@@ -58,6 +58,8 @@ function isGroupActive(group: TabGroup): boolean {
 
 function activateAgentGroup(group: TabGroup): void {
   if (group.tabs.length === 0) return
+  // Save scroll position before DOM changes caused by expand/collapse
+  const savedScroll = scrollContainer.value?.scrollLeft ?? 0
   // Expand if collapsed
   if (isGroupCollapsed(group.agentName)) {
     collapsedAgents.value.delete(group.agentName)
@@ -66,6 +68,10 @@ function activateAgentGroup(group: TabGroup): void {
   if (!isGroupActive(group)) {
     store.setActive(group.tabs[0].id)
   }
+  // Restore scroll after DOM update to prevent jump to left
+  nextTick(() => {
+    if (scrollContainer.value) scrollContainer.value.scrollLeft = savedScroll
+  })
 }
 
 // Auto-expand group when its tab becomes active; auto-collapse others when groups are shown
