@@ -602,17 +602,27 @@ export function registerAgentHandlers(): void {
    * @returns {{ success: boolean, agentId?: number, name?: string, error?: string }}
    */
   ipcMain.handle('agent:duplicate', async (_event, dbPath: string, agentId: number) => {
+    if (typeof agentId !== 'number' || !Number.isInteger(agentId)) {
+      return { success: false, error: 'Invalid agentId' }
+    }
     try {
       assertDbPathAllowed(dbPath)
       const result = await writeDb<{ id: number; name: string }>(dbPath, (db) => {
-        const rows = db.exec(`SELECT name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools FROM agents WHERE id = ${agentId}`)
-        if (!rows.length || !rows[0].values.length) throw new Error('Agent not found')
-        const [name, type, perimetre, thinkingMode, systemPrompt, systemPromptSuffix, allowedTools] = rows[0].values[0]
+        const stmt = db.prepare('SELECT name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools FROM agents WHERE id = ?')
+        stmt.bind([agentId])
+        if (!stmt.step()) { stmt.free(); throw new Error('Agent not found') }
+        const row = stmt.getAsObject()
+        stmt.free()
+        const { name, type, perimetre, thinking_mode: thinkingMode, system_prompt: systemPrompt, system_prompt_suffix: systemPromptSuffix, allowed_tools: allowedTools } = row as Record<string, string | null>
 
         // Generate unique name: <name>-copy, then -copy-2, -copy-3, …
         const baseName = `${name}-copy`
-        const existingRows = db.exec(`SELECT name FROM agents WHERE name LIKE '${baseName.replace(/'/g, "''")}%'`)
-        const existing = new Set<string>(existingRows.length ? existingRows[0].values.map(r => r[0] as string) : [])
+        const likeStmt = db.prepare('SELECT name FROM agents WHERE name LIKE ?')
+        likeStmt.bind([baseName + '%'])
+        const existingNames: string[] = []
+        while (likeStmt.step()) { existingNames.push(likeStmt.getAsObject()['name'] as string) }
+        likeStmt.free()
+        const existing = new Set<string>(existingNames)
         let newName = baseName
         let n = 2
         while (existing.has(newName)) {
