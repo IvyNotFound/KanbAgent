@@ -545,6 +545,30 @@ describe('migrateDb', () => {
     const result = await migrateDb(dbPath)
     expect(result).toEqual({ migrated: 10 })
   })
+
+  it('T491: should skip migration entirely when schema_version is already current', async () => {
+    // Build a minimal DB buffer with config.schema_version = '6' (CURRENT_SCHEMA_VERSION)
+    const sqlJs = await getSqlJs()
+    const db = new sqlJs.Database()
+    db.run(`CREATE TABLE config (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`)
+    db.run(`INSERT INTO config (key, value) VALUES ('schema_version', '6')`)
+    const buf = Buffer.from(db.export())
+    db.close()
+
+    mockStat.mockResolvedValue({ mtimeMs: Date.now() })
+    mockReadFile.mockResolvedValue(buf)
+
+    const result = await migrateDb(dbPath)
+
+    // Fast-path: returns immediately without backup or any migration
+    expect(result).toEqual({ migrated: 0 })
+    expect(mockCopyFile).not.toHaveBeenCalled()
+    expect(mockRunTaskStatusMigration).not.toHaveBeenCalled()
+    expect(mockRunAddPriorityMigration).not.toHaveBeenCalled()
+    expect(mockRunTaskStatutI18nMigration).not.toHaveBeenCalled()
+    expect(mockRunDropCommentaireColumnMigration).not.toHaveBeenCalled()
+    expect(mockRunSessionStatutI18nMigration).not.toHaveBeenCalled()
+  })
 })
 
 // ── FORBIDDEN_WRITE_PATTERN ──────────────────────────────────────────────────
