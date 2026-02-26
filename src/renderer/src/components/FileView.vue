@@ -4,18 +4,28 @@ import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
-import { EditorView, basicSetup } from 'codemirror'
+import {
+  EditorView,
+  lineNumbers,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  drawSelection,
+  highlightActiveLine,
+  keymap,
+} from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
-import { keymap } from '@codemirror/view'
-import { indentWithTab } from '@codemirror/commands'
-import { oneDark } from '@codemirror/theme-one-dark'
-import { javascript } from '@codemirror/lang-javascript'
-import { json } from '@codemirror/lang-json'
-import { sql } from '@codemirror/lang-sql'
-import { css } from '@codemirror/lang-css'
-import { html } from '@codemirror/lang-html'
-import { markdown } from '@codemirror/lang-markdown'
 import type { Extension } from '@codemirror/state'
+import { history, defaultKeymap, historyKeymap, indentWithTab } from '@codemirror/commands'
+import {
+  foldGutter,
+  indentOnInput,
+  syntaxHighlighting,
+  defaultHighlightStyle,
+  bracketMatching,
+  foldKeymap,
+} from '@codemirror/language'
+import { highlightSelectionMatches } from '@codemirror/search'
+import { oneDark } from '@codemirror/theme-one-dark'
 
 const { t } = useI18n()
 const props = defineProps<{ filePath: string; tabId: string }>()
@@ -48,17 +58,37 @@ function isTextFile(path: string): boolean {
   return TEXT_EXTS.has(ext)
 }
 
-function getLangExtension(path: string): Extension | null {
+async function getLangExtension(path: string): Promise<Extension | null> {
   const ext = path.split('.').pop()?.toLowerCase() ?? ''
   switch (ext) {
-    case 'ts': case 'tsx': return javascript({ typescript: true, jsx: ext === 'tsx' })
-    case 'js': case 'jsx': return javascript({ jsx: ext === 'jsx' })
-    case 'vue': return html()
-    case 'json': return json()
-    case 'sql': return sql()
-    case 'css': case 'scss': case 'less': return css()
-    case 'html': case 'htm': return html()
-    case 'md': return markdown()
+    case 'ts': case 'tsx': {
+      const { javascript } = await import('@codemirror/lang-javascript')
+      return javascript({ typescript: true, jsx: ext === 'tsx' })
+    }
+    case 'js': case 'jsx': {
+      const { javascript } = await import('@codemirror/lang-javascript')
+      return javascript({ jsx: ext === 'jsx' })
+    }
+    case 'vue': case 'html': case 'htm': {
+      const { html } = await import('@codemirror/lang-html')
+      return html()
+    }
+    case 'json': {
+      const { json } = await import('@codemirror/lang-json')
+      return json()
+    }
+    case 'sql': {
+      const { sql } = await import('@codemirror/lang-sql')
+      return sql()
+    }
+    case 'css': case 'scss': case 'less': {
+      const { css } = await import('@codemirror/lang-css')
+      return css()
+    }
+    case 'md': {
+      const { markdown } = await import('@codemirror/lang-markdown')
+      return markdown()
+    }
     default: return null
   }
 }
@@ -83,12 +113,25 @@ async function save(): Promise<void> {
   }
 }
 
-function buildExtensions(): Extension[] {
-  const langExt = getLangExtension(props.filePath)
+async function buildExtensions(): Promise<Extension[]> {
+  const langExt = await getLangExtension(props.filePath)
   const exts: Extension[] = [
-    basicSetup,
+    lineNumbers(),
+    highlightActiveLineGutter(),
+    highlightSpecialChars(),
+    history(),
+    foldGutter(),
+    drawSelection(),
+    indentOnInput(),
+    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    bracketMatching(),
+    highlightActiveLine(),
+    highlightSelectionMatches(),
     ...(settingsStore.theme === 'dark' ? [oneDark] : []),
     keymap.of([
+      ...defaultKeymap,
+      ...historyKeymap,
+      ...foldKeymap,
       indentWithTab,
       { key: 'Mod-s', run: () => { save(); return true } },
     ]),
@@ -109,10 +152,10 @@ function buildExtensions(): Extension[] {
   return exts
 }
 
-function initEditor(): void {
+async function initEditor(): Promise<void> {
   if (!editorEl.value) return
   view = new EditorView({
-    state: EditorState.create({ doc: '', extensions: buildExtensions() }),
+    state: EditorState.create({ doc: '', extensions: await buildExtensions() }),
     parent: editorEl.value,
   })
 }
@@ -153,12 +196,12 @@ onUnmounted(() => {
 })
 
 // Rebuild editor when theme changes to swap CodeMirror dark/light
-watch(() => settingsStore.theme, () => {
+watch(() => settingsStore.theme, async () => {
   if (!view || !editorEl.value) return
   const content = view.state.doc.toString()
   view.destroy()
   view = new EditorView({
-    state: EditorState.create({ doc: content, extensions: buildExtensions() }),
+    state: EditorState.create({ doc: content, extensions: await buildExtensions() }),
     parent: editorEl.value,
   })
 })
@@ -168,7 +211,7 @@ watch(() => props.filePath, async () => {
   view?.destroy()
   view = null
   if (editorEl.value) editorEl.value.innerHTML = ''
-  initEditor()
+  await initEditor()
   await load()
 })
 </script>

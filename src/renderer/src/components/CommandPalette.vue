@@ -36,6 +36,15 @@ const STATUTS = computed(() => [
   { key: 'archived',    label: t('columns.archived'),    dot: 'bg-violet-500' },
 ])
 
+// Pre-computed lowercase index — recomputes only when tasks list changes, not on every keystroke
+const searchIndex = computed<Map<number, string>>(() => {
+  const map = new Map<number, string>()
+  for (const t of tasksStore.tasks) {
+    map.set(t.id, (t.titre + ' ' + (t.description ?? '')).toLowerCase())
+  }
+  return map
+})
+
 const filteredTasks = computed<Task[]>(() => {
   const q = debouncedQuery.value.toLowerCase().trim()
   return tasksStore.tasks.filter(t => {
@@ -43,11 +52,8 @@ const filteredTasks = computed<Task[]>(() => {
     if (filterAgentId.value !== null && Number(t.agent_assigne_id) !== Number(filterAgentId.value)) return false
     if (filterPerimetre.value && t.perimetre !== filterPerimetre.value) return false
     if (!q) return true
-    return (
-      t.titre.toLowerCase().includes(q) ||
-      t.description?.toLowerCase().includes(q) ||
-      String(t.id) === q
-    )
+    if (String(t.id) === q) return true
+    return searchIndex.value.get(t.id)?.includes(q) ?? false
   }).slice(0, 20)
 })
 

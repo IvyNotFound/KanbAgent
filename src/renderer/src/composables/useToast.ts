@@ -10,6 +10,7 @@ export interface Toast {
 
 // Module-level singleton: shared across all composable calls
 const toasts = ref<Toast[]>([])
+const _timers = new Map<number, ReturnType<typeof setTimeout>>()
 let _id = 0
 
 export function useToast() {
@@ -17,10 +18,15 @@ export function useToast() {
     if (toasts.value.length >= 5) toasts.value.shift()
     const id = ++_id
     toasts.value.push({ id, message, type })
-    setTimeout(() => dismiss(id), duration)
+    _timers.set(id, setTimeout(() => dismiss(id), duration))
   }
 
   function dismiss(id: number): void {
+    const timer = _timers.get(id)
+    if (timer !== undefined) {
+      clearTimeout(timer)
+      _timers.delete(id)
+    }
     const idx = toasts.value.findIndex(t => t.id === id)
     if (idx !== -1) toasts.value.splice(idx, 1)
   }

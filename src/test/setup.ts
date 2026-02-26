@@ -15,7 +15,6 @@ const mockElectronAPI = {
   findProjectDb: vi.fn(),
   migrateDb: vi.fn(),
   getLocks: vi.fn(),
-  getLocksCount: vi.fn(),
   fsListDir: vi.fn(),
   fsReadFile: vi.fn(),
   fsWriteFile: vi.fn(),
@@ -49,6 +48,10 @@ const mockElectronAPI = {
   testGithubConnection: vi.fn(),
   checkForUpdates: vi.fn(),
   searchTasks: vi.fn(),
+  onTerminalConvId: vi.fn(() => () => {}),
+  setSessionConvId: vi.fn().mockResolvedValue(undefined),
+  getTaskAssignees: vi.fn().mockResolvedValue({ success: true, assignees: [] }),
+  setTaskAssignees: vi.fn().mockResolvedValue({ success: true }),
 }
 
 // Make it available globally (jsdom only — node environment has no window)

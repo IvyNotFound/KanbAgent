@@ -88,6 +88,8 @@ node scripts/dbstart.js <agent> [type] [perimetre]
 > Fait tout en un appel : enregistre l'agent, crée la session, affiche `agent_id` + `session_id`, session précédente, tâches assignées, locks actifs.
 > Tâches trouvées → commencer immédiatement. Questions seulement si aucune tâche ET type non inférable.
 
+> **⚠ Limite sessions parallèles** : max 3 sessions actives par agent — enforcé par `dbstart.js` (exit code 2 si limite atteinte).
+
 ### 3. L'agent prend le ticket
 
 ```sql
@@ -108,17 +110,27 @@ UPDATE tasks SET statut = 'done', completed_at = CURRENT_TIMESTAMP, updated_at =
 -- + libérer locks via primitive
 ```
 
-> Après `done` → consulter backlog. Tâches restantes → prendre la suivante. Sinon → étape 5.
+> Après `done` → consulter backlog. Tâches restantes → **enchaîner sans fermer la session** (`/clear` + reset PTY, puis prendre la suivante). Ne fermer la session (étape 5) **que si** : aucune tâche restante, ou tâche bloquée (dépendance, lock, attente review).
 
 ### 5. L'agent termine sa session
 
 ```sql
--- Libérer locks via primitive
+-- 1. Enregistrer les tokens consommés (OBLIGATOIRE avant de clore)
+--    Source : résumé affiché par Claude Code en fin de conversation
+--    Ligne "Tokens: X in, Y cache_read, Z cache_write, W out"
+UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id;
+
+-- 2. Libérer locks via primitive
+-- 3. Clore la session
 UPDATE sessions SET statut = 'terminé', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP,
   summary = 'Done:<accompli>. Pending:<tickets>. Next:<action>.' WHERE id = :session_id;
 ```
 
 > `summary` autosuffisant (max 200 chars) — un agent reprenant sans contexte doit savoir où il en est.
+>
+> **⚠ Tokens obligatoires** : noter les tokens AVANT de clore (`tokens_in`, `tokens_out`, `tokens_cache_read`, `tokens_cache_write`). Les valeurs sont affichées par Claude Code à la fin de chaque conversation. Si la valeur est inconnue (session interrompue), mettre 0.
+>
+> **⚠ Locks obligatoires** : libérer **tous** les locks avant de terminer la session. `dbstart.js` libère automatiquement les locks orphelins des sessions terminées au démarrage, mais les agents doivent les libérer eux-mêmes en étape 5.
 
 ### 6. Review valide ou rejette
 

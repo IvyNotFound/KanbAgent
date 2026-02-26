@@ -7,9 +7,9 @@
  */
 
 import { ipcMain } from 'electron'
-import { readdirSync, type Dirent } from 'fs'
-import { readFile, writeFile } from 'fs/promises'
-import { join, resolve, isAbsolute, sep } from 'path'
+import { readFile, writeFile, readdir } from 'fs/promises'
+import type { Dirent } from 'fs'
+import { join, resolve, sep } from 'path'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,16 +24,19 @@ export interface FileNode {
 
 const FS_SKIP = new Set(['node_modules', '.git', 'dist', 'dist-electron', '.DS_Store', '__pycache__'])
 
-export function buildTree(dirPath: string, depth = 0): FileNode[] {
-  if (depth > 4) return []
+/**
+ * Lists a single directory level (async, non-blocking).
+ * Directories have `children: undefined` — the renderer expands them lazily.
+ */
+export async function buildTree(dirPath: string): Promise<FileNode[]> {
   let entries: Dirent[]
-  try { entries = readdirSync(dirPath, { withFileTypes: true }) } catch { return [] }
+  try { entries = await readdir(dirPath, { withFileTypes: true }) } catch { return [] }
   return entries
     .filter(e => !FS_SKIP.has(e.name) && (e.name[0] !== '.' || e.name === '.claude'))
     .map(e => {
       const fullPath = join(dirPath, e.name)
       const isDir = e.isDirectory()
-      return { name: e.name, path: fullPath, isDir, children: isDir ? buildTree(fullPath, depth + 1) : undefined }
+      return { name: e.name, path: fullPath, isDir, children: isDir ? undefined : undefined }
     })
     .sort((a, b) => {
       if (a.isDir !== b.isDir) return a.isDir ? -1 : 1
@@ -41,10 +44,13 @@ export function buildTree(dirPath: string, depth = 0): FileNode[] {
     })
 }
 
-export function isPathAllowed(filePath: string, allowedDir?: string): boolean {
-  if (!allowedDir) {
-    return !isAbsolute(filePath)
-  }
+/**
+ * Check if a file path is within an allowed directory (with separator boundary check).
+ * @param filePath - Path to validate
+ * @param allowedDir - Allowed root directory
+ * @returns {boolean} true if path is within allowedDir
+ */
+export function isPathAllowed(filePath: string, allowedDir: string): boolean {
   const resolved = resolve(filePath)
   const allowed = resolve(allowedDir)
   // T318: Require path separator boundary to prevent /project-evil matching /project
@@ -53,8 +59,19 @@ export function isPathAllowed(filePath: string, allowedDir?: string): boolean {
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
+/** Register filesystem IPC handlers (listDir, readFile, writeFile). */
 export function registerFsHandlers(): void {
-  ipcMain.handle('fs:listDir', (_event, dirPath: string, allowedDir?: string): FileNode[] => {
+  /**
+   * List directory contents (directories first, sorted). Path must be within allowedDir.
+   * @param dirPath - Directory to list
+   * @param allowedDir - Allowed root directory for security
+   * @returns {FileNode[]} Directory entries
+   */
+  ipcMain.handle('fs:listDir', async (_event, dirPath: string, allowedDir: string): Promise<FileNode[]> => {
+    if (!allowedDir) {
+      console.warn('[IPC fs:listDir] Missing mandatory allowedDir')
+      return []
+    }
     if (dirPath.includes('..')) {
       console.warn('[IPC fs:listDir] Blocked path traversal attempt:', dirPath)
       return []
@@ -66,7 +83,17 @@ export function registerFsHandlers(): void {
     return buildTree(dirPath)
   })
 
-  ipcMain.handle('fs:readFile', async (_event, filePath: string, allowedDir?: string) => {
+  /**
+   * Read a text file. Path must be within allowedDir.
+   * @param filePath - File to read
+   * @param allowedDir - Allowed root directory
+   * @returns {{ success: boolean, content?: string, error?: string }}
+   */
+  ipcMain.handle('fs:readFile', async (_event, filePath: string, allowedDir: string) => {
+    if (!allowedDir) {
+      console.warn('[IPC fs:readFile] Missing mandatory allowedDir')
+      return { success: false, error: 'Missing mandatory allowedDir' }
+    }
     if (filePath.includes('..')) {
       console.warn('[IPC fs:readFile] Blocked path traversal attempt:', filePath)
       return { success: false, error: 'Path traversal not allowed' }
@@ -83,7 +110,18 @@ export function registerFsHandlers(): void {
     }
   })
 
-  ipcMain.handle('fs:writeFile', async (_event, filePath: string, content: string, allowedDir?: string): Promise<{ success: boolean; error?: string }> => {
+  /**
+   * Write a text file. Path must be within allowedDir and not a sensitive system file.
+   * @param filePath - File to write
+   * @param content - Text content
+   * @param allowedDir - Allowed root directory
+   * @returns {{ success: boolean, error?: string }}
+   */
+  ipcMain.handle('fs:writeFile', async (_event, filePath: string, content: string, allowedDir: string): Promise<{ success: boolean; error?: string }> => {
+    if (!allowedDir) {
+      console.warn('[IPC fs:writeFile] Missing mandatory allowedDir')
+      return { success: false, error: 'Missing mandatory allowedDir' }
+    }
     if (filePath.includes('..')) {
       console.warn('[IPC fs:writeFile] Blocked path traversal attempt:', filePath)
       return { success: false, error: 'Path traversal not allowed' }

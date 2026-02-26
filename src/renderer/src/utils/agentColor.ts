@@ -27,12 +27,28 @@ function hash(name: string): number {
 
 const hueCache = new Map<string, number>()
 
+// Color string caches — keyed by agent/perimeter name, invalidated on theme change.
+const agentFgCache = new Map<string, string>()
+const agentBgCache = new Map<string, string>()
+const agentBorderCache = new Map<string, string>()
+const perimeterFgCache = new Map<string, string>()
+const perimeterBgCache = new Map<string, string>()
+const perimeterBorderCache = new Map<string, string>()
+
 /** Reactive dark mode flag — kept in sync by setDarkMode(). */
 const darkMode = ref(document.documentElement.classList.contains('dark'))
 
 /** Update the reactive dark mode flag. Call this from the settings store on theme change. */
 export function setDarkMode(dark: boolean): void {
+  if (darkMode.value === dark) return
   darkMode.value = dark
+  // Invalidate color caches on theme change.
+  agentFgCache.clear()
+  agentBgCache.clear()
+  agentBorderCache.clear()
+  perimeterFgCache.clear()
+  perimeterBgCache.clear()
+  perimeterBorderCache.clear()
 }
 
 /** Returns true when the app is in dark mode. Reactive — reads from the darkMode ref. */
@@ -60,10 +76,13 @@ export function agentHue(name: string): number {
  * Dark: bright text (68% L) · Light: darker text (38% L) for contrast on white.
  */
 export function agentFg(name: string): string {
-  const h = agentHue(name)
-  return isDark()
-    ? `hsl(${h}, 70%, 68%)`
-    : `hsl(${h}, 65%, 38%)`
+  let v = agentFgCache.get(name)
+  if (v === undefined) {
+    const h = agentHue(name)
+    v = isDark() ? `hsl(${h}, 70%, 68%)` : `hsl(${h}, 65%, 38%)`
+    agentFgCache.set(name, v)
+  }
+  return v
 }
 
 /**
@@ -71,10 +90,13 @@ export function agentFg(name: string): string {
  * Dark: dark tinted bg (18% L) · Light: soft pastel bg (92% L).
  */
 export function agentBg(name: string): string {
-  const h = agentHue(name)
-  return isDark()
-    ? `hsl(${h}, 40%, 18%)`
-    : `hsl(${h}, 50%, 92%)`
+  let v = agentBgCache.get(name)
+  if (v === undefined) {
+    const h = agentHue(name)
+    v = isDark() ? `hsl(${h}, 40%, 18%)` : `hsl(${h}, 50%, 92%)`
+    agentBgCache.set(name, v)
+  }
+  return v
 }
 
 /**
@@ -82,10 +104,13 @@ export function agentBg(name: string): string {
  * Dark: medium border (32% L) · Light: subtle border (78% L).
  */
 export function agentBorder(name: string): string {
-  const h = agentHue(name)
-  return isDark()
-    ? `hsl(${h}, 40%, 32%)`
-    : `hsl(${h}, 40%, 78%)`
+  let v = agentBorderCache.get(name)
+  if (v === undefined) {
+    const h = agentHue(name)
+    v = isDark() ? `hsl(${h}, 40%, 32%)` : `hsl(${h}, 40%, 78%)`
+    agentBorderCache.set(name, v)
+  }
+  return v
 }
 
 /**
@@ -93,10 +118,13 @@ export function agentBorder(name: string): string {
  * Dark: bright text (70% L) · Light: darker text (35% L).
  */
 export function perimeterFg(name: string): string {
-  const h = agentHue(name)
-  return isDark()
-    ? `hsl(${h}, 60%, 70%)`
-    : `hsl(${h}, 55%, 35%)`
+  let v = perimeterFgCache.get(name)
+  if (v === undefined) {
+    const h = agentHue(name)
+    v = isDark() ? `hsl(${h}, 60%, 70%)` : `hsl(${h}, 55%, 35%)`
+    perimeterFgCache.set(name, v)
+  }
+  return v
 }
 
 /**
@@ -104,10 +132,13 @@ export function perimeterFg(name: string): string {
  * Dark: very dark bg (15% L) · Light: soft pastel bg (93% L).
  */
 export function perimeterBg(name: string): string {
-  const h = agentHue(name)
-  return isDark()
-    ? `hsl(${h}, 30%, 15%)`
-    : `hsl(${h}, 40%, 93%)`
+  let v = perimeterBgCache.get(name)
+  if (v === undefined) {
+    const h = agentHue(name)
+    v = isDark() ? `hsl(${h}, 30%, 15%)` : `hsl(${h}, 40%, 93%)`
+    perimeterBgCache.set(name, v)
+  }
+  return v
 }
 
 /**
@@ -115,8 +146,11 @@ export function perimeterBg(name: string): string {
  * Dark: medium border (27% L) · Light: subtle border (80% L).
  */
 export function perimeterBorder(name: string): string {
-  const h = agentHue(name)
-  return isDark()
-    ? `hsl(${h}, 30%, 27%)`
-    : `hsl(${h}, 30%, 80%)`
+  let v = perimeterBorderCache.get(name)
+  if (v === undefined) {
+    const h = agentHue(name)
+    v = isDark() ? `hsl(${h}, 30%, 27%)` : `hsl(${h}, 30%, 80%)`
+    perimeterBorderCache.set(name, v)
+  }
+  return v
 }

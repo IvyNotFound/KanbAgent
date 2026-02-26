@@ -23,6 +23,7 @@ let resizeObserver: ResizeObserver | null = null
 let ptyId: string | null = null
 let autoSendTimeout: ReturnType<typeof setTimeout> | null = null
 let fitTimeout: ReturnType<typeof setTimeout> | null = null
+let resizeRafId: number | null = null
 
 function doFit() {
   if (!fitAddon || !term) return
@@ -33,27 +34,6 @@ function doFit() {
     }
   } catch { /* ignore fit errors when hidden */ }
 }
-
-// Re-fit and refresh when this tab becomes active (was hidden with display:none)
-// scrollToBottom fixes viewport reset to top that happens after fit() on resize
-// Use setTimeout 200ms + requestAnimationFrame to ensure DOM has proper dimensions before fit
-// fitTimeout is stored so it can be cancelled in onUnmounted if component is destroyed before expiry
-watch(() => tabsStore.activeTabId, (id) => {
-  if (id === props.tabId) {
-    if (fitTimeout) clearTimeout(fitTimeout)
-    fitTimeout = setTimeout(() => {
-      fitTimeout = null
-      requestAnimationFrame(() => {
-        doFit()
-        if (term) {
-          term.refresh(0, term.rows - 1)
-          term.scrollToBottom()
-          term.focus()
-        }
-      })
-    }, 200)
-  }
-})
 
 onMounted(async () => {
   if (!container.value) return
@@ -188,17 +168,12 @@ onMounted(async () => {
   // Store the detected conversation UUID in the DB for future --resume launches.
   // Only active for agent sessions (tab has agentName and tasksStore provides agentId).
   if (tab?.agentName && tasksStore.dbPath) {
-    const agentRows = await window.electronAPI.queryDb(
-      tasksStore.dbPath,
-      'SELECT id FROM agents WHERE name = ? LIMIT 1',
-      [tab.agentName]
-    ) as Array<{ id: number }>
-    if (agentRows.length > 0) {
-      const agentId = agentRows[0].id
+    const agentId = tasksStore.agents.find(a => a.name === tab.agentName)?.id
+    if (agentId) {
       unsubConvId = window.electronAPI.onTerminalConvId(ptyId, (convId) => {
         // Store in DB for future --resume
         if (tasksStore.dbPath) {
-          window.electronAPI.setSessionConvId(tasksStore.dbPath, agentId, convId)
+          window.electronAPI.setSessionConvId(tasksStore.dbPath, Number(agentId), convId)
             .catch(err => console.warn('[TerminalView] setSessionConvId failed:', err))
         }
         // Unsubscribe after first detection
@@ -269,7 +244,11 @@ onMounted(async () => {
   }
 
   resizeObserver = new ResizeObserver(() => {
-    doFit()
+    if (resizeRafId !== null) cancelAnimationFrame(resizeRafId)
+    resizeRafId = requestAnimationFrame(() => {
+      resizeRafId = null
+      doFit()
+    })
   })
   resizeObserver.observe(container.value)
 })
@@ -302,15 +281,20 @@ function resumeListeners() {
 watch(isActive, (active) => {
   if (active) {
     resumeListeners()
-    requestAnimationFrame(() => {
-      doFit()
-      if (term) {
-        term.refresh(0, term.rows - 1)
-        term.scrollToBottom()
-        term.focus()
-      }
-    })
+    // 200ms delay + rAF ensures DOM has proper dimensions after display:none→flex transition
+    if (fitTimeout) clearTimeout(fitTimeout)
+    fitTimeout = setTimeout(() => {
+      fitTimeout = null
+      requestAnimationFrame(() => {
+        doFit()
+        if (term) {
+          term.scrollToBottom()
+          term.focus()
+        }
+      })
+    }, 200)
   } else {
+    if (fitTimeout) { clearTimeout(fitTimeout); fitTimeout = null }
     pauseListeners()
   }
 }, { immediate: true })
@@ -318,6 +302,7 @@ watch(isActive, (active) => {
 onUnmounted(() => {
   if (ptyId) window.electronAPI.terminalKill(ptyId)
   if (fitTimeout) { clearTimeout(fitTimeout); fitTimeout = null }
+  if (resizeRafId !== null) { cancelAnimationFrame(resizeRafId); resizeRafId = null }
   if (autoSendTimeout) clearTimeout(autoSendTimeout)
   unsubData?.()
   unsubExit?.()

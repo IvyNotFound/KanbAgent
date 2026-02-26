@@ -28,6 +28,8 @@ export interface Tab {
   claudeCommand?: string | null
   /** Claude Code conversation UUID for --resume (task #218). null = no previous session. */
   convId?: string | null
+  /** Task ID displayed in tab title (task #400). null = no associated task. */
+  taskId?: number | null
   filePath?: string
   dirty?: boolean
   logsAgentId?: number | null
@@ -60,12 +62,19 @@ export const useTabsStore = defineStore('tabs', () => {
   // Activité terminal : true si output reçu dans les 5 dernières secondes
   const tabActivity = ref<Record<string, boolean>>({})
   const activityTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+  // Timestamp of last markTabActive call per tab (for 500ms throttle)
+  const activityLastReset: Record<string, number> = {}
 
   function markTabActive(tabId: string): void {
+    const now = Date.now()
+    // Throttle to once per 500ms: avoids creating/destroying setTimeout at every PTY data chunk
+    if (now - (activityLastReset[tabId] ?? 0) < 500) return
+    activityLastReset[tabId] = now
     tabActivity.value[tabId] = true
     if (activityTimers[tabId]) clearTimeout(activityTimers[tabId])
     activityTimers[tabId] = setTimeout(() => {
       tabActivity.value[tabId] = false
+      delete activityTimers[tabId]
     }, 5000)
   }
 
@@ -119,12 +128,21 @@ export const useTabsStore = defineStore('tabs', () => {
     activeTabId.value = 'logs'
   }
 
-  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string): void {
+  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number): void {
     const id = `term-${Date.now()}`
     let title: string
     if (agentName) {
-      const sameAgent = tabs.value.filter(t => t.type === 'terminal' && t.agentName === agentName).length
-      title = sameAgent > 0 ? `${agentName} (${sameAgent + 1})` : agentName
+      const sameAgentTabs = tabs.value.filter(t => t.type === 'terminal' && t.agentName === agentName)
+      if (sameAgentTabs.length === 0) {
+        title = agentName
+      } else {
+        const numbers = sameAgentTabs.map(t => {
+          const m = t.title.match(/\((\d+)\)(?:\s·\s#\d+)?$/)
+          return m ? parseInt(m[1]) : 1
+        })
+        title = `${agentName} (${Math.max(...numbers) + 1})`
+      }
+      if (taskId != null) title += ` · #${taskId}`
     } else {
       const n = tabs.value.filter(t => t.type === 'terminal').length + 1
       title = `WSL ${n}`
@@ -141,8 +159,9 @@ export const useTabsStore = defineStore('tabs', () => {
       thinkingMode: thinkingMode ?? null,
       claudeCommand: claudeCommand ?? null,
       convId: convId ?? null,
+      taskId: taskId ?? null,
     })
-    activeTabId.value = id
+    if (activate) activeTabId.value = id
   }
 
   function setPtyId(tabId: string, ptyId: string): void {

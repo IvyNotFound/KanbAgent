@@ -43,7 +43,7 @@ onMounted(() => {
   }
 })
 onUnmounted(() => { resizeObs?.disconnect() })
-watch(terminalTabs, () => nextTick(updateScrollState), { deep: true })
+watch(() => terminalTabs.value.map(t => t.id).join(), () => nextTick(updateScrollState))
 
 // ── Drag & drop ──────────────────────────────────────────────────────────────
 const draggedId = ref<string | null>(null)

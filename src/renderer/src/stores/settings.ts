@@ -173,6 +173,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // Auto-launch agent sessions (T340)
   const autoLaunchAgentSessions = ref<boolean>(localStorage.getItem('autoLaunchAgentSessions') !== 'false')
 
+  /** @param enabled - Enable/disable auto-launch of agent terminal sessions on task creation */
   function setAutoLaunchAgentSessions(enabled: boolean) {
     autoLaunchAgentSessions.value = enabled
     localStorage.setItem('autoLaunchAgentSessions', String(enabled))
@@ -182,11 +183,13 @@ export const useSettingsStore = defineStore('settings', () => {
   const autoReviewEnabled = ref<boolean>(localStorage.getItem('autoReviewEnabled') !== 'false')
   const autoReviewThreshold = ref<number>(Math.max(3, parseInt(localStorage.getItem('autoReviewThreshold') ?? '10', 10) || 10))
 
+  /** @param enabled - Enable/disable auto-launch of review sessions when done threshold is reached */
   function setAutoReviewEnabled(enabled: boolean) {
     autoReviewEnabled.value = enabled
     localStorage.setItem('autoReviewEnabled', String(enabled))
   }
 
+  /** @param n - Minimum done tasks to trigger auto-review (clamped to ≥3) */
   function setAutoReviewThreshold(n: number) {
     const clamped = Math.max(3, n)
     autoReviewThreshold.value = clamped
@@ -200,6 +203,7 @@ export const useSettingsStore = defineStore('settings', () => {
     needsUpdate: false
   })
 
+  /** @param info - Partial CLAUDE.md sync state to merge */
   function setClaudeMdInfo(info: Partial<ClaudeMdInfo>) {
     Object.assign(claudeMdInfo.value, info)
   }

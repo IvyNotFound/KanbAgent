@@ -9,8 +9,8 @@
  */
 
 import { ipcMain, dialog, BrowserWindow } from 'electron'
-import { watch, type FSWatcher, readdirSync, existsSync } from 'fs'
-import { mkdir, writeFile } from 'fs/promises'
+import { watch, type FSWatcher } from 'fs'
+import { access, mkdir, readdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { DEFAULT_AGENTS } from './default-agents'
 import {
@@ -42,20 +42,19 @@ function notifyRenderer(): void {
   }
 }
 
-function findProjectDb(projectPath: string): string | null {
+async function findProjectDb(projectPath: string): Promise<string | null> {
   const claudeDir = join(projectPath, '.claude')
-  if (existsSync(claudeDir)) {
-    try {
-      const files = readdirSync(claudeDir).filter(f => f.endsWith('.db'))
-      if (files.length > 0) {
-        const found = join(claudeDir, files[0])
-        console.log('[findProjectDb] found:', found)
-        return found
-      }
-    } catch { /* ignore */ }
-  }
   try {
-    const files = readdirSync(projectPath).filter(f => f.endsWith('.db'))
+    await access(claudeDir)
+    const files = (await readdir(claudeDir)).filter(f => f.endsWith('.db'))
+    if (files.length > 0) {
+      const found = join(claudeDir, files[0])
+      console.log('[findProjectDb] found:', found)
+      return found
+    }
+  } catch { /* ignore */ }
+  try {
+    const files = (await readdir(projectPath)).filter(f => f.endsWith('.db'))
     if (files.length > 0) return join(projectPath, files[0])
   } catch { /* ignore */ }
   return null
@@ -63,9 +62,11 @@ function findProjectDb(projectPath: string): string | null {
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
+/** Register all core IPC handlers (project, DB, window, locks, migration) and delegate to domain modules. */
 export function registerIpcHandlers(): void {
   // ── Project selection / creation ──────────────────────────────────────────
 
+  /** @returns {{ projectPath: string, dbPath: string|null, error: null, hasCLAUDEmd: boolean } | null} */
   ipcMain.handle('select-project-dir', async () => {
     const result = await dialog.showOpenDialog({
       title: 'Sélectionner le répertoire du projet',
@@ -73,14 +74,20 @@ export function registerIpcHandlers(): void {
     })
     if (result.canceled || result.filePaths.length === 0) return null
     const projectPath = result.filePaths[0]
-    const dbPath = findProjectDb(projectPath)
+    const dbPath = await findProjectDb(projectPath)
     registerDbPath(dbPath)
     registerProjectPath(projectPath)
-    const hasCLAUDEmd = existsSync(join(projectPath, 'CLAUDE.md'))
+    let hasCLAUDEmd = false
+    try { await access(join(projectPath, 'CLAUDE.md')); hasCLAUDEmd = true } catch { /* not found */ }
     if (!dbPath) return { projectPath, dbPath: null, error: null, hasCLAUDEmd }
     return { projectPath, dbPath, error: null, hasCLAUDEmd }
   })
 
+  /**
+   * Create a new project.db with full schema and default agents.
+   * @param projectPath - Absolute path to the project root
+   * @returns {{ success: boolean, dbPath: string, error?: string }}
+   */
   ipcMain.handle('create-project-db', async (_event, projectPath: string) => {
     try {
       const claudeDir = join(projectPath, '.claude')
@@ -164,7 +171,7 @@ export function registerIpcHandlers(): void {
           actif INTEGER NOT NULL DEFAULT 1,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
-        INSERT OR IGNORE INTO config (key, value) VALUES ('claude_md_commit',''),('schema_version','2'),('github_token','');
+        INSERT OR IGNORE INTO config (key, value) VALUES ('claude_md_commit',''),('schema_version','3'),('github_token','');
         INSERT OR IGNORE INTO perimetres (name, dossier, techno, description) VALUES
           ('front-vuejs','renderer/','Vue 3 + TypeScript + Tailwind CSS','Interface utilisateur Electron'),
           ('back-electron','main/','Electron + Node.js + SQLite','Process principal, IPC, accès DB'),
@@ -176,6 +183,8 @@ export function registerIpcHandlers(): void {
         CREATE INDEX IF NOT EXISTS idx_locks_released_at ON locks(released_at);
         CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON tasks(updated_at DESC);
         CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigne ON tasks(agent_assigne_id);
+        CREATE INDEX IF NOT EXISTS idx_sessions_agent_started ON sessions(agent_id, started_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id);
       `)
       for (const agent of DEFAULT_AGENTS) {
         db.run(
@@ -198,7 +207,16 @@ export function registerIpcHandlers(): void {
 
   // ── DB query / watch ─────────────────────────────────────────────────────
 
+  /**
+   * Execute a read-only SQL query on the project DB.
+   * @param dbPath - Registered DB path
+   * @param query - SQL SELECT query (write keywords are blocked)
+   * @param params - Bind parameters
+   * @returns {Record<string, unknown>[]} Query result rows
+   * @throws {Error} If dbPath is not registered or query fails
+   */
   ipcMain.handle('query-db', async (_event, dbPath: string, query: string, params: unknown[] = []) => {
+    assertDbPathAllowed(dbPath)
     const matchedKeyword = FORBIDDEN_WRITE_PATTERN.exec(query)
     if (matchedKeyword) {
       console.warn('[IPC query-db] Blocked write keyword:', matchedKeyword[1], 'in query:', query.substring(0, 100))
@@ -212,7 +230,12 @@ export function registerIpcHandlers(): void {
     }
   })
 
+  /**
+   * Start watching a DB file for changes. Triggers 'db-changed' event to all renderer windows.
+   * @param dbPath - Registered DB path to watch
+   */
   ipcMain.handle('watch-db', (_event, dbPath: string) => {
+    assertDbPathAllowed(dbPath)
     if (watcher) { watcher.close(); watcher = null }
     try {
       watcher = watch(dbPath, () => {
@@ -224,6 +247,7 @@ export function registerIpcHandlers(): void {
     }
   })
 
+  /** Stop watching DB file and clear cache entry if dbPath provided. */
   ipcMain.handle('unwatch-db', (_event, dbPath?: string) => {
     if (watcher) { watcher.close(); watcher = null }
     if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null }
@@ -235,6 +259,11 @@ export function registerIpcHandlers(): void {
 
   // ── Dialogs ──────────────────────────────────────────────────────────────
 
+  /**
+   * Show a native confirmation dialog.
+   * @param opts - Dialog options (title, message, detail)
+   * @returns {boolean} true if user clicked "Continuer"
+   */
   ipcMain.handle('show-confirm-dialog', async (_event, opts: { title: string; message: string; detail?: string }) => {
     const result = await dialog.showMessageBox({
       type: 'warning',
@@ -248,6 +277,7 @@ export function registerIpcHandlers(): void {
     return result.response === 0
   })
 
+  /** @returns {string|null} Selected directory path, or null if canceled */
   ipcMain.handle('select-new-project-dir', async () => {
     const result = await dialog.showOpenDialog({
       title: 'Sélectionner le répertoire du nouveau projet',
@@ -259,6 +289,11 @@ export function registerIpcHandlers(): void {
     return selectedPath
   })
 
+  /**
+   * Initialize a new project: create .claude/ dir and download CLAUDE.md from GitHub.
+   * @param projectPath - Registered project path
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('init-new-project', async (_event, projectPath: string) => {
     try {
       assertProjectPathAllowed(projectPath)
@@ -277,35 +312,50 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('find-project-db', (_event, projectPath: string) => {
-    const dbPath = findProjectDb(projectPath)
+  /**
+   * Locate project.db inside .claude/ subdirectory.
+   * @param projectPath - Project root path
+   * @returns {string|null} Found DB path, or null
+   */
+  ipcMain.handle('find-project-db', async (_event, projectPath: string) => {
+    const dbPath = await findProjectDb(projectPath)
     registerDbPath(dbPath)
     return dbPath
   })
 
   // ── Window controls ──────────────────────────────────────────────────────
 
+  /** Minimize the focused window. */
   ipcMain.handle('window-minimize', () => {
     BrowserWindow.getFocusedWindow()?.minimize()
   })
 
+  /** Toggle maximize/unmaximize on the focused window. */
   ipcMain.handle('window-maximize', () => {
     const win = BrowserWindow.getFocusedWindow()
     if (win?.isMaximized()) win.unmaximize()
     else win?.maximize()
   })
 
+  /** Close the focused window. */
   ipcMain.handle('window-close', () => {
     BrowserWindow.getFocusedWindow()?.close()
   })
 
+  /** @returns {boolean} Whether the focused window is maximized */
   ipcMain.handle('window-is-maximized', () => {
     return BrowserWindow.getFocusedWindow()?.isMaximized() ?? false
   })
 
   // ── Locks ────────────────────────────────────────────────────────────────
 
+  /**
+   * Get all active (unreleased) file locks with agent names.
+   * @param dbPath - Registered DB path
+   * @returns {Array} Lock rows with agent_name joined
+   */
   ipcMain.handle('get-locks', async (_event, dbPath: string) => {
+    assertDbPathAllowed(dbPath)
     return queryLive(
       dbPath,
       `SELECT l.id, l.fichier, l.agent_id, a.name as agent_name,
@@ -318,17 +368,13 @@ export function registerIpcHandlers(): void {
     )
   })
 
-  ipcMain.handle('get-locks-count', async (_event, dbPath: string) => {
-    const rows = await queryLive(
-      dbPath,
-      'SELECT COUNT(*) as count FROM locks WHERE released_at IS NULL',
-      []
-    )
-    return (rows[0] as { count: number })?.count ?? 0
-  })
-
   // ── Migration ────────────────────────────────────────────────────────────
 
+  /**
+   * Run all pending schema migrations on the DB.
+   * @param dbPath - Registered DB path
+   * @returns {{ success: boolean, migrated: number, error?: string }}
+   */
   ipcMain.handle('migrate-db', async (_event, dbPath: string) => {
     try {
       assertDbPathAllowed(dbPath)

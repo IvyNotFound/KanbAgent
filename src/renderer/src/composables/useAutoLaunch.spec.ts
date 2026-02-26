@@ -4,6 +4,7 @@ import { ref, nextTick } from 'vue'
 import { useAutoLaunch } from './useAutoLaunch'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { useTasksStore } from '@renderer/stores/tasks'
 import type { Task, Agent } from '@renderer/types'
 
 // Mock window.electronAPI
@@ -37,7 +38,7 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
   return {
     id: 10, name: 'dev-front-vuejs', type: 'dev', perimetre: 'front-vuejs',
     system_prompt: null, system_prompt_suffix: null, thinking_mode: 'auto',
-    allowed_tools: null, created_at: '',
+    allowed_tools: null, auto_launch: 1, created_at: '',
     ...overrides
   } as Agent
 }
@@ -47,15 +48,25 @@ describe('composables/useAutoLaunch', () => {
   let agents: ReturnType<typeof ref<Agent[]>>
   let dbPath: ReturnType<typeof ref<string | null>>
 
+  // Counter to ensure each test gets a unique time far enough apart to expire
+  // the module-level getCachedClaudeInstances cache (TTL = 5min)
+  let testIndex = 0
+
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     localStorage.clear()
     vi.useFakeTimers()
+    testIndex++
+    vi.setSystemTime(new Date(2026, 0, 1, 0, testIndex * 10, 0))
 
     tasks = ref<Task[]>([])
     agents = ref<Agent[]>([makeAgent()])
     dbPath = ref<string | null>('/test/db')
+
+    // Set dbPath on tasks store so useLaunchSession can access it
+    const tasksStore = useTasksStore()
+    ;(tasksStore as unknown as { dbPath: string | null }).dbPath = '/test/db'
   })
 
   afterEach(() => {
@@ -68,79 +79,23 @@ describe('composables/useAutoLaunch', () => {
     await nextTick()
 
     const tabsStore = useTabsStore()
-    // Only permanent tabs (backlog, logs)
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
   })
 
-  it('should launch terminal when new task appears with assigned agent', async () => {
+  it('should NOT auto-launch terminal when new task appears (T345: removed)', async () => {
     useAutoLaunch({ tasks, agents, dbPath })
 
     // Seed phase
     tasks.value = []
     await nextTick()
 
-    // New task appears
+    // New task appears — auto-launch was removed in T345
     tasks.value = [makeTask({ id: 1, statut: 'todo', agent_assigne_id: 10 })]
     await nextTick()
-
-    // Wait for async launch
-    await vi.waitFor(() => {
-      const tabsStore = useTabsStore()
-      expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)
-    })
-
-    const tabsStore = useTabsStore()
-    const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
-    expect(terminal?.agentName).toBe('dev-front-vuejs')
-  })
-
-  it('should NOT launch for excluded agent types (review, setup, infra-prod)', async () => {
-    agents.value = [makeAgent({ id: 20, name: 'review-master', type: 'review' })]
-    useAutoLaunch({ tasks, agents, dbPath })
-
-    tasks.value = []
-    await nextTick()
-
-    tasks.value = [makeTask({ id: 1, agent_assigne_id: 20, agent_name: 'review-master' })]
-    await nextTick()
     await nextTick()
 
     const tabsStore = useTabsStore()
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
-  })
-
-  it('should NOT launch when autoLaunchAgentSessions is disabled', async () => {
-    const settingsStore = useSettingsStore()
-    settingsStore.setAutoLaunchAgentSessions(false)
-
-    useAutoLaunch({ tasks, agents, dbPath })
-
-    tasks.value = []
-    await nextTick()
-
-    tasks.value = [makeTask()]
-    await nextTick()
-    await nextTick()
-
-    const tabsStore = useTabsStore()
-    expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
-  })
-
-  it('should NOT double-launch if agent terminal already exists', async () => {
-    const tabsStore = useTabsStore()
-    tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
-
-    useAutoLaunch({ tasks, agents, dbPath })
-
-    tasks.value = []
-    await nextTick()
-
-    tasks.value = [makeTask()]
-    await nextTick()
-    await nextTick()
-
-    // Still only the one we added manually
-    expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)
   })
 
   it('should schedule close when task transitions to done', async () => {
@@ -356,6 +311,145 @@ describe('composables/useAutoLaunch', () => {
         const tabsStore = useTabsStore()
         expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(true)
       })
+    })
+  })
+
+  // NOTE: launchAgentTerminal failure tests moved to useLaunchSession.spec.ts
+  // (T345 removed auto-launch from useAutoLaunch — those were false-greens)
+
+  describe('launchReviewSession failure', () => {
+    function makeDoneTasks(count: number): Task[] {
+      return Array.from({ length: count }, (_, i) =>
+        makeTask({ id: i + 1, statut: 'done', agent_assigne_id: 10 })
+      )
+    }
+
+    it('should not crash when getClaudeInstances rejects for review', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+      agents.value = [makeAgent(), reviewAgent]
+
+      api.getClaudeInstances.mockRejectedValue(new Error('review IPC error'))
+
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      tasks.value = makeDoneTasks(10)
+      await nextTick()
+      await vi.advanceTimersByTimeAsync(0)
+
+      // No review terminal should be added
+      const tabsStore = useTabsStore()
+      expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(false)
+      vi.mocked(console.warn).mockRestore()
+    })
+
+    it('should not launch review when getClaudeInstances returns []', async () => {
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+      agents.value = [makeAgent(), reviewAgent]
+      api.getClaudeInstances.mockResolvedValue([])
+
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      tasks.value = makeDoneTasks(10)
+      await nextTick()
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(false)
+    })
+  })
+
+  describe('T411: auto_launch per-agent flag', () => {
+    it('should NOT schedule close when agent.auto_launch is 0', async () => {
+      const noAutoLaunchAgent = makeAgent({ id: 10, name: 'dev-front-vuejs', auto_launch: 0 })
+      agents.value = [noAutoLaunchAgent]
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed with in_progress task
+      tasks.value = [makeTask({ id: 1, statut: 'in_progress', agent_assigne_id: 10 })]
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.ptyId = 'pty-no-auto'
+
+      // Task transitions to done
+      tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
+      await nextTick()
+
+      // Advance past grace period — no close should happen
+      vi.advanceTimersByTime(5000)
+      vi.advanceTimersByTime(2000)
+
+      expect(api.terminalWrite).not.toHaveBeenCalled()
+      expect(api.terminalKill).not.toHaveBeenCalled()
+      expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)
+    })
+  })
+
+  describe('scheduleClose edge cases', () => {
+    it('should closeTab directly when tab has no ptyId', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed with in_progress task
+      tasks.value = [makeTask({ id: 1, statut: 'in_progress', agent_assigne_id: 10 })]
+      await nextTick()
+
+      // Add terminal WITHOUT setting ptyId
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+
+      // Task transitions to done
+      tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
+      await nextTick()
+
+      // Advance past grace period
+      vi.advanceTimersByTime(5000)
+
+      // Tab should be closed directly (no terminalWrite/Kill since no ptyId)
+      expect(api.terminalWrite).not.toHaveBeenCalled()
+      expect(api.terminalKill).not.toHaveBeenCalled()
+      expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
+    })
+
+    it('should cancel previous timer when scheduleClose called twice for same agent', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed with in_progress task
+      tasks.value = [makeTask({ id: 1, statut: 'in_progress', agent_assigne_id: 10 })]
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.ptyId = 'pty-456'
+
+      // First done transition
+      tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
+      await nextTick()
+
+      // Advance 3s (not yet at 5s grace period)
+      vi.advanceTimersByTime(3000)
+
+      // Second done transition
+      tasks.value = [
+        makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 }),
+        makeTask({ id: 2, statut: 'done', agent_assigne_id: 10 }),
+      ]
+      await nextTick()
+
+      // Advance remaining 5s from the second trigger
+      vi.advanceTimersByTime(5000)
+
+      // The key assertion: terminalWrite should have been called at most once
+      expect(api.terminalWrite).toHaveBeenCalledTimes(1)
     })
   })
 })

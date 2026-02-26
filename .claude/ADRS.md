@@ -513,6 +513,98 @@ Les sessions ont déjà un `id` unique. Pour distinguer les instances dans la UI
 
 ---
 
+## ADR-008 — Affectation multi-agents par tâche
+
+**Date :** 2026-02-26 | **Statut :** accepté | **Auteur :** arch
+
+### Contexte
+
+`tasks.agent_assigne_id` est un INTEGER FK unique → 1 agent par tâche. Certaines tâches nécessitent une collaboration entre agents de périmètres différents (ex. dev-front + dev-back). La duplication de tickets est un contournement non souhaitable.
+
+### Décision
+
+#### 1. Nouvelle table `task_agents` (many-to-many)
+
+```sql
+CREATE TABLE task_agents (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id     INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  agent_id    INTEGER NOT NULL REFERENCES agents(id),
+  role        TEXT CHECK(role IN ('primary', 'support', 'reviewer')),
+  assigned_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(task_id, agent_id)
+);
+CREATE INDEX idx_task_agents_task_id  ON task_agents(task_id);
+CREATE INDEX idx_task_agents_agent_id ON task_agents(agent_id);
+```
+
+**Rôles :** `primary` (responsable principal), `support` (contribution ponctuelle), `reviewer` (audit). NULL = non spécifié.
+
+#### 2. Compatibilité ascendante — `agent_assigne_id` conservé
+
+`tasks.agent_assigne_id` reste la référence pour les queries existantes (BoardView, dbstart, search-tasks, build-agent-prompt). Il représente l'agent principal.
+
+**Règle de cohérence :** `task:setAssignees` synchronise automatiquement `tasks.agent_assigne_id` avec l'assigné ayant `role='primary'`, ou le premier de la liste si aucun n'est `primary`, ou `NULL` si liste vide.
+
+#### 3. Migration DB — schema version 3 → 4
+
+Dans `migrateDb()`, après les migrations existantes, créer `task_agents` si elle n'existe pas. Bumper `CURRENT_SCHEMA_VERSION` de `'3'` à `'4'`.
+
+#### 4. Nouveaux handlers IPC
+
+**`task:getAssignees`**
+- Input : `(dbPath: string, taskId: number)`
+- Output : `{ success: boolean, assignees: Array<{ agent_id: number, agent_name: string, role: string|null, assigned_at: string }>, error?: string }`
+- Implémentation : `SELECT ta.agent_id, a.name as agent_name, ta.role, ta.assigned_at FROM task_agents ta JOIN agents a ON a.id = ta.agent_id WHERE ta.task_id = ? ORDER BY ta.assigned_at ASC`
+
+**`task:setAssignees`**
+- Input : `(dbPath: string, taskId: number, assignees: Array<{ agentId: number, role?: string | null }>)`
+- Output : `{ success: boolean, error?: string }`
+- Comportement : transaction atomique — DELETE task_agents + INSERT + UPDATE tasks.agent_assigne_id
+- Validation : `role` doit être `null | 'primary' | 'support' | 'reviewer'`
+- Localisation : `src/main/ipc-agents.ts` (registerAgentHandlers)
+
+#### 5. Ajouts preload `src/preload/index.ts`
+
+```ts
+getTaskAssignees: (dbPath: string, taskId: number): Promise<{
+  success: boolean
+  assignees: Array<{ agent_id: number; agent_name: string; role: string | null; assigned_at: string }>
+  error?: string
+}> => ipcRenderer.invoke('task:getAssignees', dbPath, taskId),
+
+setTaskAssignees: (dbPath: string, taskId: number, assignees: Array<{ agentId: number; role?: string | null }>): Promise<{
+  success: boolean
+  error?: string
+}> => ipcRenderer.invoke('task:setAssignees', dbPath, taskId, assignees),
+```
+
+#### 6. Impact front (spécification pour dev-front-vuejs)
+
+**`TaskDetailModal.vue`** : multi-select agents avec dropdown + sélecteur de rôle par agent. Appel `setTaskAssignees` au save. Afficher l'agent principal en premier (role='primary' ou agent_assigne_id).
+
+**`TaskCard.vue`** : fetch `task_agents` via `getTaskAssignees` ou depuis le store. Afficher ≤ 3 avatars colorés (`agentColor`) + badge "+N" si N > 3. Fallback sur `agent_assigne_id` si `task_agents` vide.
+
+**`BoardView.vue`** : aucune modification — le filtre par `agent_assigne_id` reste valide (agent principal).
+
+**Store `tasks.ts`** : le champ `assignees` peut être chargé à la demande (lazy) dans `TaskDetailModal`, pas nécessairement dans le store global (éviter surcharge du fetch boardview).
+
+### Ordre d'implémentation
+
+1. `dev-back-electron` : migration DB + handlers IPC (ce qui suit cette ADR)
+2. `dev-front-vuejs` : UI TaskDetailModal + TaskCard
+3. `test-back-electron` + `test-front-vuejs` : tests
+4. `review` : audit final
+
+### Conséquences
+
+- `CURRENT_SCHEMA_VERSION` : `'3'` → `'4'` dans `src/main/db.ts`
+- `tasks.agent_assigne_id` conservé sans dépréciation formelle — migration future si besoin
+- `CLAUDE.md` (section schema DB) mis à jour pour inclure `task_agents`
+- Pas de breaking change IPC — deux nouveaux handlers ajoutifs
+
+---
+
 ## ADR-007 — Support Windows natif pour les sessions Claude Code
 
 **Date :** 2026-02-26 | **Statut :** accepté | **Auteur :** arch

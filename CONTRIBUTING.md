@@ -119,7 +119,7 @@ docs: mise à jour du README avec les nouvelles commandes
 - **Jamais d'accès direct au système de fichiers** depuis le renderer
 - **Token GitHub** : chiffré OS-level via `safeStorage` (DPAPI / Keychain), jamais stocké en clair
 
-### Handlers IPC — `src/main/ipc.ts`
+### Handlers IPC — `src/main/ipc.ts` (core)
 
 | Handler | Description |
 |---------|-------------|
@@ -133,32 +133,46 @@ docs: mise à jour du README avec les nouvelles commandes
 | `init-new-project` | Initialise un projet (crée DB + insère agents par défaut) |
 | `migrate-db` | Migre le schéma SQLite vers la version courante |
 | `get-locks` | Retourne les locks actifs |
-| `get-locks-count` | Retourne le nombre de locks actifs |
 | `show-confirm-dialog` | Affiche une boîte de confirmation native |
-| `fs:listDir` | Liste un répertoire (explorateur de fichiers, 4 niveaux max) |
-| `fs:readFile` | Lit un fichier texte (restreint au répertoire projet) |
-| `fs:writeFile` | Écrit un fichier texte (restreint au répertoire projet) |
 | `window-minimize` | Réduit la fenêtre |
 | `window-maximize` | Maximise / restaure la fenêtre |
 | `window-close` | Ferme l'application |
 | `window-is-maximized` | Retourne l'état maximisé |
+
+### Handlers IPC — `src/main/ipc-agents.ts`
+
+| Handler | Description |
+|---------|-------------|
 | `close-agent-sessions` | Clôture les sessions `en_cours` d'un agent |
 | `rename-agent` | Renomme un agent dans la DB |
-| `update-perimetre` | Met à jour le nom/description d'un périmètre |
+| `update-perimetre` | Met à jour le nom/description d'un périmètre et cascade vers tasks/agents |
 | `update-agent-system-prompt` | Met à jour le system prompt d'un agent |
 | `update-agent-thinking-mode` | Met à jour le mode de pensée d'un agent |
 | `update-agent` | Met à jour les champs d'un agent (nom, type, périmètre…) |
 | `get-agent-system-prompt` | Retourne system_prompt, suffix, thinking_mode d'un agent |
-| `build-agent-prompt` | Construit le prompt de lancement Claude Code d'un agent |
+| `build-agent-prompt` | Construit le prompt de lancement avec résumé session + contexte tâches |
 | `create-agent` | Crée un agent + insère dans CLAUDE.md si présent |
-| `get-config-value` | Lit une clé de la table `config` |
-| `set-config-value` | Écrit une clé dans la table `config` |
+| `search-tasks` | Recherche plein texte dans les tâches avec filtres |
+| `session:setConvId` | Stocke le `claude_conv_id` d'une session pour `--resume` |
+
+### Handlers IPC — `src/main/ipc-fs.ts`
+
+| Handler | Description |
+|---------|-------------|
+| `fs:listDir` | Liste un répertoire (explorateur de fichiers, 4 niveaux max) |
+| `fs:readFile` | Lit un fichier texte (restreint au répertoire projet) |
+| `fs:writeFile` | Écrit un fichier texte (restreint au répertoire projet, chemins sensibles bloqués) |
+
+### Handlers IPC — `src/main/ipc-settings.ts`
+
+| Handler | Description |
+|---------|-------------|
+| `get-config-value` | Lit une clé de la table `config` (github_token auto-déchiffré) |
+| `set-config-value` | Écrit une clé dans la table `config` (github_token auto-chiffré) |
 | `check-master-md` | Vérifie CLAUDE.md master sur GitHub (via token chiffré) |
 | `apply-master-md` | Applique le CLAUDE.md master dans le projet |
 | `test-github-connection` | Teste la connexion GitHub avec le token stocké |
 | `check-for-updates` | Vérifie si une nouvelle version est disponible sur GitHub |
-| `search-tasks` | Recherche plein texte dans les tâches avec filtres |
-| `session:setConvId` | Stocke le `claude_conv_id` d'une session pour `--resume` |
 
 ### Handlers IPC — `src/main/terminal.ts`
 
@@ -177,6 +191,7 @@ docs: mise à jour du README avec les nouvelles commandes
 | `terminal:getActiveCount` | Retourne le nombre de PTY actifs |
 | `terminal:isAlive` | Vérifie si un PTY est toujours actif |
 | `terminal:getMemoryStatus` | Retourne l'utilisation mémoire WSL à la demande |
+| `terminal:releaseMemory` | Libère la mémoire WSL (sync + drop_caches optionnel) |
 
 ### Événements IPC (main → renderer)
 
@@ -191,7 +206,12 @@ docs: mise à jour du README avec les nouvelles commandes
 
 ### Ajouter un nouveau handler
 
-1. Définir le handler dans `src/main/ipc.ts` avec JSDoc (`@param`, `@returns`, `@throws`)
+1. Définir le handler dans le fichier IPC approprié avec JSDoc (`@param`, `@returns`, `@throws`) :
+   - `src/main/ipc.ts` — core (SQL, window, locks)
+   - `src/main/ipc-agents.ts` — agents (CRUD, sessions, recherche)
+   - `src/main/ipc-fs.ts` — filesystem (lecture/écriture fichiers)
+   - `src/main/ipc-settings.ts` — settings (config, GitHub)
+   - `src/main/terminal.ts` — terminal WSL (PTY)
 2. Exposer via `contextBridge` dans `src/preload/index.ts`
 3. Déclarer le type dans l'interface `Window.electronAPI` dans `src/renderer/src/stores/tasks.ts`
 4. Mettre à jour la table handlers dans `CONTRIBUTING.md`
@@ -213,9 +233,15 @@ npm run test:coverage   # Rapport de couverture Istanbul
 | Fichier | Périmètre |
 |---------|-----------|
 | `src/main/ipc.spec.ts` | IPC handlers (main process) |
+| `src/main/db.spec.ts` | Utilitaires SQLite (queryLive, writeLive) |
 | `src/main/migration.spec.ts` | Migrations SQLite |
+| `src/main/terminal.spec.ts` | Terminal WSL (PTY) |
+| `src/main/claude-md.spec.ts` | Manipulation CLAUDE.md |
+| `src/preload/preload.spec.ts` | contextBridge / preload |
 | `src/renderer/src/stores/stores.spec.ts` | Stores Pinia |
 | `src/renderer/src/components/components.spec.ts` | Composants Vue |
+| `src/renderer/src/composables/useAutoLaunch.spec.ts` | Composable auto-launch |
+| `src/renderer/src/utils/agentColor.spec.ts` | Utilitaire couleurs agents |
 
 ### Conventions
 

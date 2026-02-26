@@ -15,7 +15,11 @@
     "searchPlaceholder": "Search... (Ctrl+K)",
     "noArchived": "No archived tickets",
     "unassigned": "(unassigned)",
-    "tickets": "ticket | tickets"
+    "tickets": "ticket | tickets",
+    "noAgentAssigned": "No agent assigned — assign an agent before launching.",
+    "agentNotFound": "Agent not found.",
+    "launchFailed": "Failed to launch session for {agent}.",
+    "sessionLimitReached": "Session limit ({max}) reached for {agent}"
   },
   "columns": {
     "todo": "To do",
@@ -33,7 +37,11 @@
     "noComments": "No comments",
     "created": "Created",
     "updated": "Updated",
-    "justNow": "just now"
+    "justNow": "just now",
+    "assignees": "Assignees",
+    "addAssignee": "Add",
+    "noAssignees": "No agent assigned",
+    "saveError": "Failed to save assignees"
   },
   "logs": {
     "allAgents": "All agents",
@@ -187,7 +195,9 @@
     "saveShortcut": "Ctrl+Enter to save",
     "createShortcut": "Ctrl+Enter to create",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoLaunch": "Auto-launch",
+    "autoLaunchDesc": "Automatically closes terminal when task transitions to done"
   },
   "dbSelector": {
     "tagline": "View your Claude agents' tasks in real time.",

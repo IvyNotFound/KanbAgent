@@ -79,18 +79,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getLocks: (dbPath: string): Promise<unknown[]> =>
     ipcRenderer.invoke('get-locks', dbPath),
 
-  getLocksCount: (dbPath: string): Promise<number> =>
-    ipcRenderer.invoke('get-locks-count', dbPath),
-
   // ── File system (with allowedDir for security - restricts access to project directory) ──
 
-  fsListDir: (dirPath: string, allowedDir?: string): Promise<unknown[]> =>
+  fsListDir: (dirPath: string, allowedDir: string): Promise<unknown[]> =>
     ipcRenderer.invoke('fs:listDir', dirPath, allowedDir),
 
-  fsReadFile: (filePath: string, allowedDir?: string): Promise<{ success: boolean; content?: string; error?: string }> =>
+  fsReadFile: (filePath: string, allowedDir: string): Promise<{ success: boolean; content?: string; error?: string }> =>
     ipcRenderer.invoke('fs:readFile', filePath, allowedDir),
 
-  fsWriteFile: (filePath: string, content: string, allowedDir?: string): Promise<{ success: boolean; error?: string }> =>
+  fsWriteFile: (filePath: string, content: string, allowedDir: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('fs:writeFile', filePath, content, allowedDir),
 
   // ── Window ─────────────────────────────────────────────────────────────────
@@ -236,6 +233,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     allowedTools?: string | null
     systemPrompt?: string | null
     systemPromptSuffix?: string | null
+    autoLaunch?: boolean
   }): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-agent', dbPath, agentId, updates),
 
@@ -267,6 +265,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   checkForUpdates: (dbPath: string, repoUrl: string, currentVersion: string): Promise<{ hasUpdate: boolean; latestVersion: string; error?: string }> =>
     ipcRenderer.invoke('check-for-updates', dbPath, repoUrl, currentVersion),
+
+  // Task assignees (multi-agent — ADR-008)
+  getTaskAssignees: (dbPath: string, taskId: number): Promise<{ success: boolean; assignees: Array<{ agent_id: number; agent_name: string; role: string | null; assigned_at: string }>; error?: string }> =>
+    ipcRenderer.invoke('task:getAssignees', dbPath, taskId),
+
+  setTaskAssignees: (dbPath: string, taskId: number, assignees: Array<{ agentId: number; role?: string | null }>): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('task:setAssignees', dbPath, taskId, assignees),
 
   // Search tasks
   searchTasks: (

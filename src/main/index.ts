@@ -28,10 +28,15 @@ app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 // app.commandLine.appendSwitch('enable-native-gpu-memory-buffers')
 
 // ── Content Security Policy ───────────────────────────────────────────────────
+// 'unsafe-inline' for style-src is required by Tailwind CSS (utility classes injected as inline styles).
+// Removing it would break the entire UI. CSS nonce/hash is not feasible with Vite+Tailwind without
+// a custom PostCSS plugin. Risk is low (no external content loaded, no user-generated HTML rendered).
+// style-src-attr 'none' is added to restrict inline style= attributes as a partial mitigation.
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'", // Tailwind inline styles
+  "style-src 'self' 'unsafe-inline'",
+  "style-src-attr 'none'",
   "img-src 'self' data:",
   "connect-src 'self'",
   "font-src 'self'"
@@ -107,9 +112,6 @@ function createWindow(): void {
   win.on('maximize', () => win.webContents.send('window-state-changed', true))
   win.on('unmaximize', () => win.webContents.send('window-state-changed', false))
 
-  registerIpcHandlers()
-  registerTerminalHandlers()
-
   if (process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -119,6 +121,8 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   setupCSP()
+  registerIpcHandlers()
+  registerTerminalHandlers()
   createWindow()
 })
 app.on('window-all-closed', () => {

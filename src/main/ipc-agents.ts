@@ -36,7 +36,14 @@ interface SearchFilters {
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
+/** Register all agent & session IPC handlers. */
 export function registerAgentHandlers(): void {
+  /**
+   * Mark all started sessions as completed for a given agent.
+   * @param dbPath - Registered DB path
+   * @param agentName - Agent name to close sessions for
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('close-agent-sessions', async (_event, dbPath: string, agentName: string) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -55,6 +62,13 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Rename an agent in the database.
+   * @param dbPath - Registered DB path
+   * @param agentId - Agent ID to rename
+   * @param newName - New agent name
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('rename-agent', async (_event, dbPath: string, agentId: number, newName: string) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -68,6 +82,15 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Update perimeter name/description and cascade rename to tasks and agents.
+   * @param dbPath - Registered DB path
+   * @param id - Perimeter ID
+   * @param oldName - Current perimeter name (for cascade)
+   * @param newName - New perimeter name
+   * @param description - New description
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('update-perimetre', async (_event, dbPath: string, id: number, oldName: string, newName: string, description: string) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -85,6 +108,13 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Update the system_prompt field for an agent.
+   * @param dbPath - Registered DB path
+   * @param agentId - Agent ID
+   * @param systemPrompt - New system prompt content
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('update-agent-system-prompt', async (_event, dbPath: string, agentId: number, systemPrompt: string) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -98,6 +128,15 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Build the complete launch prompt for a Claude Code agent session.
+   * Includes previous session summary and open task context if available.
+   * @param agentName - Agent name
+   * @param userPrompt - User-provided prompt text
+   * @param dbPath - Optional DB path for context enrichment
+   * @param agentId - Optional agent ID for context enrichment
+   * @returns {string} Final prompt string
+   */
   ipcMain.handle('build-agent-prompt', async (_event, agentName: string, userPrompt: string, dbPath?: string, agentId?: number) => {
     const HIDDEN_SUFFIX = `Tu es agent ${agentName}. Va voir ton prompt system dans la table agent.`
     const body = userPrompt && userPrompt.trim() ? `${userPrompt.trim()}\n\n` : ''
@@ -144,6 +183,13 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Store the Claude Code conversation ID on the latest session for --resume support.
+   * @param dbPath - Registered DB path
+   * @param agentId - Agent ID
+   * @param convId - Claude Code conversation UUID
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('session:setConvId', async (_event, dbPath: string, agentId: number, convId: string) => {
     if (!dbPath || typeof agentId !== 'number' || !convId) {
       return { success: false, error: 'Invalid arguments' }
@@ -167,6 +213,12 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Fetch system_prompt, system_prompt_suffix, and thinking_mode for an agent.
+   * @param dbPath - DB path
+   * @param agentId - Agent ID
+   * @returns {{ success: boolean, systemPrompt: string|null, systemPromptSuffix: string|null, thinkingMode: string|null }}
+   */
   ipcMain.handle('get-agent-system-prompt', async (_event, dbPath: string, agentId: number) => {
     try {
       const rows = await queryLive(
@@ -190,6 +242,13 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Set thinking_mode for an agent.
+   * @param dbPath - Registered DB path
+   * @param agentId - Agent ID
+   * @param thinkingMode - 'auto', 'disabled', or null (auto)
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('update-agent-thinking-mode', async (_event, dbPath: string, agentId: number, thinkingMode: string | null) => {
     if (thinkingMode !== null && thinkingMode !== 'auto' && thinkingMode !== 'disabled') {
       return { success: false, error: `Invalid thinkingMode value: '${thinkingMode}'. Accepted: 'auto', 'disabled', null` }
@@ -206,6 +265,13 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Bulk update agent fields (name, type, perimetre, thinkingMode, etc.).
+   * @param dbPath - Registered DB path
+   * @param agentId - Agent ID
+   * @param updates - Partial agent fields to update
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('update-agent', async (_event, dbPath: string, agentId: number, updates: {
     name?: string
     type?: string
@@ -214,6 +280,7 @@ export function registerAgentHandlers(): void {
     allowedTools?: string | null
     systemPrompt?: string | null
     systemPromptSuffix?: string | null
+    autoLaunch?: boolean
   }) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -239,6 +306,9 @@ export function registerAgentHandlers(): void {
         if (updates.systemPromptSuffix !== undefined) {
           db.run('UPDATE agents SET system_prompt_suffix = ? WHERE id = ?', [updates.systemPromptSuffix || null, agentId])
         }
+        if (updates.autoLaunch !== undefined) {
+          db.run('UPDATE agents SET auto_launch = ? WHERE id = ?', [updates.autoLaunch ? 1 : 0, agentId])
+        }
       })
       return { success: true }
     } catch (err) {
@@ -247,6 +317,91 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Fetch all agents assigned to a task from task_agents.
+   * @param dbPath - DB path
+   * @param taskId - Task ID
+   * @returns {{ success: boolean, assignees: Array<{ agent_id, agent_name, role, assigned_at }>, error?: string }}
+   */
+  ipcMain.handle('task:getAssignees', async (_event, dbPath: string, taskId: number) => {
+    if (typeof taskId !== 'number' || !Number.isInteger(taskId)) {
+      return { success: false, assignees: [], error: 'Invalid taskId' }
+    }
+    try {
+      const rows = await queryLive(
+        dbPath,
+        `SELECT ta.agent_id, a.name as agent_name, ta.role, ta.assigned_at
+         FROM task_agents ta
+         JOIN agents a ON a.id = ta.agent_id
+         WHERE ta.task_id = ?
+         ORDER BY ta.assigned_at ASC`,
+        [taskId]
+      )
+      return { success: true, assignees: rows }
+    } catch (err) {
+      console.error('[IPC task:getAssignees]', err)
+      return { success: false, assignees: [], error: String(err) }
+    }
+  })
+
+  /**
+   * Atomically replace all assignees for a task in task_agents.
+   * Syncs tasks.agent_assigne_id: role='primary' takes precedence, else first assignee, else NULL.
+   * @param dbPath - Registered DB path
+   * @param taskId - Task ID
+   * @param assignees - Array of { agentId, role? } to set
+   * @returns {{ success: boolean, error?: string }}
+   */
+  ipcMain.handle('task:setAssignees', async (
+    _event,
+    dbPath: string,
+    taskId: number,
+    assignees: Array<{ agentId: number; role?: string | null }>
+  ) => {
+    if (typeof taskId !== 'number' || !Number.isInteger(taskId)) {
+      return { success: false, error: 'Invalid taskId' }
+    }
+    if (!Array.isArray(assignees)) {
+      return { success: false, error: 'assignees must be an array' }
+    }
+    const validRoles = new Set([null, undefined, 'primary', 'support', 'reviewer'])
+    for (const a of assignees) {
+      if (typeof a.agentId !== 'number' || !Number.isInteger(a.agentId)) {
+        return { success: false, error: `Invalid agentId: ${a.agentId}` }
+      }
+      if (!validRoles.has(a.role)) {
+        return { success: false, error: `Invalid role: '${a.role}'. Accepted: primary, support, reviewer, null` }
+      }
+    }
+    try {
+      assertDbPathAllowed(dbPath)
+      await writeDb(dbPath, (db) => {
+        db.run('DELETE FROM task_agents WHERE task_id = ?', [taskId])
+        for (const a of assignees) {
+          db.run(
+            'INSERT INTO task_agents (task_id, agent_id, role) VALUES (?, ?, ?)',
+            [taskId, a.agentId, a.role ?? null]
+          )
+        }
+        // Sync tasks.agent_assigne_id: primary > first > NULL
+        const primary = assignees.find(a => a.role === 'primary')
+        const newAssigne = primary?.agentId ?? assignees[0]?.agentId ?? null
+        db.run('UPDATE tasks SET agent_assigne_id = ? WHERE id = ?', [newAssigne, taskId])
+      })
+      return { success: true }
+    } catch (err) {
+      console.error('[IPC task:setAssignees]', err)
+      return { success: false, error: String(err) }
+    }
+  })
+
+  /**
+   * Full-text search tasks with optional filters (statut, agent_id, perimetre).
+   * @param dbPath - DB path
+   * @param query - Search text (LIKE match on titre/description)
+   * @param filters - Optional filters
+   * @returns {{ success: boolean, results: Array, error?: string }}
+   */
   ipcMain.handle('search-tasks', async (
     _event,
     dbPath: string,
@@ -278,6 +433,9 @@ export function registerAgentHandlers(): void {
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
+      // PERF: LIKE %...% requires a full table scan (no index usable on leading wildcard).
+      // LIMIT 20 caps results early; the scan still touches all rows but avoids large
+      // result payloads. For proper fix: add an FTS5 virtual table on titre+description.
       const sql = `
         SELECT
           t.id,
@@ -292,7 +450,7 @@ export function registerAgentHandlers(): void {
         LEFT JOIN agents a ON a.id = t.agent_assigne_id
         ${whereClause}
         ORDER BY t.updated_at DESC
-        LIMIT 50
+        LIMIT 20
       `
 
       const rows = await queryLive(dbPath, sql, params)
@@ -303,6 +461,13 @@ export function registerAgentHandlers(): void {
     }
   })
 
+  /**
+   * Create a new agent and optionally insert it into CLAUDE.md.
+   * @param dbPath - Registered DB path
+   * @param projectPath - Project root (for CLAUDE.md update)
+   * @param data - Agent definition (name, type, perimetre, thinkingMode, systemPrompt, description)
+   * @returns {{ success: boolean, agentId?: number, claudeMdUpdated?: boolean, error?: string }}
+   */
   ipcMain.handle('create-agent', async (
     _event,
     dbPath: string,

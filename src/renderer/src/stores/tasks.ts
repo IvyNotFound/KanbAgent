@@ -32,7 +32,6 @@ declare global {
       findProjectDb(projectPath: string): Promise<string | null>
       migrateDb(dbPath: string): Promise<{ success: boolean; error?: string }>
       getLocks(dbPath: string): Promise<unknown[]>
-      getLocksCount(dbPath: string): Promise<number>
       // File system
       fsListDir(dirPath: string): Promise<FileNode[]>
       fsReadFile(filePath: string): Promise<{ success: boolean; content?: string; error?: string }>
@@ -65,10 +64,14 @@ declare global {
       checkMasterClaudeMd(dbPath: string): Promise<{ success: boolean; sha?: string; content?: string; upToDate?: boolean; localSha?: string; error?: string }>
       applyMasterClaudeMd(dbPath: string, projectPath: string, content: string, sha: string): Promise<{ success: boolean; error?: string }>
       // Agents
+      updateAgent(dbPath: string, agentId: number, updates: { name?: string; type?: string; perimetre?: string | null; thinkingMode?: string | null; allowedTools?: string | null; systemPrompt?: string | null; systemPromptSuffix?: string | null; autoLaunch?: boolean }): Promise<{ success: boolean; error?: string }>
       createAgent(dbPath: string, projectPath: string, data: { name: string; type: string; perimetre: string | null; thinkingMode: string | null; systemPrompt: string | null; description: string }): Promise<{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }>
       // GitHub (secure — token stays in main process)
       testGithubConnection(dbPath: string, repoUrl: string): Promise<{ connected: boolean; error?: string }>
       checkForUpdates(dbPath: string, repoUrl: string, currentVersion: string): Promise<{ hasUpdate: boolean; latestVersion: string; error?: string }>
+      // Task assignees (multi-agent — ADR-008)
+      getTaskAssignees(dbPath: string, taskId: number): Promise<{ success: boolean; assignees: Array<{ agent_id: number; agent_name: string; role: string | null; assigned_at: string }>; error?: string }>
+      setTaskAssignees(dbPath: string, taskId: number, assignees: Array<{ agentId: number; role?: string | null }>): Promise<{ success: boolean; error?: string }>
     }
   }
 }
@@ -237,6 +240,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
   function closeProject(): void {
     stopPolling()
+    if (dbWatchInterval) { clearInterval(dbWatchInterval); dbWatchInterval = null }
     if (unsubDbChange) { unsubDbChange(); unsubDbChange = null }
     window.electronAPI.unwatchDb(dbPath.value ?? undefined)
     projectPath.value = null
@@ -262,6 +266,7 @@ export const useTasksStore = defineStore('tasks', () => {
   }
 
   let dbWatchInterval: ReturnType<typeof setInterval> | null = null
+  let dbChangeDebounce: ReturnType<typeof setTimeout> | null = null
 
   function watchForDb(path: string): void {
     if (dbWatchInterval) clearInterval(dbWatchInterval)
@@ -350,10 +355,9 @@ export const useTasksStore = defineStore('tasks', () => {
 
   function startPolling(): void {
     stopPolling()
-    pollInterval = setInterval(refresh, 30000) // fallback only - file watcher is primary
-    // agentPollInterval removed: agentRefresh is now called by file watcher (onDbChanged)
-    // Fallback: keep a very long interval (60s) just in case file watcher fails
-    agentPollInterval = setInterval(agentRefresh, 60000)
+    // 5min fallback — file watcher is primary, these only trigger if watcher silently fails
+    pollInterval = setInterval(refresh, 300000)
+    agentPollInterval = setInterval(agentRefresh, 300000)
   }
 
   function stopPolling(): void {
@@ -396,9 +400,13 @@ export const useTasksStore = defineStore('tasks', () => {
   function startWatching(path: string): void {
     if (unsubDbChange) { unsubDbChange(); unsubDbChange = null }
     window.electronAPI.watchDb(path)
-    // File watcher triggers refresh (agentRefresh stays on 60s poll as safety net)
+    // File watcher triggers refresh with 150ms debounce to coalesce burst writes
     unsubDbChange = window.electronAPI.onDbChanged(() => {
-      refresh()
+      if (dbChangeDebounce) clearTimeout(dbChangeDebounce)
+      dbChangeDebounce = setTimeout(() => {
+        dbChangeDebounce = null
+        refresh()
+      }, 150)
     })
   }
 

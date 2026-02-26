@@ -42,10 +42,40 @@ initSqlJs().then((SQL) => {
   const agentRow = db.exec(`SELECT id FROM agents WHERE name = '${agent}'`)
   const agentId = agentRow[0].values[0][0]
 
-  // 3. Create session
+  // 3. Check parallel session limit (max 3 active per agent)
+  const MAX_PARALLEL_SESSIONS = 3
+  const activeRow = db.exec(
+    `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'actif'`
+  )
+  const activeCount = activeRow[0].values[0][0]
+  if (activeCount >= MAX_PARALLEL_SESSIONS) {
+    db.close()
+    console.error(
+      `ERREUR: ${agent} a déjà ${activeCount} session(s) active(s) (max ${MAX_PARALLEL_SESSIONS}). Terminer une session avant d'en ouvrir une nouvelle.`
+    )
+    process.exit(2)
+  }
+
+  // 4. Create session
   db.run(`INSERT INTO sessions (agent_id) VALUES (${agentId})`)
   const sessionRow = db.exec(`SELECT last_insert_rowid()`)
   const sessionId = sessionRow[0].values[0][0]
+
+  // 4b. Auto-release orphan locks from terminated sessions
+  const released = db.exec(`
+    SELECT COUNT(*) FROM locks
+    WHERE released_at IS NULL
+      AND session_id IN (SELECT id FROM sessions WHERE statut = 'terminé')
+  `)
+  const orphanCount = released[0].values[0][0]
+  if (orphanCount > 0) {
+    db.run(`
+      UPDATE locks SET released_at = datetime('now')
+      WHERE released_at IS NULL
+        AND session_id IN (SELECT id FROM sessions WHERE statut = 'terminé')
+    `)
+    console.log(`\n[auto-release] ${orphanCount} orphan lock(s) released from terminated sessions`)
+  }
 
   // Persist writes (atomic: tmp + rename)
   const tmpPath = dbPath + '.tmp'

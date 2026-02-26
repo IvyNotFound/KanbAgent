@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.3.2-blue)
+![Version](https://img.shields.io/badge/version-0.5.1-blue)
 ![Statut](https://img.shields.io/badge/statut-b%C3%A9ta-orange)
 
 Interface desktop style Trello/Jira pour visualiser en temps réel les tâches des agents Claude depuis une base SQLite locale. L'application permet de gérer des agents, lancer des sessions, et dispose d'un terminal WSL intégré.
@@ -10,8 +10,12 @@ Interface desktop style Trello/Jira pour visualiser en temps réel les tâches d
 ## Fonctionnalités principales
 
 - **Board Trello/Jira** : Colonnes par statut (`todo`, `in_progress`, `done`, `archived`), cartes de tâches avec drill-down, badge effort S/M/L et priorité
-- **Gestion des agents** : Création, configuration, édition system prompt, thinking mode (auto/disabled), profils API multiples
+- **Gestion des agents** : Création, configuration, édition system prompt, thinking mode (auto/disabled), assignation obligatoire
 - **Terminal WSL intégré** : Sessions multiples, onglets, node-pty + xterm.js, crash recovery avec `--resume`
+- **Auto-launch terminals** : Lancement automatique des sessions agent à la création d'une tâche avec assignation
+- **Auto-trigger review** : Lancement automatique d'une session review quand ≥10 tâches atteignent le statut `done` (seuil configurable, cooldown)
+- **Token stats** : Statistiques globales/quotidiennes/horaires de tokens, barres par agent, table par session
+- **Terminal watchdog** : Détection automatique de crash et recovery avec paramètres de lancement stockés
 - **Multi-instance** : Lancement de plusieurs instances du même agent avec isolation worktree git
 - **Reprise de session** : Les sessions Claude Code sont reprises via `--resume <conv_id>` pour économiser les tokens
 - **Détection multi-distro** : Découverte automatique des distributions WSL avec Claude Code installé
@@ -22,7 +26,7 @@ Interface desktop style Trello/Jira pour visualiser en temps réel les tâches d
 - **Mode dark / light** : Thème sombre par défaut, mode clair disponible
 - **Internationalisation** : Interface disponible en français et anglais (vue-i18n)
 - **Token GitHub sécurisé** : Chiffrement OS-level via Electron `safeStorage` (DPAPI Windows / Keychain macOS)
-- **Monitoring mémoire WSL** : Surveillance en temps réel de la RAM WSL avec alertes
+- **Monitoring mémoire WSL** : Surveillance en temps réel de la RAM WSL avec alertes et libération mémoire
 
 ## Prérequis
 
@@ -89,8 +93,13 @@ agent-viewer/
 ├── src/
 │   ├── main/                   # Processus principal Electron
 │   │   ├── index.ts            # Point d'entrée, BrowserWindow, CSP
-│   │   ├── ipc.ts              # Handlers IPC (SQL, fichiers, agents, GitHub…)
+│   │   ├── ipc.ts              # Handlers IPC core (SQL, window, locks, migrations)
+│   │   ├── ipc-agents.ts       # Handlers IPC agents (CRUD, sessions, recherche)
+│   │   ├── ipc-fs.ts           # Handlers IPC filesystem (listDir, readFile, writeFile)
+│   │   ├── ipc-settings.ts     # Handlers IPC settings (config, GitHub, updates)
+│   │   ├── db.ts               # Utilitaires SQLite (queryLive, writeLive)
 │   │   ├── terminal.ts         # Gestion node-pty + WSL (spawn, resize, kill, memory)
+│   │   ├── claude-md.ts        # Manipulation CLAUDE.md (insertion agents)
 │   │   ├── migration.ts        # Migrations SQLite incrémentales (schéma v2+)
 │   │   ├── seed.ts             # Données de démo pour project.db
 │   │   └── default-agents.ts   # Agents par défaut insérés à la création d'un projet
@@ -105,6 +114,7 @@ agent-viewer/
 │           │   ├── tabs.ts     # Gestion des onglets (multi-type)
 │           │   └── settings.ts # Thème, langue, GitHub, CLAUDE.md
 │           ├── components/     # Composants Vue (~20 composants)
+│           ├── composables/    # Composables Vue (useAutoLaunch, useConfirmDialog…)
 │           ├── locales/        # Traductions i18n (fr.json, en.json)
 │           ├── utils/          # Utilitaires (agentColor…)
 │           └── types/

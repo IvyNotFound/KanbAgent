@@ -3,10 +3,14 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { useLaunchSession } from '@renderer/composables/useLaunchSession'
+import { useToast } from '@renderer/composables/useToast'
 import StatusColumn from './StatusColumn.vue'
 
 const { t, locale } = useI18n()
 const store = useTasksStore()
+const { launchAgentTerminal } = useLaunchSession()
+const toast = useToast()
 
 type BoardTab = 'backlog' | 'archive'
 const activeTab = ref<BoardTab>('backlog')
@@ -44,6 +48,29 @@ const activeAgentName = computed(() =>
 function formatDate(iso: string): string {
   const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
   return new Date(iso).toLocaleDateString(dateLocale, { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+async function onTaskDropped(taskId: number): Promise<void> {
+  const task = store.tasks.find(t => t.id === taskId)
+  if (!task) return
+
+  if (!task.agent_assigne_id) {
+    toast.push(t('board.noAgentAssigned'), 'warn')
+    return
+  }
+
+  const agent = store.agents.find(a => a.id === task.agent_assigne_id)
+  if (!agent) {
+    toast.push(t('board.agentNotFound'), 'error')
+    return
+  }
+
+  const result = await launchAgentTerminal(agent, task)
+  if (result === 'session-limit') {
+    toast.push(t('board.sessionLimitReached', { agent: agent.name, max: 3 }), 'warn')
+  } else if (result === 'error') {
+    toast.push(t('board.launchFailed', { agent: agent.name }), 'error')
+  }
 }
 
 const UNASSIGNED_SENTINEL = '__unassigned__'
@@ -116,6 +143,7 @@ const archivedByAgent = computed(() => {
           :statut="col.key"
           :tasks="tasks?.[col.key] || []"
           :accent-class="col.accentClass"
+          @task-dropped="onTaskDropped"
         />
       </div>
     </div>

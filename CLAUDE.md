@@ -18,7 +18,7 @@ Périmètres: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind, clés: `App.vue
 
 Conventions: français (conv) · anglais (code) · tests obligatoires · 0 lint · Conventional Commits
 
-**Version: `0.5.0`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/lint/release` | Bêta: MAJOR → validation `arch` + lead.
+**Version: `0.6.0`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/lint/release` | Bêta: MAJOR → validation `arch` + lead.
 
 ---
 
@@ -54,7 +54,8 @@ SQL détaillé → `.claude/WORKFLOW.md`
 - **Accès DB**: `node scripts/dbq.js "<SQL>"` (lecture) · `node scripts/dbw.js "<SQL>"` (écriture) — voir `.claude/WORKFLOW.md`
 - **Avant modification**: vérifier locks → `INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (…)`
 - **Tâche**: `UPDATE tasks SET statut='in_progress'` au début · `statut='done'` + commentaire de sortie à la fin
-- **Inter-tâche** : après `terminé`, avant nouvelle tâche → `/clear` (contexte Claude Code) + reset terminal PTY si ouvert
+- **Sessions parallèles** : max **3 sessions actives** par même agent (enforcé par `dbstart.js`, exit code 2 si limite atteinte).
+- **Inter-tâche** : après `done`, enchaîner la tâche suivante **sans fermer la session** → `/clear` contexte + reset terminal PTY si ouvert, puis prendre le prochain ticket `todo`. Ne fermer la session **que si** : aucune tâche restante, ou tâche bloquée (dépendance, lock, attente review).
 - **Fin de session**: libérer locks + `UPDATE sessions SET statut='terminé', summary='Done:T<id>[action]. Pending:T<id>[raison]. Next:T<id> <titre>'` **(max 200 chars)**
 - Jamais push direct sur `main` · Jamais éditer `project.db` manuellement
 

@@ -35,7 +35,6 @@ describe('preload/index', () => {
       'findProjectDb',
       'migrateDb',
       'getLocks',
-      'getLocksCount',
     ]
 
     for (const method of requiredProjectMethods) {
@@ -68,13 +67,22 @@ describe('preload/index', () => {
   it('should expose all required terminal methods', () => {
     const requiredTerminalMethods = [
       'getWslUsers',
+      'getClaudeProfiles',
       'getClaudeInstances',
       'terminalCreate',
       'terminalWrite',
       'terminalResize',
       'terminalKill',
+      'terminalIsAlive',
       'onTerminalData',
       'onTerminalExit',
+      'onTerminalConvId',
+      'terminalRelaunch',
+      'terminalDismissCrash',
+      'terminalGetActiveCount',
+      'terminalGetMemoryStatus',
+      'onMemoryStatus',
+      'terminalReleaseMemory',
     ]
 
     for (const method of requiredTerminalMethods) {
@@ -93,6 +101,7 @@ describe('preload/index', () => {
       'updateAgentThinkingMode',
       'updateAgent',
       'createAgent',
+      'setSessionConvId',
     ]
 
     for (const method of requiredAgentMethods) {

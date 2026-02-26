@@ -17,6 +17,8 @@ export interface Agent {
   system_prompt_suffix: string | null
   thinking_mode: 'auto' | 'disabled' | null
   allowed_tools: string | null
+  /** Whether to auto-launch a session for this agent (1=yes, 0=no). DEFAULT 1. */
+  auto_launch: number
   created_at: string
   /** Session statut (English, migrated from French in T329). */
   session_statut?: 'started' | 'completed' | 'blocked' | null
@@ -52,6 +54,14 @@ export interface Task {
   started_at: string | null
   completed_at: string | null
   validated_at: string | null
+}
+
+/** Task assignee from the `task_agents` table, enriched with agent name. */
+export interface TaskAssignee {
+  agent_id: number
+  agent_name: string
+  role: 'primary' | 'support' | 'reviewer' | null
+  assigned_at: string
 }
 
 /** Comment on a task, from the `task_comments` table. */

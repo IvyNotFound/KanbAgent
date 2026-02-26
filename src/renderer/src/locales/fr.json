@@ -15,7 +15,11 @@
     "searchPlaceholder": "Rechercher... (Ctrl+K)",
     "noArchived": "Aucun ticket archivé",
     "unassigned": "(non assigné)",
-    "tickets": "ticket | tickets"
+    "tickets": "ticket | tickets",
+    "noAgentAssigned": "Aucun agent assigné — assignez un agent avant de lancer.",
+    "agentNotFound": "Agent introuvable.",
+    "launchFailed": "Impossible de lancer la session pour {agent}.",
+    "sessionLimitReached": "Limite de {max} sessions atteinte pour {agent}"
   },
   "columns": {
     "todo": "À faire",
@@ -33,7 +37,11 @@
     "noComments": "Aucun commentaire",
     "created": "Créé",
     "updated": "Modifié",
-    "justNow": "à l'instant"
+    "justNow": "à l'instant",
+    "assignees": "Assignés",
+    "addAssignee": "Ajouter",
+    "noAssignees": "Aucun agent assigné",
+    "saveError": "Erreur lors de l'enregistrement des assignés"
   },
   "logs": {
     "allAgents": "Tous les agents",
@@ -187,7 +195,9 @@
     "saveShortcut": "Ctrl+Entrée pour enregistrer",
     "createShortcut": "Ctrl+Entrée pour créer",
     "creating": "Création...",
-    "create": "Créer"
+    "create": "Créer",
+    "autoLaunch": "Lancement auto",
+    "autoLaunchDesc": "Ferme automatiquement le terminal quand la tâche passe en done"
   },
   "dbSelector": {
     "tagline": "Visualisez les tâches de vos agents Claude en temps réel.",

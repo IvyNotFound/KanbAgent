@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
+## [0.6.0] - 2026-02-26
+
+### Security
+- **safeStorage:** Token GitHub chiffré via Electron safeStorage avec fallback documenté (T356)
+- **CSP:** Suppression de `unsafe-inline` pour les styles (T357)
+- **SSRF:** Mitigation sur `test-github-connection` / `check-for-updates` (T359)
+- **Locks:** Fix libération des locks en fin de session agent — 15 locks non libérés corrigés (T401)
+
+### Performance
+- **CommandPalette:** `toLowerCase` sur descriptions O(N) par keystroke déplacé en cache (T378)
+- **TokenStatsView:** Refetch évité via `v-show` au lieu de `v-if` (T380)
+- **CodeMirror 6:** Lazy-load des parsers de langages (~200-300 KB économisés) (T381)
+- **Terminal:** Suppression création/destroy `setTimeout` par chunk PTY dans `markTabActive` (T386)
+- **Polling:** Double polling 30s+60s remplacé par file watcher (T387)
+- **FTS:** Recherche LIKE sur titre/description remplacée par Full-Text Search (T388)
+- **WSL:** Appels `wsl.exe` parallèles limités en concurrence dans `getClaudeInstances` (T389)
+- **Cache:** `getClaudeInstances()` — latence 0.5-2s éliminée (T365)
+
+### Added
+- **Multi-agents:** Migration schema v4 + IPC `task:getAssignees` / `task:setAssignees` (T414)
+
+### Fixed
+- **Tabs:** Onglets dupliqués quand le premier tab agent est fermé (T408)
+
+### Tests
+- Tests `src/main/terminal.ts` (T350)
+- Tests stores Pinia + composables (T352)
+- Tests composants Vue critiques (T353)
+
+### Docs
+- README Vitest version + JSDoc `writeDb` + CONTRIBUTING stale fixes (T406)
+- Protocole tracking tokens documenté (T407)
+
+## [0.5.1] - 2026-02-26
+
+### Fixed
+- **Terminal:** user prompt passé en argument CLI (`claude <prompt>`) au lieu d'écriture PTY avec détection de readiness — corrige la perte silencieuse du prompt au lancement (T344)
+
+### Removed
+- Dépendance `node-sqlite3-wasm` inutilisée (~3-4 MB de poids mort)
+
 ## [0.5.0] - 2026-02-26
 
 ### Added
@@ -185,7 +226,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial prototype with Tauri
 - Basic task board view
 
-[Unreleased]: https://github.com/IvyNotFound/agent-viewer/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/IvyNotFound/agent-viewer/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/IvyNotFound/agent-viewer/compare/v0.5.1...v0.6.0
+[0.5.1]: https://github.com/IvyNotFound/agent-viewer/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/IvyNotFound/agent-viewer/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IvyNotFound/agent-viewer/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/IvyNotFound/agent-viewer/compare/v0.3.1...v0.3.2

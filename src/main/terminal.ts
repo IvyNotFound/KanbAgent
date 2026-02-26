@@ -11,7 +11,7 @@
  *
  * @module terminal
  */
-import { ipcMain, app } from 'electron'
+import { ipcMain, app, BrowserWindow } from 'electron'
 import { spawn, type IPty } from 'node-pty'
 import { execFile } from 'child_process'
 import { writeFile, unlink } from 'fs/promises'
@@ -44,6 +44,9 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 // Track which PTY IDs were launched with a systemPrompt (agent session)
 // Used by gracefulKillPty to send Ctrl+C before killing
 const agentPtys = new Set<string>()
+
+// T370: Track pending kill timeouts to cancel on double call
+const killTimeouts = new Map<string, ReturnType<typeof setTimeout>[]>()
 
 // ── T279: Store launch params per PTY for crash recovery ─────────────────
 interface PtyLaunchParams {
@@ -165,24 +168,36 @@ function gracefulKillPty(id: string): void {
   const pty = ptys.get(id)
   if (!pty) return
 
+  // T370: Cancel any pending kill timeouts from a previous call
+  const pending = killTimeouts.get(id)
+  if (pending) {
+    for (const t of pending) clearTimeout(t)
+    killTimeouts.delete(id)
+  }
+
   const isAgentSession = agentPtys.has(id)
 
   if (isAgentSession) {
+    const timers: ReturnType<typeof setTimeout>[] = []
+
     // Step 1: Send Ctrl+C x2 to interrupt Claude
     pty.write('\x03\x03')
 
     // Step 2: After 100ms, send 'exit' to close bash
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
       const currentPty = ptys.get(id)
       if (currentPty) {
         currentPty.write('exit\r')
       }
-    }, 100)
+    }, 100))
 
     // Step 3: Force kill after 300ms if still alive
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      killTimeouts.delete(id)
       killPty(id)
-    }, 300)
+    }, 300))
+
+    killTimeouts.set(id, timers)
   } else {
     // Regular bash session - just kill immediately
     killPty(id)
@@ -258,7 +273,6 @@ async function doMemoryCheck(): Promise<void> {
     }
 
     // Broadcast to all active WebContents
-    const { BrowserWindow } = await import('electron')
     for (const win of BrowserWindow.getAllWindows()) {
       if (!win.isDestroyed()) {
         win.webContents.send('terminal:memoryStatus', {
@@ -381,36 +395,42 @@ export function registerTerminalHandlers(): void {
 
       if (distroEntries.length === 0) return []
 
-      // Step 2: check each distro for claude in parallel
-      const instancePromises = distroEntries.map(async ({ distro, isDefault }) => {
-        try {
-          const versionResult = await execPromise('wsl.exe', ['-d', distro, '--', 'bash', '-lc', 'claude --version 2>/dev/null'])
-          const rawVersion = versionResult.stdout.replace(/\0/g, '').trim()
-          if (!rawVersion) return null
-          // Parse "2.1.58 (Claude Code)" → "2.1.58"
-          const version = rawVersion.split(' ')[0]
-
-          // Step 3: scan ~/bin/ for claude-* wrapper scripts
-          let profiles: string[] = ['claude']
+      // Step 2: check each distro for claude — max 2 concurrent to avoid overloading WSL
+      const WSL_TIMEOUT = 10_000
+      const CONCURRENCY = 2
+      type DistroResult = { distro: string; version: string; isDefault: boolean; profiles: string[] } | null
+      const results: DistroResult[] = []
+      for (let i = 0; i < distroEntries.length; i += CONCURRENCY) {
+        const batch = distroEntries.slice(i, i + CONCURRENCY)
+        const batchResults = await Promise.all(batch.map(async ({ distro, isDefault }) => {
           try {
-            const binResult = await execPromise('wsl.exe', ['-d', distro, '--', 'bash', '-lc', 'ls ~/bin/ 2>/dev/null'])
-            const scripts = binResult.stdout
-              .replace(/\0/g, '')
-              .split('\n')
-              .map(f => f.trim())
-              .filter(f => /^claude(-[a-z0-9-]+)?$/.test(f))
-              .sort()
-            profiles = ['claude', ...scripts.filter(s => s !== 'claude')]
-          } catch { /* ~/bin/ may not exist — default profile only */ }
+            const versionResult = await execPromise('wsl.exe', ['-d', distro, '--', 'bash', '-lc', 'claude --version 2>/dev/null'], { timeout: WSL_TIMEOUT })
+            const rawVersion = versionResult.stdout.replace(/\0/g, '').trim()
+            if (!rawVersion) return null
+            // Parse "2.1.58 (Claude Code)" → "2.1.58"
+            const version = rawVersion.split(' ')[0]
 
-          return { distro, version, isDefault, profiles }
-        } catch {
-          // Claude not installed in this distro
-          return null
-        }
-      })
+            // Step 3: scan ~/bin/ for claude-* wrapper scripts
+            let profiles: string[] = ['claude']
+            try {
+              const binResult = await execPromise('wsl.exe', ['-d', distro, '--', 'bash', '-lc', 'ls ~/bin/ 2>/dev/null'], { timeout: WSL_TIMEOUT })
+              const scripts = binResult.stdout
+                .replace(/\0/g, '')
+                .split('\n')
+                .map(f => f.trim())
+                .filter(f => /^claude(-[a-z0-9-]+)?$/.test(f))
+                .sort()
+              profiles = ['claude', ...scripts.filter(s => s !== 'claude')]
+            } catch { /* ~/bin/ may not exist — default profile only */ }
 
-      const results = await Promise.all(instancePromises)
+            return { distro, version, isDefault, profiles }
+          } catch {
+            // Claude not installed in this distro, or timed out
+            return null
+          }
+        }))
+        results.push(...batchResults)
+      }
       // Filter out nulls and sort: default distro first
       return results
         .filter((r): r is NonNullable<typeof r> => r !== null)
@@ -583,6 +603,7 @@ export function registerTerminalHandlers(): void {
     // We only scan the first ~8KB of output (startup banner) to avoid overhead.
     let convIdDetected = false
     let convIdBuffer = ''
+    let convIdBytesRead = 0
     const CONV_ID_SCAN_LIMIT = 8192
 
     pty.onData(data => {
@@ -594,20 +615,23 @@ export function registerTerminalHandlers(): void {
       }
 
       // Scan for conversation ID in startup output (only if not yet detected)
-      if (!convIdDetected && convIdBuffer.length < CONV_ID_SCAN_LIMIT) {
+      if (!convIdDetected && convIdBytesRead < CONV_ID_SCAN_LIMIT) {
+        convIdBytesRead += data.length
         convIdBuffer += data
+        // T371: Truncate buffer to avoid O(N)*chunks regex — keep last 512 chars
+        if (convIdBuffer.length > 512) {
+          convIdBuffer = convIdBuffer.slice(-512)
+        }
         const match = CONV_ID_REGEX.exec(convIdBuffer)
         if (match && match[1]) {
           convIdDetected = true
           convIdBuffer = '' // free memory
-          // T279: Store detected convId for crash recovery (--resume)
           const params = ptyLaunchParams.get(id)
           if (params) params.detectedConvId = match[1]
           if (!event.sender.isDestroyed()) {
             event.sender.send(`terminal:convId:${id}`, match[1])
           }
-        } else if (convIdBuffer.length >= CONV_ID_SCAN_LIMIT) {
-          // Stop scanning — conv_id not found in startup banner
+        } else if (convIdBytesRead >= CONV_ID_SCAN_LIMIT) {
           convIdBuffer = ''
         }
       }
@@ -744,6 +768,7 @@ export const _testing = {
   releaseWslMemory,
   checkDropCachesCapability,
   doMemoryCheck,
+  toWslPath,
   ptys,
   get dropCachesAvailable() { return dropCachesAvailable },
   set dropCachesAvailable(v: boolean | null) { dropCachesAvailable = v },

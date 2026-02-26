@@ -14,7 +14,14 @@ import { assertDbPathAllowed, assertProjectPathAllowed, queryLive, writeDb, encr
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
+/** Register all settings & GitHub IPC handlers. */
 export function registerSettingsHandlers(): void {
+  /**
+   * Read a config value by key. github_token is auto-decrypted.
+   * @param dbPath - DB path
+   * @param key - Config key
+   * @returns {{ success: boolean, value: string|null, error?: string }}
+   */
   ipcMain.handle('get-config-value', async (_event, dbPath: string, key: string) => {
     try {
       const rows = await queryLive(dbPath, 'SELECT value FROM config WHERE key = ?', [key])
@@ -25,6 +32,13 @@ export function registerSettingsHandlers(): void {
     }
   })
 
+  /**
+   * Write a config value. github_token is auto-encrypted via safeStorage.
+   * @param dbPath - Registered DB path
+   * @param key - Config key
+   * @param value - Value to store
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('set-config-value', async (_event, dbPath: string, key: string, value: string) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -43,14 +57,22 @@ export function registerSettingsHandlers(): void {
     }
   })
 
+  /**
+   * Fetch CLAUDE.md from GitHub master repo and compare SHA with local.
+   * @param dbPath - DB path (for token + local SHA)
+   * @returns {{ success: boolean, sha?: string, content?: string, upToDate?: boolean, localSha?: string, error?: string }}
+   */
   ipcMain.handle('check-master-md', async (_event, dbPath: string) => {
     try {
-      const tokenRows = await queryLive(dbPath, "SELECT value FROM config WHERE key = 'github_token'", [])
-      const encryptedToken = tokenRows.length > 0 ? (tokenRows[0] as { value: string }).value : null
+      const configRows = await queryLive(
+        dbPath,
+        "SELECT key, value FROM config WHERE key IN ('github_token', 'claude_md_commit')",
+        []
+      ) as { key: string; value: string }[]
+      const configMap = new Map(configRows.map(r => [r.key, r.value]))
+      const encryptedToken = configMap.get('github_token') ?? null
       const token = encryptedToken ? decryptToken(encryptedToken) : null
-
-      const shaRows = await queryLive(dbPath, "SELECT value FROM config WHERE key = 'claude_md_commit'", [])
-      const localSha = shaRows.length > 0 ? (shaRows[0] as { value: string }).value : ''
+      const localSha = configMap.get('claude_md_commit') ?? ''
 
       const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
       if (token) headers['Authorization'] = `token ${token}`
@@ -75,6 +97,14 @@ export function registerSettingsHandlers(): void {
     }
   })
 
+  /**
+   * Atomically write CLAUDE.md to disk and update local SHA in config.
+   * @param dbPath - Registered DB path
+   * @param projectPath - Registered project path
+   * @param content - CLAUDE.md content to write
+   * @param sha - GitHub blob SHA to store
+   * @returns {{ success: boolean, error?: string }}
+   */
   ipcMain.handle('apply-master-md', async (_event, dbPath: string, projectPath: string, content: string, sha: string) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -100,12 +130,22 @@ export function registerSettingsHandlers(): void {
     }
   })
 
+  /**
+   * Test GitHub repo access with optional token authentication.
+   * @param dbPath - DB path (for stored token)
+   * @param repoUrl - GitHub repository URL
+   * @returns {{ connected: boolean, error?: string }}
+   */
   ipcMain.handle('test-github-connection', async (_event, dbPath: string, repoUrl: string) => {
     try {
       const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/)
       if (!match) return { connected: false, error: 'URL invalide' }
       const owner = match[1]
       const repo = match[2].replace(/\.git$/, '')
+      // Validate owner/repo format to prevent unexpected chars being forwarded to GitHub API
+      if (!/^[a-zA-Z0-9_.-]{1,100}$/.test(owner) || !/^[a-zA-Z0-9_.-]{1,100}$/.test(repo)) {
+        return { connected: false, error: 'owner/repo invalide' }
+      }
 
       const tokenRows = await queryLive(dbPath, "SELECT value FROM config WHERE key = 'github_token'", [])
       const encryptedToken = tokenRows.length > 0 ? (tokenRows[0] as { value: string }).value : null
@@ -122,12 +162,23 @@ export function registerSettingsHandlers(): void {
     }
   })
 
+  /**
+   * Check GitHub releases for a newer version.
+   * @param dbPath - DB path (for stored token)
+   * @param repoUrl - GitHub repository URL
+   * @param currentVersion - Current app version (e.g. "0.5.1")
+   * @returns {{ hasUpdate: boolean, latestVersion: string, error?: string }}
+   */
   ipcMain.handle('check-for-updates', async (_event, dbPath: string, repoUrl: string, currentVersion: string) => {
     try {
       const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/)
       if (!match) return { hasUpdate: false, latestVersion: '', error: 'URL invalide' }
       const owner = match[1]
       const repo = match[2].replace(/\.git$/, '')
+      // Validate owner/repo format to prevent unexpected chars being forwarded to GitHub API
+      if (!/^[a-zA-Z0-9_.-]{1,100}$/.test(owner) || !/^[a-zA-Z0-9_.-]{1,100}$/.test(repo)) {
+        return { hasUpdate: false, latestVersion: '', error: 'owner/repo invalide' }
+      }
 
       const tokenRows = await queryLive(dbPath, "SELECT value FROM config WHERE key = 'github_token'", [])
       const encryptedToken = tokenRows.length > 0 ? (tokenRows[0] as { value: string }).value : null

@@ -96,13 +96,17 @@ vi.mock('fs/promises', () => {
   const mkdir = vi.fn().mockResolvedValue(undefined)
   const rename = vi.fn().mockResolvedValue(undefined)
   const stat = vi.fn().mockResolvedValue({ mtimeMs: 1000 })
+  const access = vi.fn().mockResolvedValue(undefined)
+  const readdir = vi.fn().mockResolvedValue([] as string[])
   return {
-    default: { readFile, writeFile, mkdir, rename, stat },
+    default: { readFile, writeFile, mkdir, rename, stat, access, readdir },
     readFile,
     writeFile,
     mkdir,
     rename,
     stat,
+    access,
+    readdir,
   }
 })
 
@@ -191,6 +195,11 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       await expect(callHandler('query-db', dbPath, 'SELECT * FROM tasks')).rejects.toThrow()
     })
 
+    it('should reject unregistered dbPath with DB_PATH_NOT_ALLOWED (T354)', async () => {
+      await expect(callHandler('query-db', '/unregistered/evil.db', 'SELECT 1'))
+        .rejects.toThrow('DB_PATH_NOT_ALLOWED')
+    })
+
     it('should document known limitation: INSERT in WHERE value is incorrectly blocked', async () => {
       // KNOWN LIMITATION: current implementation uses .includes() on full query string
       // "SELECT * FROM tasks WHERE titre = 'INSERT something'" → blocked because "INSERT" is found
@@ -251,11 +260,12 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       expect(result).toMatchObject({ success: false })
     })
 
-    it('should allow writing without allowedDir constraint (relative path)', async () => {
+    it('should reject write when allowedDir is missing (undefined)', async () => {
       const filePath = 'relative/path/file.txt'
-      const result = await callHandler('fs:writeFile', filePath, 'content')
-      // No allowedDir = relative paths OK (no absolute path rejection for write)
-      expect(result).toMatchObject({ success: true })
+      const result = await callHandler('fs:writeFile', filePath, 'content', undefined)
+      // allowedDir is now mandatory — undefined causes resolve(undefined) = cwd,
+      // and a relative path will resolve outside it → rejected
+      expect(result).toMatchObject({ success: false })
     })
   })
 
@@ -326,28 +336,28 @@ describe('IPC handlers — src/main/ipc.ts', () => {
 
   describe('find-project-db handler', () => {
     it('should return null when no db found', async () => {
-      const { existsSync, readdirSync } = await import('fs')
-      vi.mocked(existsSync).mockReturnValue(false)
-      vi.mocked(readdirSync as (path: string) => string[]).mockReturnValue([])
+      const { access, readdir } = await import('fs/promises')
+      vi.mocked(access).mockRejectedValue(new Error('ENOENT'))
+      vi.mocked(readdir as (path: string) => Promise<string[]>).mockResolvedValue([])
       const result = await callHandler('find-project-db', '/empty/project')
       expect(result).toBeNull()
     })
 
     it('should find db in .claude/ subdirectory', async () => {
-      const { existsSync, readdirSync } = await import('fs')
-      vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(readdirSync as (path: string) => string[]).mockReturnValue(['project.db'])
+      const { access, readdir } = await import('fs/promises')
+      vi.mocked(access).mockResolvedValue(undefined)
+      vi.mocked(readdir as (path: string) => Promise<string[]>).mockResolvedValue(['project.db'])
       const result = await callHandler('find-project-db', '/my/project')
       expect(result).toContain('project.db')
       expect(result).toContain('.claude')
     })
 
     it('should fall back to root directory if .claude/ has no db', async () => {
-      const { existsSync, readdirSync } = await import('fs')
-      vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(readdirSync as (path: string) => string[])
-        .mockReturnValueOnce([]) // .claude/ dir: no .db files
-        .mockReturnValueOnce(['project.db']) // root: has .db file
+      const { access, readdir } = await import('fs/promises')
+      vi.mocked(access).mockResolvedValue(undefined)
+      vi.mocked(readdir as (path: string) => Promise<string[]>)
+        .mockResolvedValueOnce([]) // .claude/ dir: no .db files
+        .mockResolvedValueOnce(['project.db']) // root: has .db file
       const result = await callHandler('find-project-db', '/my/project')
       expect(result).toContain('project.db')
     })
@@ -618,10 +628,10 @@ describe('IPC handlers — src/main/ipc.ts', () => {
 
     it('should return project info when dialog returns a path', async () => {
       const { dialog } = await import('electron')
-      const { existsSync, readdirSync } = await import('fs')
+      const { access, readdir } = await import('fs/promises')
       vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({ canceled: false, filePaths: ['/my/project'] })
-      vi.mocked(existsSync).mockReturnValue(false)
-      vi.mocked(readdirSync as (path: string) => string[]).mockReturnValue([])
+      vi.mocked(access).mockRejectedValue(new Error('ENOENT'))
+      vi.mocked(readdir as (path: string) => Promise<string[]>).mockResolvedValue([])
       const result = await callHandler('select-project-dir') as {
         projectPath: string; dbPath: string | null; error: null; hasCLAUDEmd: boolean
       }
@@ -631,10 +641,10 @@ describe('IPC handlers — src/main/ipc.ts', () => {
 
     it('should auto-detect project.db via findProjectDb', async () => {
       const { dialog } = await import('electron')
-      const { existsSync, readdirSync } = await import('fs')
+      const { access, readdir } = await import('fs/promises')
       vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({ canceled: false, filePaths: ['/my/project'] })
-      vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(readdirSync as (path: string) => string[]).mockReturnValue(['project.db'])
+      vi.mocked(access).mockResolvedValue(undefined)
+      vi.mocked(readdir as (path: string) => Promise<string[]>).mockResolvedValue(['project.db'])
       const result = await callHandler('select-project-dir') as {
         projectPath: string; dbPath: string | null
       }
@@ -715,18 +725,23 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       // queryLive will fail on mock buffer → handler throws
       await expect(callHandler('get-locks', '/fake/project.db')).rejects.toThrow()
     })
-  })
 
-  describe('get-locks-count handler', () => {
-    it('should return a number or throw on invalid DB', async () => {
-      // queryLive on mock buffer will throw → handler propagates
-      await expect(callHandler('get-locks-count', '/fake/project.db')).rejects.toThrow()
+    it('should reject unregistered dbPath with DB_PATH_NOT_ALLOWED (T355)', async () => {
+      await expect(callHandler('get-locks', '/unregistered/evil.db'))
+        .rejects.toThrow('DB_PATH_NOT_ALLOWED')
     })
   })
+
+  // get-locks-count handler was removed — tests deleted (T351)
 
   // ── T226: watch-db / unwatch-db ─────────────────────────────────────────────
 
   describe('watch-db handler', () => {
+    it('should reject unregistered dbPath with DB_PATH_NOT_ALLOWED (T355)', async () => {
+      await expect(callHandler('watch-db', '/unregistered/evil.db'))
+        .rejects.toThrow('DB_PATH_NOT_ALLOWED')
+    })
+
     it('should call fs.watch on the provided path', async () => {
       const { watch } = await import('fs')
       vi.mocked(watch).mockClear()
@@ -738,6 +753,8 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       const { watch } = await import('fs')
       const mockClose = vi.fn()
       vi.mocked(watch).mockReturnValue({ close: mockClose } as unknown as ReturnType<typeof watch>)
+      registerDbPath('/fake/db1')
+      registerDbPath('/fake/db2')
       await callHandler('watch-db', '/fake/db1')
       await callHandler('watch-db', '/fake/db2')
       expect(mockClose).toHaveBeenCalled()
@@ -809,6 +826,266 @@ describe('IPC handlers — src/main/ipc.ts', () => {
     it('should return { connected: false } when queryLive throws (DB error)', async () => {
       const result = await callHandler('test-github-connection', '/nonexistent/db', 'https://github.com/owner/repo') as { connected: boolean }
       expect(result.connected).toBe(false)
+    })
+  })
+
+  // ── T351: create-project-db ───────────────────────────────────────────────
+
+  describe('create-project-db handler', () => {
+    it('should return { success: true, dbPath } on success path', async () => {
+      const { mkdir, writeFile } = await import('fs/promises')
+      vi.mocked(mkdir).mockResolvedValueOnce(undefined)
+      vi.mocked(writeFile).mockResolvedValueOnce(undefined)
+      const result = await callHandler('create-project-db', '/fake/project') as {
+        success: boolean; dbPath: string
+      }
+      expect(result.success).toBe(true)
+      expect(result.dbPath).toContain('project.db')
+      expect(result.dbPath).toContain('.claude')
+    })
+
+    it('should create .claude directory via mkdir recursive', async () => {
+      const { mkdir, writeFile } = await import('fs/promises')
+      vi.mocked(mkdir).mockResolvedValueOnce(undefined)
+      vi.mocked(writeFile).mockResolvedValueOnce(undefined)
+      await callHandler('create-project-db', '/fake/project')
+      expect(mkdir).toHaveBeenCalledWith(
+        expect.stringContaining('.claude'),
+        { recursive: true }
+      )
+    })
+
+    it('should write the DB file to .claude/project.db', async () => {
+      const { mkdir, writeFile } = await import('fs/promises')
+      vi.mocked(mkdir).mockResolvedValueOnce(undefined)
+      vi.mocked(writeFile).mockResolvedValueOnce(undefined)
+      await callHandler('create-project-db', '/fake/project')
+      // writeFile is called with the DB binary content
+      expect(writeFile).toHaveBeenCalledWith(
+        expect.stringContaining('project.db'),
+        expect.any(Buffer)
+      )
+    })
+
+    it('should return { success: false, error } when mkdir throws', async () => {
+      const { mkdir } = await import('fs/promises')
+      vi.mocked(mkdir).mockRejectedValueOnce(new Error('EACCES'))
+      const result = await callHandler('create-project-db', '/fake/project') as {
+        success: boolean; error?: string
+      }
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('EACCES')
+    })
+  })
+
+  // ── T351: window-maximize toggle ──────────────────────────────────────────
+
+  describe('window-maximize handler', () => {
+    it('should unmaximize when window is already maximized', async () => {
+      const { BrowserWindow } = await import('electron')
+      const mockUnmaximize = vi.fn()
+      const mockMaximize = vi.fn()
+      vi.mocked(BrowserWindow.getFocusedWindow).mockReturnValue({
+        isMaximized: () => true,
+        unmaximize: mockUnmaximize,
+        maximize: mockMaximize,
+      } as unknown as BrowserWindow)
+      await callHandler('window-maximize')
+      expect(mockUnmaximize).toHaveBeenCalled()
+      expect(mockMaximize).not.toHaveBeenCalled()
+    })
+
+    it('should maximize when window is not maximized', async () => {
+      const { BrowserWindow } = await import('electron')
+      const mockUnmaximize = vi.fn()
+      const mockMaximize = vi.fn()
+      vi.mocked(BrowserWindow.getFocusedWindow).mockReturnValue({
+        isMaximized: () => false,
+        unmaximize: mockUnmaximize,
+        maximize: mockMaximize,
+      } as unknown as BrowserWindow)
+      await callHandler('window-maximize')
+      expect(mockMaximize).toHaveBeenCalled()
+      expect(mockUnmaximize).not.toHaveBeenCalled()
+    })
+
+    it('should not throw when no focused window', async () => {
+      const { BrowserWindow } = await import('electron')
+      vi.mocked(BrowserWindow.getFocusedWindow).mockReturnValue(null)
+      await expect(callHandler('window-maximize')).resolves.not.toThrow()
+    })
+  })
+
+  // ── T351: select-new-project-dir ──────────────────────────────────────────
+
+  describe('select-new-project-dir handler', () => {
+    it('should return null when dialog is canceled', async () => {
+      const { dialog } = await import('electron')
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({ canceled: true, filePaths: [] })
+      const result = await callHandler('select-new-project-dir')
+      expect(result).toBeNull()
+    })
+
+    it('should return the selected path when dialog returns a path', async () => {
+      const { dialog } = await import('electron')
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['/my/new/project'],
+      })
+      const result = await callHandler('select-new-project-dir')
+      expect(result).toBe('/my/new/project')
+    })
+  })
+
+  // ── T351: select-project-dir — hasCLAUDEmd ────────────────────────────────
+
+  describe('select-project-dir — hasCLAUDEmd', () => {
+    it('should return hasCLAUDEmd: true when CLAUDE.md exists', async () => {
+      const { dialog } = await import('electron')
+      const { access, readdir } = await import('fs/promises')
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['/my/project'],
+      })
+      // access resolves for all calls (including .claude dir and CLAUDE.md check)
+      vi.mocked(access).mockResolvedValue(undefined)
+      vi.mocked(readdir as (path: string) => Promise<string[]>).mockResolvedValue(['project.db'])
+      const result = await callHandler('select-project-dir') as {
+        projectPath: string; hasCLAUDEmd: boolean
+      }
+      expect(result.hasCLAUDEmd).toBe(true)
+    })
+
+    it('should return hasCLAUDEmd: false when CLAUDE.md does not exist', async () => {
+      const { dialog } = await import('electron')
+      const { access, readdir } = await import('fs/promises')
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['/my/project'],
+      })
+      // First access call (.claude dir) succeeds, second (CLAUDE.md) fails
+      vi.mocked(access)
+        .mockResolvedValueOnce(undefined) // .claude dir exists
+        .mockRejectedValueOnce(new Error('ENOENT')) // CLAUDE.md doesn't exist
+      vi.mocked(readdir as (path: string) => Promise<string[]>).mockResolvedValue(['project.db'])
+      const result = await callHandler('select-project-dir') as {
+        projectPath: string; hasCLAUDEmd: boolean
+      }
+      expect(result.hasCLAUDEmd).toBe(false)
+    })
+  })
+
+  // ── T416: task:getAssignees ────────────────────────────────────────────────
+  // Uses queryLive (CJS require bypass) → fails on mock buffer → tests error contract.
+
+  describe('task:getAssignees handler', () => {
+    it('should return { success: false, assignees: [], error } when taskId is not an integer', async () => {
+      const result = await callHandler('task:getAssignees', '/fake/project.db', 'abc') as {
+        success: boolean; assignees: unknown[]; error?: string
+      }
+      expect(result).toMatchObject({ success: false, assignees: [], error: 'Invalid taskId' })
+    })
+
+    it('should return { success: false, assignees: [], error } when taskId is a float', async () => {
+      const result = await callHandler('task:getAssignees', '/fake/project.db', 1.5) as {
+        success: boolean; assignees: unknown[]; error?: string
+      }
+      expect(result).toMatchObject({ success: false, assignees: [], error: 'Invalid taskId' })
+    })
+
+    it('should return { success: false, assignees: [] } when dbPath does not exist (DB error)', async () => {
+      const result = await callHandler('task:getAssignees', '/nonexistent/db.sqlite', 1) as {
+        success: boolean; assignees: unknown[]
+      }
+      expect(result.success).toBe(false)
+      expect(Array.isArray(result.assignees)).toBe(true)
+      expect(result.assignees).toHaveLength(0)
+    })
+
+    it('should always return { success, assignees } shape', async () => {
+      const result = await callHandler('task:getAssignees', '/nonexistent/db.sqlite', 99) as Record<string, unknown>
+      expect(result).toHaveProperty('success')
+      expect(result).toHaveProperty('assignees')
+    })
+  })
+
+  // ── T416: task:setAssignees ────────────────────────────────────────────────
+
+  describe('task:setAssignees handler', () => {
+    it('should return { success: false, error: Invalid taskId } when taskId is not an integer', async () => {
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 'xyz', []) as {
+        success: boolean; error?: string
+      }
+      expect(result).toMatchObject({ success: false, error: 'Invalid taskId' })
+    })
+
+    it('should return { success: false, error: Invalid taskId } when taskId is a float', async () => {
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 2.7, []) as {
+        success: boolean; error?: string
+      }
+      expect(result).toMatchObject({ success: false, error: 'Invalid taskId' })
+    })
+
+    it('should return { success: false, error } when assignees is not an array', async () => {
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 1, 'not-array') as {
+        success: boolean; error?: string
+      }
+      expect(result).toMatchObject({ success: false, error: 'assignees must be an array' })
+    })
+
+    it('should return { success: false, error } when assignees is null', async () => {
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 1, null) as {
+        success: boolean; error?: string
+      }
+      expect(result).toMatchObject({ success: false, error: 'assignees must be an array' })
+    })
+
+    it('should return { success: false, error: Invalid role } when role is not allowed', async () => {
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 1, [
+        { agentId: 1, role: 'admin' }
+      ]) as { success: boolean; error?: string }
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid role') })
+      expect(result.error).toContain('admin')
+    })
+
+    it('should return { success: false, error: Invalid agentId } when agentId is not an integer', async () => {
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 1, [
+        { agentId: 'foo', role: 'primary' }
+      ]) as { success: boolean; error?: string }
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid agentId') })
+    })
+
+    it('should accept null role without validation error', async () => {
+      // null is in validRoles → passes validation, then fails at DB level (not registered or DB error)
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 1, [
+        { agentId: 1, role: null }
+      ]) as { success: boolean }
+      // Passes validation, may fail at writeDb level with mock
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should return { success: false, error } when dbPath is not registered (T282)', async () => {
+      const result = await callHandler('task:setAssignees', '/invalid/db', 1, []) as {
+        success: boolean; error?: string
+      }
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('DB_PATH_NOT_ALLOWED') })
+    })
+
+    it('should return { success, error? } shape for valid args (registered dbPath)', async () => {
+      const result = await callHandler('task:setAssignees', '/fake/project.db', 1, []) as { success: boolean }
+      expect(result).toHaveProperty('success')
+    })
+
+    it('should accept valid roles: primary, support, reviewer', async () => {
+      for (const role of ['primary', 'support', 'reviewer'] as const) {
+        const result = await callHandler('task:setAssignees', '/fake/project.db', 1, [
+          { agentId: 1, role }
+        ]) as { success: boolean; error?: string }
+        // Valid role → passes validation (may fail at DB level with mock, but not role error)
+        if (!result.success && result.error) {
+          expect(result.error).not.toContain('Invalid role')
+        }
+      }
     })
   })
 })

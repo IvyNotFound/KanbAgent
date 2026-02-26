@@ -133,6 +133,10 @@ export async function getDbBuffer(dbPath: string): Promise<Buffer> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let SQL: any = null
 
+/**
+ * Get the sql.js WASM singleton. Lazily initialized on first call.
+ * @returns {Promise} sql.js module instance
+ */
 export async function getSqlJs() {
   if (!SQL) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -151,6 +155,10 @@ const writeMutex = new Map<string, Promise<unknown>>()
 /**
  * Shared write helper — reads via cached buffer, runs mutation, exports + writes.
  * Uses per-path mutex and atomic write (temp file + rename).
+ * @param dbPath - Absolute path to the SQLite database file
+ * @param fn - Callback receiving a sql.js Database instance to run mutations on
+ * @returns The value returned by the callback
+ * @throws If the database read, mutation, or atomic write fails
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function writeDb<T = void>(dbPath: string, fn: (db: any) => T): Promise<T> {
@@ -167,12 +175,24 @@ export async function writeDb<T = void>(dbPath: string, fn: (db: any) => T): Pro
     try {
       const result = fn(db)
       const exported = db.export()
+      const newBuf = Buffer.from(exported)
       const tmpPath = dbPath + '.tmp'
-      await writeFile(tmpPath, Buffer.from(exported))
+      await writeFile(tmpPath, newBuf)
       await rename(tmpPath, dbPath)
+      // Update cache: refresh buffer + recreate DB instance from exported data
+      // so the next queryLive doesn't need to reinstantiate (~10-50ms saved)
+      const statResult = await stat(dbPath)
       const entry = dbCache.get(dbPath)
       if (entry?.db) { try { entry.db.close() } catch { /* ignore */ } }
-      if (entry) { entry.db = null }
+      const freshDb = new sqlJs.Database(newBuf)
+      if (entry) {
+        entry.buf = newBuf
+        entry.mtime = statResult.mtimeMs
+        entry.lastAccess = Date.now()
+        entry.db = freshDb
+      } else {
+        dbCache.set(dbPath, { buf: newBuf, mtime: statResult.mtimeMs, lastAccess: Date.now(), db: freshDb })
+      }
       return result
     } finally {
       db.close()
@@ -185,6 +205,15 @@ export async function writeDb<T = void>(dbPath: string, fn: (db: any) => T): Pro
 
 // ── queryLive ────────────────────────────────────────────────────────────────
 
+/**
+ * Execute a read-only SQL query using cached DB buffer and sql.js instance.
+ * Retries once on malformed DB errors (cache invalidation).
+ * @param dbPath - Path to the SQLite database
+ * @param query - SQL query string
+ * @param params - Bind parameters
+ * @returns {Promise<Record<string, unknown>[]>} Query result rows
+ * @throws {Error} If query fails after retry
+ */
 export async function queryLive(dbPath: string, query: string, params: unknown[]): Promise<unknown[]> {
   return queryLiveAttempt(dbPath, query, params, true)
 }
@@ -229,11 +258,35 @@ async function queryLiveAttempt(
 
 // ── Migration ────────────────────────────────────────────────────────────────
 
+/** Current schema version — bump when adding migrations or indexes. */
+const CURRENT_SCHEMA_VERSION = '4'
+
+/**
+ * Run all pending schema migrations on a project database.
+ * Creates a backup (.bak) before migrating and deletes it on success.
+ * @param dbPath - Path to the SQLite database
+ * @returns {Promise<{ migrated: number }>} Number of rows migrated
+ * @throws {Error} If migration fails (backup is kept)
+ */
 export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
+  // T382: Fast-path — skip full migration if schema is already up to date
+  const sqlJs = await getSqlJs()
+  try {
+    const checkBuf = await getDbBuffer(dbPath)
+    const checkDb = new sqlJs.Database(checkBuf)
+    try {
+      const result = checkDb.exec("SELECT value FROM config WHERE key = 'schema_version'")
+      if (result.length > 0 && result[0].values.length > 0 && result[0].values[0][0] === CURRENT_SCHEMA_VERSION) {
+        return { migrated: 0 }
+      }
+    } finally {
+      checkDb.close()
+    }
+  } catch { /* config table may not exist yet — run full migration */ }
+
   const backupPath = `${dbPath}.bak`
   await copyFile(dbPath, backupPath)
 
-  const sqlJs = await getSqlJs()
   const buf = await readFile(dbPath)
   const db = new sqlJs.Database(buf)
   let changed = false
@@ -268,6 +321,11 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
     if (!existingCols.has('allowed_tools')) {
       db.run('ALTER TABLE agents ADD COLUMN allowed_tools TEXT')
       changed = true
+    }
+    if (!existingCols.has('auto_launch')) {
+      db.run('ALTER TABLE agents ADD COLUMN auto_launch INTEGER NOT NULL DEFAULT 1')
+      changed = true
+      console.log('[migrateDb] added auto_launch column to agents')
     }
 
     const tableResult = db.exec("SELECT name FROM sqlite_master WHERE type='table'")
@@ -315,7 +373,27 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
     db.run('CREATE INDEX IF NOT EXISTS idx_locks_released_at ON locks(released_at)')
     db.run('CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON tasks(updated_at DESC)')
     db.run('CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigne ON tasks(agent_assigne_id)')
+    // T374: Composite index for ROW_NUMBER() OVER (PARTITION BY agent_id ORDER BY started_at DESC)
+    db.run('CREATE INDEX IF NOT EXISTS idx_sessions_agent_started ON sessions(agent_id, started_at DESC)')
+    // T375: Index for task_comments JOIN on task_id
+    db.run('CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id)')
     changed = true
+
+    // T414 (schema v4): task_agents table for multi-agent assignment
+    if (!existingTables.has('task_agents')) {
+      db.run(`CREATE TABLE IF NOT EXISTS task_agents (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id     INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        agent_id    INTEGER NOT NULL REFERENCES agents(id),
+        role        TEXT CHECK(role IN ('primary', 'support', 'reviewer')),
+        assigned_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(task_id, agent_id)
+      )`)
+      changed = true
+      console.log('[migrateDb] created task_agents table')
+    }
+    db.run('CREATE INDEX IF NOT EXISTS idx_task_agents_task_id ON task_agents(task_id)')
+    db.run('CREATE INDEX IF NOT EXISTS idx_task_agents_agent_id ON task_agents(agent_id)')
 
     const convIdAdded = runAddConvIdToSessionsMigration(db)
     if (convIdAdded) {
@@ -374,6 +452,8 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
     }
 
     if (changed) {
+      // T382: Stamp schema version so next startup skips full migration
+      db.run("INSERT OR REPLACE INTO config (key, value, updated_at) VALUES ('schema_version', ?, CURRENT_TIMESTAMP)", [CURRENT_SCHEMA_VERSION])
       const exported = db.export()
       await writeFile(dbPath, Buffer.from(exported))
       console.log('[migrateDb] schema updated:', dbPath)
@@ -395,6 +475,12 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
 
 // ── Token encryption (safeStorage) ───────────────────────────────────────────
 
+/**
+ * Encrypt a token using Electron safeStorage (DPAPI on Windows, Keychain on macOS).
+ * Falls back to plaintext if encryption is unavailable.
+ * @param plaintext - Token to encrypt
+ * @returns {string} Base64-encoded ciphertext, or plaintext as fallback
+ */
 export function encryptToken(plaintext: string): string {
   if (!plaintext) return ''
   try {
@@ -402,12 +488,23 @@ export function encryptToken(plaintext: string): string {
       const encrypted = safeStorage.encryptString(plaintext)
       return encrypted.toString('base64')
     }
+    console.warn(
+      '[SECURITY] safeStorage encryption is unavailable on this system. ' +
+      'The GitHub token will be stored in plaintext in project.db. ' +
+      'Ensure the database file has restricted filesystem permissions.'
+    )
   } catch (err) {
     console.warn('[IPC] safeStorage encryption failed:', err)
   }
   return plaintext
 }
 
+/**
+ * Decrypt a token encrypted with encryptToken().
+ * Falls back to returning ciphertext as-is if decryption fails.
+ * @param ciphertext - Base64-encoded encrypted token
+ * @returns {string} Decrypted plaintext token
+ */
 export function decryptToken(ciphertext: string): string {
   if (!ciphertext) return ''
   try {

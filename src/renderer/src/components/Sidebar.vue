@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import { useToast } from '@renderer/composables/useToast'
-import { usePolledData } from '@renderer/composables/usePolledData'
 import LaunchSessionModal from './LaunchSessionModal.vue'
 import SettingsModal from './SettingsModal.vue'
 import ContextMenu from './ContextMenu.vue'
@@ -76,12 +75,11 @@ function isDirOpen(path: string): boolean {
   return sidebarOpenDirs.value.has(path)
 }
 
-function flattenTree(nodes: FileNode[], depth = 0): Array<{ node: FileNode; depth: number }> {
-  const result: Array<{ node: FileNode; depth: number }> = []
+function flattenTree(nodes: FileNode[], depth = 0, result: Array<{ node: FileNode; depth: number }> = []): Array<{ node: FileNode; depth: number }> {
   for (const node of nodes) {
     result.push({ node, depth })
     if (node.isDir && isDirOpen(node.path) && node.children?.length) {
-      result.push(...flattenTree(node.children, depth + 1))
+      flattenTree(node.children, depth + 1, result)
     }
   }
   return result
@@ -120,7 +118,14 @@ async function fetchSidebarLogs(): Promise<void> {
   } catch { /* silent */ }
 }
 
-usePolledData(fetchSidebarLogs, () => activeSection.value === 'logs', 3000)
+// Event-driven refresh — replaces 3s polling (was 20 IPC/min)
+const unsubLogs = window.electronAPI.onDbChanged(() => {
+  if (activeSection.value === 'logs') fetchSidebarLogs()
+})
+onUnmounted(() => unsubLogs())
+watch(() => activeSection.value === 'logs', (active) => {
+  if (active) fetchSidebarLogs()
+}, { immediate: true })
 
 function formatRelativeTime(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -138,8 +143,16 @@ function toggleSection(section: Section) {
   }
 }
 
+const openTerminalAgents = computed(() => {
+  const set = new Set<string>()
+  for (const t of tabsStore.tabs) {
+    if (t.type === 'terminal' && t.agentName) set.add(t.agentName)
+  }
+  return set
+})
+
 function hasOpenTerminal(agentName: string): boolean {
-  return tabsStore.tabs.some(t => t.type === 'terminal' && t.agentName === agentName)
+  return openTerminalAgents.value.has(agentName)
 }
 
 const MULTI_INSTANCE_TYPES = ['review']

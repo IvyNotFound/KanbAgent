@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { nextTick } from 'vue'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useSettingsStore } from '@renderer/stores/settings'
@@ -675,8 +676,8 @@ describe('stores/tasks — project lifecycle', () => {
       store.startPolling()
       store.startPolling() // second call — should cancel first interval
 
-      // Advance 35s to trigger the first poll (interval is 30s)
-      await vi.advanceTimersByTimeAsync(35000)
+      // Advance past 300s (interval is 5min = 300000ms)
+      await vi.advanceTimersByTimeAsync(300001)
 
       // queryDb called for ONE interval only (not doubled)
       // Each tick calls multiple queries via Promise.all
@@ -1389,5 +1390,451 @@ describe('composables/useToast', () => {
     t1.push('from t1')
     expect(t2.toasts.value).toHaveLength(1)
     expect(t2.toasts.value[0].message).toBe('from t1')
+  })
+})
+
+// ── T352: stores/tasks — closeTask, perimetres computed ──────────────────────
+
+describe('stores/tasks — closeTask', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    mockElectronAPI.queryDb.mockResolvedValue([])
+    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
+    mockElectronAPI.watchDb.mockResolvedValue(undefined)
+    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
+  })
+
+  it('should set selectedTask to null', () => {
+    const store = useTasksStore()
+    store.selectedTask = { id: 1, titre: 'Task 1' } as never
+    store.taskComments = [{ id: 1, contenu: 'comment' }] as never
+
+    store.closeTask()
+
+    expect(store.selectedTask).toBeNull()
+  })
+
+  it('should clear taskComments', () => {
+    const store = useTasksStore()
+    store.selectedTask = { id: 1, titre: 'Task 1' } as never
+    store.taskComments = [{ id: 1, contenu: 'c1' }, { id: 2, contenu: 'c2' }] as never
+
+    store.closeTask()
+
+    expect(store.taskComments).toHaveLength(0)
+  })
+
+  it('should be a no-op when already closed', () => {
+    const store = useTasksStore()
+    expect(store.selectedTask).toBeNull()
+    expect(store.taskComments).toHaveLength(0)
+
+    store.closeTask()
+
+    expect(store.selectedTask).toBeNull()
+    expect(store.taskComments).toHaveLength(0)
+  })
+})
+
+describe('stores/tasks — perimetres computed', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    mockElectronAPI.queryDb.mockResolvedValue([])
+    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
+    mockElectronAPI.watchDb.mockResolvedValue(undefined)
+    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
+  })
+
+  it('should deduplicate perimetres from tasks', () => {
+    const store = useTasksStore()
+    store.tasks = [
+      { id: 1, perimetre: 'front-vuejs', statut: 'todo' },
+      { id: 2, perimetre: 'back-electron', statut: 'todo' },
+      { id: 3, perimetre: 'front-vuejs', statut: 'done' },
+    ] as never
+
+    expect(store.perimetres).toEqual(['back-electron', 'front-vuejs'])
+  })
+
+  it('should return sorted array', () => {
+    const store = useTasksStore()
+    store.tasks = [
+      { id: 1, perimetre: 'zzz', statut: 'todo' },
+      { id: 2, perimetre: 'aaa', statut: 'todo' },
+      { id: 3, perimetre: 'mmm', statut: 'todo' },
+    ] as never
+
+    expect(store.perimetres).toEqual(['aaa', 'mmm', 'zzz'])
+  })
+
+  it('should skip tasks with null/undefined perimetre', () => {
+    const store = useTasksStore()
+    store.tasks = [
+      { id: 1, perimetre: null, statut: 'todo' },
+      { id: 2, perimetre: undefined, statut: 'todo' },
+      { id: 3, perimetre: 'front-vuejs', statut: 'todo' },
+    ] as never
+
+    expect(store.perimetres).toEqual(['front-vuejs'])
+  })
+
+  it('should return empty array when no tasks', () => {
+    const store = useTasksStore()
+    store.tasks = []
+
+    expect(store.perimetres).toEqual([])
+  })
+})
+
+// ── T352: stores/tabs — setTabDirty, setPtyId, addTerminal title numbering ───
+
+describe('stores/tabs — setTabDirty', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('should set dirty flag to true on a tab', () => {
+    const store = useTabsStore()
+    store.addTerminal('agent-1')
+    const tab = store.tabs.find(t => t.type === 'terminal')!
+
+    store.setTabDirty(tab.id, true)
+
+    expect(tab.dirty).toBe(true)
+  })
+
+  it('should set dirty flag to false on a tab', () => {
+    const store = useTabsStore()
+    store.addTerminal('agent-1')
+    const tab = store.tabs.find(t => t.type === 'terminal')!
+    store.setTabDirty(tab.id, true)
+
+    store.setTabDirty(tab.id, false)
+
+    expect(tab.dirty).toBe(false)
+  })
+
+  it('should be a no-op for non-existent tab id', () => {
+    const store = useTabsStore()
+    expect(() => store.setTabDirty('nonexistent', true)).not.toThrow()
+  })
+})
+
+describe('stores/tabs — setPtyId', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('should set ptyId on an existing tab', () => {
+    const store = useTabsStore()
+    store.addTerminal('agent-1')
+    const tab = store.tabs.find(t => t.type === 'terminal')!
+
+    store.setPtyId(tab.id, 'pty-abc-123')
+
+    expect(tab.ptyId).toBe('pty-abc-123')
+  })
+
+  it('should be a no-op for non-existent tab id', () => {
+    const store = useTabsStore()
+    expect(() => store.setPtyId('nonexistent', 'pty-123')).not.toThrow()
+  })
+})
+
+describe('stores/tabs — addTerminal title numbering', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('should title first agent terminal with agent name only', () => {
+    const store = useTabsStore()
+    store.addTerminal('myAgent')
+
+    const tab = store.tabs.find(t => t.agentName === 'myAgent')!
+    expect(tab.title).toBe('myAgent')
+  })
+
+  it('should title second same-agent terminal with "(2)"', () => {
+    const store = useTabsStore()
+    store.addTerminal('myAgent')
+    store.addTerminal('myAgent')
+
+    const termTabs = store.tabs.filter(t => t.agentName === 'myAgent')
+    expect(termTabs).toHaveLength(2)
+    expect(termTabs[0].title).toBe('myAgent')
+    expect(termTabs[1].title).toBe('myAgent (2)')
+  })
+
+  it('should title third same-agent terminal with "(3)"', () => {
+    const store = useTabsStore()
+    store.addTerminal('myAgent')
+    store.addTerminal('myAgent')
+    store.addTerminal('myAgent')
+
+    const termTabs = store.tabs.filter(t => t.agentName === 'myAgent')
+    expect(termTabs[2].title).toBe('myAgent (3)')
+  })
+
+  it('should title anonymous terminal as "WSL N"', () => {
+    const store = useTabsStore()
+    store.addTerminal() // no agent
+
+    const termTabs = store.tabs.filter(t => t.type === 'terminal')
+    expect(termTabs[0].title).toBe('WSL 1')
+  })
+
+  it('should count all terminals for WSL numbering', () => {
+    const store = useTabsStore()
+    store.addTerminal('someAgent')
+    store.addTerminal() // anonymous
+
+    const anonTab = store.tabs.filter(t => t.type === 'terminal' && !t.agentName)
+    expect(anonTab[0].title).toBe('WSL 2')
+  })
+
+  it('should not activate terminal when activate=false', () => {
+    const store = useTabsStore()
+    const prevActive = store.activeTabId
+    store.addTerminal('agent', undefined, undefined, undefined, undefined, undefined, undefined, false)
+
+    expect(store.activeTabId).toBe(prevActive)
+  })
+})
+
+// ── T352: stores/settings — autoLaunchAgentSessions, autoReview, appInfo ─────
+
+describe('stores/settings — autoLaunchAgentSessions', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('should default to true', () => {
+    const store = useSettingsStore()
+    expect(store.autoLaunchAgentSessions).toBe(true)
+  })
+
+  it('should persist false to localStorage', () => {
+    const store = useSettingsStore()
+    store.setAutoLaunchAgentSessions(false)
+
+    expect(store.autoLaunchAgentSessions).toBe(false)
+    expect(localStorage.getItem('autoLaunchAgentSessions')).toBe('false')
+  })
+
+  it('should persist true to localStorage', () => {
+    const store = useSettingsStore()
+    store.setAutoLaunchAgentSessions(false)
+    store.setAutoLaunchAgentSessions(true)
+
+    expect(store.autoLaunchAgentSessions).toBe(true)
+    expect(localStorage.getItem('autoLaunchAgentSessions')).toBe('true')
+  })
+
+  it('should read false from localStorage on init', () => {
+    localStorage.setItem('autoLaunchAgentSessions', 'false')
+    const store = useSettingsStore()
+
+    expect(store.autoLaunchAgentSessions).toBe(false)
+  })
+})
+
+describe('stores/settings — autoReviewEnabled', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('should default to true', () => {
+    const store = useSettingsStore()
+    expect(store.autoReviewEnabled).toBe(true)
+  })
+
+  it('should persist enabled state', () => {
+    const store = useSettingsStore()
+    store.setAutoReviewEnabled(false)
+
+    expect(store.autoReviewEnabled).toBe(false)
+    expect(localStorage.getItem('autoReviewEnabled')).toBe('false')
+  })
+})
+
+describe('stores/settings — autoReviewThreshold', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('should default to 10', () => {
+    const store = useSettingsStore()
+    expect(store.autoReviewThreshold).toBe(10)
+  })
+
+  it('should clamp minimum to 3', () => {
+    const store = useSettingsStore()
+    store.setAutoReviewThreshold(1)
+
+    expect(store.autoReviewThreshold).toBe(3)
+    expect(localStorage.getItem('autoReviewThreshold')).toBe('3')
+  })
+
+  it('should accept values >= 3', () => {
+    const store = useSettingsStore()
+    store.setAutoReviewThreshold(5)
+
+    expect(store.autoReviewThreshold).toBe(5)
+  })
+
+  it('should read from localStorage on init', () => {
+    localStorage.setItem('autoReviewThreshold', '15')
+    const store = useSettingsStore()
+
+    expect(store.autoReviewThreshold).toBe(15)
+  })
+
+  it('should clamp invalid localStorage value to minimum', () => {
+    localStorage.setItem('autoReviewThreshold', '1')
+    const store = useSettingsStore()
+
+    expect(store.autoReviewThreshold).toBe(3)
+  })
+})
+
+describe('stores/settings — appInfo', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('should have default name "Agent Viewer"', () => {
+    const store = useSettingsStore()
+    expect(store.appInfo.name).toBe('Agent Viewer')
+  })
+
+  it('should have a version string', () => {
+    const store = useSettingsStore()
+    expect(typeof store.appInfo.version).toBe('string')
+    expect(store.appInfo.version.length).toBeGreaterThan(0)
+  })
+})
+
+// ── T352: stores/tasks — watcher tests ───────────────────────────────────────
+
+describe('stores/tasks — watch(agents) auto-clear filter', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    mockElectronAPI.queryDb.mockResolvedValue([])
+    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
+    mockElectronAPI.watchDb.mockResolvedValue(undefined)
+    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
+  })
+
+  it('should clear selectedAgentId when filtered agent disappears from agents list', async () => {
+    const store = useTasksStore()
+    store.agents = [
+      { id: 10, name: 'dev-front', type: 'dev', perimetre: 'front-vuejs' },
+      { id: 20, name: 'dev-back', type: 'dev', perimetre: 'back-electron' },
+    ] as never
+    store.selectedAgentId = 10
+    await nextTick()
+
+    // Agent 10 disappears (e.g. project switch refreshed agents)
+    store.agents = [
+      { id: 20, name: 'dev-back', type: 'dev', perimetre: 'back-electron' },
+    ] as never
+    await nextTick()
+
+    expect(store.selectedAgentId).toBeNull()
+  })
+
+  it('should keep selectedAgentId when filtered agent still exists', async () => {
+    const store = useTasksStore()
+    store.agents = [
+      { id: 10, name: 'dev-front', type: 'dev', perimetre: 'front-vuejs' },
+    ] as never
+    store.selectedAgentId = 10
+    await nextTick()
+
+    // Agents refreshed but agent 10 still present
+    store.agents = [
+      { id: 10, name: 'dev-front', type: 'dev', perimetre: 'front-vuejs' },
+      { id: 20, name: 'dev-back', type: 'dev', perimetre: 'back-electron' },
+    ] as never
+    await nextTick()
+
+    expect(store.selectedAgentId).toBe(10)
+  })
+
+  it('should be a no-op when selectedAgentId is already null', async () => {
+    const store = useTasksStore()
+    store.selectedAgentId = null
+    store.agents = [{ id: 10, name: 'dev-front' }] as never
+    await nextTick()
+
+    store.agents = [] as never
+    await nextTick()
+
+    expect(store.selectedAgentId).toBeNull()
+  })
+})
+
+describe('stores/tasks — watch(dbPath) reset filters', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    mockElectronAPI.queryDb.mockResolvedValue([])
+    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
+    mockElectronAPI.watchDb.mockResolvedValue(undefined)
+    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
+  })
+
+  it('should reset selectedAgentId and selectedPerimetre when dbPath changes', async () => {
+    const store = useTasksStore()
+    store.dbPath = '/project-a/.claude/project.db'
+    store.selectedAgentId = 5
+    store.selectedPerimetre = 'front-vuejs'
+    await nextTick()
+
+    // Switch project
+    store.dbPath = '/project-b/.claude/project.db'
+    await nextTick()
+
+    expect(store.selectedAgentId).toBeNull()
+    expect(store.selectedPerimetre).toBeNull()
+  })
+
+  it('should not reset filters when dbPath stays the same', async () => {
+    const store = useTasksStore()
+    store.dbPath = '/project-a/.claude/project.db'
+    await nextTick()
+
+    // Set filters AFTER the initial watcher fires
+    store.selectedAgentId = 5
+    store.selectedPerimetre = 'front-vuejs'
+
+    // Same path re-assigned (Vue ref won't trigger watcher for identical value)
+    store.dbPath = '/project-a/.claude/project.db'
+    await nextTick()
+
+    expect(store.selectedAgentId).toBe(5)
+    expect(store.selectedPerimetre).toBe('front-vuejs')
   })
 })

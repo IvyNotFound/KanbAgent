@@ -217,10 +217,11 @@ watch(() => props.initialAgentId, (v) => {
     </div>
 
     <!-- ── Token Stats sub-tab ───────────────────────────────────────────── -->
-    <TokenStatsView v-if="activeSubTab === 'tokenStats'" />
+    <!-- v-show instead of v-if: keeps component mounted, avoids 5 IPC calls on every sub-tab switch -->
+    <TokenStatsView v-show="activeSubTab === 'tokenStats'" />
 
     <!-- ── Logs sub-tab ──────────────────────────────────────────────────── -->
-    <template v-else>
+    <template v-if="activeSubTab !== 'tokenStats'">
 
     <!-- ── Barre de filtres ──────────────────────────────────────────────── -->
     <div class="shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-edge-subtle bg-surface-base">
