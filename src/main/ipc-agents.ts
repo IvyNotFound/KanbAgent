@@ -421,6 +421,7 @@ export function registerAgentHandlers(): void {
    * @param dbPath - Registered DB path
    * @param agentId - Agent ID
    * @param updates - Partial agent fields to update
+   * @param updates.maxSessions - Max concurrent sessions: integer >= 1, or -1 for unlimited (T534)
    * @returns {{ success: boolean, error?: string }}
    */
   ipcMain.handle('update-agent', async (_event, dbPath: string, agentId: number, updates: {

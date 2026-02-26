@@ -28,9 +28,11 @@ async function getGitHubToken(dbPath: string): Promise<string> {
 export function registerSettingsHandlers(): void {
   /**
    * Read a config value by key.
-   * @param dbPath - DB path
+   * Path is validated via assertDbPathAllowed before any DB access (T529).
+   * @param dbPath - DB path (must be a registered project.db path)
    * @param key - Config key
    * @returns {{ success: boolean, value: string|null, error?: string }}
+   * @throws If dbPath is not an allowed project database path
    */
   ipcMain.handle('get-config-value', async (_event, dbPath: string, key: string) => {
     try {

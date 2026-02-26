@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.9.0-blue)
+![Version](https://img.shields.io/badge/version-0.10.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches sessions, and includes an embedded WSL terminal.
@@ -10,7 +10,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 ## Key Features
 
 - **Trello/Jira Board**: Columns by status (`todo`, `in_progress`, `done`, `archived`), task cards with drill-down, S/M/L effort badge and priority
-- **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete/duplicate, max sessions limit; review agents highlighted with amber accent in a dedicated sidebar section
+- **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete/duplicate, max sessions limit (including `-1` for unlimited); review agents highlighted with amber accent in a dedicated sidebar section
 - **Keyboard Shortcuts**: Press `Escape` to close any modal (standardised via `useModalEscape` composable)
 - **Multi-agent Assignments**: Multiple agents per task (primary / support / reviewer roles), task card avatars
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
@@ -32,6 +32,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Dark / Light Mode**: Dark theme by default, light mode available
 - **Internationalization**: Interface available in French and English (vue-i18n)
 - **Secure GitHub Token**: OS-level encryption via Electron `safeStorage` (DPAPI Windows / Keychain macOS)
+- **IPC Path Guard**: All read-only IPC handlers protected by `assertDbPathAllowed` — prevents path traversal to unauthorized databases
 - **WSL Memory Monitoring**: Real-time WSL RAM monitoring with alerts and memory release
 
 ## Prerequisites
