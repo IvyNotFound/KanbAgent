@@ -320,7 +320,8 @@ export function registerIpcHandlers(): void {
    * @returns {string|null} Found DB path, or null
    */
   ipcMain.handle('find-project-db', async (_event, projectPath: string) => {
-    assertProjectPathAllowed(projectPath)
+    if (!projectPath) throw new Error('PROJECT_PATH_REQUIRED')
+    registerProjectPath(projectPath)
     const dbPath = await findProjectDb(projectPath)
     registerDbPath(dbPath)
     return dbPath

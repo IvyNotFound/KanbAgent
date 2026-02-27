@@ -395,8 +395,17 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       expect(result).toContain('project.db')
     })
 
-    it('T527: should throw when projectPath is not in allowed list', async () => {
-      await expect(callHandler('find-project-db', '/unregistered/path')).rejects.toThrow('PROJECT_PATH_NOT_ALLOWED')
+    it('T527: should throw when projectPath is empty', async () => {
+      await expect(callHandler('find-project-db', '')).rejects.toThrow('PROJECT_PATH_REQUIRED')
+    })
+
+    it('T615: should register path and work without prior registration', async () => {
+      const { access, readdir } = await import('fs/promises')
+      vi.mocked(access).mockResolvedValue(undefined)
+      vi.mocked(readdir as (path: string) => Promise<string[]>).mockResolvedValue(['project.db'])
+      // Path never registered before — must succeed (idempotent registration)
+      const result = await callHandler('find-project-db', '/cold-start/project')
+      expect(result).toContain('project.db')
     })
   })
 
