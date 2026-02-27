@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.12.0] - 2026-02-27
+
+### Changes
+- docs(repo): update README and JSDoc for v0.12.0 (T622) (f3685aa)
+- fix(renderer): default useResume to false in LaunchSessionModal (T632) (ca496d9)
+- feat(devops): add Stop hook for automatic token capture (T627) (acf6148)
+- fix(scripts): normalize backslash-escaped quotes in dbq.js and dbw.js (T629) (7b412ab)
+- fix(back-electron): T630+T631 kill chain + auto-release WSL RAM on last PTY close (8d6c9cf)
+- fix(settings): extract ToggleSwitch component with ARIA and focus styles (T625) (3dc951d)
+- fix(back-electron): T626 race condition setSessionConvId + dbstart UUID pre-assign (5991132)
+- fix(timestamps): parse SQLite UTC timestamps correctly in all components (T624) (db487fd)
+- fix(stream-view): T621 extend ANSI regex to strip OSC sequences in JSONL (6858c38)
+- test(tab-bar): T619 add closeTab same-group selection tests (7fa89e3)
+- fix(tab-bar): T619 stay in same group when closing active terminal tab (884abf3)
+- feat(scripts): add parameterized query support to dbw.js (T620) (455ef5b)
 ## [0.11.0] - 2026-02-27
 
 ### Changes
