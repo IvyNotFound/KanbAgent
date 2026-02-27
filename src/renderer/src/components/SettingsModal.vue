@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
+import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -220,41 +221,29 @@ function handleKeydown(e: KeyboardEvent) {
 
           <!-- Auto-launch agent sessions (T340) -->
           <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.autoLaunch') }}</p>
                 <p class="text-xs text-content-faint">{{ t('settings.autoLaunchDesc') }}</p>
               </div>
-              <button
-                class="relative w-10 h-5 rounded-full transition-colors duration-200"
-                :class="settingsStore.autoLaunchAgentSessions ? 'bg-violet-600' : 'bg-surface-tertiary'"
-                @click="settingsStore.setAutoLaunchAgentSessions(!settingsStore.autoLaunchAgentSessions)"
-              >
-                <span
-                  class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200"
-                  :class="settingsStore.autoLaunchAgentSessions ? 'translate-x-5' : ''"
-                />
-              </button>
+              <ToggleSwitch
+                :model-value="settingsStore.autoLaunchAgentSessions"
+                @update:model-value="settingsStore.setAutoLaunchAgentSessions($event)"
+              />
             </div>
           </div>
 
           <!-- Auto-review threshold (T341) -->
           <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between gap-4 mb-2">
               <div>
                 <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.autoReview') }}</p>
                 <p class="text-xs text-content-faint">{{ t('settings.autoReviewDesc') }}</p>
               </div>
-              <button
-                class="relative w-10 h-5 rounded-full transition-colors duration-200"
-                :class="settingsStore.autoReviewEnabled ? 'bg-violet-600' : 'bg-surface-tertiary'"
-                @click="settingsStore.setAutoReviewEnabled(!settingsStore.autoReviewEnabled)"
-              >
-                <span
-                  class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200"
-                  :class="settingsStore.autoReviewEnabled ? 'translate-x-5' : ''"
-                />
-              </button>
+              <ToggleSwitch
+                :model-value="settingsStore.autoReviewEnabled"
+                @update:model-value="settingsStore.setAutoReviewEnabled($event)"
+              />
             </div>
             <div v-if="settingsStore.autoReviewEnabled" class="flex items-center gap-2 mt-2">
               <label class="text-xs text-content-muted">{{ t('settings.autoReviewThreshold') }}</label>
