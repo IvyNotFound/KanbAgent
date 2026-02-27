@@ -5,6 +5,7 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { usePolledData } from '@renderer/composables/usePolledData'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { parseUtcDate } from '@renderer/utils/parseDate'
 
 interface AgentTokenRow {
   agent_id: number
@@ -102,6 +103,7 @@ async function fetchStats(): Promise<void> {
                 (COALESCE(s.tokens_in, 0) + COALESCE(s.tokens_out, 0)) as total
          FROM sessions s
          LEFT JOIN agents a ON a.id = s.agent_id
+         WHERE (COALESCE(s.tokens_in, 0) + COALESCE(s.tokens_out, 0)) > 0
          ORDER BY s.started_at DESC
          LIMIT 50`,
       ) as Promise<SessionTokenRow[]>,
@@ -128,7 +130,7 @@ function formatNumber(n: number): string {
 }
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr)
+  const d = parseUtcDate(dateStr)
   const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
   return d.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }

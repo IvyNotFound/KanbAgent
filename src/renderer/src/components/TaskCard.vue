@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Task } from '@renderer/types'
 import AgentBadge from './AgentBadge.vue'
+import { parseUtcDate } from '@renderer/utils/parseDate'
 import ContextMenu from './ContextMenu.vue'
 import type { ContextMenuItem } from './ContextMenu.vue'
 import { useTasksStore } from '@renderer/stores/tasks'
@@ -87,7 +88,7 @@ const contextMenuItems = computed<ContextMenuItem[]>(() => {
 
 function formatDate(iso: string): string {
   const loc = locale.value === 'fr' ? 'fr-FR' : 'en-US'
-  return new Date(iso).toLocaleString(loc, {
+  return parseUtcDate(iso).toLocaleString(loc, {
     day: '2-digit', month: '2-digit', year: '2-digit',
     hour: '2-digit', minute: '2-digit',
   })

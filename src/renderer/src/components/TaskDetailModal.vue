@@ -6,6 +6,7 @@ import DOMPurify from 'dompurify'
 import { useTasksStore } from '@renderer/stores/tasks'
 import AgentBadge from './AgentBadge.vue'
 import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
+import { parseUtcDate } from '@renderer/utils/parseDate'
 import type { TaskAssignee, TaskLink } from '@renderer/types'
 
 // Configure marked for synchronous rendering
@@ -43,7 +44,7 @@ const EFFORT_BADGE: Record<number, string> = {
 
 function formatDateFull(iso: string): string {
   const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
-  return new Date(iso).toLocaleString(dateLocale, {
+  return parseUtcDate(iso).toLocaleString(dateLocale, {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
@@ -73,7 +74,7 @@ const renderedComments = computed(() =>
 )
 
 function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
+  const diff = Date.now() - parseUtcDate(iso).getTime()
   const m = Math.floor(diff / 60000)
   if (m < 1) return t('taskDetail.justNow')
   if (m < 60) return `${m}min`

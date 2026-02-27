@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { parseUtcDate } from '@renderer/utils/parseDate'
 import { useToast } from '@renderer/composables/useToast'
 import LaunchSessionModal from './LaunchSessionModal.vue'
 import SettingsModal from './SettingsModal.vue'
@@ -356,7 +357,7 @@ async function addPerimetre() {
 }
 
 function isLockOld(createdAt: string): boolean {
-  return Date.now() - new Date(createdAt).getTime() > 30 * 60 * 1000
+  return Date.now() - parseUtcDate(createdAt).getTime() > 30 * 60 * 1000
 }
 
 </script>

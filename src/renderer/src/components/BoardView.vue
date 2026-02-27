@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { parseUtcDate } from '@renderer/utils/parseDate'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useToast } from '@renderer/composables/useToast'
 import { useArchivedPagination } from '@renderer/composables/useArchivedPagination'
@@ -56,7 +57,7 @@ const activeAgentName = computed(() =>
 
 function formatDate(iso: string): string {
   const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
-  return new Date(iso).toLocaleDateString(dateLocale, { day: '2-digit', month: 'short', year: 'numeric' })
+  return parseUtcDate(iso).toLocaleDateString(dateLocale, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 async function onTaskDropped(taskId: number, targetStatut: string): Promise<void> {

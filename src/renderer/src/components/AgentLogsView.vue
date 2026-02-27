@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
+import { parseUtcDate } from '@renderer/utils/parseDate'
 import { usePolledData } from '@renderer/composables/usePolledData'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import type { AgentLog } from '@renderer/types'
@@ -122,7 +123,7 @@ const uniqueAgents = computed(() =>
 
 // ── Timestamps ────────────────────────────────────────────────────────────
 function formatTime(dateStr: string): string {
-  const d = new Date(dateStr)
+  const d = parseUtcDate(dateStr)
   const now = new Date()
   const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
   if (d.toDateString() === now.toDateString()) {
@@ -133,7 +134,7 @@ function formatTime(dateStr: string): string {
 
 function absoluteTime(dateStr: string): string {
   const dateLocale = locale.value === 'fr' ? 'fr-FR' : 'en-US'
-  return new Date(dateStr).toLocaleString(dateLocale, {
+  return parseUtcDate(dateStr).toLocaleString(dateLocale, {
     day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
