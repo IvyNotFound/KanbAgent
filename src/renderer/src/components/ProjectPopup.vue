@@ -1,3 +1,12 @@
+/**
+ * Modal popup for active project management.
+ *
+ * Displays the current project name, database path, and app version.
+ * Provides actions to switch to another project or close the current one.
+ * Emits `close` when dismissed (backdrop click, Escape key, or action button).
+ *
+ * @emits close - when the popup should be hidden
+ */
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTasksStore } from '@renderer/stores/tasks'
@@ -9,16 +18,27 @@ const tabsStore = useTabsStore()
 
 const appVersion = import.meta.env.VITE_APP_VERSION as string ?? '0.0.0'
 
+/**
+ * Derives a short display name from the full project path.
+ * Returns the last path segment, or '—' when no project is open.
+ */
 const projectName = computed(() => {
   if (!store.projectPath) return '—'
   return store.projectPath.split(/[\\/]/).filter(Boolean).pop() ?? store.projectPath
 })
 
+/**
+ * Opens the native folder-picker to select a new project, then closes the popup.
+ */
 async function handleChangeProject() {
   await store.selectProject()
   emit('close')
 }
 
+/**
+ * Closes the current project after optional confirmation when WSL terminals are open.
+ * All open terminal tabs are killed before the project is unloaded.
+ */
 async function handleCloseProject() {
   const openTerminals = tabsStore.tabs.filter(t => t.type === 'terminal')
   if (openTerminals.length > 0) {

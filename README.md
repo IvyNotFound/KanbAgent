@@ -14,6 +14,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Keyboard Shortcuts**: Press `Escape` to close any modal (standardised via `useModalEscape` composable)
 - **Multi-agent Assignments**: Multiple agents per task (primary / support / reviewer roles), task card avatars
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
+- **Project Popup**: Click the project button in the sidebar to open a modal showing active project name, database path, version, and quick actions (switch project, close project)
 - **Kanban Drag & Drop**: Drag task cards between columns to update status directly in the database
 - **Integrated WSL Terminal**: Multiple sessions, tabs grouped by agent with collapsible parent tab, node-pty + xterm.js, crash recovery with `--resume`
 - **Auto-launch Terminals**: Automatic agent session launch on task creation with assignment
