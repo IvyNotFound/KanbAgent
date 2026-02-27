@@ -14,6 +14,7 @@ import { app, BrowserWindow, session, Menu, MenuItem } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { registerTerminalHandlers } from './terminal'
+import { registerAgentStreamHandlers } from './agent-stream'
 
 // ── GPU flags for improved rendering performance ─────────────────────────────────
 // These MUST be set BEFORE app.whenReady() to take effect
@@ -147,6 +148,7 @@ app.whenReady().then(() => {
   setupCSP()
   registerIpcHandlers()
   registerTerminalHandlers()
+  registerAgentStreamHandlers()
   createWindow()
 })
 app.on('window-all-closed', () => {
