@@ -178,12 +178,15 @@ export const useTabsStore = defineStore('tabs', () => {
     const idx = tabs.value.findIndex(t => t.id === id)
     tabs.value.splice(idx, 1)
     if (activeTabId.value === id) {
-      // Priority 1: another tab in the same agent group to avoid inter-group switch
-      const sameGroupTab = tabs.value.find(t => t.agentName === closedAgentName && t.type === 'terminal')
-      if (sameGroupTab) {
-        activeTabId.value = sameGroupTab.id
+      if (tab.type === 'terminal') {
+        // Priority 1: another tab in the same agent group to avoid inter-group switch
+        const sameGroupTab = tabs.value.find(t => t.agentName === closedAgentName && t.type === 'terminal')
+        // Priority 2: any other terminal tab
+        const otherTerminal = sameGroupTab ?? tabs.value.find(t => t.type === 'terminal')
+        // Priority 3: backlog
+        activeTabId.value = otherTerminal?.id ?? 'backlog'
       } else {
-        // Priority 2: linear fallback
+        // Non-terminal tabs: linear fallback
         activeTabId.value = tabs.value[Math.max(0, idx - 1)]?.id ?? 'backlog'
       }
     }
