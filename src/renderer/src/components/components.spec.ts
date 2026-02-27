@@ -3787,7 +3787,7 @@ describe('TaskDetailModal — multi-agents', () => {
 describe('StreamView', () => {
   // Helper to mount StreamView with a fake tab and inject stream events via the IPC callback.
   // T597: StreamView now creates a PTY async (terminalCreate) then subscribes — mountStream is async.
-  async function mountStream(events: StreamEvent[] = []) {
+  async function mountStream(events: StreamEvent[] = [], options: { autoSend?: string | null } = {}) {
     vi.mocked(mockElectronAPI.terminalCreate).mockResolvedValue('stream-pty-1')
     vi.mocked(mockElectronAPI.onTerminalStreamMessage).mockReset()
     vi.mocked(mockElectronAPI.onTerminalStreamMessage).mockReturnValue(() => {})
@@ -3804,7 +3804,7 @@ describe('StreamView', () => {
             ptyId: null,
             agentName: 'test-agent',
             wslDistro: null,
-            autoSend: null,
+            autoSend: options.autoSend ?? null,
             systemPrompt: null,
             thinkingMode: null,
             viewMode: 'stream' as const,
@@ -3984,5 +3984,43 @@ describe('StreamView', () => {
     expect(block.exists()).toBe(true)
     expect(block.text()).toContain('coucou')
     expect(block.classes()).toContain('justify-end')
+  })
+
+  it('displays autoSend as user bubble when system:init is received (T605)', async () => {
+    const initEvent: StreamEvent = {
+      type: 'system',
+      subtype: 'init',
+      session_id: 'abc123-session-id',
+    }
+    const { wrapper } = await mountStream([initEvent], { autoSend: 'Mon prompt initial' })
+    await nextTick()
+    const userBlocks = wrapper.findAll('[data-testid="block-user"]')
+    expect(userBlocks.length).toBe(1)
+    expect(userBlocks[0].text()).toContain('Mon prompt initial')
+    expect(userBlocks[0].classes()).toContain('justify-end')
+  })
+
+  it('does not display user bubble on system:init when autoSend is null (T605)', async () => {
+    const initEvent: StreamEvent = {
+      type: 'system',
+      subtype: 'init',
+      session_id: 'abc123-session-id',
+    }
+    const { wrapper } = await mountStream([initEvent])
+    await nextTick()
+    expect(wrapper.find('[data-testid="block-user"]').exists()).toBe(false)
+  })
+
+  it('displays sent message as user bubble immediately (T605)', async () => {
+    const { wrapper } = await mountStream()
+    const textarea = wrapper.find('textarea')
+    await textarea.setValue('Bonjour Claude')
+    const btn = wrapper.find('[data-testid="send-button"]')
+    await btn.trigger('click')
+    await nextTick()
+    const userBlock = wrapper.find('[data-testid="block-user"]')
+    expect(userBlock.exists()).toBe(true)
+    expect(userBlock.text()).toContain('Bonjour Claude')
+    expect(userBlock.classes()).toContain('justify-end')
   })
 })

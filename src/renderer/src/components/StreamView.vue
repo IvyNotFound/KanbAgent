@@ -84,9 +84,15 @@ let unsubStreamMessage: (() => void) | null = null
 async function sendMessage(): Promise<void> {
   const text = inputText.value.trim()
   if (!text || !ptyId.value) return
+  const msgText = text
   inputText.value = ''
-  // POC: write to PTY — Claude processes the input in stream-json mode
-  await window.electronAPI.terminalWrite(ptyId.value, text + '\n')
+  // Optimistic UI: display user bubble immediately before PTY write
+  events.value.push({
+    type: 'user',
+    message: { role: 'user', content: [{ type: 'text', text: msgText }] }
+  })
+  await window.electronAPI.terminalWrite(ptyId.value, msgText + '\n')
+  scrollToBottom()
 }
 
 function handleKeydown(e: KeyboardEvent): void {
@@ -145,8 +151,15 @@ onMounted(async () => {
         id,
         (raw: Record<string, unknown>) => {
           const event = raw as StreamEvent
-          if (event.type === 'system' && event.session_id) {
-            sessionId.value = event.session_id
+          if (event.type === 'system' && event.subtype === 'init') {
+            sessionId.value = event.session_id ?? null
+            // Synthetic user bubble for the initial autoSend prompt
+            if (tab?.autoSend) {
+              events.value.push({
+                type: 'user',
+                message: { role: 'user', content: [{ type: 'text', text: tab.autoSend }] }
+              })
+            }
           }
           events.value.push(event)
           scrollToBottom()
