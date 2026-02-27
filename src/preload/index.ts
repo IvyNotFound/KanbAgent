@@ -167,9 +167,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onTerminalStreamMessage: (id: string, cb: (event: Record<string, unknown>) => void): (() => void) => {
     const channel = `terminal:data:${id}`
     let buffer = ''
-    // Strip ANSI escape sequences (SGR, cursor movements, erase, etc.) emitted by the PTY.
-    // Even with NO_COLOR=1 and TERM=dumb in the PTY env, the terminal layer can inject codes.
-    const ansiRe = /\x1b\[[0-9;?]*[a-zA-Z]/g
+    // Strip ANSI escape sequences emitted by the PTY even with TERM=dumb + NO_COLOR=1 (T621).
+    // Extended coverage beyond T617 (CSI only) to include:
+    //  - OSC sequences  \x1b]...\x07 or \x1b]...\x1b\\ (e.g. terminal title, hyperlinks)
+    //    MUST come before Fe single-char: \x1b] is also in Fe range (\-_), causing OSC to be
+    //    swallowed one char at a time without stripping the payload.
+    //  - Fe sequences   \x1b[<-Z\\-_] (single-char after ESC: SS2/SS3/RIS/DECKPAM/etc.)
+    //    Range starts at '<' (0x3C) to also cover DEC private sequences (=, >, ?)
+    //  - C1 control codes \x80-\x9f range (8-bit equivalents)
+    const ansiRe = /\x1b\[[0-9;?]*[a-zA-Z]|\x9b[0-9;?]*[a-zA-Z]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[<-Z\\-_]|[\x80-\x9a\x9c-\x9f]/g
     const handler = (_: unknown, data: string) => {
       buffer += data
       const lines = buffer.split('\n')
