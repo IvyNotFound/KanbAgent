@@ -534,8 +534,16 @@ export function registerTerminalHandlers(): void {
       // Solution: write the full command to a temp .sh file on the Windows FS,
       // then pass only `bash -l /mnt/c/.../script.sh` through wsl.exe.
       //
-      // User prompt is passed as a CLI positional argument to `claude` so it
-      // becomes the first message — no need for PTY readiness detection.
+      // T604 stream-json fix: in stream-json mode, Claude is launched WITHOUT the
+      // user prompt as a positional arg (interactive mode instead of print mode).
+      // Passing a positional arg puts Claude in single-turn print mode → exits after
+      // the first `result` event, making the PTY dead for subsequent messages.
+      // Instead, we write the first user message via pty.write() after detecting the
+      // `system:init` JSON event which signals that Claude is ready for input.
+      //
+      // For regular (non-stream-json) sessions, user prompt stays as a positional arg
+      // so it becomes the first message — no PTY readiness detection needed.
+      //
       // Both prompts are base64-decoded at runtime to prevent shell injection.
       // T589: Use --session-id to control the UUID for this new session.
       // Claude Code v2.x never displays the session ID in the startup banner for
@@ -546,7 +554,12 @@ export function registerTerminalHandlers(): void {
 
       const scriptName = `agent-prompt-${id}.sh`
       tempScriptWinPath = join(tmpdir(), scriptName)
-      const scriptContent = `#!/bin/bash\nexec ${cmd}${skipPermissionsFlag} --session-id ${newSessionId} --append-system-prompt "$(echo '${b64System}' | base64 -d)"${thinkingFlag}${outputFormatFlag} "$(echo '${b64User}' | base64 -d)"\n`
+      const isStreamJson = outputFormat === 'stream-json'
+      // stream-json: interactive mode (no positional arg) — first message sent via pty.write after system:init
+      // regular: print mode with positional arg — Claude auto-submits and exits
+      const scriptContent = isStreamJson
+        ? `#!/bin/bash\nexec ${cmd}${skipPermissionsFlag} --session-id ${newSessionId} --append-system-prompt "$(echo '${b64System}' | base64 -d)"${thinkingFlag}${outputFormatFlag}\n`
+        : `#!/bin/bash\nexec ${cmd}${skipPermissionsFlag} --session-id ${newSessionId} --append-system-prompt "$(echo '${b64System}' | base64 -d)"${thinkingFlag}${outputFormatFlag} "$(echo '${b64User}' | base64 -d)"\n`
       await writeFile(tempScriptWinPath, scriptContent, { encoding: 'utf8' })
       const scriptWslPath = toWslPath(tempScriptWinPath)
 
@@ -646,12 +659,46 @@ export function registerTerminalHandlers(): void {
     let convIdBytesRead = 0
     const CONV_ID_SCAN_LIMIT = 8192
 
+    // ── T604: stream-json interactive mode — write first user message after system:init ──
+    // When outputFormat === 'stream-json', Claude is launched without a positional user prompt
+    // (interactive mode) so it stays alive for multi-turn. We write the first message
+    // via pty.write() once Claude signals readiness with a {"type":"system","subtype":"init"} event.
+    let pendingStreamUserPrompt: string | null = (outputFormat === 'stream-json' && userPrompt) ? userPrompt : null
+    let streamInitBuffer = ''
+
     const onDataDisposable = pty.onData(data => {
       if (event.sender.isDestroyed()) {
         // Renderer is gone but PTY is still running → kill it gracefully.
         gracefulKillPty(id)
         webContentsPtys.get(wcId)?.delete(id)
         return
+      }
+
+      // ── T604: write first user message after stream-json system:init ────────
+      // Buffer JSONL output until a {"type":"system","subtype":"init"} line is found,
+      // then write the pending user prompt so Claude processes it in interactive mode.
+      if (pendingStreamUserPrompt !== null) {
+        streamInitBuffer += data
+        const lines = streamInitBuffer.split('\n')
+        streamInitBuffer = lines.pop() ?? ''
+        let initFound = false
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          try {
+            const parsed = JSON.parse(trimmed) as Record<string, unknown>
+            if (parsed.type === 'system' && parsed.subtype === 'init') {
+              initFound = true
+              break
+            }
+          } catch { /* not JSON — skip ANSI noise before Claude starts */ }
+        }
+        if (initFound) {
+          const prompt = pendingStreamUserPrompt
+          pendingStreamUserPrompt = null
+          streamInitBuffer = ''
+          pty.write(prompt + '\n')
+        }
       }
 
       // Scan for conversation ID in startup output (only if not yet detected)
