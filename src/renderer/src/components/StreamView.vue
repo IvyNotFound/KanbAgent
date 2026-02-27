@@ -217,6 +217,19 @@ function toolResultText(content: StreamContentBlock['content']): string {
           >· {{ event.session_id.slice(0, 8) }}…</span>
         </div>
 
+        <!-- user message — bulle utilisateur alignée à droite -->
+        <div
+          v-if="event.type === 'user' && event.message"
+          class="flex justify-end"
+          data-testid="block-user"
+        >
+          <div class="bg-violet-900 border border-violet-700 rounded-lg px-4 py-3 max-w-[80%] whitespace-pre-wrap text-sm text-violet-100 leading-relaxed">
+            <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
+              <span v-if="block.type === 'text'">{{ block.text }}</span>
+            </template>
+          </div>
+        </div>
+
         <!-- assistant message blocks -->
         <template v-if="event.type === 'assistant' && event.message">
           <template

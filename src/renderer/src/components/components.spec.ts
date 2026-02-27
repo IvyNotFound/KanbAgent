@@ -3969,4 +3969,20 @@ describe('StreamView', () => {
     expect(systemBlock.exists()).toBe(true)
     expect(systemBlock.text()).toContain('Session démarrée')
   })
+
+  it('renders user message as right-aligned bubble (T603)', async () => {
+    const event: StreamEvent = {
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [{ type: 'text', text: 'coucou' }],
+      },
+    }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-user"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('coucou')
+    expect(block.classes()).toContain('justify-end')
+  })
 })
