@@ -160,10 +160,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.off(channel, handler)
   },
 
-  // T597 POC: Subscribe to JSONL stream events from a stream-json session.
-  // Wraps terminal:data:<id> and parses each newline-delimited JSON object.
-  // Lines that are not valid JSON (e.g. ANSI banner noise before Claude starts)
-  // are silently skipped. Returns an unsubscribe function.
+  /**
+   * Subscribe to JSONL stream events emitted by a `--output-format stream-json` session.
+   *
+   * Wraps the raw `terminal:data:<id>` IPC channel and handles:
+   * - Line-buffering of partial PTY chunks
+   * - ANSI escape stripping (CSI, OSC, Fe, C1 — T617 + extended T621 coverage)
+   * - Silent skip of non-JSON lines (shell banner, Claude startup noise)
+   *
+   * @param id - PTY / terminal tab identifier
+   * @param cb - Called for each successfully parsed JSON object
+   * @returns Unsubscribe function — call it to detach the IPC listener
+   */
   onTerminalStreamMessage: (id: string, cb: (event: Record<string, unknown>) => void): (() => void) => {
     const channel = `terminal:data:${id}`
     let buffer = ''

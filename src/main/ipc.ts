@@ -43,6 +43,16 @@ function notifyRenderer(): void {
   }
 }
 
+/**
+ * Locate a SQLite database inside a project directory.
+ *
+ * Search order (cold-start safe — T615):
+ *  1. `<projectPath>/.claude/*.db`  — standard agent-viewer layout
+ *  2. `<projectPath>/*.db`          — fallback for flat layouts
+ *
+ * @param projectPath - Absolute path to the project root
+ * @returns Absolute path to the first `.db` file found, or `null`
+ */
 async function findProjectDb(projectPath: string): Promise<string | null> {
   const claudeDir = join(projectPath, '.claude')
   try {

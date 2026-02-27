@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.10.0-blue)
+![Version](https://img.shields.io/badge/version-0.12.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches sessions, and includes an embedded WSL terminal.
@@ -127,10 +127,34 @@ agent-viewer/
 │           ├── utils/          # Utilities (agentColor…)
 │           └── types/
 │               └── index.ts    # Shared TypeScript types
-├── scripts/                    # CLI scripts (dbq.js, dbw.js, dbstart.js)
+├── scripts/                    # CLI scripts (dbq.js, dbw.js, dbstart.js, dblock.js)
 ├── electron.vite.config.ts
 ├── electron-builder.yml
 └── package.json
+```
+
+### Scripts CLI
+
+Les scripts dans `scripts/` permettent aux agents d'interagir avec la base de données sans ouvrir l'application :
+
+| Script | Description |
+|--------|-------------|
+| `node scripts/dbq.js "<SQL>"` | Lecture en mémoire (sql.js, bypass lock SQLite) |
+| `node scripts/dbw.js "<SQL>"` | Écriture atomique avec advisory lock (`.wlock`) |
+| `node scripts/dbstart.js <agent>` | Démarre une session agent, affiche tâches et locks |
+
+**Mode JSON (dbw.js)** — pour les valeurs contenant des apostrophes ou caractères spéciaux, utilisez le mode JSON via stdin :
+
+```sh
+echo '{"sql":"INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (?,?,?)","params":[42,3,"O'\''Brien"]}' | node scripts/dbw.js
+```
+
+**Mode heredoc** — pour le SQL multiligne ou contenant des backticks / `$()` :
+
+```sh
+node scripts/dbw.js <<'SQL'
+UPDATE tasks SET statut='done', updated_at=CURRENT_TIMESTAMP WHERE id=42;
+SQL
 ```
 
 ### Data Flow

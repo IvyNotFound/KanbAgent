@@ -171,6 +171,19 @@ export const useTabsStore = defineStore('tabs', () => {
     if (tab) tab.ptyId = ptyId
   }
 
+  /**
+   * Remove a tab by ID and activate an appropriate replacement.
+   *
+   * Activation priority for closed terminal tabs (T619 — intra-group selection):
+   *  1. Another terminal in the **same agent group** (avoids unwanted inter-group switch)
+   *  2. Any other terminal tab
+   *  3. `'backlog'` (always present, permanent)
+   *
+   * Non-terminal tabs fall back to linear index-based selection.
+   * Cleans up the activity timer for the closed tab.
+   *
+   * @param id - Unique identifier of the tab to close
+   */
   function closeTab(id: string): void {
     const tab = tabs.value.find(t => t.id === id)
     if (!tab || tab.permanent) return
