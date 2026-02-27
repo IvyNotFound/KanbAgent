@@ -174,10 +174,18 @@ export const useTabsStore = defineStore('tabs', () => {
   function closeTab(id: string): void {
     const tab = tabs.value.find(t => t.id === id)
     if (!tab || tab.permanent) return
+    const closedAgentName = tab.agentName
     const idx = tabs.value.findIndex(t => t.id === id)
     tabs.value.splice(idx, 1)
     if (activeTabId.value === id) {
-      activeTabId.value = tabs.value[Math.max(0, idx - 1)]?.id ?? 'backlog'
+      // Priority 1: another tab in the same agent group to avoid inter-group switch
+      const sameGroupTab = tabs.value.find(t => t.agentName === closedAgentName && t.type === 'terminal')
+      if (sameGroupTab) {
+        activeTabId.value = sameGroupTab.id
+      } else {
+        // Priority 2: linear fallback
+        activeTabId.value = tabs.value[Math.max(0, idx - 1)]?.id ?? 'backlog'
+      }
     }
     // Clean up activity timer
     if (activityTimers[id]) {

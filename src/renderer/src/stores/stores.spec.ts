@@ -826,6 +826,40 @@ describe('stores/tabs — missing actions', () => {
     })
   })
 
+  describe('closeTabGroup', () => {
+    it('should close all tabs of the specified agent group', () => {
+      const store = useTabsStore()
+      store.addTerminal('agent-a')
+      store.addTerminal('agent-a')
+      store.addTerminal('agent-b')
+
+      store.closeTabGroup('agent-a')
+
+      const remaining = store.tabs.filter(t => t.type === 'terminal')
+      expect(remaining).toHaveLength(1)
+      expect(remaining[0].agentName).toBe('agent-b')
+    })
+
+    it('should not close permanent tabs when agentName is null', () => {
+      const store = useTabsStore()
+      store.addTerminal('agent-x')
+      store.closeTabGroup(null)
+      // Only the terminal without agentName would be affected; permanent tabs must survive
+      expect(store.tabs.find(t => t.id === 'backlog')).toBeDefined()
+      expect(store.tabs.find(t => t.id === 'logs')).toBeDefined()
+    })
+
+    it('should reset activeTabId to backlog when active tab is in closed group', () => {
+      const store = useTabsStore()
+      store.addTerminal('agent-z')
+      // The terminal is now active
+
+      store.closeTabGroup('agent-z')
+
+      expect(store.activeTabId).toBe('backlog')
+    })
+  })
+
   describe('renameTab', () => {
     it('should rename an existing tab', () => {
       const store = useTabsStore()

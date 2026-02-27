@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.11.0] - 2026-02-27
+
+### Changes
+- feat(tab-bar): right-click on group header to close all tabs (76fd31c)
+- fix(stream-view): suppress ANSI codes in stream-json PTY sessions (f7c0ab4)
+- fix(back-electron): T615 allow find-project-db to register path on cold start (4d4e706)
+- fix(scripts): normalize typographic quotes in dbq/dbw (17540df)
+- fix(stream-view): T606 switch stream-json to respawn-per-message mode (cbe6027)
+- fix(agents): T608 T609 document sessions.statut CHECK and dbstart.js startup (61feb95)
+- fix(stream-view): T607 display autoSend bubble without system:init dependency (b057614)
+- fix(dbw): normalize NOW() to CURRENT_TIMESTAMP before SQL execution (6210270)
+- feat(stream-view): T605 display autoSend and textarea msgs as user bubbles (7d6db10)
+- docs(front): T596 add JSDoc to ProjectPopup.vue and update README feature list (338373d)
+- fix(terminal): T604 fix stream-json multi-turn by launching Claude in interactive mode (5389033)
+- feat(stream-view): T603 render user messages as right-aligned bubbles (98bae53)
+- fix(agents): T600 document valid task_links.type values in agent prompts (0777b83)
+- feat(stream-view): T597 câbler StreamView dans LaunchSessionModal et App.vue (6a61ffa)
+- fix(front): T596 align ProjectPopup.vue with design tokens (9d1cb1b)
+- fix(terminal): T593 restore CONV_ID_REGEX colon + update relaunch test (cda408e)
+- fix(terminal): T592 inject --session-id for new sessions to fix claude_conv_id=NULL (370ce66)
+- fix(dbstart): T590 intercept --help/-h flags before DB INSERT (f034726)
+- feat(stream-view): T578 POC StreamView — structured stream-json display without xterm.js (b16545a)
+- fix(terminal): T589 strip ANSI codes before CONV_ID_REGEX match (78c97fc)
+- docs(arch): T577 amend ADR-009 — CLI stream-json approach and spike results (18cc160)
+- fix(launch): T586 respect agent.max_sessions in canLaunchSession and launchAgentTerminal (d0ad0cb)
+- chore(spike): T576 validate claude CLI stream-json for xterm.js replacement (ba8c0a5)
+- test(ipc): T580/T581/T582 — agent-groups, session tokens, apply-master-md behavioral tests (7dee545)
+- test(ipc): T580/T581/T582 add behavioural tests for agent-groups, session tokens, ipc-settings handlers (8fb68e3)
+- fix(sidebar): T579 correct drag & drop dragleave on children (c9a1aa1)
 ## [0.10.0] - 2026-02-26
 
 ### Changes
