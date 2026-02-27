@@ -17,6 +17,7 @@
 const initSqlJs = require('sql.js')
 const fs = require('fs')
 const path = require('path')
+const { randomUUID } = require('node:crypto')
 const { acquireLock, releaseLock, cleanupOrphanTmp } = require('./dblock')
 
 const agent = process.argv[2]
@@ -133,8 +134,9 @@ initSqlJs().then((SQL) => {
     process.exit(2)
   }
 
-  // 4. Create session
-  db.run(`INSERT INTO sessions (agent_id) VALUES (${agentId})`)
+  // 4. Create session with pre-assigned conv_id (T626: avoids race condition with setSessionConvId)
+  const sessionUUID = randomUUID()
+  db.run(`INSERT INTO sessions (agent_id, claude_conv_id) VALUES (${agentId}, '${sessionUUID}')`)
   const sessionRow = db.exec(`SELECT last_insert_rowid()`)
   const sessionId = sessionRow[0].values[0][0]
 
@@ -165,6 +167,7 @@ initSqlJs().then((SQL) => {
   console.log(`=== IDENTIFIANTS ===`)
   console.log(`agent_id: ${agentId}`)
   console.log(`session_id: ${sessionId}`)
+  console.log(`SESSION_ID=${sessionUUID}`)
 
   // 4. Last terminated session
   const session = db.exec(`

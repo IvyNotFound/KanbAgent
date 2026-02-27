@@ -181,14 +181,31 @@ onMounted(async () => {
     const agentId = tasksStore.agents.find(a => a.name === tab.agentName)?.id
     if (agentId) {
       unsubConvId = window.electronAPI.onTerminalConvId(ptyId, (convId) => {
-        // Store in DB for future --resume
-        if (tasksStore.dbPath) {
-          window.electronAPI.setSessionConvId(tasksStore.dbPath, Number(agentId), convId)
-            .catch(err => console.warn('[TerminalView] setSessionConvId failed:', err))
+        if (!tasksStore.dbPath) return
+        // T626: retry up to 3×2s — dbstart.js may not have created the session yet
+        let attempts = 0
+        const dbPath = tasksStore.dbPath
+        const trySet = async (): Promise<void> => {
+          try {
+            const result = await window.electronAPI.setSessionConvId(dbPath, Number(agentId), convId) as { success: boolean; updated?: boolean; error?: string }
+            if (result.success && result.updated) {
+              unsubConvId?.()
+              unsubConvId = null
+              return
+            }
+          } catch (err) {
+            console.warn('[TerminalView] setSessionConvId failed:', err)
+          }
+          attempts++
+          if (attempts < 3) {
+            setTimeout(() => { trySet() }, 2000)
+          } else {
+            unsubConvId?.()
+            unsubConvId = null
+            console.warn('[TerminalView] setSessionConvId: session not found after 3 attempts, giving up')
+          }
         }
-        // Unsubscribe after first detection
-        unsubConvId?.()
-        unsubConvId = null
+        trySet()
       })
     }
   }

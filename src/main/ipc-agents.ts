@@ -261,17 +261,20 @@ export function registerAgentHandlers(): void {
     }
     try {
       assertDbPathAllowed(dbPath)
-      await writeDb(dbPath, (db) => {
+      const rowsModified = await writeDb<number>(dbPath, (db) => {
         db.run(
           `UPDATE sessions SET claude_conv_id = ?
            WHERE id = (
-             SELECT id FROM sessions WHERE agent_id = ? ORDER BY id DESC LIMIT 1
+             SELECT id FROM sessions
+             WHERE agent_id = ? AND statut = 'started' AND claude_conv_id IS NULL
+             ORDER BY id DESC LIMIT 1
            )`,
           [convId, agentId]
         )
+        return db.getRowsModified() as number
       })
-      console.log(`[IPC session:setConvId] agent=${agentId} conv_id=${convId}`)
-      return { success: true }
+      console.log(`[IPC session:setConvId] agent=${agentId} conv_id=${convId} updated=${rowsModified}`)
+      return { success: true, updated: rowsModified > 0 }
     } catch (err) {
       console.error('[IPC session:setConvId]', err)
       return { success: false, error: String(err) }
