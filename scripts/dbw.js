@@ -37,6 +37,8 @@ function run(sql, params = []) {
   // Note: regex may replace curly quotes inside string literals — acceptable trade-off.
   sql = sql.replace(/[\u201C\u201D]/g, '"') // curly double quotes -> straight
   sql = sql.replace(/[\u2018\u2019]/g, "'") // curly single quotes -> straight
+  sql = sql.replace(/\\"/g, '"') // backslash-escaped double quote -> straight
+  sql = sql.replace(/\\'/g, "'") // backslash-escaped single quote -> straight
 
   initSqlJs().then((SQL) => {
     cleanupOrphanTmp(dbPath)
