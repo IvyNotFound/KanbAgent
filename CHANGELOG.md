@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.13.0] - 2026-02-27
+
+### Changes
+- chore(arch): bump CLAUDE.md version 0.10.0 → 0.13.0 (bc4715e)
+- fix(front-vuejs): migrate StreamView to agent:* IPC channels — ADR-009 (T648) (2b60b64)
+- fix(back-electron): implement agent-stream IPC handlers via child_process.spawn (T647) (075f85d)
+- docs(repo): update README and JSDoc for v0.13.0 (e511381)
+- fix(front-vuejs): auto-close agents with no assigned tasks (T646) (9ae00c4)
+- fix(back-electron): fix stream-json pipeline — cols=10000 + resume guard (T645) (43cd4ee)
+- test(back-electron): add stream-json PTY tests for T645 (cols, output-format, env) (20a4644)
+- perf(front-vuejs): remove debug console.log from StreamView hot paths (T640) (b7d6e85)
+- perf(front-vuejs): optimize computed in Sidebar and TokenStatsView (T642/T643/T644) (7421400)
+- perf(back-electron): batch writeDb in session:syncAllTokens (T641) (9bf0fad)
+- perf(back-electron): remove console.log in terminal+preload hot paths (T639) (afc57b2)
+- perf(electron): remove debug console.log in terminal onData + preload hot paths (T639) (49333fc)
+- feat(front-vuejs): add cost, cache hit rate and sparkline widgets (T635) (4065a31)
+- feat(front-vuejs): add period selector to TokenStatsView (T634) (ff3c78b)
+- fix(stream-view): T633 fix terminal:data silence — stale event.sender + diagnostic logs (54817ae)
+- fix(devops): build full installer and attach .exe to GitHub Release (T636) (6a34706)
 ## [0.12.0] - 2026-02-27
 
 ### Changes
