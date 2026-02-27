@@ -73,11 +73,24 @@
     "today": "Aujourd'hui (24h)",
     "lastHour": "Dernière heure",
     "cache": "Cache",
+    "total": "Total tokens",
+    "sessions": "Sessions",
+    "avgPerSession": "Moy./session :",
+    "ratio": "Ratio sortie",
+    "outputRatio": "% output",
     "perAgent": "Par agent",
     "perSession": "Par session (50 dernières)",
     "agent": "Agent",
     "date": "Date",
-    "noData": "Aucune donnée"
+    "noData": "Aucune donnée",
+    "period": {
+      "label": "Période",
+      "1h": "1h",
+      "24h": "24h",
+      "7d": "7j",
+      "30d": "30j",
+      "all": "∞"
+    }
   },
   "settings": {
     "title": "Paramètres",

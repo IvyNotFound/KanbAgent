@@ -2854,11 +2854,9 @@ describe('TokenStatsView (T353)', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    // Mock 5 queryDb calls: global, today, hour, per-agent, per-session
+    // Mock 3 queryDb calls: period-stats, per-agent, per-session (T634: period selector)
     api.queryDb
-      .mockResolvedValueOnce([{ tokens_in: 1000, tokens_out: 500, tokens_cache_read: 200, tokens_cache_write: 100, total: 1500 }])
-      .mockResolvedValueOnce([{ tokens_in: 300, tokens_out: 200, total: 500 }])
-      .mockResolvedValueOnce([{ tokens_in: 50, tokens_out: 30, total: 80 }])
+      .mockResolvedValueOnce([{ tokens_in: 1000, tokens_out: 500, tokens_cache_read: 200, tokens_cache_write: 100, total: 1500, session_count: 5 }])
       .mockResolvedValueOnce([
         { agent_id: 1, agent_name: 'dev-front', tokens_in: 800, tokens_out: 400, tokens_cache_read: 150, tokens_cache_write: 50, total: 1200, session_count: 3 },
       ])
@@ -2922,12 +2920,10 @@ describe('TokenStatsView (T353)', () => {
 
   it('shows empty state when no data', async () => {
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    // Reset all mocks to return empty
+    // Reset all mocks to return empty (T634: 3 calls — period-stats, per-agent, per-session)
     api.queryDb.mockReset()
     api.queryDb
-      .mockResolvedValueOnce([{ tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 0 }])
-      .mockResolvedValueOnce([{ tokens_in: 0, tokens_out: 0, total: 0 }])
-      .mockResolvedValueOnce([{ tokens_in: 0, tokens_out: 0, total: 0 }])
+      .mockResolvedValueOnce([{ tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 0, session_count: 0 }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
 

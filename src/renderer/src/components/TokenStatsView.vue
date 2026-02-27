@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
@@ -32,49 +32,77 @@ interface SessionTokenRow {
   total: number
 }
 
+interface PeriodStats {
+  tokens_in: number
+  tokens_out: number
+  tokens_cache_read: number
+  tokens_cache_write: number
+  total: number
+  session_count: number
+}
+
+// ── Period selector ───────────────────────────────────────────────────────────
+
+const PERIODS = [
+  { key: '1h',  labelKey: 'tokenStats.period.1h',  sql: "datetime('now', '-1 hour')" },
+  { key: '24h', labelKey: 'tokenStats.period.24h', sql: "datetime('now', '-24 hours')" },
+  { key: '7d',  labelKey: 'tokenStats.period.7d',  sql: "datetime('now', '-7 days')" },
+  { key: '30d', labelKey: 'tokenStats.period.30d', sql: "datetime('now', '-30 days')" },
+  { key: 'all', labelKey: 'tokenStats.period.all', sql: null },
+] as const
+
+type PeriodKey = (typeof PERIODS)[number]['key']
+
+function loadSavedPeriod(): PeriodKey {
+  try {
+    const v = localStorage.getItem('tokenStats.period') as PeriodKey | null
+    if (v && PERIODS.some(p => p.key === v)) return v
+  } catch { /* ignore */ }
+  return '24h'
+}
+
+const selectedPeriod = ref<PeriodKey>(loadSavedPeriod())
+
+const activePeriod = computed(() => PERIODS.find(p => p.key === selectedPeriod.value) ?? PERIODS[1])
+
+function whereClause(periodSql: string | null): string {
+  return periodSql ? `WHERE started_at >= ${periodSql}` : ''
+}
+
+function andOrWhere(periodSql: string | null, extraCondition: string): string {
+  return periodSql
+    ? `WHERE started_at >= ${periodSql} AND ${extraCondition}`
+    : `WHERE ${extraCondition}`
+}
+
+// ── Data ─────────────────────────────────────────────────────────────────────
+
 const { t, locale } = useI18n()
 const store = useTasksStore()
 const tabsStore = useTabsStore()
 
-const globalStats = ref({ tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 0 })
-const todayStats = ref({ tokens_in: 0, tokens_out: 0, total: 0 })
-const hourStats = ref({ tokens_in: 0, tokens_out: 0, total: 0 })
+const globalStats = ref<PeriodStats>({ tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 0, session_count: 0 })
 const agentRows = ref<AgentTokenRow[]>([])
 const sessionRows = ref<SessionTokenRow[]>([])
 
 async function fetchStats(): Promise<void> {
   if (!store.dbPath) return
+  const where = whereClause(activePeriod.value.sql)
   try {
-    const [globalRes, todayRes, hourRes, agentRes, sessionRes] = await Promise.all([
-      // Global totals
+    const [globalRes, agentRes, sessionRes] = await Promise.all([
+      // Period totals
       window.electronAPI.queryDb(
         store.dbPath,
         `SELECT COALESCE(SUM(tokens_in),0) as tokens_in,
                 COALESCE(SUM(tokens_out),0) as tokens_out,
                 COALESCE(SUM(tokens_cache_read),0) as tokens_cache_read,
                 COALESCE(SUM(tokens_cache_write),0) as tokens_cache_write,
-                (COALESCE(SUM(tokens_in),0) + COALESCE(SUM(tokens_out),0)) as total
-         FROM sessions`,
-      ) as Promise<{ tokens_in: number; tokens_out: number; tokens_cache_read: number; tokens_cache_write: number; total: number }[]>,
-      // Today (last 24h)
-      window.electronAPI.queryDb(
-        store.dbPath,
-        `SELECT COALESCE(SUM(tokens_in),0) as tokens_in,
-                COALESCE(SUM(tokens_out),0) as tokens_out,
-                COALESCE(SUM(COALESCE(tokens_in,0) + COALESCE(tokens_out,0)),0) as total
+                COALESCE(SUM(COALESCE(tokens_in,0) + COALESCE(tokens_out,0)),0) as total,
+                COUNT(*) as session_count
          FROM sessions
-         WHERE started_at >= datetime('now', '-24 hours')`,
-      ) as Promise<{ tokens_in: number; tokens_out: number; total: number }[]>,
-      // Last hour
-      window.electronAPI.queryDb(
-        store.dbPath,
-        `SELECT COALESCE(SUM(tokens_in),0) as tokens_in,
-                COALESCE(SUM(tokens_out),0) as tokens_out,
-                COALESCE(SUM(COALESCE(tokens_in,0) + COALESCE(tokens_out,0)),0) as total
-         FROM sessions
-         WHERE started_at >= datetime('now', '-1 hour')`,
-      ) as Promise<{ tokens_in: number; tokens_out: number; total: number }[]>,
-      // Per agent
+         ${where}`,
+      ) as Promise<PeriodStats[]>,
+      // Per agent for selected period
       window.electronAPI.queryDb(
         store.dbPath,
         `SELECT s.agent_id,
@@ -87,10 +115,11 @@ async function fetchStats(): Promise<void> {
                 COUNT(s.id) as session_count
          FROM sessions s
          LEFT JOIN agents a ON a.id = s.agent_id
+         ${where}
          GROUP BY s.agent_id
          ORDER BY total DESC`,
       ) as Promise<AgentTokenRow[]>,
-      // Per session (latest 50)
+      // Per session for selected period (latest 50 with tokens)
       window.electronAPI.queryDb(
         store.dbPath,
         `SELECT s.id, s.agent_id,
@@ -103,18 +132,22 @@ async function fetchStats(): Promise<void> {
                 (COALESCE(s.tokens_in, 0) + COALESCE(s.tokens_out, 0)) as total
          FROM sessions s
          LEFT JOIN agents a ON a.id = s.agent_id
-         WHERE (COALESCE(s.tokens_in, 0) + COALESCE(s.tokens_out, 0)) > 0
+         ${andOrWhere(activePeriod.value.sql, '(COALESCE(s.tokens_in, 0) + COALESCE(s.tokens_out, 0)) > 0')}
          ORDER BY s.started_at DESC
          LIMIT 50`,
       ) as Promise<SessionTokenRow[]>,
     ])
-    globalStats.value = globalRes[0] ?? { tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 0 }
-    todayStats.value = todayRes[0] ?? { tokens_in: 0, tokens_out: 0, total: 0 }
-    hourStats.value = hourRes[0] ?? { tokens_in: 0, tokens_out: 0, total: 0 }
+    globalStats.value = globalRes[0] ?? { tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 0, session_count: 0 }
     agentRows.value = agentRes
     sessionRows.value = sessionRes
   } catch { /* silent — usePolledData handles loading state */ }
 }
+
+// Re-fetch when period changes, and persist to localStorage
+watch(selectedPeriod, (v) => {
+  try { localStorage.setItem('tokenStats.period', v) } catch { /* ignore */ }
+  void fetchStats()
+})
 
 // usePolledData manages polling lifecycle, loading state, and cleanup
 const { loading, refresh } = usePolledData(
@@ -122,6 +155,8 @@ const { loading, refresh } = usePolledData(
   () => tabsStore.activeTabId === 'logs',
   30000,
 )
+
+// ── Formatting ────────────────────────────────────────────────────────────────
 
 function formatNumber(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
@@ -142,17 +177,40 @@ function barWidth(total: number): string {
   return Math.max((total / maxAgentTotal.value) * 100, 2) + '%'
 }
 
+// Avg tokens per session
+const avgPerSession = computed(() => {
+  if (globalStats.value.session_count === 0) return 0
+  return Math.round(globalStats.value.total / globalStats.value.session_count)
+})
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-surface-primary min-h-0">
 
-    <!-- ── Summary cards ──────────────────────────────────────────────── -->
-    <div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 py-3 border-b border-edge-subtle bg-surface-base">
+    <!-- ── Period selector ────────────────────────────────────────────── -->
+    <div class="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
+      <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.period.label') }}</span>
+      <div class="flex gap-1">
+        <button
+          v-for="period in PERIODS"
+          :key="period.key"
+          class="px-2.5 py-0.5 rounded-full text-[11px] font-mono border transition-colors"
+          :class="selectedPeriod === period.key
+            ? 'bg-accent-primary border-accent-primary text-white'
+            : 'bg-surface-secondary border-edge-default text-content-secondary hover:border-accent-primary hover:text-content-primary'"
+          @click="selectedPeriod = period.key"
+        >
+          {{ t(period.labelKey) }}
+        </button>
+      </div>
+    </div>
 
-      <!-- Global -->
+    <!-- ── Summary cards ──────────────────────────────────────────────── -->
+    <div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 py-2 border-b border-edge-subtle bg-surface-base">
+
+      <!-- Period total tokens -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.global') }}</span>
+        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.total') }}</span>
         <span class="text-lg font-bold text-content-primary tabular-nums">{{ formatNumber(globalStats.total) }}</span>
         <div class="flex gap-2 text-[10px] font-mono text-content-subtle">
           <span class="text-emerald-600 dark:text-emerald-400">↓ {{ formatNumber(globalStats.tokens_in) }}</span>
@@ -160,23 +218,12 @@ function barWidth(total: number): string {
         </div>
       </div>
 
-      <!-- Today -->
+      <!-- Sessions count -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.today') }}</span>
-        <span class="text-lg font-bold text-content-primary tabular-nums">{{ formatNumber(todayStats.total) }}</span>
-        <div class="flex gap-2 text-[10px] font-mono text-content-subtle">
-          <span class="text-emerald-600 dark:text-emerald-400">↓ {{ formatNumber(todayStats.tokens_in) }}</span>
-          <span class="text-sky-600 dark:text-sky-400">↑ {{ formatNumber(todayStats.tokens_out) }}</span>
-        </div>
-      </div>
-
-      <!-- Last hour -->
-      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.lastHour') }}</span>
-        <span class="text-lg font-bold text-content-primary tabular-nums">{{ formatNumber(hourStats.total) }}</span>
-        <div class="flex gap-2 text-[10px] font-mono text-content-subtle">
-          <span class="text-emerald-600 dark:text-emerald-400">↓ {{ formatNumber(hourStats.tokens_in) }}</span>
-          <span class="text-sky-600 dark:text-sky-400">↑ {{ formatNumber(hourStats.tokens_out) }}</span>
+        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.sessions') }}</span>
+        <span class="text-lg font-bold text-content-primary tabular-nums">{{ globalStats.session_count }}</span>
+        <div class="text-[10px] font-mono text-content-subtle">
+          <span>{{ t('tokenStats.avgPerSession') }} {{ formatNumber(avgPerSession) }}</span>
         </div>
       </div>
 
@@ -187,6 +234,17 @@ function barWidth(total: number): string {
         <div class="flex gap-2 text-[10px] font-mono text-content-subtle">
           <span class="text-amber-600 dark:text-amber-400">R {{ formatNumber(globalStats.tokens_cache_read) }}</span>
           <span class="text-violet-600 dark:text-violet-400">W {{ formatNumber(globalStats.tokens_cache_write) }}</span>
+        </div>
+      </div>
+
+      <!-- Tokens In/Out ratio -->
+      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.ratio') }}</span>
+        <span class="text-lg font-bold text-content-primary tabular-nums">
+          {{ globalStats.total > 0 ? Math.round((globalStats.tokens_out / Math.max(globalStats.total, 1)) * 100) : 0 }}%
+        </span>
+        <div class="text-[10px] font-mono text-content-subtle">
+          <span class="text-sky-600 dark:text-sky-400">{{ t('tokenStats.outputRatio') }}</span>
         </div>
       </div>
     </div>
