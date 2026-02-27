@@ -26,6 +26,12 @@ const POLL_INTERVAL_MS = 5_000
 /** Fallback delay (ms): force-close terminal if session never reaches 'completed' */
 const FALLBACK_CLOSE_MS = 5 * 60 * 1000
 
+/**
+ * Fallback delay (ms) for agents with no assigned tasks (task-creator, review, test, perf…).
+ * Longer window because these agents may run long sessions without any task transitions.
+ */
+const FALLBACK_CLOSE_NOTASK_MS = 30 * 60 * 1000
+
 /** Delay (ms) between Ctrl+C and terminalKill */
 const KILL_DELAY_MS = 2_000
 
@@ -85,6 +91,25 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
             if (agent && agent.auto_launch !== 0 && tabsStore.hasAgentTerminal(agent.name)) {
               scheduleClose(agent.name, agent.id)
             }
+          }
+        }
+      }
+
+      // --- Auto-close agents with no assigned tasks (task-creator, review, test, perf…) ---
+      // Covers agents that never receive assigned tasks: their terminal stays open indefinitely
+      // unless we poll their session status independently of any task transition. (T646)
+      if (settingsStore.autoLaunchAgentSessions) {
+        for (const agent of agents.value) {
+          if (agent.auto_launch === 0) continue
+          if (!tabsStore.hasAgentTerminal(agent.name)) continue
+          if (pendingCloses.has(agent.name)) continue // already scheduled
+          const hasActiveTasks = current.some(
+            t =>
+              t.agent_assigne_id === agent.id &&
+              (t.statut === 'todo' || t.statut === 'in_progress')
+          )
+          if (!hasActiveTasks) {
+            scheduleClose(agent.name, agent.id, FALLBACK_CLOSE_NOTASK_MS)
           }
         }
       }
@@ -163,7 +188,7 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     }
   }
 
-  function scheduleClose(agentName: string, agentId: number): void {
+  function scheduleClose(agentName: string, agentId: number, fallbackMs: number = FALLBACK_CLOSE_MS): void {
     const existing = pendingCloses.get(agentName)
     if (existing) {
       clearInterval(existing.intervalId)
@@ -189,7 +214,7 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
 
     const fallbackId = setTimeout(() => {
       doClose(agentName)
-    }, FALLBACK_CLOSE_MS)
+    }, fallbackMs)
 
     pendingCloses.set(agentName, { intervalId, fallbackId })
   }
