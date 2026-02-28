@@ -161,7 +161,10 @@ export function registerSettingsHandlers(): void {
       const headers: Record<string, string> = {}
       if (githubToken) headers['Authorization'] = `token ${githubToken}`
 
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers })
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+        headers,
+        signal: AbortSignal.timeout(10_000)
+      })
       return { connected: response.ok }
     } catch (err) {
       console.error('[IPC test-github-connection]', err)

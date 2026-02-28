@@ -549,4 +549,35 @@ describe('test-github-connection handler', () => {
       globalThis.fetch = originalFetch
     }
   })
+
+  // T672: AbortSignal.timeout(10s) protection
+  it('passes AbortSignal.timeout(10000) to fetch — T672', async () => {
+    const originalFetch = globalThis.fetch
+    let capturedOptions: RequestInit | undefined
+    globalThis.fetch = vi.fn().mockImplementationOnce((_url: string, options: RequestInit) => {
+      capturedOptions = options
+      return Promise.resolve({ ok: true })
+    })
+    try {
+      await callHandler('test-github-connection', '/fake/project.db', 'https://github.com/owner/repo')
+      expect(capturedOptions?.signal).toBeDefined()
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('returns { connected: false, error } when fetch aborts (AbortError) — T672', async () => {
+    const originalFetch = globalThis.fetch
+    const abortError = new DOMException('The operation was aborted.', 'AbortError')
+    globalThis.fetch = vi.fn().mockRejectedValueOnce(abortError)
+    try {
+      const result = await callHandler('test-github-connection', '/fake/project.db', 'https://github.com/owner/repo') as {
+        connected: boolean; error?: string
+      }
+      expect(result.connected).toBe(false)
+      expect(typeof result.error).toBe('string')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
 })
