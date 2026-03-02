@@ -66,6 +66,13 @@ const mockElectronAPI = {
   onAgentStream: vi.fn(() => () => {}),
   onAgentConvId: vi.fn(() => () => {}),
   onAgentExit: vi.fn(() => () => {}),
+  // Agent groups IPC (T556/T557)
+  agentGroupsList: vi.fn().mockResolvedValue({ success: true, groups: [] }),
+  agentGroupsCreate: vi.fn().mockResolvedValue({ success: true, group: { id: 1, name: 'New Group', sort_order: 0, created_at: '' } }),
+  agentGroupsRename: vi.fn().mockResolvedValue({ success: true }),
+  agentGroupsDelete: vi.fn().mockResolvedValue({ success: true }),
+  agentGroupsSetMember: vi.fn().mockResolvedValue({ success: true }),
+  agentGroupsReorder: vi.fn().mockResolvedValue({ success: true }),
 }
 
 // Make it available globally (jsdom only — node environment has no window)

@@ -2427,7 +2427,7 @@ describe('LaunchSessionModal — advanced features (T353)', () => {
     expect(checkbox.exists()).toBe(true)
   })
 
-  it('useResume defaults to true when convId exists', async () => {
+  it('useResume defaults to false when convId exists', async () => {
     const wrapper = shallowMount(LaunchSessionModal, {
       props: { agent: mockAgent as never },
       global: {
@@ -2440,7 +2440,7 @@ describe('LaunchSessionModal — advanced features (T353)', () => {
     await flushPromises()
 
     const checkbox = wrapper.find('input[type="checkbox"]')
-    expect((checkbox.element as HTMLInputElement).checked).toBe(true)
+    expect((checkbox.element as HTMLInputElement).checked).toBe(false)
   })
 
   it('fullSystemPrompt combines system_prompt + suffix', async () => {
@@ -2533,7 +2533,11 @@ describe('LaunchSessionModal — advanced features (T353)', () => {
     const { useTabsStore } = await import('@renderer/stores/tabs')
     const tabsStore = useTabsStore()
 
-    // useResume is true by default — just click launch
+    // useResume defaults to false — check the checkbox first to enable resume mode
+    const checkbox = wrapper.find('input[type="checkbox"]')
+    await checkbox.setValue(true)
+    await nextTick()
+
     const launchBtn = wrapper.findAll('button').find(b => {
       const text = b.text().toLowerCase()
       return text.includes('lancer') || text.includes('launch')
@@ -4056,5 +4060,165 @@ describe('StreamView', () => {
     expect(userBlock.exists()).toBe(true)
     expect(userBlock.text()).toContain('Bonjour Claude')
     expect(userBlock.classes()).toContain('justify-end')
+  })
+})
+
+// ── ConfirmModal (T675) ───────────────────────────────────────────────────────
+
+import ConfirmModal from '@renderer/components/ConfirmModal.vue'
+
+describe('ConfirmModal (T675)', () => {
+  const teleportStub = { Teleport: { template: '<div><slot /></div>' } }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('renders title and message when mounted', () => {
+    const wrapper = mount(ConfirmModal, {
+      props: { title: 'Supprimer', message: 'Voulez-vous vraiment supprimer ?' },
+      global: { plugins: [i18n], stubs: teleportStub },
+    })
+    expect(wrapper.text()).toContain('Supprimer')
+    expect(wrapper.text()).toContain('Voulez-vous vraiment supprimer ?')
+  })
+
+  it('emits confirm when OK button clicked', async () => {
+    const wrapper = mount(ConfirmModal, {
+      props: { title: 'Confirmation', message: 'Continuer ?' },
+      global: { plugins: [i18n], stubs: teleportStub },
+    })
+    const buttons = wrapper.findAll('button')
+    const confirmBtn = buttons[buttons.length - 1]
+    await confirmBtn.trigger('click')
+    expect(wrapper.emitted('confirm')).toBeTruthy()
+    expect(wrapper.emitted('confirm')).toHaveLength(1)
+  })
+
+  it('emits cancel when Annuler button clicked', async () => {
+    const wrapper = mount(ConfirmModal, {
+      props: { title: 'Confirmation', message: 'Continuer ?' },
+      global: { plugins: [i18n], stubs: teleportStub },
+    })
+    const buttons = wrapper.findAll('button')
+    const cancelBtn = buttons[0]
+    await cancelBtn.trigger('click')
+    expect(wrapper.emitted('cancel')).toBeTruthy()
+    expect(wrapper.emitted('cancel')).toHaveLength(1)
+  })
+
+  it('emits cancel when backdrop clicked', async () => {
+    const wrapper = mount(ConfirmModal, {
+      props: { title: 'Confirmation', message: 'Continuer ?' },
+      global: { plugins: [i18n], stubs: teleportStub },
+    })
+    const backdrop = wrapper.find('.fixed.inset-0')
+    await backdrop.trigger('click')
+    expect(wrapper.emitted('cancel')).toBeTruthy()
+  })
+})
+
+// ── ProjectPopup (T675) ───────────────────────────────────────────────────────
+
+import ProjectPopup from '@renderer/components/ProjectPopup.vue'
+
+describe('ProjectPopup (T675)', () => {
+  const teleportStub = { Teleport: { template: '<div><slot /></div>' } }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    mockElectronAPI.showConfirmDialog.mockResolvedValue(false)
+  })
+
+  it('displays current project name derived from projectPath', () => {
+    const pinia = createTestingPinia({
+      initialState: {
+        tasks: { projectPath: '/home/user/my-project', dbPath: '/home/user/my-project/project.db' },
+      },
+    })
+    const wrapper = mount(ProjectPopup, {
+      global: { plugins: [pinia, i18n], stubs: teleportStub },
+    })
+    expect(wrapper.text()).toContain('my-project')
+  })
+
+  it('calls store.selectProject when Changer de projet is clicked', async () => {
+    const pinia = createTestingPinia({
+      initialState: {
+        tasks: { projectPath: '/home/user/proj', dbPath: '/home/user/proj/project.db' },
+      },
+    })
+    const wrapper = mount(ProjectPopup, {
+      global: { plugins: [pinia, i18n], stubs: teleportStub },
+    })
+    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const store = useTasksStore()
+    const changeBtn = wrapper.findAll('button').find(b => b.text().includes('Changer de projet'))
+    expect(changeBtn).toBeDefined()
+    await changeBtn!.trigger('click')
+    await flushPromises()
+    expect(store.selectProject).toHaveBeenCalled()
+  })
+
+  it('emits close when close button (X) clicked', async () => {
+    const pinia = createTestingPinia({
+      initialState: {
+        tasks: { projectPath: '/home/user/proj', dbPath: '/home/user/proj/project.db' },
+      },
+    })
+    const wrapper = mount(ProjectPopup, {
+      global: { plugins: [pinia, i18n], stubs: teleportStub },
+    })
+    const closeBtn = wrapper.find('button[title="Fermer"]')
+    await closeBtn.trigger('click')
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('emits close when backdrop clicked', async () => {
+    const pinia = createTestingPinia({
+      initialState: {
+        tasks: { projectPath: '/home/user/proj', dbPath: null },
+      },
+    })
+    const wrapper = mount(ProjectPopup, {
+      global: { plugins: [pinia, i18n], stubs: teleportStub },
+    })
+    const backdrop = wrapper.find('.fixed.inset-0')
+    await backdrop.trigger('click')
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+})
+
+// ── ToggleSwitch (T675) ───────────────────────────────────────────────────────
+
+import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
+
+describe('ToggleSwitch (T675)', () => {
+  it('renders in off position when modelValue=false', () => {
+    const wrapper = mount(ToggleSwitch, {
+      props: { modelValue: false },
+    })
+    const btn = wrapper.find('button[role="switch"]')
+    expect(btn.attributes('aria-checked')).toBe('false')
+    expect(btn.classes()).toContain('bg-surface-tertiary')
+  })
+
+  it('renders in on position when modelValue=true', () => {
+    const wrapper = mount(ToggleSwitch, {
+      props: { modelValue: true },
+    })
+    const btn = wrapper.find('button[role="switch"]')
+    expect(btn.attributes('aria-checked')).toBe('true')
+    expect(btn.classes()).toContain('bg-violet-600')
+  })
+
+  it('emits update:modelValue with toggled value on click', async () => {
+    const wrapper = mount(ToggleSwitch, {
+      props: { modelValue: false },
+    })
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.emitted('update:modelValue')).toBeTruthy()
+    expect(wrapper.emitted('update:modelValue')![0]).toEqual([true])
   })
 })
