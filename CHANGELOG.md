@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.14.0] - 2026-03-03
+
+### Changes
+- feat(front-vuejs): render markdown + agent color theme + send button align (T678 T680 T681) (e253f23)
+- fix(devops): remove hardcoded machine path in Stop hook and script (24a9bb7)
+- test(front-vuejs): add ConfirmModal, ProjectPopup, ToggleSwitch tests + fix LaunchSessionModal tests (T675) (9d450f2)
+- perf(front-vuejs): micro-batch StreamView IPC events via nextTick buffer (T676) (1b6ff03)
+- fix(back-electron): add AbortSignal.timeout(10s) to test-github-connection fetch (T672) (24977c2)
+- test(back-electron): add missing tests for runAddAgentGroupsMigration and task:getLinks (e936163)
 ## [0.13.0] - 2026-02-27
 
 ### Changes
