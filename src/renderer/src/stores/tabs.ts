@@ -64,6 +64,7 @@ export const useTabsStore = defineStore('tabs', () => {
   // Activité terminal : true si output reçu dans les 5 dernières secondes
   const tabActivity = ref<Record<string, boolean>>({})
   const activityTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+  let _tabCounter = 0
   // Timestamp of last markTabActive call per tab (for 500ms throttle)
   const activityLastReset: Record<string, number> = {}
 
@@ -131,7 +132,7 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'terminal' | 'stream'): void {
-    const id = `term-${Date.now()}`
+    const id = `term-${Date.now()}-${++_tabCounter}`
     let title: string
     if (agentName) {
       const sameAgentTabs = tabs.value.filter(t => t.type === 'terminal' && t.agentName === agentName)
@@ -226,7 +227,13 @@ export const useTabsStore = defineStore('tabs', () => {
   function closeAllTerminals(): void {
     const terminals = tabs.value.filter(t => t.type === 'terminal')
     for (const tab of terminals) {
-      if (tab.ptyId) window.electronAPI.terminalKill(tab.ptyId)
+      if (tab.ptyId) {
+        if (tab.viewMode === 'stream') {
+          window.electronAPI.agentKill(tab.ptyId)
+        } else {
+          window.electronAPI.terminalKill(tab.ptyId)
+        }
+      }
       // Clean up activity timer
       if (activityTimers[tab.id]) {
         clearTimeout(activityTimers[tab.id])

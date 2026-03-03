@@ -4001,6 +4001,27 @@ describe('StreamView', () => {
     expect(block.classes()).toContain('justify-end')
   })
 
+  it('suppresses empty user bubbles from autonomous Claude reasoning (T679)', async () => {
+    // T679: user events with empty/whitespace-only text must not render a bubble
+    const emptyEvent: StreamEvent = {
+      type: 'user',
+      message: { role: 'user', content: [{ type: 'text', text: '' }] },
+    }
+    const whitespaceEvent: StreamEvent = {
+      type: 'user',
+      message: { role: 'user', content: [{ type: 'text', text: '   ' }] },
+    }
+    const realEvent: StreamEvent = {
+      type: 'user',
+      message: { role: 'user', content: [{ type: 'text', text: 'message réel' }] },
+    }
+    const { wrapper } = await mountStream([emptyEvent, whitespaceEvent, realEvent])
+    await nextTick()
+    const blocks = wrapper.findAll('[data-testid="block-user"]')
+    expect(blocks.length).toBe(1)
+    expect(blocks[0].text()).toContain('message réel')
+  })
+
   it('displays autoSend as user bubble immediately after agentCreate (T607)', async () => {
     // T648: bubble is pushed right after agentCreate + agentSend — no system:init needed
     const { wrapper } = await mountStream([], { autoSend: 'Mon prompt initial' })
@@ -4060,6 +4081,47 @@ describe('StreamView', () => {
     expect(userBlock.exists()).toBe(true)
     expect(userBlock.text()).toContain('Bonjour Claude')
     expect(userBlock.classes()).toContain('justify-end')
+  })
+
+  it('stop-button is absent when agent is not streaming (T683)', async () => {
+    const { wrapper } = await mountStream([])
+    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(false)
+  })
+
+  it('stop-button is visible when isStreaming=true and ptyId set (T683)', async () => {
+    // Inject an assistant event without a trailing result event → isStreaming stays true
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'Réponse en cours…' }] },
+    }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(true)
+  })
+
+  it('stop-button click calls agentKill with ptyId (T683)', async () => {
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'En cours…' }] },
+    }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    const stopBtn = wrapper.find('[data-testid="stop-button"]')
+    expect(stopBtn.exists()).toBe(true)
+    await stopBtn.trigger('click')
+    expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('agent-stream-1')
+  })
+
+  it('stop-button disappears after click (agentStopped flag, T683)', async () => {
+    const event: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'En cours…' }] },
+    }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    await wrapper.find('[data-testid="stop-button"]').trigger('click')
+    await nextTick()
+    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(false)
   })
 })
 

@@ -67,9 +67,12 @@ export default [
     },
   },
 
-  // ── TaskDetailModal — v-html allowed (sanitized via DOMPurify) ───────────
+  // ── Components using v-html — allowed (sanitized via DOMPurify) ─────────
   {
-    files: ['src/renderer/src/components/TaskDetailModal.vue'],
+    files: [
+      'src/renderer/src/components/TaskDetailModal.vue',
+      'src/renderer/src/components/StreamView.vue',
+    ],
     rules: {
       'vue/no-v-html': 'off',
     },
