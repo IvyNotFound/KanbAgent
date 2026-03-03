@@ -21,7 +21,7 @@ const fs = require('fs')
 const path = require('path')
 
 const DB_PATH = path.resolve(__dirname, '../.claude/project.db')
-const PROJECT_PATH = '/mnt/c/Users/Cover/agent-viewer'
+const PROJECT_PATH = path.resolve(__dirname, '..')
 
 /**
  * Parse token usage from a JSONL transcript.

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /mnt/c/Users/Cover/agent-viewer/scripts/capture-tokens-hook.js",
+            "command": "node scripts/capture-tokens-hook.js",
             "timeout": 15
           }
         ]
