@@ -293,6 +293,57 @@ describe('agent-stream', () => {
     })
   })
 
+  it('forwards stderr lines as error:stderr events to renderer', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, {})) as string
+
+    mockProc.stderr.write('bash: command not found: claude\n')
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, {
+      type: 'error:stderr',
+      error: 'bash: command not found: claude',
+    })
+  })
+
+  it('emits error:exit when process exits non-zero without any stream event', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, {})) as string
+
+    // No stdout events emitted — process exits with code 1
+    mockProc.emit('close', 1)
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, {
+      type: 'error:exit',
+      error: 'Process exited with code 1',
+    })
+  })
+
+  it('does not emit error:exit when process exits non-zero after receiving events', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, {})) as string
+
+    // Emit one valid JSONL event first
+    const payload = { type: 'assistant', message: { role: 'assistant', content: [] } }
+    mockProc.stdout.write(JSON.stringify(payload) + '\n')
+    await new Promise(resolve => setImmediate(resolve))
+
+    vi.mocked(mockSender.send).mockClear()
+
+    // Now process exits non-zero
+    mockProc.emit('close', 1)
+    await new Promise(resolve => setImmediate(resolve))
+
+    const errorExitCalls = vi.mocked(mockSender.send).mock.calls.filter(
+      ([, payload]) => (payload as { type?: string })?.type === 'error:exit'
+    )
+    expect(errorExitCalls).toHaveLength(0)
+  })
+
   // ── env forwarding ────────────────────────────────────────────────────────
 
   it('does not forward ANTHROPIC_API_KEY — auth is via OAuth in ~/.claude/', () => {

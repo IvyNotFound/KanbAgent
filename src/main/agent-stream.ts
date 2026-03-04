@@ -228,6 +228,24 @@ export function registerAgentStreamHandlers(): void {
 
     agents.set(id, proc)
 
+    let eventsReceived = 0
+    let stderrBuffer = ''
+
+    // Capture stderr and forward each line as error:stderr event to renderer (T693)
+    proc.stderr!.on('data', (chunk: Buffer) => {
+      stderrBuffer += chunk.toString()
+      const lines = stderrBuffer.split('\n')
+      stderrBuffer = lines.pop() ?? ''
+      for (const line of lines) {
+        const clean = line.trim()
+        if (!clean) continue
+        const wc = webContents.fromId(wcId)
+        if (wc && !wc.isDestroyed()) {
+          wc.send(`agent:stream:${id}`, { type: 'error:stderr', error: clean })
+        }
+      }
+    })
+
     // readline on stdout → clean JSONL lines, 0 ANSI corruption
     const rl = createInterface({ input: proc.stdout! })
     rl.on('line', (line) => {
@@ -235,6 +253,7 @@ export function registerAgentStreamHandlers(): void {
       if (!clean) return
       try {
         const parsed: Record<string, unknown> = JSON.parse(clean)
+        eventsReceived++
 
         // Extract convId from system:init event — no banner scanning needed
         if (
@@ -276,6 +295,26 @@ export function registerAgentStreamHandlers(): void {
       rl.close()
       agents.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
+
+      // Flush residual stderr buffer if any
+      if (stderrBuffer.trim()) {
+        const wc = webContents.fromId(wcId)
+        if (wc && !wc.isDestroyed()) {
+          wc.send(`agent:stream:${id}`, { type: 'error:stderr', error: stderrBuffer.trim() })
+        }
+        stderrBuffer = ''
+      }
+
+      // Signal abnormal exit if process died before emitting any stream event (T693)
+      if (exitCode !== 0 && eventsReceived === 0) {
+        const wc = webContents.fromId(wcId)
+        if (wc && !wc.isDestroyed()) {
+          wc.send(`agent:stream:${id}`, {
+            type: 'error:exit',
+            error: `Process exited with code ${exitCode}`,
+          })
+        }
+      }
 
       const wc = webContents.fromId(wcId)
       if (wc && !wc.isDestroyed()) {
