@@ -128,8 +128,16 @@ describe('preload/index', () => {
     expect(exposedMethods).toContain('addPerimetre')
   })
 
-  it('should expose total of 40+ API methods', () => {
-    expect(exposedMethods.length).toBeGreaterThanOrEqual(40)
+  it('should expose new methods added in T758/T766/T768/T771 (T781)', () => {
+    expect(exposedMethods).toContain('gitLog')
+    expect(exposedMethods).toContain('sessionUpdateResult')
+    expect(exposedMethods).toContain('sessionsStatsCost')
+    expect(exposedMethods).toContain('projectExportZip')
+    expect(exposedMethods).toContain('onHookEvent')
+  })
+
+  it('should expose total of 60+ API methods (T781)', () => {
+    expect(exposedMethods.length).toBeGreaterThanOrEqual(60)
   })
 
   it('should use ipcRenderer.invoke for queryDb', () => {
@@ -160,6 +168,31 @@ describe('preload/index', () => {
     const queryDbMatch = preloadSource.match(/queryDb:\s*\([^)]+\)/)
     expect(queryDbMatch).toBeTruthy()
     expect(queryDbMatch![0]).toContain('dbPath')
+  })
+
+  // T781 — new IPC channel verifications
+  it('gitLog → ipcRenderer.invoke("git:log", projectPath, options)', () => {
+    expect(preloadSource).toContain("ipcRenderer.invoke('git:log'")
+  })
+
+  it('sessionUpdateResult → ipcRenderer.invoke("session:updateResult", ...)', () => {
+    expect(preloadSource).toContain("ipcRenderer.invoke('session:updateResult'")
+  })
+
+  it('sessionsStatsCost → ipcRenderer.invoke("sessions:statsCost", ...)', () => {
+    expect(preloadSource).toContain("ipcRenderer.invoke('sessions:statsCost'")
+  })
+
+  it('projectExportZip → ipcRenderer.invoke("project:exportZip", ...)', () => {
+    expect(preloadSource).toContain("ipcRenderer.invoke('project:exportZip'")
+  })
+
+  it('onHookEvent → subscribes via ipcRenderer.on("hook:event") and returns unsubscribe fn', () => {
+    expect(preloadSource).toContain("ipcRenderer.on('hook:event'")
+  })
+
+  it('onHookEvent → unsubscribes via ipcRenderer.off("hook:event")', () => {
+    expect(preloadSource).toContain("ipcRenderer.off('hook:event'")
   })
 })
 
