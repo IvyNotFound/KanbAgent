@@ -67,6 +67,15 @@
   "git": {
     "noCommits": "Aucun commit — dépôt git non trouvé ou vide"
   },
+  "workload": {
+    "title": "Répartition de charge",
+    "noAgents": "Aucun agent trouvé",
+    "agent": "Agent",
+    "tasks": "Tâches",
+    "effort": "Effort",
+    "bar": "Distribution",
+    "current": "Tâche en cours"
+  },
   "logs": {
     "allAgents": "Tous les agents",
     "noLogs": "Aucun log",
@@ -280,6 +289,7 @@
     "metrics": "Métriques",
     "stat": "Stat",
     "hooks": "Hooks",
+    "workload": "Workload",
     "project": "Projet",
     "agents": "Agents",
     "perimeters": "Périmètres",

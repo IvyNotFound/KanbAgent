@@ -13,7 +13,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'stat' | 'hooks'
+export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'stat' | 'hooks' | 'workload'
 
 export interface Tab {
   id: string
@@ -60,7 +60,8 @@ export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<Tab[]>([
     { id: 'backlog', type: 'backlog', title: 'Backlog', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
     { id: 'stat',    type: 'stat',    title: 'Stat',    ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
-    { id: 'hooks',   type: 'hooks',   title: 'Hooks',   ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
+    { id: 'hooks',    type: 'hooks',    title: 'Hooks',    ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
+    { id: 'workload', type: 'workload', title: 'Workload', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
   ])
   const activeTabId = ref<string>('backlog')
 

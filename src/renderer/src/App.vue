@@ -16,6 +16,7 @@ const StreamView = defineAsyncComponent(() => import('@renderer/components/Strea
 const FileView = defineAsyncComponent(() => import('@renderer/components/FileView.vue'))
 const AgentLogsView = defineAsyncComponent(() => import('@renderer/components/AgentLogsView.vue'))
 const HookEventsView = defineAsyncComponent(() => import('@renderer/components/HookEventsView.vue'))
+const WorkloadView = defineAsyncComponent(() => import('@renderer/components/WorkloadView.vue'))
 const ExplorerView = defineAsyncComponent(() => import('@renderer/components/ExplorerView.vue'))
 const CommandPalette = defineAsyncComponent(() => import('@renderer/components/CommandPalette.vue'))
 const SetupWizard = defineAsyncComponent(() => import('@renderer/components/SetupWizard.vue'))
@@ -96,6 +97,10 @@ defineExpose({
           <!-- Hooks tab (vue globale cross-sessions) -->
           <template v-else-if="tabsStore.activeTab.type === 'hooks'">
             <HookEventsView class="flex-1" />
+          </template>
+          <!-- Workload tab (distribution effort/tâches par agent) -->
+          <template v-else-if="tabsStore.activeTab.type === 'workload'">
+            <WorkloadView class="flex-1" />
           </template>
           <!-- Terminal tabs (keep mounted to preserve session, hide inactive) -->
           <template v-for="tab in tabsStore.tabs.filter(t => t.type === 'terminal')" :key="tab.id">

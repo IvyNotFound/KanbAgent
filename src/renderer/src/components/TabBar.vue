@@ -321,6 +321,26 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
       ></span>
     </button>
 
+    <!-- Onglet Workload (fixe, non fermable) -->
+    <button
+      :class="[
+        'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0',
+        store.activeTabId === 'workload'
+          ? 'text-content-primary bg-surface-secondary'
+          : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
+      ]"
+      @click="store.setActive('workload')"
+    >
+      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+        <path d="M1 11h3v3H1v-3zm4-4h3v7H5V7zm4-4h3v11H9V3zm4-2h3v13h-3V1z"/>
+      </svg>
+      <span>{{ t('sidebar.workload') }}</span>
+      <span
+        v-if="store.activeTabId === 'workload'"
+        class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
+      ></span>
+    </button>
+
     <!-- Scroll left arrow -->
     <button
       v-show="canScrollLeft"

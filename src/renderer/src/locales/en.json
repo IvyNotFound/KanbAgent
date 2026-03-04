@@ -67,6 +67,15 @@
   "git": {
     "noCommits": "No commits — git repo not found or empty"
   },
+  "workload": {
+    "title": "Workload balance",
+    "noAgents": "No agents found",
+    "agent": "Agent",
+    "tasks": "Tasks",
+    "effort": "Effort",
+    "bar": "Distribution",
+    "current": "Current task"
+  },
   "logs": {
     "allAgents": "All agents",
     "noLogs": "No logs",
@@ -280,6 +289,7 @@
     "metrics": "Metrics",
     "stat": "Stat",
     "hooks": "Hooks",
+    "workload": "Workload",
     "project": "Project",
     "agents": "Agents",
     "perimeters": "Perimeters",
