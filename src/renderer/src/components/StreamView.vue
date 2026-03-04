@@ -434,11 +434,11 @@ function toolResultText(content: StreamContentBlock['content']): string {
             v-for="(block, bIdx) in event.message.content"
             :key="`${eIdx}-${bIdx}`"
           >
-            <!-- text block — rendu Markdown DOMPurify (T678), border-left couleur agent (T680) -->
+            <!-- text block — rendu Markdown DOMPurify (T678), fond couleur agent (T720) -->
             <div
               v-if="block.type === 'text'"
-              class="stream-markdown bg-zinc-800 rounded-lg px-4 py-3 border border-zinc-700 border-l-2 leading-relaxed"
-              :style="{ borderLeftColor: accentFg }"
+              class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed"
+              :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
               data-testid="block-text"
               v-html="renderMarkdown(block.text ?? '')"
             />
@@ -622,4 +622,26 @@ function toolResultText(content: StreamContentBlock['content']): string {
 .stream-markdown strong { font-weight: 600; }
 .stream-markdown em { font-style: italic; }
 .stream-markdown hr { border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 0.8em 0; }
+.stream-markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6em 0;
+  font-size: 0.85em;
+  overflow-x: auto;
+  display: block;
+}
+.stream-markdown th,
+.stream-markdown td {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.4em 0.75em;
+  text-align: left;
+}
+.stream-markdown th {
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+  color: #e4e4e7;
+}
+.stream-markdown tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
 </style>
