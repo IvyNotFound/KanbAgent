@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Task } from '@renderer/types'
 import AgentBadge from './AgentBadge.vue'
@@ -20,21 +20,10 @@ const tabsStore = useTabsStore()
 const { launchAgentTerminal, canLaunchSession } = useLaunchSession()
 const toast = useToast()
 
-// Multi-agent avatars (lazy-loaded on mount)
-interface AssigneeAvatar { agent_id: number; agent_name: string; role: string | null }
-const assigneeAvatars = ref<AssigneeAvatar[]>([])
+// Multi-agent avatars — read from board-level cache in store (no per-card IPC, T787)
+const assigneeAvatars = computed(() => store.boardAssignees.get(props.task.id) ?? [])
 const visibleAvatars = computed(() => assigneeAvatars.value.slice(0, 3))
 const overflowCount = computed(() => Math.max(0, assigneeAvatars.value.length - 3))
-
-onMounted(async () => {
-  if (!store.dbPath || !props.task.id) return
-  try {
-    const res = await window.electronAPI.getTaskAssignees(store.dbPath, props.task.id)
-    if (res.success) assigneeAvatars.value = res.assignees as AssigneeAvatar[]
-  } catch {
-    // silent: fallback to agent_assigne_id badge
-  }
-})
 
 function onDragStart(e: DragEvent): void {
   if (!e.dataTransfer) return

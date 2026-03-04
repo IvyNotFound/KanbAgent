@@ -3025,85 +3025,73 @@ describe('TaskCard — multi-agents', () => {
     expect(badge.exists()).toBe(true)
   })
 
-  it('renders 2 avatars when task_agents has 2 agents', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getTaskAssignees.mockResolvedValue({
-      success: true,
-      assignees: [
-        { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '2026-01-01T00:00:00Z' },
-      ],
-    })
+  it('renders 2 avatars when boardAssignees has 2 agents for task (T787)', async () => {
+    const task = makeTask({ id: 1 })
+    const assignees = [
+      { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '' },
+      { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '' },
+    ]
 
     const wrapper = shallowMount(TaskCard, {
-      props: { task: makeTask() },
+      props: { task },
       global: {
         plugins: [createTestingPinia({
-          initialState: { tasks: { dbPath: '/p/db', agents: [] } },
+          initialState: { tasks: { dbPath: '/p/db', agents: [], boardAssignees: new Map([[1, assignees]]) } },
         }), i18n],
       },
     })
-    await flushPromises()
+    await nextTick()
 
     const avatarDivs = wrapper.findAll('div.rounded-full')
     expect(avatarDivs.length).toBe(2)
-    // No overflow badge with 2 agents
     const overflowBadge = wrapper.findAll('div.rounded-full').find(d => d.text().startsWith('+'))
     expect(overflowBadge).toBeUndefined()
   })
 
-  it('renders 3 avatars without overflow badge when task_agents has exactly 3 agents', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getTaskAssignees.mockResolvedValue({
-      success: true,
-      assignees: [
-        { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 3, agent_name: 'review', role: 'reviewer', assigned_at: '2026-01-01T00:00:00Z' },
-      ],
-    })
+  it('renders 3 avatars without overflow badge when boardAssignees has exactly 3 agents (T787)', async () => {
+    const task = makeTask({ id: 1 })
+    const assignees = [
+      { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '' },
+      { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '' },
+      { agent_id: 3, agent_name: 'review', role: 'reviewer', assigned_at: '' },
+    ]
 
     const wrapper = shallowMount(TaskCard, {
-      props: { task: makeTask() },
+      props: { task },
       global: {
         plugins: [createTestingPinia({
-          initialState: { tasks: { dbPath: '/p/db', agents: [] } },
+          initialState: { tasks: { dbPath: '/p/db', agents: [], boardAssignees: new Map([[1, assignees]]) } },
         }), i18n],
       },
     })
-    await flushPromises()
+    await nextTick()
 
     const allRounded = wrapper.findAll('div.rounded-full')
-    // 3 avatars, no overflow badge
     expect(allRounded.length).toBe(3)
     const overflowBadge = allRounded.find(d => d.text().startsWith('+'))
     expect(overflowBadge).toBeUndefined()
   })
 
-  it('renders 3 avatars + "+1" overflow badge when task_agents has 4 agents', async () => {
-    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getTaskAssignees.mockResolvedValue({
-      success: true,
-      assignees: [
-        { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 3, agent_name: 'review', role: 'reviewer', assigned_at: '2026-01-01T00:00:00Z' },
-        { agent_id: 4, agent_name: 'arch', role: null, assigned_at: '2026-01-01T00:00:00Z' },
-      ],
-    })
+  it('renders 3 avatars + "+1" overflow badge when boardAssignees has 4 agents (T787)', async () => {
+    const task = makeTask({ id: 1 })
+    const assignees = [
+      { agent_id: 1, agent_name: 'dev-front', role: 'primary', assigned_at: '' },
+      { agent_id: 2, agent_name: 'test-front', role: null, assigned_at: '' },
+      { agent_id: 3, agent_name: 'review', role: 'reviewer', assigned_at: '' },
+      { agent_id: 4, agent_name: 'arch', role: null, assigned_at: '' },
+    ]
 
     const wrapper = shallowMount(TaskCard, {
-      props: { task: makeTask() },
+      props: { task },
       global: {
         plugins: [createTestingPinia({
-          initialState: { tasks: { dbPath: '/p/db', agents: [] } },
+          initialState: { tasks: { dbPath: '/p/db', agents: [], boardAssignees: new Map([[1, assignees]]) } },
         }), i18n],
       },
     })
-    await flushPromises()
+    await nextTick()
 
     const allRounded = wrapper.findAll('div.rounded-full')
-    // 3 visible avatars + 1 overflow badge = 4 div.rounded-full total
     expect(allRounded.length).toBe(4)
     const overflowBadge = allRounded.find(d => d.text().trim() === '+1')
     expect(overflowBadge).toBeDefined()

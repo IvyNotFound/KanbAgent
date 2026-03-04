@@ -52,6 +52,8 @@ export const useTasksStore = defineStore('tasks', () => {
   const taskComments = ref<TaskComment[]>([])
   const taskLinks = ref<TaskLink[]>([])
   const taskAssignees = ref<TaskAssignee[]>([])
+  /** Board-level assignees indexed by task_id — loaded once in refresh(), no per-card IPC (T787) */
+  const boardAssignees = ref<Map<number, TaskAssignee[]>>(new Map())
 
   let pollInterval: ReturnType<typeof setInterval> | null = null
   let agentPollInterval: ReturnType<typeof setInterval> | null = null
@@ -110,7 +112,7 @@ export const useTasksStore = defineStore('tasks', () => {
     loading.value = true
     error.value = null
     try {
-      const [rawTasks, rawAgents, rawLocks, rawStats, rawPerimetres] = await Promise.all([
+      const [rawTasks, rawAgents, rawLocks, rawStats, rawPerimetres, rawBoardAssignees] = await Promise.all([
         query<Task>(`
           SELECT t.*, a.name as agent_name, a.perimetre as agent_perimetre,
             c.name as agent_createur_name
@@ -128,6 +130,14 @@ export const useTasksStore = defineStore('tasks', () => {
         query<Perimetre>(`
           SELECT id, name, dossier, techno, description, actif
           FROM perimetres WHERE actif = 1 ORDER BY name
+        `),
+        // Batch load all board assignees in one query — eliminates N per-card IPC calls (T787)
+        query<{ task_id: number; agent_id: number; agent_name: string; role: string | null }>(`
+          SELECT ta.task_id, ta.agent_id, a.name as agent_name, ta.role
+          FROM task_agents ta
+          JOIN agents a ON a.id = ta.agent_id
+          JOIN tasks t ON t.id = ta.task_id
+          WHERE t.statut != 'archived'
         `)
       ])
 
@@ -150,6 +160,18 @@ export const useTasksStore = defineStore('tasks', () => {
         }
       }
       tasks.value = newTasks
+      // Build boardAssignees Map<taskId, TaskAssignee[]> from flat batch result (T787)
+      const assigneesMap = new Map<number, TaskAssignee[]>()
+      for (const row of rawBoardAssignees) {
+        if (!assigneesMap.has(row.task_id)) assigneesMap.set(row.task_id, [])
+        assigneesMap.get(row.task_id)!.push({
+          agent_id: row.agent_id,
+          agent_name: row.agent_name,
+          role: row.role as TaskAssignee['role'],
+          assigned_at: '',
+        })
+      }
+      boardAssignees.value = assigneesMap
       // Update agentsStore state via storeToRefs refs — mutations propagate to the sub-store
       agents.value = rawAgents.map(normalizeRow)
       locks.value = rawLocks.map(normalizeRow)
@@ -438,6 +460,6 @@ export const useTasksStore = defineStore('tasks', () => {
     filteredTasks, tasksByStatus,
     setProject, selectProject, closeProject, watchForDb,
     refresh, startPolling, stopPolling, query, setTaskStatut,
-    selectedTask, taskComments, taskLinks, taskAssignees, openTask, closeTask,
+    selectedTask, taskComments, taskLinks, taskAssignees, boardAssignees, openTask, closeTask,
   }
 })
