@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useHookEventsStore, type HookEvent } from '@renderer/stores/hookEvents'
 import HookEventPayloadModal from './HookEventPayloadModal.vue'
+import { eventIcon, toolColor, eventColor, toolName } from '@renderer/composables/useHookEventDisplay'
 
 const props = defineProps<{
   /** Claude session UUID — used to filter hook events for this stream. */
@@ -20,37 +21,18 @@ const activeTool = computed(() => {
   return store.activeTools[key] ?? null
 })
 
-const EVENT_ICON: Record<string, string> = {
-  PreToolUse:    '⚙',
-  PostToolUse:   '✓',
-  SessionStart:  '▶',
-  SubagentStart: '→',
-  SubagentStop:  '✕',
+function rowColor(e: HookEvent): string {
+  if (e.event === 'PreToolUse' || e.event === 'PostToolUse' || e.event === 'PostToolUseFailure') {
+    return toolColor(toolName(e.payload))
+  }
+  return eventColor(e.event)
 }
 
-function eventLabel(event: string): string {
-  return EVENT_ICON[event] ?? '·'
-}
-
-function toolName(payload: unknown): string {
-  return (payload as Record<string, unknown>)?.tool_name as string ?? '?'
-}
-
-const TOOL_COLOR: Record<string, string> = {
-  Bash:         'text-amber-400',
-  Read:         'text-sky-400',
-  Write:        'text-emerald-400',
-  Edit:         'text-emerald-400',
-  Glob:         'text-violet-400',
-  Grep:         'text-violet-400',
-  Agent:        'text-pink-400',
-  WebFetch:     'text-blue-400',
-  WebSearch:    'text-blue-400',
-  TodoWrite:    'text-orange-400',
-}
-
-function toolColor(name: string): string {
-  return TOOL_COLOR[name] ?? 'text-content-tertiary'
+function rowLabel(e: HookEvent): string {
+  if (e.event === 'PreToolUse' || e.event === 'PostToolUse' || e.event === 'PostToolUseFailure') {
+    return toolName(e.payload)
+  }
+  return e.event
 }
 </script>
 
@@ -93,12 +75,8 @@ function toolColor(name: string): string {
         class="flex items-center gap-1.5 py-0.5 cursor-pointer hover:bg-surface-secondary/40 rounded px-1 -mx-1 transition-colors"
         @click.stop="selectedEvent = e"
       >
-        <span class="text-[10px] text-content-faint font-mono shrink-0">{{ eventLabel(e.event) }}</span>
-        <span class="text-[10px] font-mono shrink-0"
-          :class="e.event === 'PreToolUse' || e.event === 'PostToolUse'
-            ? toolColor(toolName(e.payload))
-            : 'text-content-subtle'"
-        >{{ e.event === 'PreToolUse' || e.event === 'PostToolUse' ? toolName(e.payload) : e.event }}</span>
+        <span class="text-[10px] text-content-faint font-mono shrink-0">{{ eventIcon(e.event) }}</span>
+        <span class="text-[10px] font-mono shrink-0" :class="rowColor(e)">{{ rowLabel(e) }}</span>
         <span class="text-[10px] text-content-faint font-mono ml-auto tabular-nums shrink-0">
           {{ new Date(e.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}
         </span>
