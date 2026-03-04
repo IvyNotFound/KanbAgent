@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.14.0-blue)
+![Version](https://img.shields.io/badge/version-0.16.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches sessions, and includes an embedded WSL terminal.
@@ -35,6 +35,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Secure GitHub Token**: OS-level encryption via Electron `safeStorage` (DPAPI Windows / Keychain macOS)
 - **IPC Path Guard**: All read-only IPC handlers protected by `assertDbPathAllowed` — prevents path traversal to unauthorized databases
 - **WSL Memory Monitoring**: Real-time WSL RAM monitoring with alerts and memory release
+- **Agent Error Visibility**: Spawn failures (`error:spawn`) and abnormal exits (`error:exit`) are surfaced directly in the StreamView UI — no DevTools needed; full stderr output included when available
 
 ## Prerequisites
 

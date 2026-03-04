@@ -160,9 +160,12 @@ function killAllAgents(): void {
  * - `agent:kill`   → kill the process
  *
  * Events emitted to renderer:
- * - `agent:stream:<id>` — parsed JSONL event object
- * - `agent:convId:<id>` — session_id from system:init event
- * - `agent:exit:<id>`   — exitCode when process closes
+ * - `agent:stream:<id>` — parsed JSONL event object (StreamEvent)
+ * - `agent:stream:<id>` `{ type: 'error:spawn', error }` — wsl.exe failed to start (ENOENT, EACCES…)
+ * - `agent:stream:<id>` `{ type: 'error:exit', error, stderr? }` — process exited with non-zero code
+ *   before emitting any JSONL event; stderr contains the buffered process output when available (T697)
+ * - `agent:convId:<id>` — session_id extracted from system:init event
+ * - `agent:exit:<id>`   — exitCode (number | null) when process closes
  */
 export function registerAgentStreamHandlers(): void {
   app.on('before-quit', killAllAgents)
