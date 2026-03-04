@@ -8,8 +8,9 @@ import { usePolledData } from '@renderer/composables/usePolledData'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import type { AgentLog } from '@renderer/types'
 import TokenStatsView from './TokenStatsView.vue'
+import ActivityHeatmap from './ActivityHeatmap.vue'
 
-type SubTab = 'logs' | 'tokenStats'
+type SubTab = 'logs' | 'tokenStats' | 'heatmap'
 
 const props = defineProps<{
   initialAgentId?: number | null
@@ -215,14 +216,30 @@ watch(() => props.initialAgentId, (v) => {
         ]"
         @click="activeSubTab = 'tokenStats'"
       >{{ t('tokenStats.title') }}</button>
+      <button
+        :class="[
+          'px-3 py-1 rounded-t text-[11px] font-mono font-medium transition-colors border border-b-0',
+          activeSubTab === 'heatmap'
+            ? 'text-content-secondary bg-surface-primary border-edge-subtle'
+            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
+        ]"
+        @click="activeSubTab = 'heatmap'"
+      >Heatmap</button>
     </div>
 
     <!-- ── Token Stats sub-tab ───────────────────────────────────────────── -->
     <!-- v-show instead of v-if: keeps component mounted, avoids 5 IPC calls on every sub-tab switch -->
     <TokenStatsView v-show="activeSubTab === 'tokenStats'" />
 
+    <!-- ── Heatmap sub-tab ───────────────────────────────────────────────── -->
+    <ActivityHeatmap
+      v-if="activeSubTab === 'heatmap' && store.dbPath"
+      :db-path="store.dbPath"
+      class="flex-1"
+    />
+
     <!-- ── Logs sub-tab ──────────────────────────────────────────────────── -->
-    <template v-if="activeSubTab !== 'tokenStats'">
+    <template v-if="activeSubTab !== 'tokenStats' && activeSubTab !== 'heatmap'">
 
     <!-- ── Barre de filtres ──────────────────────────────────────────────── -->
     <div class="shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-edge-subtle bg-surface-base">
