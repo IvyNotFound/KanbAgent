@@ -16,6 +16,19 @@ import { PassThrough } from 'stream'
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
+const mockWriteFileSync = vi.hoisted(() => vi.fn())
+const mockUnlinkSync = vi.hoisted(() => vi.fn())
+const mockAppendFileSync = vi.hoisted(() => vi.fn())
+
+vi.mock('fs', () => {
+  const fns = {
+    writeFileSync: mockWriteFileSync,
+    unlinkSync: mockUnlinkSync,
+    appendFileSync: mockAppendFileSync,
+  }
+  return { default: fns, ...fns }
+})
+
 // sender registry for webContents.fromId
 const senderRegistry = vi.hoisted(() => new Map<number, {
   id: number
@@ -121,7 +134,7 @@ describe('agent-stream', () => {
     expect(spawnOpts.stdio).toEqual(['pipe', 'pipe', 'pipe'])
   })
 
-  it('spawns wsl.exe with bash -lc and claude -p --input-format stream-json', async () => {
+  it('spawns wsl.exe with bash -l <script> and claude -p --input-format stream-json (T706)', async () => {
     const handler = handlers.get('agent:create')!
     const event = { sender: mockSender }
     await handler(event, {})
@@ -129,14 +142,22 @@ describe('agent-stream', () => {
     const [cmd, args] = mockSpawn.mock.calls[0] as [string, string[]]
     // cmd is now an absolute path (e.g. C:\Windows\System32\wsl.exe or fallback) — check suffix
     expect(cmd.toLowerCase()).toMatch(/wsl\.exe$/)
-    // Must contain 'bash', '-lc'
+    // Must contain 'bash', '-l' — never '-lc' (T706: avoid wsl.exe intermediate shell expansion)
     expect(args).toContain('bash')
-    expect(args).toContain('-lc')
-    // The claude command string
-    const claudeCmd = args[args.length - 1]
-    expect(claudeCmd).toContain('-p')
-    expect(claudeCmd).toContain('--input-format stream-json')
-    expect(claudeCmd).toContain('--output-format stream-json')
+    expect(args).toContain('-l')
+    expect(args).not.toContain('-lc')
+    // Last arg is a WSL path to the script file (not the command string)
+    const scriptPath = args[args.length - 1]
+    expect(scriptPath).toMatch(/claude-start-\d+\.sh$/)
+    // Script content contains the full claude command
+    const scriptCall = mockWriteFileSync.mock.calls.find(
+      ([p]: [unknown]) => String(p).includes('claude-start')
+    )!
+    expect(scriptCall).toBeTruthy()
+    const scriptContent = String(scriptCall[1])
+    expect(scriptContent).toContain('-p')
+    expect(scriptContent).toContain('--input-format stream-json')
+    expect(scriptContent).toContain('--output-format stream-json')
   })
 
   it('includes -d <distro> when wslDistro is provided', async () => {

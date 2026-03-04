@@ -6,7 +6,7 @@
  * line wrapping, and enables true multi-turn via stdin JSONL without respawning.
  *
  * Architecture:
- * - spawn('wsl.exe', [..., 'bash', '-lc', claudeCmd], { stdio: 'pipe' })
+ * - spawn('wsl.exe', [..., 'bash', '-l', scriptPath], { stdio: 'pipe' })
  * - readline on stdout → JSONL events, 0 ANSI corruption
  * - proc.stdin.write() for multi-turn messages (no respawn)
  * - convId extracted from system:init event (no banner scanning needed)
@@ -108,7 +108,9 @@ function buildEnv(): Record<string, string> {
  *   Path must not contain single quotes (e.g. `/mnt/c/Users/Cover/AppData/Local/Temp/claude-sp-1.txt`).
  * @param opts.thinkingMode - Set to `'disabled'` to inject `--settings '{"alwaysThinkingEnabled":false}'`.
  * @param opts.permissionMode - Set to `'auto'` to add `--dangerously-skip-permissions`.
- * @returns The full bash command string, ready for `spawn('wsl.exe', ['--', 'bash', '-lc', cmd])`.
+ * @returns The full bash command string to embed in a launch script executed as `bash -l script.sh` (T706).
+ *   Do NOT pass this string directly to `bash -lc` via wsl.exe — write it to a temp file first
+ *   so wsl.exe outer-shell expansion cannot evaluate `$(cat ...)` before bash sees it.
  */
 function buildClaudeCmd(opts: {
   claudeCommand?: string
@@ -256,15 +258,24 @@ export function registerAgentStreamHandlers(): void {
       permissionMode: opts.permissionMode,
     })
 
+    // Write bash launch script to avoid wsl.exe outer-shell expansion of $(cat ...) (T706).
+    // When wsl.exe receives "bash -lc "cmd"", an intermediate shell evaluates $(cat file)
+    // before bash sees it — the system prompt content becomes the bash script, causing
+    // parse errors at line N (e.g. "syntax error near unexpected token '('").
+    // Solution: write the full command into a .sh file and pass only a plain path to wsl.exe.
+    const scriptTempFile = join(tmpdir(), `claude-start-${id}.sh`)
+    writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${claudeCmd}\n`, 'utf-8')
+    const scriptWslPath = toWslPath(scriptTempFile)
+
     // Resolve wsl.exe via absolute path to avoid ENOENT in packaged app where
     // C:\Windows\System32 may be absent from the spawned process PATH (Fix T692).
     const wslExe = process.env.SystemRoot
       ? join(process.env.SystemRoot, 'System32', 'wsl.exe')
       : 'C:\\Windows\\System32\\wsl.exe'
 
-    logDebug(`spawn attempt: exe=${wslExe} args=${JSON.stringify([...wslArgs, '--', 'bash', '-lc', claudeCmd])}`)
+    logDebug(`spawn attempt: exe=${wslExe} script=${scriptWslPath} args=${JSON.stringify([...wslArgs, '--', 'bash', '-l', scriptWslPath])}`)
     console.log('[agent-stream] spawn', wslExe, wslArgs)
-    const proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-lc', claudeCmd], {
+    const proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-l', scriptWslPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: buildEnv(),
     })
@@ -332,6 +343,7 @@ export function registerAgentStreamHandlers(): void {
       agents.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
       if (spTempFile) try { unlinkSync(spTempFile) } catch { /* cleanup best-effort */ }
+      try { unlinkSync(scriptTempFile) } catch { /* cleanup best-effort */ }
 
       logDebug(`close id=${id}: exitCode=${exitCode} eventsReceived=${eventsReceived} stderr=${stderrBuffer.slice(0, 200)}`)
 
