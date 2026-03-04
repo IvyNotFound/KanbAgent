@@ -48,6 +48,9 @@ build/*
 tsconfig.node.tsbuildinfo
 tsconfig.web.tsbuildinfo
 
+# Screenshots / temp images
+img/
+
 # Misc
 SELECT
 .claude/project-db
