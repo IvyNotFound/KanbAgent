@@ -8,7 +8,7 @@
  * @module ipc
  */
 
-import { ipcMain, dialog, BrowserWindow, app } from 'electron'
+import { ipcMain, dialog, BrowserWindow, app, shell } from 'electron'
 import { watch, type FSWatcher } from 'fs'
 import { access, copyFile, mkdir, readdir, writeFile } from 'fs/promises'
 import { join } from 'path'
@@ -519,4 +519,9 @@ export function registerIpcHandlers(): void {
   registerAgentHandlers()
   registerSettingsHandlers()
   registerWslHandlers()
+
+  ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+    if (!/^https?:\/\//i.test(url)) return
+    await shell.openExternal(url)
+  })
 }

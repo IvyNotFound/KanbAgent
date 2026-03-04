@@ -292,6 +292,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openWslTerminal: (): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('wsl:openTerminal'),
 
+  /** Open a URL in the system default browser. Only http/https URLs are allowed. */
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
+
   // Hook events — pushed by hookServer when Claude Code lifecycle hooks fire (T741)
   onHookEvent: (callback: (event: { event: string; payload: unknown; ts: number }) => void): (() => void) => {
     const handler = (_: unknown, data: { event: string; payload: unknown; ts: number }) => callback(data)
