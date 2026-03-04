@@ -301,6 +301,26 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
       ></span>
     </button>
 
+    <!-- Onglet Hooks (fixe, non fermable) -->
+    <button
+      :class="[
+        'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0',
+        store.activeTabId === 'hooks'
+          ? 'text-content-primary bg-surface-secondary'
+          : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
+      ]"
+      @click="store.setActive('hooks')"
+    >
+      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.93 9.48-.23 1.3-.66.22-.23-1.3a3 3 0 1 1 1.13 0zm-.93.9a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1z"/>
+      </svg>
+      <span>{{ t('sidebar.hooks') }}</span>
+      <span
+        v-if="store.activeTabId === 'hooks'"
+        class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
+      ></span>
+    </button>
+
     <!-- Scroll left arrow -->
     <button
       v-show="canScrollLeft"

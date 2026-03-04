@@ -15,7 +15,7 @@ export interface HookEvent {
 let _seq = 0
 
 /** Maximum total events kept in the store (memory cap). */
-const MAX_EVENTS = 200
+const MAX_EVENTS = 2000
 
 /**
  * Global store for Claude Code hook events received via IPC `hook:event`.
