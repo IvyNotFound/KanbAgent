@@ -202,7 +202,7 @@ watch(selectedPeriod, (v) => {
 // usePolledData manages polling lifecycle, loading state, and cleanup
 const { loading, refresh } = usePolledData(
   fetchStats,
-  () => tabsStore.activeTabId === 'logs' || tabsStore.activeTabId === 'metrics',
+  () => tabsStore.activeTabId === 'stat',
   30000,
 )
 
