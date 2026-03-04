@@ -15,6 +15,7 @@ import ConfirmDialog from '@renderer/components/ConfirmDialog.vue'
 const StreamView = defineAsyncComponent(() => import('@renderer/components/StreamView.vue'))
 const FileView = defineAsyncComponent(() => import('@renderer/components/FileView.vue'))
 const AgentLogsView = defineAsyncComponent(() => import('@renderer/components/AgentLogsView.vue'))
+const TokenStatsView = defineAsyncComponent(() => import('@renderer/components/TokenStatsView.vue'))
 const ExplorerView = defineAsyncComponent(() => import('@renderer/components/ExplorerView.vue'))
 const CommandPalette = defineAsyncComponent(() => import('@renderer/components/CommandPalette.vue'))
 const SetupWizard = defineAsyncComponent(() => import('@renderer/components/SetupWizard.vue'))
@@ -83,6 +84,10 @@ defineExpose({
           <!-- Logs tab -->
           <template v-else-if="tabsStore.activeTab.type === 'logs'">
             <AgentLogsView :initial-agent-id="tabsStore.activeTab.logsAgentId" class="flex-1" />
+          </template>
+          <!-- Metrics tab -->
+          <template v-else-if="tabsStore.activeTab.type === 'metrics'">
+            <TokenStatsView class="flex-1" />
           </template>
           <!-- Terminal tabs (keep mounted to preserve session, hide inactive) -->
           <template v-for="tab in tabsStore.tabs.filter(t => t.type === 'terminal')" :key="tab.id">

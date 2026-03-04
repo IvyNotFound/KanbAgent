@@ -84,7 +84,7 @@
     "cacheHitLabel": "% tokens en cache",
     "cost": "Coût estimé",
     "costNote": "Estimation Sonnet 4.6",
-    "evolution": "Évolution 7j",
+    "evolution": "Évolution 30j",
     "perAgent": "Par agent",
     "perSession": "Par session (50 dernières)",
     "agent": "Agent",
@@ -269,6 +269,7 @@
   "sidebar": {
     "backlog": "Backlog",
     "logs": "Log",
+    "metrics": "Métriques",
     "project": "Projet",
     "agents": "Agents",
     "perimeters": "Périmètres",

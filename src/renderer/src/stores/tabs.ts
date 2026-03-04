@@ -2,7 +2,7 @@
  * Pinia store for tab management in the application.
  *
  * Manages:
- * - Multiple tab types: backlog, terminal, explorer, file, logs
+ * - Multiple tab types: backlog, terminal, explorer, file, logs, metrics
  * - Tab ordering and activation
  * - Terminal sessions with ptyId tracking
  * - Activity indicators for terminals
@@ -13,7 +13,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'logs'
+export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'logs' | 'metrics'
 
 export interface Tab {
   id: string
@@ -44,7 +44,7 @@ export interface Tab {
  * Tabs store using Pinia composition API.
  *
  * State:
- * - tabs: Array of open tabs (includes permanent tabs: backlog, logs)
+ * - tabs: Array of open tabs (includes permanent tabs: backlog, logs, metrics)
  * - activeTabId: Currently active tab
  * - tabActivity: Map of tab IDs to activity status
  *
@@ -59,7 +59,8 @@ export interface Tab {
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<Tab[]>([
     { id: 'backlog', type: 'backlog', title: 'Backlog', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
-    { id: 'logs',  type: 'logs',  title: 'Log',   ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
+    { id: 'logs',    type: 'logs',    title: 'Log',     ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
+    { id: 'metrics', type: 'metrics', title: 'Metrics', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
   ])
   const activeTabId = ref<string>('backlog')
 

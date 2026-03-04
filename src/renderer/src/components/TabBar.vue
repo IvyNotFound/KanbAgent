@@ -302,6 +302,26 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
       ></span>
     </button>
 
+    <!-- Onglet Métriques (fixe, non fermable) -->
+    <button
+      :class="[
+        'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0',
+        store.activeTabId === 'metrics'
+          ? 'text-content-primary bg-surface-secondary'
+          : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
+      ]"
+      @click="store.setActive('metrics')"
+    >
+      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+        <path d="M0 11l4-5 3 3 4-6 5 3v5H0z"/>
+      </svg>
+      <span>{{ t('sidebar.metrics') }}</span>
+      <span
+        v-if="store.activeTabId === 'metrics'"
+        class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
+      ></span>
+    </button>
+
     <!-- Scroll left arrow -->
     <button
       v-show="canScrollLeft"

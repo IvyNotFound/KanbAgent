@@ -175,13 +175,13 @@ async function fetchStats(): Promise<void> {
          ORDER BY s.started_at DESC
          LIMIT 50`,
       ) as Promise<SessionTokenRow[]>,
-      // Sparkline: daily totals for last 7 days (always global, not filtered by period)
+      // Sparkline: daily totals for last 30 days (always global, not filtered by period)
       window.electronAPI.queryDb(
         store.dbPath,
         `SELECT date(started_at) as day,
                 SUM(COALESCE(tokens_in,0) + COALESCE(tokens_out,0)) as total
          FROM sessions
-         WHERE started_at >= datetime('now', '-7 days')
+         WHERE started_at >= datetime('now', '-30 days')
          GROUP BY date(started_at)
          ORDER BY day ASC`,
       ) as Promise<SparkDay[]>,
@@ -202,7 +202,7 @@ watch(selectedPeriod, (v) => {
 // usePolledData manages polling lifecycle, loading state, and cleanup
 const { loading, refresh } = usePolledData(
   fetchStats,
-  () => tabsStore.activeTabId === 'logs',
+  () => tabsStore.activeTabId === 'logs' || tabsStore.activeTabId === 'metrics',
   30000,
 )
 
@@ -288,20 +288,19 @@ const cacheHitColor = computed(() => {
   return 'text-content-faint'
 })
 
-// ── T635 — Sparkline 7 days ───────────────────────────────────────────────────
+// ── Sparkline 30 days ─────────────────────────────────────────────────────────
 
-// Build a complete 7-day array filling missing days with 0
+// Build a complete 30-day array filling missing days with 0
 const sparkBars = computed(() => {
   const map = new Map<string, number>()
   for (const d of sparkDays.value) map.set(d.day, d.total)
 
   const fmt = new Intl.DateTimeFormat(locale.value === 'fr' ? 'fr-FR' : 'en-US', {
-    weekday: 'short',
     day: 'numeric',
     month: 'short',
   })
   const bars: Array<{ day: string; total: number; label: string }> = []
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 29; i >= 0; i--) {
     const date = new Date()
     date.setUTCDate(date.getUTCDate() - i)
     const key = date.toISOString().slice(0, 10)
@@ -428,7 +427,7 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
       </div>
     </div>
 
-    <!-- ── Sparkline 7 days (T635) ────────────────────────────────────── -->
+    <!-- ── Sparkline 30 days ─────────────────────────────────────────── -->
     <div class="shrink-0 px-4 py-2 border-b border-edge-subtle bg-surface-base">
       <div class="flex items-center gap-2 mb-1">
         <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.evolution') }}</span>

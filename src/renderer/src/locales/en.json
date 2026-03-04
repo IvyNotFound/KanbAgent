@@ -84,7 +84,7 @@
     "cacheHitLabel": "% cached tokens",
     "cost": "Est. cost",
     "costNote": "Sonnet 4.6 estimate",
-    "evolution": "7-day trend",
+    "evolution": "30-day trend",
     "perAgent": "Per agent",
     "perSession": "Per session (last 50)",
     "agent": "Agent",
@@ -269,6 +269,7 @@
   "sidebar": {
     "backlog": "Backlog",
     "logs": "Log",
+    "metrics": "Metrics",
     "project": "Project",
     "agents": "Agents",
     "perimeters": "Perimeters",

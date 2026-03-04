@@ -280,9 +280,10 @@ describe('stores/tabs', () => {
       const store = useTabsStore()
       store.addTerminal('agent1')
       store.addTerminal('agent2')
-      const firstTabId = store.tabs[1].id // First terminal
+      const terminals = store.tabs.filter(t => t.type === 'terminal')
+      const firstTabId = terminals[0].id
       store.setActive(firstTabId)
-      const secondTabId = store.tabs[2].id // Second terminal
+      const secondTabId = terminals[1].id
 
       store.closeTab(secondTabId)
 
@@ -294,8 +295,9 @@ describe('stores/tabs', () => {
       store.addTerminal('agent-a')
       store.addTerminal('agent-a')
       store.addTerminal('agent-b')
-      // tabs: [backlog, logs, agent-a tab1, agent-a tab2, agent-b tab]
-      const [, , tabA1, tabA2] = store.tabs
+      // tabs: [backlog, logs, metrics, agent-a tab1, agent-a tab2, agent-b tab]
+      const terminals = store.tabs.filter(t => t.type === 'terminal')
+      const [tabA1, tabA2] = terminals
       store.setActive(tabA1.id)
 
       store.closeTab(tabA1.id)
@@ -308,8 +310,9 @@ describe('stores/tabs', () => {
       const store = useTabsStore()
       store.addTerminal('agent-a')
       store.addTerminal('agent-b')
-      // tabs: [backlog, logs, agent-a tab, agent-b tab]
-      const [, , tabA, tabB] = store.tabs
+      // tabs: [backlog, logs, metrics, agent-a tab, agent-b tab]
+      const terminals = store.tabs.filter(t => t.type === 'terminal')
+      const [tabA, tabB] = terminals
       store.setActive(tabA.id)
 
       store.closeTab(tabA.id)
@@ -323,8 +326,9 @@ describe('stores/tabs', () => {
       store.addTerminal('agent-a')
       store.addTerminal('agent-a')
       store.addTerminal('agent-b')
-      // tabs: [backlog, logs, agent-a tab1, agent-a tab2, agent-b tab]
-      const [, , tabA1, tabA2, tabB] = store.tabs
+      // tabs: [backlog, logs, metrics, agent-a tab1, agent-a tab2, agent-b tab]
+      const terminals = store.tabs.filter(t => t.type === 'terminal')
+      const [tabA1, tabA2, tabB] = terminals
       store.setActive(tabB.id)
 
       store.closeTab(tabA1.id)
