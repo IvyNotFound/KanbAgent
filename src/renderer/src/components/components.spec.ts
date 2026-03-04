@@ -4123,6 +4123,49 @@ describe('StreamView', () => {
     await nextTick()
     expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(false)
   })
+
+  it('renders error:spawn event as red error block (T694)', async () => {
+    const event: StreamEvent = { type: 'error:spawn', error: 'spawn ENOENT' }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-error"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('error:spawn')
+    expect(block.text()).toContain('spawn ENOENT')
+  })
+
+  it('renders error:stderr event as red error block (T694)', async () => {
+    const event: StreamEvent = { type: 'error:stderr', error: 'bash: claude: command not found' }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-error"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('error:stderr')
+    expect(block.text()).toContain('bash: claude: command not found')
+  })
+
+  it('renders error:exit event as red error block (T694)', async () => {
+    const event: StreamEvent = { type: 'error:exit', error: 'Process exited with code 127' }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-error"]')
+    expect(block.exists()).toBe(true)
+    expect(block.text()).toContain('error:exit')
+    expect(block.text()).toContain('Process exited with code 127')
+  })
+
+  it('normal assistant/user/result blocks unaffected by error types (T694)', async () => {
+    const assistant: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'Réponse normale' }] },
+    }
+    const result: StreamEvent = { type: 'result', cost_usd: 0.001, num_turns: 1 }
+    const { wrapper } = await mountStream([assistant, result])
+    await nextTick()
+    expect(wrapper.find('[data-testid="block-text"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="block-result"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="block-error"]').exists()).toBe(false)
+  })
 })
 
 // ── ConfirmModal (T675) ───────────────────────────────────────────────────────

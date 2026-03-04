@@ -59,7 +59,7 @@ export interface StreamContentBlock {
 }
 
 export interface StreamEvent {
-  type: 'system' | 'user' | 'assistant' | 'result'
+  type: 'system' | 'user' | 'assistant' | 'result' | 'error:spawn' | 'error:stderr' | 'error:exit'
   subtype?: string
   session_id?: string
   message?: {
@@ -69,6 +69,8 @@ export interface StreamEvent {
   cost_usd?: number
   num_turns?: number
   duration_ms?: number
+  /** Error message for error:spawn / error:stderr / error:exit events */
+  error?: string
 }
 
 // ── Props ────────────────────────────────────────────────────────────────────
@@ -392,6 +394,19 @@ function toolResultText(content: StreamContentBlock['content']): string {
             v-if="event.session_id"
             class="ml-1 font-mono"
           >· {{ event.session_id.slice(0, 8) }}…</span>
+        </div>
+
+        <!-- error events (error:spawn / error:stderr / error:exit) -->
+        <div
+          v-if="event.type === 'error:spawn' || event.type === 'error:stderr' || event.type === 'error:exit'"
+          class="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg px-4 py-3 text-red-300 text-xs font-mono"
+          data-testid="block-error"
+        >
+          <span class="shrink-0 text-red-400">⚠</span>
+          <div>
+            <span class="font-semibold text-red-400">{{ event.type }}</span>
+            <span class="ml-2 whitespace-pre-wrap">{{ event.error }}</span>
+          </div>
         </div>
 
         <!-- user message — bulle utilisateur alignée à droite -->
