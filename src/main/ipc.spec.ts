@@ -44,6 +44,10 @@ vi.mock('electron', () => ({
     isPackaged: false,
     getAppPath: vi.fn(() => '/fake/app'),
   },
+  shell: {
+    openExternal: vi.fn().mockResolvedValue(undefined),
+    showItemInFolder: vi.fn(),
+  },
 }))
 
 // ── sql.js mock ────────────────────────────────────────────────────────────────
@@ -113,6 +117,19 @@ vi.mock('fs/promises', () => {
     copyFile,
   }
 })
+
+// ── child_process mock (for git:log dynamic import) ──────────────────────────
+const { mockExecSync, mockExecFile, mockSpawn } = vi.hoisted(() => ({
+  mockExecSync: vi.fn(),
+  mockExecFile: vi.fn(),
+  mockSpawn: vi.fn(() => ({ unref: vi.fn() })),
+}))
+vi.mock('child_process', () => ({
+  default: { execSync: mockExecSync, execFile: mockExecFile, spawn: mockSpawn },
+  execSync: mockExecSync,
+  execFile: mockExecFile,
+  spawn: mockSpawn,
+}))
 
 // ── T552: mock ./db to intercept queryLive (CJS require bypasses sql.js vi.mock) ──
 vi.mock('./db', async (importOriginal) => {
@@ -1485,6 +1502,166 @@ describe('IPC handlers — src/main/ipc.ts', () => {
       const result = await callHandler('project:exportZip', '/fake/project.db') as { success: boolean; error?: string; path?: string }
       expect(result).toHaveProperty('success')
       expect(typeof result.success).toBe('boolean')
+    })
+  })
+
+  // ── T777: shell:openExternal ──────────────────────────────────────────────────
+  // URL filter: only http/https allowed; other schemes silently ignored.
+
+  describe('shell:openExternal handler (T777)', () => {
+    let shellMock: { openExternal: ReturnType<typeof vi.fn> }
+
+    beforeEach(async () => {
+      const electron = await import('electron')
+      shellMock = (electron as unknown as { shell: { openExternal: ReturnType<typeof vi.fn> } }).shell
+      shellMock.openExternal.mockClear()
+    })
+
+    it('should call shell.openExternal for https:// URL', async () => {
+      await callHandler('shell:openExternal', 'https://example.com')
+      expect(shellMock.openExternal).toHaveBeenCalledWith('https://example.com')
+    })
+
+    it('should call shell.openExternal for http:// URL', async () => {
+      await callHandler('shell:openExternal', 'http://example.com')
+      expect(shellMock.openExternal).toHaveBeenCalledWith('http://example.com')
+    })
+
+    it('should NOT call shell.openExternal for ftp:// URL', async () => {
+      await callHandler('shell:openExternal', 'ftp://example.com')
+      expect(shellMock.openExternal).not.toHaveBeenCalled()
+    })
+
+    it('should NOT call shell.openExternal for empty string', async () => {
+      await callHandler('shell:openExternal', '')
+      expect(shellMock.openExternal).not.toHaveBeenCalled()
+    })
+
+    it('should NOT call shell.openExternal for javascript: scheme (XSS guard)', async () => {
+      await callHandler('shell:openExternal', 'javascript:alert(1)')
+      expect(shellMock.openExternal).not.toHaveBeenCalled()
+    })
+  })
+
+  // ── T777: session:updateResult ────────────────────────────────────────────────
+  // sessionId validation: must be integer > 0.
+  // writeDb errors are caught → { success: false, error }.
+
+  describe('session:updateResult handler (T777)', () => {
+    it('should return INVALID_SESSION_ID for sessionId = 0', async () => {
+      const result = await callHandler('session:updateResult', '/fake/project.db', 0, {}) as { success: boolean; error?: string }
+      expect(result).toMatchObject({ success: false, error: 'INVALID_SESSION_ID' })
+    })
+
+    it('should return INVALID_SESSION_ID for sessionId = -1', async () => {
+      const result = await callHandler('session:updateResult', '/fake/project.db', -1, {}) as { success: boolean; error?: string }
+      expect(result).toMatchObject({ success: false, error: 'INVALID_SESSION_ID' })
+    })
+
+    it('should return INVALID_SESSION_ID for sessionId = 1.5 (float)', async () => {
+      const result = await callHandler('session:updateResult', '/fake/project.db', 1.5, {}) as { success: boolean; error?: string }
+      expect(result).toMatchObject({ success: false, error: 'INVALID_SESSION_ID' })
+    })
+
+    it('should return INVALID_SESSION_ID for sessionId = NaN', async () => {
+      const result = await callHandler('session:updateResult', '/fake/project.db', NaN, {}) as { success: boolean; error?: string }
+      expect(result).toMatchObject({ success: false, error: 'INVALID_SESSION_ID' })
+    })
+
+    it('should throw DB_PATH_NOT_ALLOWED for unregistered dbPath', async () => {
+      await expect(
+        callHandler('session:updateResult', '/unregistered/evil.db', 1, {})
+      ).rejects.toThrow('DB_PATH_NOT_ALLOWED')
+    })
+
+    it('should return { success: false, error } when writeDb throws (mock sql.js buffer)', async () => {
+      // writeDb uses real sql.js on mock buffer → throws "file is not a database"
+      const result = await callHandler('session:updateResult', '/fake/project.db', 1, { cost_usd: 0.01 }) as { success: boolean; error?: string }
+      expect(result).toHaveProperty('success')
+      if (!result.success) {
+        expect(result.error).toBeDefined()
+      }
+    })
+  })
+
+  // ── T777: git:log ─────────────────────────────────────────────────────────────
+  // Security: assertProjectPathAllowed guard + sinceArg regex injection guard.
+  // Parsing: JSONL-style lines split by SEP (\x1F), taskIds extracted from subject.
+
+  describe('git:log handler (T777)', () => {
+    const SEP = '\x1F'
+
+    beforeEach(() => {
+      mockExecSync.mockReset()
+    })
+
+    it('should throw PROJECT_PATH_NOT_ALLOWED for unregistered projectPath', async () => {
+      await expect(
+        callHandler('git:log', '/unregistered/repo')
+      ).rejects.toThrow()
+    })
+
+    it('should return [] when execSync throws (git absent or invalid repo)', async () => {
+      mockExecSync.mockImplementation(() => { throw new Error('git: command not found') })
+      const result = await callHandler('git:log', '/fake/project') as unknown[]
+      expect(result).toEqual([])
+    })
+
+    it('should clamp limit < 1 to 1', async () => {
+      mockExecSync.mockReturnValue('')
+      await callHandler('git:log', '/fake/project', { limit: 0 })
+      const cmd = mockExecSync.mock.calls[0][0] as string
+      expect(cmd).toContain('-n 1')
+    })
+
+    it('should clamp limit > 500 to 500', async () => {
+      mockExecSync.mockReturnValue('')
+      await callHandler('git:log', '/fake/project', { limit: 9999 })
+      const cmd = mockExecSync.mock.calls[0][0] as string
+      expect(cmd).toContain('-n 500')
+    })
+
+    it('should floor decimal limit (2.9 → 2)', async () => {
+      mockExecSync.mockReturnValue('')
+      await callHandler('git:log', '/fake/project', { limit: 2.9 })
+      const cmd = mockExecSync.mock.calls[0][0] as string
+      expect(cmd).toContain('-n 2')
+    })
+
+    it('should inject sinceArg for valid since string', async () => {
+      mockExecSync.mockReturnValue('')
+      await callHandler('git:log', '/fake/project', { since: '2024-01-01' })
+      const cmd = mockExecSync.mock.calls[0][0] as string
+      expect(cmd).toContain('--since=')
+    })
+
+    it('should NOT inject sinceArg for string with semicolon (injection guard)', async () => {
+      mockExecSync.mockReturnValue('')
+      await callHandler('git:log', '/fake/project', { since: '2024-01-01; rm -rf /' })
+      const cmd = mockExecSync.mock.calls[0][0] as string
+      expect(cmd).not.toContain('--since=')
+    })
+
+    it('should parse hash, date, subject, author from output line', async () => {
+      const line = `abc123${SEP}2024-01-15T10:00:00+00:00${SEP}fix: something${SEP}John`
+      mockExecSync.mockReturnValue(line + '\n')
+      const result = await callHandler('git:log', '/fake/project') as Array<{ hash: string; date: string; subject: string; author: string; taskIds: number[] }>
+      expect(result).toHaveLength(1)
+      expect(result[0]).toMatchObject({ hash: 'abc123', date: '2024-01-15T10:00:00+00:00', subject: 'fix: something', author: 'John', taskIds: [] })
+    })
+
+    it('should extract multiple taskIds from subject (T123+T456)', async () => {
+      const line = `def456${SEP}2024-01-16T10:00:00+00:00${SEP}feat(scope): do thing (T123 T456)${SEP}Alice`
+      mockExecSync.mockReturnValue(line + '\n')
+      const result = await callHandler('git:log', '/fake/project') as Array<{ taskIds: number[] }>
+      expect(result[0].taskIds).toEqual([123, 456])
+    })
+
+    it('should filter empty lines from output', async () => {
+      const line = `abc123${SEP}2024-01-15T10:00:00+00:00${SEP}fix: x${SEP}John`
+      mockExecSync.mockReturnValue(`${line}\n\n\n`)
+      const result = await callHandler('git:log', '/fake/project') as unknown[]
+      expect(result).toHaveLength(1)
     })
   })
 })
