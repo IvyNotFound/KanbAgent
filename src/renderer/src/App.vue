@@ -11,8 +11,7 @@ import TaskDetailModal from '@renderer/components/TaskDetailModal.vue'
 import ToastContainer from '@renderer/components/ToastContainer.vue'
 import ConfirmDialog from '@renderer/components/ConfirmDialog.vue'
 
-// Lazy-loaded heavy components (xterm.js, CodeMirror, etc.)
-const TerminalView = defineAsyncComponent(() => import('@renderer/components/TerminalView.vue'))
+// Lazy-loaded heavy components (CodeMirror, etc.)
 const StreamView = defineAsyncComponent(() => import('@renderer/components/StreamView.vue'))
 const FileView = defineAsyncComponent(() => import('@renderer/components/FileView.vue'))
 const AgentLogsView = defineAsyncComponent(() => import('@renderer/components/AgentLogsView.vue'))
@@ -91,8 +90,7 @@ defineExpose({
               class="flex-1 overflow-hidden"
               :style="{ display: tabsStore.activeTabId === tab.id ? 'flex' : 'none' }"
             >
-              <StreamView v-if="tab.viewMode === 'stream'" :terminal-id="tab.id" class="flex-1" />
-              <TerminalView v-else :tab-id="tab.id" :is-active="tabsStore.activeTabId === tab.id" class="flex-1" />
+              <StreamView :terminal-id="tab.id" class="flex-1" />
             </div>
           </template>
         </template>

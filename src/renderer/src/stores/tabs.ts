@@ -30,8 +30,8 @@ export interface Tab {
   convId?: string | null
   /** Task ID displayed in tab title (task #400). null = no associated task. */
   taskId?: number | null
-  /** View mode: terminal (xterm.js) or stream (StreamView POC). Default: terminal. */
-  viewMode?: 'terminal' | 'stream'
+  /** View mode: always 'stream' (StreamView). Field kept for backward compat with persisted state. */
+  viewMode?: 'stream'
   filePath?: string
   dirty?: boolean
   logsAgentId?: number | null
@@ -131,7 +131,7 @@ export const useTabsStore = defineStore('tabs', () => {
     activeTabId.value = 'logs'
   }
 
-  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'terminal' | 'stream'): void {
+  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'stream'): void {
     const id = `term-${Date.now()}-${++_tabCounter}`
     let title: string
     if (agentName) {
@@ -162,7 +162,7 @@ export const useTabsStore = defineStore('tabs', () => {
       claudeCommand: claudeCommand ?? null,
       convId: convId ?? null,
       taskId: taskId ?? null,
-      viewMode: viewMode ?? 'terminal',
+      viewMode: viewMode ?? 'stream',
     })
     if (activate) activeTabId.value = id
   }
@@ -228,11 +228,7 @@ export const useTabsStore = defineStore('tabs', () => {
     const terminals = tabs.value.filter(t => t.type === 'terminal')
     for (const tab of terminals) {
       if (tab.ptyId) {
-        if (tab.viewMode === 'stream') {
-          window.electronAPI.agentKill(tab.ptyId)
-        } else {
-          window.electronAPI.terminalKill(tab.ptyId)
-        }
+        window.electronAPI.agentKill(tab.ptyId)
       }
       // Clean up activity timer
       if (activityTimers[tab.id]) {

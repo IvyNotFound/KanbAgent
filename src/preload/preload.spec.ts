@@ -72,28 +72,17 @@ describe('preload/index', () => {
     }
   })
 
-  it('should expose all required terminal methods', () => {
-    const requiredTerminalMethods = [
-      'getWslUsers',
-      'getClaudeProfiles',
-      'getClaudeInstances',
-      'terminalCreate',
-      'terminalWrite',
-      'terminalResize',
-      'terminalKill',
-      'terminalIsAlive',
-      'onTerminalData',
-      'onTerminalExit',
-      'onTerminalConvId',
-      'terminalRelaunch',
-      'terminalDismissCrash',
-      'terminalGetActiveCount',
-      'terminalGetMemoryStatus',
-      'onMemoryStatus',
-      'terminalReleaseMemory',
+  it('should expose all required agent stream methods', () => {
+    const requiredAgentStreamMethods = [
+      'agentCreate',
+      'agentSend',
+      'agentKill',
+      'onAgentStream',
+      'onAgentConvId',
+      'onAgentExit',
     ]
 
-    for (const method of requiredTerminalMethods) {
+    for (const method of requiredAgentStreamMethods) {
       expect(exposedMethods).toContain(method)
     }
   })
@@ -148,11 +137,10 @@ describe('preload/index', () => {
     expect(preloadSource).toContain("ipcRenderer.invoke('query-db'")
   })
 
-  it('should use ipcRenderer.invoke for terminal methods', () => {
-    expect(preloadSource).toContain("ipcRenderer.invoke('terminal:create'")
-    expect(preloadSource).toContain("ipcRenderer.invoke('terminal:write'")
-    expect(preloadSource).toContain("ipcRenderer.invoke('terminal:resize'")
-    expect(preloadSource).toContain("ipcRenderer.invoke('terminal:kill'")
+  it('should use ipcRenderer.invoke for agent stream methods', () => {
+    expect(preloadSource).toContain("ipcRenderer.invoke('agent:create'")
+    expect(preloadSource).toContain("ipcRenderer.invoke('agent:send'")
+    expect(preloadSource).toContain("ipcRenderer.invoke('agent:kill'")
   })
 
   it('should use ipcRenderer.on for subscription methods', () => {

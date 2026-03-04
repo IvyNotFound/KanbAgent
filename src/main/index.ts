@@ -5,7 +5,6 @@
  * - Application lifecycle (ready, activate, quit)
  * - BrowserWindow creation with security settings
  * - IPC handler registration
- * - Terminal handler registration
  *
  * @module main
  */
@@ -13,12 +12,11 @@
 import { app, BrowserWindow, session, Menu, MenuItem, globalShortcut } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
-import { registerTerminalHandlers } from './terminal'
 import { registerAgentStreamHandlers } from './agent-stream'
 
 // ── GPU flags for improved rendering performance ─────────────────────────────────
 // These MUST be set BEFORE app.whenReady() to take effect
-// They improve GPU rasterization and reduce CPU usage for animations/terminals
+// They improve GPU rasterization and reduce CPU usage for animations
 app.commandLine.appendSwitch('enable-gpu-rasterization')
 app.commandLine.appendSwitch('enable-zero-copy')
 app.commandLine.appendSwitch('disable-software-rasterizer')
@@ -83,7 +81,7 @@ function getIconPath(): string | undefined {
  * - Dark background (#18181b)
  * - Security: contextIsolation enabled, nodeIntegration disabled
  *
- * Registers IPC and terminal handlers, then loads the renderer.
+ * Registers IPC handlers, then loads the renderer.
  *
  * @returns {void}
  */
@@ -156,7 +154,6 @@ function createWindow(): void {
 app.whenReady().then(() => {
   setupCSP()
   registerIpcHandlers()
-  registerTerminalHandlers()
   registerAgentStreamHandlers()
   createWindow()
 })

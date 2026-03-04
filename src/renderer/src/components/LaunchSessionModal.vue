@@ -31,8 +31,6 @@ const selectedProfile = ref<string>('claude')
 const lastConvId = ref<string | null>(null)
 /** Whether to use --resume mode on next launch */
 const useResume = ref(false)
-/** Whether to launch in StreamView (stream-json) mode instead of xterm.js — POC */
-const useStreamView = ref(false)
 
 // Compute the full system prompt (system_prompt + system_prompt_suffix)
 const fullSystemPrompt = computed(() => {
@@ -103,8 +101,6 @@ async function launch() {
     // Use selected profile only if it differs from the default 'claude'
     const cmdProfile = selectedProfile.value !== 'claude' ? selectedProfile.value : undefined
     const convId = useResume.value && lastConvId.value ? lastConvId.value : undefined
-    const viewMode = useStreamView.value ? 'stream' : 'terminal'
-
     if (convId) {
       // Resume mode: skip system prompt injection entirely
       tabsStore.addTerminal(
@@ -114,10 +110,7 @@ async function launch() {
         undefined,
         thinkingMode.value,
         cmdProfile,
-        convId,
-        true,
-        undefined,
-        viewMode
+        convId
       )
     } else if (fullSystemPrompt.value) {
       tabsStore.addTerminal(
@@ -126,11 +119,7 @@ async function launch() {
         finalPrompt,
         fullSystemPrompt.value,
         thinkingMode.value,
-        cmdProfile,
-        undefined,
-        true,
-        undefined,
-        viewMode
+        cmdProfile
       )
     } else {
       tabsStore.addTerminal(
@@ -139,11 +128,7 @@ async function launch() {
         finalPrompt,
         undefined,
         thinkingMode.value,
-        cmdProfile,
-        undefined,
-        true,
-        undefined,
-        viewMode
+        cmdProfile
       )
     }
     emit('close')
@@ -257,19 +242,6 @@ async function launch() {
             </p>
           </div>
 
-          <!-- Mode d'affichage (POC StreamView) -->
-          <div>
-            <p class="text-sm font-medium text-content-secondary mb-2">Mode d'affichage (POC)</p>
-            <label
-              class="flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all"
-              :class="useStreamView ? '' : 'border-edge-default bg-surface-secondary/40 hover:border-content-faint'"
-              :style="useStreamView ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '15' } : {}"
-            >
-              <input v-model="useStreamView" type="checkbox" :style="{ accentColor: agentFg(agent.name) }" />
-              <span class="text-sm text-content-secondary">StreamView (stream-json) — expérimental</span>
-            </label>
-            <p class="text-[10px] text-content-faint mt-1">Remplace le terminal xterm.js par un affichage structuré des messages. Incompatible avec --resume.</p>
-          </div>
 
           <!-- Profil API Claude (sélecteur masqué si aucun profil alternatif disponible) -->
           <div v-if="activeProfiles.length > 1">
