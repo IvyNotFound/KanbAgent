@@ -57,6 +57,8 @@ export interface StreamContentBlock {
   content?: string | Array<{ type: string; text?: string }>
   tool_use_id?: string
   is_error?: boolean
+  /** Pre-rendered HTML for text/tool_result blocks — computed once in flushEvents() (T791) */
+  _html?: string
 }
 
 export interface StreamEvent {
@@ -253,7 +255,19 @@ let flushPending = false
 
 function flushEvents(): void {
   if (pendingEvents.length === 0) { flushPending = false; return }
-  for (const e of pendingEvents) events.value.push(e)
+  for (const e of pendingEvents) {
+    // Pre-render markdown HTML once on flush — avoids re-computing on every Vue render (T791)
+    if (e.message?.content) {
+      for (const block of e.message.content) {
+        if (block.type === 'text' && block.text != null) {
+          block._html = renderMarkdown(block.text)
+        } else if (block.type === 'tool_result') {
+          block._html = renderMarkdown(toolResultText(block.content))
+        }
+      }
+    }
+    events.value.push(e)
+  }
   pendingEvents = []
   flushPending = false
   scrollToBottom()
@@ -505,7 +519,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
               class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed select-text cursor-text"
               :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
               data-testid="block-text"
-              v-html="renderMarkdown(block.text ?? '')"
+              v-html="block._html ?? ''"
             />
 
             <!-- thinking block — collapsible grisé -->
@@ -578,7 +592,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
               <div
                 v-show="!isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content))"
                 class="stream-markdown px-4 py-2 text-xs text-zinc-300 overflow-x-auto select-text cursor-text"
-                v-html="renderMarkdown(toolResultText(block.content))"
+                v-html="block._html ?? ''"
               />
             </div>
           </template>
