@@ -25,7 +25,8 @@
     "nextPage": "Suivant",
     "pageOf": "Page {page} / {total} ({count} tâches)",
     "listView": "Vue liste",
-    "treeView": "Vue arborescente"
+    "treeView": "Vue arborescente",
+    "staleTasks": "{count} tâche bloquée depuis trop longtemps | {count} tâches bloquées depuis trop longtemps"
   },
   "taskCard": {
     "relaunchAgent": "Relancer l'agent",
@@ -272,6 +273,7 @@
     "logs": "Log",
     "metrics": "Métriques",
     "stat": "Stat",
+    "hooks": "Hooks",
     "project": "Projet",
     "agents": "Agents",
     "perimeters": "Périmètres",

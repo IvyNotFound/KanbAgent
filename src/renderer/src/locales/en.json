@@ -25,7 +25,8 @@
     "nextPage": "Next",
     "pageOf": "Page {page} / {total} ({count} tasks)",
     "listView": "List view",
-    "treeView": "Tree view"
+    "treeView": "Tree view",
+    "staleTasks": "{count} stale task | {count} stale tasks"
   },
   "taskCard": {
     "relaunchAgent": "Relaunch agent",
@@ -272,6 +273,7 @@
     "logs": "Log",
     "metrics": "Metrics",
     "stat": "Stat",
+    "hooks": "Hooks",
     "project": "Project",
     "agents": "Agents",
     "perimeters": "Perimeters",

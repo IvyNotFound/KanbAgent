@@ -39,6 +39,8 @@ export const useTasksStore = defineStore('tasks', () => {
   const lastRefresh = ref<Date | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  /** Stale task threshold in minutes — loaded from config `stale_threshold_minutes`, default 120. */
+  const staleThresholdMinutes = ref<number>(120)
   const selectedAgentId = ref<number | null>(null)
   const selectedPerimetre = ref<string | null>(null)
   const selectedTask = ref<Task | null>(null)
@@ -162,6 +164,14 @@ export const useTasksStore = defineStore('tasks', () => {
     selectedAgentId.value = null
     selectedPerimetre.value = null
     await window.electronAPI.migrateDb(dPath)
+    // Load stale threshold from config (T749)
+    try {
+      const cfgRes = await window.electronAPI.getConfigValue(dPath, 'stale_threshold_minutes')
+      if (cfgRes.success && cfgRes.value !== null) {
+        const parsed = parseInt(cfgRes.value, 10)
+        if (!isNaN(parsed) && parsed > 0) staleThresholdMinutes.value = parsed
+      }
+    } catch { /* ignore — fallback to default 120 */ }
     await refresh()
     startPolling()
     startWatching(dPath)
@@ -399,7 +409,7 @@ export const useTasksStore = defineStore('tasks', () => {
     agentRefresh, fetchAgentGroups,
     createAgentGroup, renameAgentGroup, deleteAgentGroup, setAgentGroup,
     // Tasks state
-    tasks, stats, lastRefresh, loading, error,
+    tasks, stats, lastRefresh, loading, error, staleThresholdMinutes,
     selectedAgentId, toggleAgentFilter,
     selectedPerimetre, togglePerimetreFilter, perimetres, perimetresData,
     filteredTasks, tasksByStatus,

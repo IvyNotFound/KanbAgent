@@ -11,6 +11,7 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useToast } from '@renderer/composables/useToast'
 import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
+import { isStale, staleDuration } from '@renderer/utils/staleTask'
 
 const { t, locale } = useI18n()
 const props = defineProps<{ task: Task }>()
@@ -97,6 +98,14 @@ function formatDate(iso: string): string {
 const formattedCreatedAt = computed(() => formatDate(props.task.created_at))
 const formattedUpdatedAt = computed(() => formatDate(props.task.updated_at))
 
+const isStaleTask = computed(() =>
+  props.task.statut === 'in_progress' && isStale(props.task.started_at, store.staleThresholdMinutes)
+)
+const staleTooltip = computed(() => {
+  const d = staleDuration(props.task.started_at)
+  return d ? `En cours depuis ${d}` : 'En cours depuis longtemps'
+})
+
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
 const EFFORT_BADGE: Record<number, string> = {
   1: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -130,6 +139,11 @@ const PRIORITY_LABEL: Record<string, string> = {
     <div class="flex items-start justify-between gap-2 mb-2">
       <p class="text-sm text-content-primary font-medium leading-snug flex-1 min-w-0 break-words">{{ task.titre }}</p>
       <div class="flex items-center gap-1 shrink-0">
+        <span
+          v-if="isStaleTask"
+          class="text-xs font-bold px-1.5 py-0.5 rounded font-mono border bg-orange-500/20 text-orange-400 border-orange-500/30"
+          :title="staleTooltip"
+        >⚠</span>
         <span
           v-if="task.priority && task.priority !== 'normal' && task.priority !== 'low'"
           :class="['text-xs font-bold px-1.5 py-0.5 rounded font-mono border', PRIORITY_BADGE[task.priority]]"

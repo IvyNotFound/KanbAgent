@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { isStale } from '@renderer/utils/staleTask'
 import { parseUtcDate } from '@renderer/utils/parseDate'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useToast } from '@renderer/composables/useToast'
@@ -21,6 +22,11 @@ const treeMode = ref(false)
 
 const emptyTasks = { todo: [], in_progress: [], done: [], archived: [] }
 const tasks = computed(() => store.tasksByStatus ?? emptyTasks)
+
+/** Stale tasks: in_progress tasks exceeding the configured threshold (T749). */
+const staleTasks = computed(() =>
+  (tasks.value.in_progress ?? []).filter(t => isStale(t.started_at, store.staleThresholdMinutes))
+)
 
 // Auto-switch to Archive tab when backlog is empty but archives exist
 // Uses stats.archived (from GROUP BY query) since archived tasks are excluded from refresh()
@@ -194,8 +200,25 @@ const archivedByAgent = computed(() => archivedGroupsSorted.value)
     </div>
 
     <!-- Board view: 3 colonnes -->
-    <div v-if="activeTab === 'backlog'" class="flex-1 min-h-0 p-4">
-      <div class="flex gap-3 h-full">
+    <div v-if="activeTab === 'backlog'" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <!-- Stale tasks alert (T749) -->
+      <div
+        v-if="staleTasks.length > 0"
+        class="shrink-0 mx-4 mt-4 px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-start gap-2"
+      >
+        <span class="text-orange-400 shrink-0 text-sm">⚠</span>
+        <div class="flex-1 min-w-0">
+          <span class="text-xs font-semibold text-orange-300">{{ t('board.staleTasks', { count: staleTasks.length }) }}</span>
+          <span
+            v-for="task in staleTasks"
+            :key="task.id"
+            class="ml-2 text-xs text-orange-200/80 cursor-pointer hover:text-orange-200 transition-colors"
+            @click="store.openTask(task)"
+          >#{{ task.id }} {{ task.titre }}</span>
+        </div>
+      </div>
+
+      <div class="flex gap-3 flex-1 min-h-0 p-4">
         <StatusColumn
           v-for="col in columns"
           :key="col.key"
