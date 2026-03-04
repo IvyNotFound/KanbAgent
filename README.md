@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.16.3-blue)
+![Version](https://img.shields.io/badge/version-0.17.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches sessions, and includes an embedded WSL terminal.
@@ -107,9 +107,10 @@ agent-viewer/
 │   │   ├── ipc-fs.ts           # Filesystem IPC handlers (listDir, readFile, writeFile)
 │   │   ├── ipc-settings.ts     # Settings IPC handlers (config, GitHub, updates)
 │   │   ├── db.ts               # SQLite utilities (queryLive, writeLive)
-│   │   ├── terminal.ts         # node-pty + WSL management (spawn, resize, kill, memory)
 │   │   ├── claude-md.ts        # CLAUDE.md manipulation (agent insertion)
-│   │   ├── migration.ts        # Incremental SQLite migrations (schema v2+)
+│   │   ├── migration.ts        # Numbered SQLite migrations (PRAGMA user_version), SAVEPOINT atomicity
+│   │   └── utils/
+│   │       └── wsl.ts          # WSL path conversion (toWslPath)
 │   │   ├── seed.ts             # Demo data for project.db
 │   │   └── default-agents.ts   # Agent definitions: GENERIC_AGENTS (new projects) + DEFAULT_AGENTS (agent-viewer)
 │   ├── preload/
@@ -119,15 +120,18 @@ agent-viewer/
 │           ├── main.ts         # Vue + Pinia + i18n entry point
 │           ├── App.vue         # Root component
 │           ├── stores/         # Pinia stores
-│           │   ├── tasks.ts    # Tasks, agents, locks, project
+│           │   ├── tasks.ts    # Tasks CRUD, filtering, polling (facade → project + agents)
+│           │   ├── agents.ts   # Agents list, locks, agent groups
+│           │   ├── project.ts  # Project connection (dbPath, projectPath)
 │           │   ├── tabs.ts     # Tab management (multi-type)
 │           │   └── settings.ts # Theme, language, GitHub, CLAUDE.md
 │           ├── components/     # Vue components (~20 components)
 │           ├── composables/    # Vue composables (useAutoLaunch, useArchivedPagination, useModalEscape…)
 │           ├── locales/        # i18n translations (fr.json, en.json)
-│           ├── utils/          # Utilities (agentColor…)
+│           ├── utils/          # Utilities (agentColor, db normalisation…)
 │           └── types/
-│               └── index.ts    # Shared TypeScript types
+│               ├── index.ts    # Shared TypeScript types
+│               └── electron.d.ts # Window.electronAPI interface (contextBridge)
 ├── scripts/                    # CLI scripts (dbq.js, dbw.js, dbstart.js, dblock.js)
 ├── electron.vite.config.ts
 ├── electron-builder.yml
