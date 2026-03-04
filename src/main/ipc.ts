@@ -36,6 +36,7 @@ import {
 import { registerFsHandlers } from './ipc-fs'
 import { registerAgentHandlers } from './ipc-agents'
 import { registerSettingsHandlers } from './ipc-settings'
+import { registerWslHandlers } from './ipc-wsl'
 
 // Re-export for consumers (index.ts, tests)
 export { registerDbPath, registerProjectPath } from './db'
@@ -517,4 +518,5 @@ export function registerIpcHandlers(): void {
   registerFsHandlers()
   registerAgentHandlers()
   registerSettingsHandlers()
+  registerWslHandlers()
 }

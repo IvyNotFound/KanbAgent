@@ -180,6 +180,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setTaskAssignees: (dbPath: string, taskId: number, assignees: Array<{ agentId: number; role?: string | null }>): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('task:setAssignees', dbPath, taskId, assignees),
 
+  // WSL — detect distros with Claude Code installed (T721: restored after terminal.ts removal)
+  getClaudeInstances: (): Promise<unknown[]> =>
+    ipcRenderer.invoke('wsl:getClaudeInstances'),
+
   // Search tasks
   searchTasks: (
     dbPath: string,
@@ -283,4 +287,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.off(channel, handler)
   },
+
+  /** Open an external WSL terminal window (wt.exe → wsl:// → wsl.exe fallback). */
+  openWslTerminal: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('wsl:openTerminal'),
+
 })
