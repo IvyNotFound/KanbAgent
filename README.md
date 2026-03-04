@@ -3,7 +3,7 @@
 ![Version](https://img.shields.io/badge/version-0.17.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
-Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches sessions, and includes an embedded WSL terminal.
+Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches Claude sessions in external WSL terminals, and monitors activity in real time.
 
 ![Board agent-viewer](https://placehold.co/800x400/18181b/white?text=agent-viewer+board)
 
@@ -16,12 +16,11 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
 - **Project Popup**: Click the project button in the sidebar to open a modal showing active project name, database path, version, and quick actions (switch project, close project)
 - **Kanban Drag & Drop**: Drag task cards between columns to update status directly in the database
-- **Integrated WSL Terminal**: Multiple sessions, tabs grouped by agent with collapsible parent tab, node-pty + xterm.js, crash recovery with `--resume`
+- **External WSL Terminal**: Launch Claude sessions in external WSL terminal windows (Windows Terminal → `wsl://` URI → `wsl.exe` fallback chain)
 - **Auto-launch Terminals**: Automatic agent session launch on task creation with assignment
 - **Auto-trigger Review**: Automatic review session launch when ≥10 tasks reach `done` status (configurable threshold, cooldown)
 - **Archive Pagination**: Paginated archive view (50 tasks per page), archives excluded from main refresh for better performance
 - **Token Stats**: Period selector (1h / 24h / 7d / 30d / ∞), estimated cost (Sonnet 4.6 pricing), cache hit rate with colour indicator, 7-day activity sparkline, per-agent bars and per-session table
-- **Terminal Watchdog**: Automatic crash detection and recovery with stored launch parameters
 - **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation
 - **Session Resume**: Claude Code sessions resumed via `--resume <conv_id>` to save tokens
 - **Multi-distro Detection**: Automatic discovery of WSL distributions with Claude Code installed
@@ -43,7 +42,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 |----------|-----------------|
 | Node.js | ≥ 20 |
 | npm | ≥ 10 |
-| WSL2 | For the integrated terminal |
+| WSL2 | For launching Claude sessions in external terminal windows |
 | sql.js | ≥ 1.14 (included via `npm install`) |
 
 ## Installation
@@ -106,6 +105,7 @@ agent-viewer/
 │   │   ├── ipc-agents.ts       # Agent IPC handlers (CRUD, sessions, search, assignees)
 │   │   ├── ipc-fs.ts           # Filesystem IPC handlers (listDir, readFile, writeFile)
 │   │   ├── ipc-settings.ts     # Settings IPC handlers (config, GitHub, updates)
+│   │   ├── ipc-wsl.ts          # WSL IPC handlers (wsl:getClaudeInstances, wsl:openTerminal)
 │   │   ├── db.ts               # SQLite utilities (queryLive, writeLive)
 │   │   ├── claude-md.ts        # CLAUDE.md manipulation (agent insertion)
 │   │   ├── migration.ts        # Numbered SQLite migrations (PRAGMA user_version), SAVEPOINT atomicity
@@ -199,7 +199,6 @@ SQL
 | State management | Pinia 2 |
 | CSS | Tailwind CSS v4 (`@tailwindcss/postcss`) |
 | i18n | vue-i18n 9 (FR/EN) |
-| Terminal | node-pty 1 + @xterm/xterm 5 |
 | Database | sql.js 1.14 (SQLite WASM, bypasses file locks) |
 | Tests | Vitest 4 |
 | Code editor | CodeMirror 6 |

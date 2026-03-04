@@ -16,6 +16,15 @@ const execPromise = promisify(execFile)
 const WSL_TIMEOUT = 10_000
 const CONCURRENCY = 2
 
+/**
+ * Represents a WSL distro with Claude Code installed.
+ *
+ * @property distro    - WSL distribution name (e.g. `Ubuntu`, `Debian`)
+ * @property version   - Claude Code version string (e.g. `2.1.58`)
+ * @property isDefault - Whether this distro is marked as default in `wsl.exe -l`
+ * @property profiles  - Available claude wrapper scripts: always includes `"claude"`,
+ *                       plus any `claude-*` scripts found in `~/bin/`
+ */
 export interface ClaudeInstance {
   distro: string
   version: string
@@ -51,7 +60,15 @@ async function openWslTerminalWindow(): Promise<{ success: boolean; error?: stri
   }
 }
 
-/** Register all WSL IPC handlers. */
+/**
+ * Register all WSL IPC handlers on `ipcMain`.
+ *
+ * Handlers registered:
+ * - `wsl:getClaudeInstances` — detect WSL distros with Claude Code installed
+ * - `wsl:openTerminal`       — open an external WSL terminal window
+ *
+ * @returns void
+ */
 export function registerWslHandlers(): void {
   /**
    * Detect all WSL distros that have Claude Code installed.
