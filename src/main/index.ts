@@ -10,7 +10,7 @@
  * @module main
  */
 
-import { app, BrowserWindow, session, Menu, MenuItem } from 'electron'
+import { app, BrowserWindow, session, Menu, MenuItem, globalShortcut } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc'
 import { registerTerminalHandlers } from './terminal'
@@ -109,6 +109,15 @@ function createWindow(): void {
   })
 
   win.once('ready-to-show', () => win.show())
+
+  // DevTools shortcut: always in dev, in packaged app only when DEBUG_DEVTOOLS=1 env var is set.
+  // Useful for diagnosing issues in packaged builds without rebuilding (T704).
+  if (!app.isPackaged || process.env['DEBUG_DEVTOOLS'] === '1') {
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+      const focused = BrowserWindow.getFocusedWindow()
+      if (focused) focused.webContents.toggleDevTools()
+    })
+  }
 
   win.on('maximize', () => win.webContents.send('window-state-changed', true))
   win.on('unmaximize', () => win.webContents.send('window-state-changed', false))
