@@ -134,7 +134,7 @@ export interface FileNode {
  * Used by LaunchSessionModal to let the user pick which environment to launch Claude in.
  */
 export interface ClaudeInstance {
-  /** WSL distro name (e.g. "Ubuntu-24.04") */
+  /** WSL distro name (e.g. "Ubuntu-24.04") or "local" for native installs */
   distro: string
   /** Claude Code version string (e.g. "2.1.58") */
   version: string
@@ -142,6 +142,8 @@ export interface ClaudeInstance {
   isDefault: boolean
   /** Wrapper scripts in ~/bin/ matching claude(-[a-z0-9-]+)? */
   profiles: string[]
+  /** Instance type: "wsl" for WSL distros, "local" for native installs. Optional for backward compat. */
+  type?: 'wsl' | 'local'
 }
 
 /** Agent session record from the `sessions` table. */

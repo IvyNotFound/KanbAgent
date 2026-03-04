@@ -16,7 +16,7 @@ const { t } = useI18n()
 const tabsStore = useTabsStore()
 const tasksStore = useTasksStore()
 
-/** Detected Claude Code instances (one per WSL distro that has claude installed) */
+/** Detected Claude Code instances (WSL distros and/or native installs with claude) */
 const claudeInstances = ref<ClaudeInstance[]>([])
 const selectedInstance = ref<ClaudeInstance | null>(null)
 const loading = ref(true)
@@ -49,7 +49,7 @@ watch(selectedInstance, (inst) => {
 })
 
 onMounted(async () => {
-  // Detect WSL distros with Claude Code installed
+  // Detect Claude Code instances (WSL distros and/or native installs)
   const rawInstances = await window.electronAPI.getClaudeInstances()
   claudeInstances.value = rawInstances as ClaudeInstance[]
 
@@ -85,6 +85,11 @@ onMounted(async () => {
 
   loading.value = false
 })
+
+function instanceLabel(inst: ClaudeInstance): string {
+  if (inst.type === 'local') return 'Local'
+  return inst.distro
+}
 
 async function launch() {
   launching.value = true
@@ -193,7 +198,7 @@ async function launch() {
                   :value="inst"
                   :style="{ accentColor: agentFg(agent.name) }"
                 />
-                <span class="flex-1 text-sm font-mono text-content-secondary">{{ inst.distro }}</span>
+                <span class="flex-1 text-sm font-mono text-content-secondary">{{ instanceLabel(inst) }}</span>
                 <span class="text-[10px] text-content-subtle font-mono shrink-0">{{ t('launch.instanceVersion', { version: inst.version }) }}</span>
                 <span
                   v-if="inst.isDefault"
