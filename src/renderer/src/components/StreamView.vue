@@ -250,6 +250,9 @@ function isCollapsed(eventIdx: number, blockIdx: number, defaultCollapsed = fals
 // Accumulate incoming IPC events in a non-reactive buffer, then flush once per
 // nextTick — avoids 1 re-render per JSONL line at high-frequency streaming.
 
+/** Maximum events kept in memory per StreamView tab (T817). Older events are evicted. */
+const MAX_EVENTS = 500
+
 let pendingEvents: StreamEvent[] = []
 let flushPending = false
 
@@ -270,6 +273,21 @@ function flushEvents(): void {
   }
   pendingEvents = []
   flushPending = false
+
+  // Sliding window: evict oldest events beyond MAX_EVENTS (T817).
+  if (events.value.length > MAX_EVENTS) {
+    const evicted = events.value.length - MAX_EVENTS
+    events.value.splice(0, evicted)
+    // Purge collapsed keys for evicted event indices — they are now stale.
+    const minIdx = evicted
+    for (const key of Object.keys(collapsed.value)) {
+      const eventIdx = parseInt(key.split('-')[0], 10)
+      if (eventIdx < minIdx) {
+        delete collapsed.value[key]
+      }
+    }
+  }
+
   scrollToBottom()
 }
 
@@ -388,6 +406,10 @@ onUnmounted(() => {
   if (ptyId.value && !agentStopped.value) {
     window.electronAPI.agentKill(ptyId.value)
   }
+  // Release reactive memory: clear events and collapsed on unmount (T817).
+  events.value = []
+  collapsed.value = {}
+  pendingEvents = []
 })
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
