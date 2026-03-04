@@ -32,6 +32,8 @@ export interface Tab {
   taskId?: number | null
   /** View mode: always 'stream' (StreamView). Field kept for backward compat with persisted state. */
   viewMode?: 'stream'
+  /** Agent stream ID returned by agentCreate — used for explicit kill on closeTab (T730). */
+  streamId?: string | null
   filePath?: string
   dirty?: boolean
   logsAgentId?: number | null
@@ -172,6 +174,11 @@ export const useTabsStore = defineStore('tabs', () => {
     if (tab) tab.ptyId = ptyId
   }
 
+  function setStreamId(tabId: string, streamId: string | null): void {
+    const tab = tabs.value.find(t => t.id === tabId)
+    if (tab) tab.streamId = streamId
+  }
+
   /**
    * Remove a tab by ID and activate an appropriate replacement.
    *
@@ -188,6 +195,10 @@ export const useTabsStore = defineStore('tabs', () => {
   function closeTab(id: string): void {
     const tab = tabs.value.find(t => t.id === id)
     if (!tab || tab.permanent) return
+    // Explicit kill — agentKill is idempotent; onUnmounted in StreamView is the fallback (T730).
+    if (tab.streamId) {
+      window.electronAPI.agentKill(tab.streamId)
+    }
     const closedAgentName = tab.agentName
     const idx = tabs.value.findIndex(t => t.id === id)
     tabs.value.splice(idx, 1)
@@ -225,23 +236,11 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   function closeAllTerminals(): void {
-    const terminals = tabs.value.filter(t => t.type === 'terminal')
-    for (const tab of terminals) {
-      if (tab.ptyId) {
-        window.electronAPI.agentKill(tab.ptyId)
-      }
-      // Clean up activity timer
-      if (activityTimers[tab.id]) {
-        clearTimeout(activityTimers[tab.id])
-        delete activityTimers[tab.id]
-      }
-      delete tabActivity.value[tab.id]
-    }
-    tabs.value = tabs.value.filter(t => t.type !== 'terminal')
-    if (activeTabId.value !== 'backlog' && !tabs.value.find(t => t.id === activeTabId.value)) {
-      activeTabId.value = 'backlog'
+    const terminalIds = tabs.value.filter(t => t.type === 'terminal').map(t => t.id)
+    for (const id of terminalIds) {
+      closeTab(id)
     }
   }
 
-  return { tabs, activeTabId, activeTab, tabActivity, setActive, addTerminal, addLogs, addExplorer, openFile, setTabDirty, setPtyId, closeTab, renameTab, closeTabGroup, closeAllTerminals, markTabActive, isAgentActive, hasAgentTerminal }
+  return { tabs, activeTabId, activeTab, tabActivity, setActive, addTerminal, addLogs, addExplorer, openFile, setTabDirty, setPtyId, setStreamId, closeTab, renameTab, closeTabGroup, closeAllTerminals, markTabActive, isAgentActive, hasAgentTerminal }
 })

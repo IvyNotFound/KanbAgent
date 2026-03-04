@@ -854,31 +854,30 @@ describe('stores/tabs — missing actions', () => {
       expect(store.tabs.find(t => t.type === 'explorer')).toBeDefined()
     })
 
-    it('should call agentKill for each terminal with a ptyId', () => {
+    it('should call agentKill for each terminal with a streamId (T730)', () => {
       const store = useTabsStore()
       store.addTerminal('agent-1')
-      // Set a ptyId on the terminal tab
       const termTab = store.tabs.find(t => t.type === 'terminal')
-      if (termTab) store.setPtyId(termTab.id, 'pty-123')
+      if (termTab) store.setStreamId(termTab.id, 'stream-123')
 
       store.closeAllTerminals()
 
-      expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('pty-123')
+      expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('stream-123')
       expect(mockElectronAPI.terminalKill).not.toHaveBeenCalled()
     })
 
-    it('should call agentKill for all stream tabs', () => {
+    it('should call agentKill for all stream tabs (T730)', () => {
       const store = useTabsStore()
       store.addTerminal('agent-1')
       store.addTerminal('agent-2')
       const [tab1, tab2] = store.tabs.filter(t => t.type === 'terminal')
-      if (tab1) store.setPtyId(tab1.id, 'pty-1')
-      if (tab2) store.setPtyId(tab2.id, 'pty-2')
+      if (tab1) store.setStreamId(tab1.id, 'stream-1')
+      if (tab2) store.setStreamId(tab2.id, 'stream-2')
 
       store.closeAllTerminals()
 
-      expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('pty-1')
-      expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('pty-2')
+      expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('stream-1')
+      expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('stream-2')
       expect(mockElectronAPI.terminalKill).not.toHaveBeenCalled()
     })
 
