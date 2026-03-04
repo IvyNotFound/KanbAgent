@@ -17,6 +17,7 @@ const FileView = defineAsyncComponent(() => import('@renderer/components/FileVie
 const AgentLogsView = defineAsyncComponent(() => import('@renderer/components/AgentLogsView.vue'))
 const HookEventsView = defineAsyncComponent(() => import('@renderer/components/HookEventsView.vue'))
 const WorkloadView = defineAsyncComponent(() => import('@renderer/components/WorkloadView.vue'))
+const TopologyView = defineAsyncComponent(() => import('@renderer/components/TopologyView.vue'))
 const ExplorerView = defineAsyncComponent(() => import('@renderer/components/ExplorerView.vue'))
 const CommandPalette = defineAsyncComponent(() => import('@renderer/components/CommandPalette.vue'))
 const SetupWizard = defineAsyncComponent(() => import('@renderer/components/SetupWizard.vue'))
@@ -101,6 +102,10 @@ defineExpose({
           <!-- Workload tab (distribution effort/tâches par agent) -->
           <template v-else-if="tabsStore.activeTab.type === 'workload'">
             <WorkloadView class="flex-1" />
+          </template>
+          <!-- Topology tab (carte visuelle agents/périmètres/sessions) -->
+          <template v-else-if="tabsStore.activeTab.type === 'topology'">
+            <TopologyView class="flex-1" />
           </template>
           <!-- Terminal tabs (keep mounted to preserve session, hide inactive) -->
           <template v-for="tab in tabsStore.tabs.filter(t => t.type === 'terminal')" :key="tab.id">

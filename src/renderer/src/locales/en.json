@@ -76,6 +76,18 @@
     "bar": "Distribution",
     "current": "Current task"
   },
+  "topology": {
+    "title": "Agent topology",
+    "noAgents": "No agents found",
+    "global": "Global",
+    "tokens": "tokens",
+    "filterByAgent": "Filter by {name}",
+    "status": {
+      "active": "active",
+      "blocked": "blocked",
+      "idle": "idle"
+    }
+  },
   "logs": {
     "allAgents": "All agents",
     "noLogs": "No logs",
@@ -299,6 +311,7 @@
     "stat": "Stat",
     "hooks": "Hooks",
     "workload": "Workload",
+    "topology": "Topology",
     "project": "Project",
     "agents": "Agents",
     "perimeters": "Perimeters",

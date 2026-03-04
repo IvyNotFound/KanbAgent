@@ -341,6 +341,34 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
       ></span>
     </button>
 
+    <!-- Onglet Topology (fixe, non fermable) -->
+    <button
+      :class="[
+        'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0',
+        store.activeTabId === 'topology'
+          ? 'text-content-primary bg-surface-secondary'
+          : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
+      ]"
+      @click="store.setActive('topology')"
+    >
+      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+        <circle cx="8" cy="8" r="1.5"/>
+        <circle cx="3" cy="4" r="1.5"/>
+        <circle cx="13" cy="4" r="1.5"/>
+        <circle cx="3" cy="12" r="1.5"/>
+        <circle cx="13" cy="12" r="1.5"/>
+        <line x1="8" y1="8" x2="3" y2="4" stroke="currentColor" stroke-width="1"/>
+        <line x1="8" y1="8" x2="13" y2="4" stroke="currentColor" stroke-width="1"/>
+        <line x1="8" y1="8" x2="3" y2="12" stroke="currentColor" stroke-width="1"/>
+        <line x1="8" y1="8" x2="13" y2="12" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <span>{{ t('sidebar.topology') }}</span>
+      <span
+        v-if="store.activeTabId === 'topology'"
+        class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
+      ></span>
+    </button>
+
     <!-- Scroll left arrow -->
     <button
       v-show="canScrollLeft"
