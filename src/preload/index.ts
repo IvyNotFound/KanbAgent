@@ -302,4 +302,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.off('hook:event', handler)
   },
 
+  /** Get git log for the given project path. Returns parsed commits with task mentions. */
+  gitLog: (projectPath: string, options?: { limit?: number; since?: string }): Promise<Array<{ hash: string; date: string; subject: string; author: string; taskIds: number[] }>> =>
+    ipcRenderer.invoke('git:log', projectPath, options),
+
 })
