@@ -16,6 +16,13 @@ const selectedEvent = ref<HookEvent | null>(null)
 
 // Access state directly (not actions) so createTestingPinia doesn't stub these
 const events = computed(() => store.events.filter(e => e.sessionId === props.sessionId))
+// Pre-reversed in a computed — avoids spread+reverse allocation on every template render (T793)
+const reversedEvents = computed(() => {
+  const evts = events.value
+  const result: HookEvent[] = []
+  for (let i = evts.length - 1; i >= 0; i--) result.push(evts[i])
+  return result
+})
 const activeTool = computed(() => {
   const key = props.sessionId ?? '__global__'
   return store.activeTools[key] ?? null
@@ -70,7 +77,7 @@ function rowLabel(e: HookEvent): string {
     <!-- Expanded event list -->
     <div v-if="expanded" class="max-h-36 overflow-y-auto border-t border-edge-subtle/50 px-3 py-1.5 space-y-0.5">
       <div
-        v-for="e in [...events].reverse()"
+        v-for="e in reversedEvents"
         :key="e.id"
         class="flex items-center gap-1.5 py-0.5 cursor-pointer hover:bg-surface-secondary/40 rounded px-1 -mx-1 transition-colors"
         @click.stop="selectedEvent = e"
