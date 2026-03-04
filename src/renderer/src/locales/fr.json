@@ -131,6 +131,8 @@
     "autoReview": "Review automatique",
     "autoReviewDesc": "Lancer une session review quand assez de tâches sont terminées",
     "autoReviewThreshold": "Seuil :",
+    "notifications": "Notifications desktop",
+    "notificationsDesc": "Notifier quand une tâche passe en cours ou est terminée",
     "about": "À propos",
     "aboutDesc": "Interface desktop pour visualiser les tâches des agents Claude",
     "database": "Base de données",

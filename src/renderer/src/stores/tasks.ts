@@ -18,8 +18,12 @@ import type { Task, Agent, Lock, Stats, TaskComment, TaskLink, Perimetre, TaskAs
 import { useProjectStore } from '@renderer/stores/project'
 import { useAgentsStore, AGENT_CTE_SQL, LOCKS_SQL } from '@renderer/stores/agents'
 import { useTabsStore } from '@renderer/stores/tabs'
+import { useSettingsStore } from '@renderer/stores/settings'
 import { useToast } from '@renderer/composables/useToast'
 import { normalizeRow } from '@renderer/utils/db'
+
+/** Debounce: last notification timestamp per task (prevent spam). */
+const _lastNotifTs: Record<number, number> = {}
 
 export const useTasksStore = defineStore('tasks', () => {
   const { push: pushToast } = useToast()
@@ -27,6 +31,7 @@ export const useTasksStore = defineStore('tasks', () => {
   // Sub-stores
   const projectStore = useProjectStore()
   const agentsStore = useAgentsStore()
+  const settingsStore = useSettingsStore()
 
   // Reactive refs delegated from sub-stores (storeToRefs gives back the original refs — mutations propagate)
   const { projectPath, dbPath, setupWizardTarget } = storeToRefs(projectStore)
@@ -126,7 +131,25 @@ export const useTasksStore = defineStore('tasks', () => {
         `)
       ])
 
-      tasks.value = rawTasks.map(normalizeRow)
+      const newTasks = rawTasks.map(normalizeRow) as Task[]
+      // Desktop notifications — detect statut transitions (T755)
+      if (settingsStore.notificationsEnabled && Notification.permission === 'granted' && tasks.value.length > 0) {
+        const prevMap = new Map(tasks.value.map(t => [t.id, t.statut]))
+        const now = Date.now()
+        for (const t of newTasks) {
+          const prev = prevMap.get(t.id)
+          if (prev && prev !== t.statut && ['in_progress', 'done'].includes(t.statut)) {
+            // Debounce: skip if notified for this task in last 5s
+            if (now - (_lastNotifTs[t.id] ?? 0) < 5000) continue
+            _lastNotifTs[t.id] = now
+            new Notification(`Tâche ${t.statut === 'done' ? 'terminée' : 'démarrée'}`, {
+              body: `${t.titre} — ${(t as Task & { agent_name?: string }).agent_name ?? '?'}`,
+              silent: false,
+            })
+          }
+        }
+      }
+      tasks.value = newTasks
       // Update agentsStore state via storeToRefs refs — mutations propagate to the sub-store
       agents.value = rawAgents.map(normalizeRow)
       locks.value = rawLocks.map(normalizeRow)

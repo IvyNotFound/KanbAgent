@@ -181,6 +181,19 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.setItem('autoReviewThreshold', String(clamped))
   }
 
+  // Desktop notifications (T755)
+  const notificationsEnabled = ref<boolean>(localStorage.getItem('notificationsEnabled') === 'true')
+
+  /** Enable/disable desktop notifications for task status transitions. */
+  async function setNotificationsEnabled(enabled: boolean): Promise<void> {
+    if (enabled && Notification.permission !== 'granted') {
+      const perm = await Notification.requestPermission()
+      if (perm !== 'granted') return
+    }
+    notificationsEnabled.value = enabled
+    localStorage.setItem('notificationsEnabled', String(enabled))
+  }
+
   // CLAUDE.md sync
   const claudeMdInfo = ref<ClaudeMdInfo>({
     projectCommit: null,
@@ -217,6 +230,9 @@ export const useSettingsStore = defineStore('settings', () => {
     autoReviewEnabled,
     autoReviewThreshold,
     setAutoReviewEnabled,
-    setAutoReviewThreshold
+    setAutoReviewThreshold,
+    // Desktop notifications (T755)
+    notificationsEnabled,
+    setNotificationsEnabled,
   }
 })

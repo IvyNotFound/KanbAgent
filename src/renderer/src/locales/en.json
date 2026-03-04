@@ -131,6 +131,8 @@
     "autoReview": "Auto-review",
     "autoReviewDesc": "Launch a review session when enough tasks are done",
     "autoReviewThreshold": "Threshold:",
+    "notifications": "Desktop notifications",
+    "notificationsDesc": "Notify when a task becomes in-progress or done",
     "about": "About",
     "aboutDesc": "Desktop interface to view Claude agent tasks",
     "database": "Database",
