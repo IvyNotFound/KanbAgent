@@ -16,6 +16,7 @@ import DOMPurify from 'dompurify'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg, agentBg, agentBorder, colorVersion } from '@renderer/utils/agentColor'
+import HookEventBar from './HookEventBar.vue'
 
 // highlight.js dark theme — scoped to .stream-markdown
 import 'highlight.js/styles/github-dark.css'
@@ -453,7 +454,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
           data-testid="block-error"
         >
           <span class="shrink-0 text-red-400">⚠</span>
-          <div>
+          <div class="select-text cursor-text">
             <span class="font-semibold text-red-400">{{ event.type }}</span>
             <span class="ml-2 whitespace-pre-wrap">{{ event.error }}</span>
             <pre v-if="event.stderr" class="mt-2 text-red-200 text-xs whitespace-pre-wrap">{{ event.stderr }}</pre>
@@ -467,7 +468,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
           data-testid="block-user"
         >
           <div
-            class="bg-zinc-800 border rounded-lg px-4 py-3 max-w-[80%] whitespace-pre-wrap text-sm text-zinc-100 leading-relaxed"
+            class="bg-zinc-800 border rounded-lg px-4 py-3 max-w-[80%] whitespace-pre-wrap text-sm text-zinc-100 leading-relaxed select-text cursor-text"
             :style="{ borderColor: accentBorder }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
@@ -485,7 +486,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
             <!-- text block — rendu Markdown DOMPurify (T678), fond couleur agent (T720) -->
             <div
               v-if="block.type === 'text'"
-              class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed"
+              class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed select-text cursor-text"
               :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
               data-testid="block-text"
               v-html="renderMarkdown(block.text ?? '')"
@@ -506,7 +507,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
               </button>
               <div
                 v-show="!isCollapsed(eIdx, bIdx, true)"
-                class="px-4 py-3 bg-zinc-900 text-zinc-400 text-xs whitespace-pre-wrap"
+                class="px-4 py-3 bg-zinc-900 text-zinc-400 text-xs whitespace-pre-wrap select-text cursor-text"
               >
                 {{ block.text }}
               </div>
@@ -530,7 +531,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
               </button>
               <div
                 v-show="!isCollapsed(eIdx, bIdx, true)"
-                class="px-4 py-3 bg-zinc-900 text-xs text-zinc-300 overflow-x-auto"
+                class="px-4 py-3 bg-zinc-900 text-xs text-zinc-300 overflow-x-auto select-text cursor-text"
               >
                 <pre class="whitespace-pre-wrap">{{ toolInputPreview(block.input) }}</pre>
               </div>
@@ -560,7 +561,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
               </button>
               <div
                 v-show="!isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content))"
-                class="stream-markdown px-4 py-2 text-xs text-zinc-300 overflow-x-auto"
+                class="stream-markdown px-4 py-2 text-xs text-zinc-300 overflow-x-auto select-text cursor-text"
                 v-html="renderMarkdown(toolResultText(block.content))"
               />
             </div>
@@ -611,6 +612,9 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
         <span v-else>En cours…</span>
       </div>
     </div>
+
+    <!-- ── Hook events bar (T742) ──────────────────────────────────────── -->
+    <HookEventBar :session-id="sessionId" />
 
     <!-- ── Input zone (T681: items-end aligne boutons sur bas textarea) ─── -->
     <div class="border-t border-zinc-800 px-4 py-3 flex items-end gap-2">

@@ -20,10 +20,18 @@ const ExplorerView = defineAsyncComponent(() => import('@renderer/components/Exp
 const CommandPalette = defineAsyncComponent(() => import('@renderer/components/CommandPalette.vue'))
 const SetupWizard = defineAsyncComponent(() => import('@renderer/components/SetupWizard.vue'))
 import { useAutoLaunch } from '@renderer/composables/useAutoLaunch'
+import { useHookEventsStore } from '@renderer/stores/hookEvents'
 import type { Task } from '@renderer/types'
 
 const store = useTasksStore()
 const tabsStore = useTabsStore()
+const hookEventsStore = useHookEventsStore()
+
+// Set up global IPC listener for Claude Code hook events (T742).
+// Registered once at app level so all StreamView instances share the same store.
+if (window.electronAPI.onHookEvent) {
+  window.electronAPI.onHookEvent((e) => hookEventsStore.push(e))
+}
 
 // Auto-launch agent terminals when tasks are created with assigned agents (T340)
 useAutoLaunch({

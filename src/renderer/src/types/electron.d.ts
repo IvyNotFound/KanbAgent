@@ -72,6 +72,10 @@ declare global {
       onAgentConvId(id: string, cb: (convId: string) => void): () => void
       onAgentExit(id: string, cb: (exitCode: number | null) => void): () => void
       openWslTerminal(): Promise<{ success: boolean; error?: string }>
+      /** Open a URL in the system default browser. Only http/https URLs are allowed (security). */
+      openExternal(url: string): Promise<void>
+      /** Subscribe to Claude Code hook events (SessionStart, SubagentStart/Stop, PreToolUse, PostToolUse). Returns unsubscribe fn. */
+      onHookEvent(callback: (event: { event: string; payload: unknown; ts: number }) => void): () => void
     }
   }
 }
