@@ -118,6 +118,26 @@ const isStreaming = computed(() => {
   return last.type === 'assistant'
 })
 
+// ── Live thinking display (T731) ─────────────────────────────────────────────
+
+/**
+ * Text of the currently-streaming thinking block, if any.
+ * Only populated when thinkingMode is active and the last assistant block is thinking.
+ */
+const activeThinkingText = computed<string | null>(() => {
+  if (!isStreaming.value) return null
+  const tab = tabsStore.tabs.find(t => t.id === props.terminalId)
+  if (!tab?.thinkingMode) return null
+  const lastEvent = events.value[events.value.length - 1]
+  if (lastEvent?.type !== 'assistant') return null
+  const blocks = lastEvent.message?.content ?? []
+  const lastBlock = blocks[blocks.length - 1]
+  if (lastBlock?.type === 'thinking' && lastBlock.text) {
+    return lastBlock.text
+  }
+  return null
+})
+
 // ── Agent color theme (T680) ──────────────────────────────────────────────────
 
 /** Agent name from active tab — drives the color theme. */
@@ -350,6 +370,9 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
   }
 }
 
+/** Number of lines above which a tool_result is auto-collapsed (T727). */
+const TOOL_RESULT_COLLAPSE_THRESHOLD = 15
+
 /** Strip ANSI escape codes from tool output (T727). */
 function stripAnsi(text: string): string {
   return text.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')
@@ -362,6 +385,11 @@ function toolResultText(content: StreamContentBlock['content']): string {
     return stripAnsi(content.map(c => c.text ?? '').join('\n'))
   }
   return stripAnsi(String(content))
+}
+
+/** Returns true if a tool_result is long enough to be auto-collapsed (T727). */
+function toolResultIsLong(content: StreamContentBlock['content']): boolean {
+  return toolResultText(content).split('\n').length > TOOL_RESULT_COLLAPSE_THRESHOLD
 }
 </script>
 
@@ -505,20 +533,20 @@ function toolResultText(content: StreamContentBlock['content']): string {
               <button
                 class="w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors"
                 :class="block.is_error ? 'text-red-400 hover:bg-red-900' : 'text-zinc-400 hover:bg-zinc-800'"
-                @click="toggleCollapsed(collapseKey(eIdx, bIdx), !block.is_error)"
+                @click="toggleCollapsed(collapseKey(eIdx, bIdx), !block.is_error && toolResultIsLong(block.content))"
               >
                 <span
                   class="transition-transform duration-200"
-                  :class="isCollapsed(eIdx, bIdx, !block.is_error) ? '' : 'rotate-90'"
+                  :class="isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content)) ? '' : 'rotate-90'"
                 >▶</span>
                 <span>{{ block.is_error ? '✗ Erreur' : '✓ Résultat' }}</span>
                 <span
-                  v-if="isCollapsed(eIdx, bIdx, !block.is_error)"
+                  v-if="isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content))"
                   class="ml-1 opacity-60"
                 >({{ toolResultText(block.content).split('\n').length }} lignes)</span>
               </button>
               <div
-                v-show="!isCollapsed(eIdx, bIdx, !block.is_error)"
+                v-show="!isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content))"
                 class="stream-markdown px-4 py-2 text-xs text-zinc-300 overflow-x-auto"
                 v-html="renderMarkdown(toolResultText(block.content))"
               />
@@ -550,19 +578,24 @@ function toolResultText(content: StreamContentBlock['content']): string {
         </div>
       </template>
 
-      <!-- Indicateur "en cours" — couleur agent (T680) -->
+      <!-- Indicateur "en cours" — thinking live si thinkingMode actif (T731), sinon générique -->
       <div
         v-if="isStreaming"
-        class="flex items-center gap-2 text-xs"
+        class="flex items-center gap-2 text-xs min-w-0"
         :style="{ color: accentFg }"
         data-testid="streaming-indicator"
       >
-        <span class="inline-flex gap-0.5">
+        <span class="inline-flex gap-0.5 shrink-0">
           <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" :style="{ backgroundColor: accentFg }" />
           <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" :style="{ backgroundColor: accentFg }" />
           <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" :style="{ backgroundColor: accentFg }" />
         </span>
-        <span>En cours…</span>
+        <span
+          v-if="activeThinkingText"
+          class="truncate italic opacity-75"
+          data-testid="thinking-preview"
+        >{{ activeThinkingText.slice(-120) }}</span>
+        <span v-else>En cours…</span>
       </div>
     </div>
 
