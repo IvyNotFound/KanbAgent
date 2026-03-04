@@ -17,6 +17,7 @@ const pagination = useArchivedPagination()
 
 type BoardTab = 'backlog' | 'archive'
 const activeTab = ref<BoardTab>('backlog')
+const treeMode = ref(false)
 
 const emptyTasks = { todo: [], in_progress: [], done: [], archived: [] }
 const tasks = computed(() => store.tasksByStatus ?? emptyTasks)
@@ -143,6 +144,34 @@ const archivedByAgent = computed(() => archivedGroupsSorted.value)
         </button>
       </div>
 
+      <!-- List / Tree toggle (backlog only) -->
+      <div v-if="activeTab === 'backlog'" class="flex items-center rounded-md border border-edge-subtle overflow-hidden shrink-0">
+        <button
+          :class="[
+            'px-2.5 py-1 text-xs font-medium transition-colors',
+            !treeMode ? 'bg-surface-tertiary text-content-primary' : 'text-content-subtle hover:text-content-tertiary hover:bg-surface-secondary'
+          ]"
+          :title="t('board.listView')"
+          @click="treeMode = false"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
+        </button>
+        <button
+          :class="[
+            'px-2.5 py-1 text-xs font-medium transition-colors border-l border-edge-subtle',
+            treeMode ? 'bg-surface-tertiary text-content-primary' : 'text-content-subtle hover:text-content-tertiary hover:bg-surface-secondary'
+          ]"
+          :title="t('board.treeView')"
+          @click="treeMode = true"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h4m0 0v10m0-10h14M7 12h6m0 0v5m0-5h4" />
+          </svg>
+        </button>
+      </div>
+
       <!-- Active filters -->
       <div class="flex items-center gap-2 flex-wrap">
         <span
@@ -174,6 +203,7 @@ const archivedByAgent = computed(() => archivedGroupsSorted.value)
           :statut="col.key"
           :tasks="tasks?.[col.key] || []"
           :accent-class="col.accentClass"
+          :tree-mode="treeMode"
           @task-dropped="(taskId) => onTaskDropped(taskId, col.key)"
         />
       </div>

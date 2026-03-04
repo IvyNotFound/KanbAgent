@@ -23,7 +23,9 @@
     "taskBlocked": "Task blocked by: {blockers}",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "pageOf": "Page {page} / {total} ({count} tasks)"
+    "pageOf": "Page {page} / {total} ({count} tasks)",
+    "listView": "List view",
+    "treeView": "Tree view"
   },
   "taskCard": {
     "relaunchAgent": "Relaunch agent",

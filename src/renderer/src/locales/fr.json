@@ -23,7 +23,9 @@
     "taskBlocked": "Tâche bloquée par : {blockers}",
     "prevPage": "Précédent",
     "nextPage": "Suivant",
-    "pageOf": "Page {page} / {total} ({count} tâches)"
+    "pageOf": "Page {page} / {total} ({count} tâches)",
+    "listView": "Vue liste",
+    "treeView": "Vue arborescente"
   },
   "taskCard": {
     "relaunchAgent": "Relancer l'agent",
