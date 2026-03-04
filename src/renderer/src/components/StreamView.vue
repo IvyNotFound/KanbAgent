@@ -373,7 +373,14 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
 /** Number of lines above which a tool_result is auto-collapsed (T727). */
 const TOOL_RESULT_COLLAPSE_THRESHOLD = 15
 
-/** Strip ANSI escape codes from tool output (T727). */
+/**
+ * Strip ANSI escape codes from tool output (T727).
+ * Removes SGR sequences (color/style), cursor movement, and erase commands
+ * so that raw CLI output renders cleanly in the browser.
+ *
+ * @param text - Raw string potentially containing ANSI escape sequences.
+ * @returns Plain text with all ANSI codes removed.
+ */
 function stripAnsi(text: string): string {
   return text.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')
 }
@@ -387,7 +394,13 @@ function toolResultText(content: StreamContentBlock['content']): string {
   return stripAnsi(String(content))
 }
 
-/** Returns true if a tool_result is long enough to be auto-collapsed (T727). */
+/**
+ * Returns true if a tool_result content exceeds the auto-collapse threshold (T727).
+ * Used to decide whether to render the block collapsed by default.
+ *
+ * @param content - Raw content of the tool_result block (string or array of text parts).
+ * @returns `true` if the extracted text has more than {@link TOOL_RESULT_COLLAPSE_THRESHOLD} lines.
+ */
 function toolResultIsLong(content: StreamContentBlock['content']): boolean {
   return toolResultText(content).split('\n').length > TOOL_RESULT_COLLAPSE_THRESHOLD
 }

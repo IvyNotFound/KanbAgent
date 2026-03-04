@@ -174,6 +174,17 @@ export const useTabsStore = defineStore('tabs', () => {
     if (tab) tab.ptyId = ptyId
   }
 
+  /**
+   * Set or clear the `streamId` for a terminal tab (T730).
+   *
+   * The `streamId` is the agent process ID returned by `agentCreate`. It is stored
+   * on the tab so that `closeTab` can call `agentKill` explicitly — before the
+   * `StreamView` component unmounts — guaranteeing no orphan agent processes.
+   * `StreamView.onUnmounted` clears it to `null` to prevent a double-kill.
+   *
+   * @param tabId    - Unique identifier of the target tab.
+   * @param streamId - Agent process ID to store, or `null` to clear after kill.
+   */
   function setStreamId(tabId: string, streamId: string | null): void {
     const tab = tabs.value.find(t => t.id === tabId)
     if (tab) tab.streamId = streamId

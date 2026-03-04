@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.17.0-blue)
+![Version](https://img.shields.io/badge/version-0.18.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches Claude sessions in external WSL terminals, and monitors activity in real time.
@@ -35,6 +35,9 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **IPC Path Guard**: All read-only IPC handlers protected by `assertDbPathAllowed` — prevents path traversal to unauthorized databases
 - **WSL Memory Monitoring**: Real-time WSL RAM monitoring with alerts and memory release
 - **Agent Error Visibility**: Spawn failures (`error:spawn`) and abnormal exits (`error:exit`) are surfaced directly in the StreamView UI — no DevTools needed; full stderr output included when available
+- **Collapsible Stream Blocks**: `tool_use`, `tool_result`, and `thinking` blocks are collapsed by default — long results (>15 lines) auto-collapse; error results always expand. ANSI escape codes are stripped from tool output for clean display (T727/T729)
+- **Thinking Live Preview**: While streaming with thinking mode active, the status bar shows the last 120 characters of the live thinking text in real time (T731)
+- **Guaranteed Agent Kill on Tab Close**: Closing a stream tab calls `agentKill` explicitly before unmounting — eliminates orphan agent processes (T730)
 
 ## Prerequisites
 

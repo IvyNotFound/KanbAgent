@@ -98,6 +98,25 @@ node scripts/dbw.js "UPDATE tasks SET statut='en_cours' WHERE id=250"
 
 ---
 
+## Checklist done — agents scopés (obligatoire)
+
+> Cette checklist est la **référence canonique**. Les system_prompt des agents dev/test/ux doivent lui être conformes.
+
+Tous les agents dev/test/ux doivent inclure dans leur system_prompt la checklist suivante (dans cet ordre) :
+
+1. `npm run lint` → 0 erreur
+2. `npm run test` → 0 test cassé *(N/A pour tâches test-only sans modification source, ou pour ux sans .spec)*
+3. `git add <fichiers modifiés>` + `git commit -m "type(scope): description (T<id>)"`
+4. Libérer les locks : `UPDATE locks SET released_at=datetime('now') WHERE session_id=<sid> AND released_at IS NULL`
+5. COMMENTAIRE DE SORTIE dans `task_comments` **EN PREMIER** — format : `"fichiers:lignes · fait · pourquoi · Reste: [rien | liste]"`
+6. `UPDATE tasks SET statut='done'`
+
+Sans commit ET sans commentaire de sortie → review rejettera automatiquement.
+
+> Si la checklist évolue, mettre à jour à la fois cette section **et** les system_prompt des agents concernés (via `UPDATE agents SET system_prompt`).
+
+---
+
 ## Schéma DB v2 — Colonnes ajoutées
 
 ```sql
