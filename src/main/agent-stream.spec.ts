@@ -76,6 +76,17 @@ vi.mock('child_process', () => {
   }
 })
 
+// ── db mock (T772: active tasks context injection) ─────────────────────────────
+const mockQueryLive = vi.hoisted(() => vi.fn().mockResolvedValue([]))
+const mockAssertDbPathAllowed = vi.hoisted(() => vi.fn())
+
+vi.mock('./db', () => ({
+  queryLive: mockQueryLive,
+  assertDbPathAllowed: mockAssertDbPathAllowed,
+  registerDbPath: vi.fn(),
+  registerProjectPath: vi.fn(),
+}))
+
 // ── Test setup ────────────────────────────────────────────────────────────────
 
 import * as agentStream from './agent-stream'
@@ -461,5 +472,75 @@ describe('agent-stream', () => {
     expect(toWslPath('C:\\Users\\foo')).toBe('/mnt/c/Users/foo')
     expect(toWslPath('D:\\projects\\bar')).toBe('/mnt/d/projects/bar')
     expect(toWslPath('/already/unix')).toBe('/already/unix')
+  })
+
+  // ── T772: active tasks context injection ─────────────────────────────────
+
+  describe('T772: getActiveTasksLine', () => {
+    it('returns empty string when no active tasks', async () => {
+      mockQueryLive.mockResolvedValueOnce([])
+      const result = await agentStream._testing.getActiveTasksLine('/fake/project.db', 1)
+      expect(result).toBe('')
+    })
+
+    it('returns compact "Active tasks: #N #M" line for active tasks', async () => {
+      mockQueryLive.mockResolvedValueOnce([{ id: 42 }, { id: 67 }])
+      const result = await agentStream._testing.getActiveTasksLine('/fake/project.db', 5)
+      expect(result).toBe('Active tasks: #42 #67')
+    })
+
+    it('returns empty string when queryLive throws', async () => {
+      mockQueryLive.mockRejectedValueOnce(new Error('DB error'))
+      const result = await agentStream._testing.getActiveTasksLine('/fake/project.db', 1)
+      expect(result).toBe('')
+    })
+
+    it('returns single task ID for one active session', async () => {
+      mockQueryLive.mockResolvedValueOnce([{ id: 99 }])
+      const result = await agentStream._testing.getActiveTasksLine('/fake/project.db', 1)
+      expect(result).toBe('Active tasks: #99')
+    })
+  })
+
+  describe('T772: agent:create injects active tasks into system prompt', () => {
+    it('does NOT inject when no dbPath provided', async () => {
+      const handler = handlers.get('agent:create')!
+      const event = { sender: mockSender }
+      await handler(event, { systemPrompt: 'Base prompt' })
+
+      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      expect(spCall?.[1]).toBe('Base prompt')
+      // queryLive must NOT be called
+      expect(mockQueryLive).not.toHaveBeenCalled()
+    })
+
+    it('appends active tasks line when dbPath + sessionId provided and tasks exist', async () => {
+      mockQueryLive.mockResolvedValueOnce([{ id: 42 }, { id: 67 }])
+      const handler = handlers.get('agent:create')!
+      const event = { sender: mockSender }
+      await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: 5 })
+
+      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      expect(spCall?.[1]).toBe('Base prompt\n\nActive tasks: #42 #67')
+    })
+
+    it('does not append when no active tasks', async () => {
+      mockQueryLive.mockResolvedValueOnce([])
+      const handler = handlers.get('agent:create')!
+      const event = { sender: mockSender }
+      await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: 5 })
+
+      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      expect(spCall?.[1]).toBe('Base prompt')
+    })
+
+    it('does not block spawn if DB injection fails (invalid sessionId)', async () => {
+      const handler = handlers.get('agent:create')!
+      const event = { sender: mockSender }
+      // sessionId = -1 → guard fails → no queryLive → spawn still happens
+      const id = await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: -1 })
+      expect(typeof id).toBe('string')
+      expect(mockSpawn).toHaveBeenCalledOnce()
+    })
   })
 })

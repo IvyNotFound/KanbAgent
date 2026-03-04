@@ -20,6 +20,7 @@ import { appendFileSync, writeFileSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { toWslPath } from './utils/wsl'
+import { queryLive, assertDbPathAllowed } from './db'
 
 // ── Debug logging ─────────────────────────────────────────────────────────────
 
@@ -143,6 +144,34 @@ function buildClaudeCmd(opts: {
   return parts.join(' ')
 }
 
+// ── Active tasks context injection (T772) ─────────────────────────────────────
+
+/**
+ * Query active task IDs from other in-progress sessions (DB-first, no JSONL).
+ * Returns a compact string like "Active tasks: #42 #67" or "" if none.
+ *
+ * Uses `tasks.session_id` JOIN to find tasks linked to started sessions
+ * (excluding the current session). Ultra-compact format to minimize token cost.
+ *
+ * @param dbPath - Registered project DB path
+ * @param currentSessionId - The session ID of the agent being spawned (excluded)
+ */
+async function getActiveTasksLine(dbPath: string, currentSessionId: number): Promise<string> {
+  try {
+    const rows = await queryLive(dbPath, `
+      SELECT t.id
+      FROM sessions s
+      JOIN tasks t ON t.session_id = s.id
+      WHERE s.statut = 'started' AND s.id != ?
+      ORDER BY t.id
+    `, [currentSessionId]) as Array<{ id: number }>
+    if (!rows.length) return ''
+    return 'Active tasks: ' + rows.map(r => '#' + r.id).join(' ')
+  } catch {
+    return ''
+  }
+}
+
 // ── Kill helpers ──────────────────────────────────────────────────────────────
 
 /**
@@ -203,6 +232,8 @@ export function registerAgentStreamHandlers(): void {
     claudeCommand?: string
     convId?: string
     permissionMode?: string
+    dbPath?: string
+    sessionId?: number
   } = {}) => {
     // Validate inputs
     if (opts.claudeCommand && !CLAUDE_CMD_REGEX.test(opts.claudeCommand)) {
@@ -232,12 +263,28 @@ export function registerAgentStreamHandlers(): void {
     if (opts.wslDistro) wslArgs.push('-d', opts.wslDistro)
     if (opts.projectPath) wslArgs.push('--cd', toWslPath(opts.projectPath))
 
+    // T772: Inject active tasks context into system prompt (DB-first, ultra-compact).
+    // Appends "Active tasks: #N #M" if other agents are in-progress sessions.
+    // Zero tokens injected when no other agents are active.
+    let effectiveSystemPrompt = opts.systemPrompt ?? ''
+    if (opts.dbPath && Number.isInteger(opts.sessionId) && opts.sessionId! > 0) {
+      try {
+        assertDbPathAllowed(opts.dbPath)
+        const activeLine = await getActiveTasksLine(opts.dbPath, opts.sessionId!)
+        if (activeLine) {
+          effectiveSystemPrompt = effectiveSystemPrompt
+            ? effectiveSystemPrompt + '\n\n' + activeLine
+            : activeLine
+        }
+      } catch { /* never block spawn on context injection failure */ }
+    }
+
     // Write system prompt to a Windows temp file so bash reads it directly — avoids the
     // Windows CreateProcess command-line serialization issue with $'...' ANSI-C quoting (T705).
     let spTempFile: string | undefined
-    if (opts.systemPrompt) {
+    if (effectiveSystemPrompt) {
       spTempFile = join(tmpdir(), `claude-sp-${id}.txt`)
-      writeFileSync(spTempFile, opts.systemPrompt, 'utf-8')
+      writeFileSync(spTempFile, effectiveSystemPrompt, 'utf-8')
     }
 
     const claudeCmd = buildClaudeCmd({
@@ -392,4 +439,5 @@ export const _testing = {
   killAgent,
   agents,
   webContentsAgents,
+  getActiveTasksLine,
 }

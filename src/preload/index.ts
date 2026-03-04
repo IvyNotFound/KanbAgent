@@ -253,6 +253,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     claudeCommand?: string
     convId?: string
     permissionMode?: string
+    dbPath?: string
+    sessionId?: number
   }): Promise<string> =>
     ipcRenderer.invoke('agent:create', opts ?? {}),
 
