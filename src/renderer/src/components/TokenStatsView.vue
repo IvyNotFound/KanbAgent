@@ -6,6 +6,8 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { usePolledData } from '@renderer/composables/usePolledData'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import { parseUtcDate } from '@renderer/utils/parseDate'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import CostStatsSection from '@renderer/components/CostStatsSection.vue'
 
 interface AgentTokenRow {
   agent_id: number
@@ -466,6 +468,9 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
 
     <!-- ── Content (scrollable) ───────────────────────────────────────── -->
     <div class="flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-4">
+
+      <!-- Cost analytics section (T769) -->
+      <CostStatsSection :db-path="store.dbPath" />
 
       <!-- Per-agent table with bars -->
       <section>

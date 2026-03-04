@@ -104,6 +104,23 @@
     "avgDuration": "Durée moy.",
     "empty": "Aucune donnée — lance un agent pour voir les stats outils"
   },
+  "costStats": {
+    "title": "Analytique coût",
+    "totalCost": "Coût total",
+    "sessions": "Sessions",
+    "turns": "Tours",
+    "trend": "Tendance coût",
+    "perAgent": "Coût par agent",
+    "cache": "Cache",
+    "cacheEfficiency": "Efficacité cache (read / read+write)",
+    "loading": "Chargement…",
+    "noData": "Aucune donnée de coût — sessions avec cost_usd requises",
+    "period": {
+      "day": "Jour",
+      "week": "Semaine",
+      "month": "Mois"
+    }
+  },
   "tokenStats": {
     "logsTab": "Logs",
     "title": "Token Stats",

@@ -104,6 +104,23 @@
     "avgDuration": "Avg duration",
     "empty": "No data — launch an agent to see tool stats"
   },
+  "costStats": {
+    "title": "Cost analytics",
+    "totalCost": "Total cost",
+    "sessions": "Sessions",
+    "turns": "Turns",
+    "trend": "Cost trend",
+    "perAgent": "Cost per agent",
+    "cache": "Cache",
+    "cacheEfficiency": "Cache efficiency (read / read+write)",
+    "loading": "Loading…",
+    "noData": "No cost data — sessions with cost_usd are needed",
+    "period": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    }
+  },
   "tokenStats": {
     "logsTab": "Logs",
     "title": "Token Stats",
