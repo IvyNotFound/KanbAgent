@@ -37,31 +37,13 @@ vi.mock('fs/promises', () => ({
   unlink: (...args: unknown[]) => mockUnlink(...args),
 }))
 
-// Mock all migration functions
-const mockRunTaskStatusMigration = vi.fn(() => 0)
-const mockRunAddPriorityMigration = vi.fn(() => false)
-const mockRunTaskStatutI18nMigration = vi.fn(() => 0)
-const mockRunAddConvIdToSessionsMigration = vi.fn(() => false)
-const mockRunAddTokensToSessionsMigration = vi.fn(() => 0)
-const mockRunRemoveThinkingModeBudgetTokensMigration = vi.fn(() => false)
-const mockRunDropCommentaireColumnMigration = vi.fn(() => 0)
-const mockRunSessionStatutI18nMigration = vi.fn(() => 0)
-const mockRunMakeAgentAssigneNotNullMigration = vi.fn(() => false)
-const mockRunMakeCommentAgentNotNullMigration = vi.fn(() => false)
-const mockRunAddAgentGroupsMigration = vi.fn(() => false)
+// Mock migration module — db.ts delegates all migration logic to migration.ts
+const mockApplyMigrations = vi.fn(() => 0)
+const MOCK_CURRENT_SCHEMA_VERSION = 19 // must match vi.mock factory below
 
 vi.mock('./migration', () => ({
-  runTaskStatusMigration: (...args: unknown[]) => mockRunTaskStatusMigration(...args),
-  runAddPriorityMigration: (...args: unknown[]) => mockRunAddPriorityMigration(...args),
-  runTaskStatutI18nMigration: (...args: unknown[]) => mockRunTaskStatutI18nMigration(...args),
-  runAddConvIdToSessionsMigration: (...args: unknown[]) => mockRunAddConvIdToSessionsMigration(...args),
-  runAddTokensToSessionsMigration: (...args: unknown[]) => mockRunAddTokensToSessionsMigration(...args),
-  runRemoveThinkingModeBudgetTokensMigration: (...args: unknown[]) => mockRunRemoveThinkingModeBudgetTokensMigration(...args),
-  runDropCommentaireColumnMigration: (...args: unknown[]) => mockRunDropCommentaireColumnMigration(...args),
-  runSessionStatutI18nMigration: (...args: unknown[]) => mockRunSessionStatutI18nMigration(...args),
-  runMakeAgentAssigneNotNullMigration: (...args: unknown[]) => mockRunMakeAgentAssigneNotNullMigration(...args),
-  runMakeCommentAgentNotNullMigration: (...args: unknown[]) => mockRunMakeCommentAgentNotNullMigration(...args),
-  runAddAgentGroupsMigration: (...args: unknown[]) => mockRunAddAgentGroupsMigration(...args),
+  migrateDb: (...args: unknown[]) => mockApplyMigrations(...args),
+  CURRENT_SCHEMA_VERSION: 19, // literal: vi.mock is hoisted, cannot reference const above
 }))
 
 // Mock sql.js — create a factory for mock DB instances
@@ -440,57 +422,23 @@ describe('migrateDb', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     clearDbCacheEntry(dbPath)
-    // Reset all migration mocks
-    mockRunTaskStatusMigration.mockReturnValue(0)
-    mockRunAddPriorityMigration.mockReturnValue(false)
-    mockRunTaskStatutI18nMigration.mockReturnValue(0)
-    mockRunAddConvIdToSessionsMigration.mockReturnValue(false)
-    mockRunAddTokensToSessionsMigration.mockReturnValue(0)
-    mockRunRemoveThinkingModeBudgetTokensMigration.mockReturnValue(false)
-    mockRunDropCommentaireColumnMigration.mockReturnValue(0)
-    mockRunSessionStatutI18nMigration.mockReturnValue(0)
-    mockRunMakeAgentAssigneNotNullMigration.mockReturnValue(false)
-    mockRunMakeCommentAgentNotNullMigration.mockReturnValue(false)
-    mockRunAddAgentGroupsMigration.mockReturnValue(false)
+    mockApplyMigrations.mockReturnValue(0)
   })
 
-  /** Build a minimal SQLite DB buffer with all tables migrateDb expects */
+  /** Build a minimal SQLite DB buffer (real sql.js, no tables needed for these tests) */
   async function buildTestDbBuffer() {
     const sqlJs = await getSqlJs()
     const db = new sqlJs.Database()
-    db.run(`CREATE TABLE agents (
-      id INTEGER PRIMARY KEY, name TEXT, type TEXT, perimetre TEXT,
-      system_prompt TEXT, system_prompt_suffix TEXT, thinking_mode TEXT, allowed_tools TEXT, created_at TEXT
-    )`)
-    db.run(`CREATE TABLE tasks (
-      id INTEGER PRIMARY KEY, titre TEXT, description TEXT, statut TEXT,
-      agent_createur_id INTEGER, agent_assigne_id INTEGER, agent_valideur_id INTEGER,
-      parent_task_id INTEGER, session_id INTEGER, perimetre TEXT, effort INTEGER,
-      priority TEXT, created_at TEXT, updated_at TEXT, started_at TEXT, completed_at TEXT, validated_at TEXT
-    )`)
-    db.run(`CREATE TABLE sessions (
-      id INTEGER PRIMARY KEY, agent_id INTEGER, started_at TEXT, ended_at TEXT,
-      updated_at TEXT, statut TEXT, summary TEXT, claude_conv_id TEXT
-    )`)
-    db.run(`CREATE TABLE task_comments (
-      id INTEGER PRIMARY KEY, task_id INTEGER, agent_id INTEGER, contenu TEXT, created_at TEXT
-    )`)
-    db.run(`CREATE TABLE task_links (
-      id INTEGER PRIMARY KEY, from_task INTEGER, to_task INTEGER, type TEXT, created_at TEXT
-    )`)
-    db.run(`CREATE TABLE locks (
-      id INTEGER PRIMARY KEY, fichier TEXT, agent_id INTEGER, session_id INTEGER, created_at TEXT, released_at TEXT
-    )`)
-    db.run(`CREATE TABLE agent_logs (
-      id INTEGER PRIMARY KEY, session_id INTEGER, agent_id INTEGER, niveau TEXT,
-      action TEXT, detail TEXT, fichiers TEXT, created_at TEXT
-    )`)
-    db.run(`CREATE TABLE config (
-      key TEXT PRIMARY KEY, value TEXT, updated_at TEXT
-    )`)
-    db.run(`CREATE TABLE perimetres (
-      id INTEGER PRIMARY KEY, name TEXT UNIQUE, dossier TEXT, techno TEXT, description TEXT, actif INTEGER DEFAULT 1, created_at TEXT
-    )`)
+    const buf = Buffer.from(db.export())
+    db.close()
+    return buf
+  }
+
+  /** Build a DB buffer with PRAGMA user_version already at CURRENT_SCHEMA_VERSION */
+  async function buildCurrentVersionDbBuffer() {
+    const sqlJs = await getSqlJs()
+    const db = new sqlJs.Database()
+    db.run(`PRAGMA user_version = ${MOCK_CURRENT_SCHEMA_VERSION}`)
     const buf = Buffer.from(db.export())
     db.close()
     return buf
@@ -507,22 +455,12 @@ describe('migrateDb', () => {
     expect(mockCopyFile).toHaveBeenCalledWith(dbPath, `${dbPath}.bak`)
   })
 
-  it('should call all migration functions', async () => {
+  it('should delegate to migration.migrateDb', async () => {
     mockReadFile.mockResolvedValue(await buildTestDbBuffer())
 
     await migrateDb(dbPath)
 
-    expect(mockRunDropCommentaireColumnMigration).toHaveBeenCalled()
-    expect(mockRunAddConvIdToSessionsMigration).toHaveBeenCalled()
-    expect(mockRunAddTokensToSessionsMigration).toHaveBeenCalled()
-    expect(mockRunAddPriorityMigration).toHaveBeenCalled()
-    expect(mockRunTaskStatutI18nMigration).toHaveBeenCalled()
-    expect(mockRunRemoveThinkingModeBudgetTokensMigration).toHaveBeenCalled()
-    expect(mockRunTaskStatusMigration).toHaveBeenCalled()
-    expect(mockRunMakeAgentAssigneNotNullMigration).toHaveBeenCalled()
-    expect(mockRunMakeCommentAgentNotNullMigration).toHaveBeenCalled()
-    expect(mockRunAddAgentGroupsMigration).toHaveBeenCalled()
-    expect(mockRunSessionStatutI18nMigration).toHaveBeenCalled()
+    expect(mockApplyMigrations).toHaveBeenCalledWith(expect.any(Object))
   })
 
   it('should delete backup on success', async () => {
@@ -534,44 +472,32 @@ describe('migrateDb', () => {
   })
 
   it('should keep backup on failure', async () => {
-    mockReadFile.mockResolvedValue(Buffer.from('corrupted'))
+    mockReadFile.mockResolvedValue(await buildTestDbBuffer())
+    mockApplyMigrations.mockImplementation(() => { throw new Error('migration failed') })
 
-    await expect(migrateDb(dbPath)).rejects.toThrow()
+    await expect(migrateDb(dbPath)).rejects.toThrow('migration failed')
     expect(mockUnlink).not.toHaveBeenCalled()
   })
 
-  it('should return migrated count', async () => {
+  it('should return migrated count from migration.migrateDb', async () => {
     mockReadFile.mockResolvedValue(await buildTestDbBuffer())
-    mockRunTaskStatutI18nMigration.mockReturnValue(5)
-    mockRunTaskStatusMigration.mockReturnValue(3)
-    mockRunSessionStatutI18nMigration.mockReturnValue(2)
+    mockApplyMigrations.mockReturnValue(7)
 
     const result = await migrateDb(dbPath)
-    expect(result).toEqual({ migrated: 10 })
+    expect(result).toEqual({ migrated: 7 })
   })
 
-  it('T491: should skip migration entirely when schema_version is already current', async () => {
-    // Build a minimal DB buffer with config.schema_version = '7' (CURRENT_SCHEMA_VERSION)
-    const sqlJs = await getSqlJs()
-    const db = new sqlJs.Database()
-    db.run(`CREATE TABLE config (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`)
-    db.run(`INSERT INTO config (key, value) VALUES ('schema_version', '7')`)
-    const buf = Buffer.from(db.export())
-    db.close()
-
+  it('T491: should skip migration entirely when user_version is already current', async () => {
+    // Build a real DB buffer with user_version set to CURRENT_SCHEMA_VERSION
     mockStat.mockResolvedValue({ mtimeMs: Date.now() })
-    mockReadFile.mockResolvedValue(buf)
+    mockReadFile.mockResolvedValue(await buildCurrentVersionDbBuffer())
 
     const result = await migrateDb(dbPath)
 
     // Fast-path: returns immediately without backup or any migration
     expect(result).toEqual({ migrated: 0 })
     expect(mockCopyFile).not.toHaveBeenCalled()
-    expect(mockRunTaskStatusMigration).not.toHaveBeenCalled()
-    expect(mockRunAddPriorityMigration).not.toHaveBeenCalled()
-    expect(mockRunTaskStatutI18nMigration).not.toHaveBeenCalled()
-    expect(mockRunDropCommentaireColumnMigration).not.toHaveBeenCalled()
-    expect(mockRunSessionStatutI18nMigration).not.toHaveBeenCalled()
+    expect(mockApplyMigrations).not.toHaveBeenCalled()
   })
 })
 

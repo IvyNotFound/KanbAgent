@@ -9,19 +9,7 @@
 
 import { readFile, writeFile, rename, stat, copyFile, unlink } from 'fs/promises'
 import { join, dirname, resolve } from 'path'
-import {
-  runTaskStatusMigration,
-  runAddPriorityMigration,
-  runTaskStatutI18nMigration,
-  runAddConvIdToSessionsMigration,
-  runAddTokensToSessionsMigration,
-  runRemoveThinkingModeBudgetTokensMigration,
-  runDropCommentaireColumnMigration,
-  runSessionStatutI18nMigration,
-  runMakeAgentAssigneNotNullMigration,
-  runMakeCommentAgentNotNullMigration,
-  runAddAgentGroupsMigration
-} from './migration'
+import { migrateDb as applyMigrations, CURRENT_SCHEMA_VERSION } from './migration'
 
 // ── T282: Registry of allowed DB paths ────────────────────────────────────────
 const allowedDbPaths = new Set<string>()
@@ -268,215 +256,43 @@ async function queryLiveAttempt(
 
 // ── Migration ────────────────────────────────────────────────────────────────
 
-/** Current schema version — bump when adding migrations or indexes. */
-const CURRENT_SCHEMA_VERSION = '7'
-
 /**
  * Run all pending schema migrations on a project database.
  * Creates a backup (.bak) before migrating and deletes it on success.
+ *
+ * Fast-path: skips migration if PRAGMA user_version is already at CURRENT_SCHEMA_VERSION.
+ *
  * @param dbPath - Path to the SQLite database
- * @returns {Promise<{ migrated: number }>} Number of rows migrated
+ * @returns {Promise<{ migrated: number }>} Number of migrations applied
  * @throws {Error} If migration fails (backup is kept)
  */
 export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
-  // T382: Fast-path — skip full migration if schema is already up to date
   const sqlJs = await getSqlJs()
+
+  // Fast-path: check user_version before loading the full DB
   try {
     const checkBuf = await getDbBuffer(dbPath)
     const checkDb = new sqlJs.Database(checkBuf)
     try {
-      const result = checkDb.exec("SELECT value FROM config WHERE key = 'schema_version'")
-      if (result.length > 0 && result[0].values.length > 0 && result[0].values[0][0] === CURRENT_SCHEMA_VERSION) {
-        return { migrated: 0 }
-      }
+      const uvResult = checkDb.exec('PRAGMA user_version')
+      const currentVersion = uvResult.length > 0 && uvResult[0].values.length > 0
+        ? (uvResult[0].values[0][0] as number) : 0
+      if (currentVersion >= CURRENT_SCHEMA_VERSION) return { migrated: 0 }
     } finally {
       checkDb.close()
     }
-  } catch { /* config table may not exist yet — run full migration */ }
+  } catch { /* DB unreadable — proceed to full migration */ }
 
   const backupPath = `${dbPath}.bak`
   await copyFile(dbPath, backupPath)
 
   const buf = await readFile(dbPath)
   const db = new sqlJs.Database(buf)
-  let changed = false
 
   try {
-    const tasksColsBefore = db.exec('PRAGMA table_info(tasks)')
-    const hadCommentaire = tasksColsBefore.length > 0 &&
-      tasksColsBefore[0].values.some((r: unknown[]) => r[1] === 'commentaire')
-    const commentaireMigrated = runDropCommentaireColumnMigration(db)
-    if (hadCommentaire) {
-      changed = true
-      console.log(`[migrateDb] dropped tasks.commentaire column (${commentaireMigrated} rows migrated to task_comments)`)
-    }
+    const migrated = applyMigrations(db)
 
-    const colResult = db.exec('PRAGMA table_info(agents)')
-    const existingCols = new Set<string>()
-    if (colResult.length > 0) {
-      for (const row of colResult[0].values) existingCols.add(row[1] as string)
-    }
-    if (!existingCols.has('system_prompt')) {
-      db.run('ALTER TABLE agents ADD COLUMN system_prompt TEXT')
-      changed = true
-    }
-    if (!existingCols.has('system_prompt_suffix')) {
-      db.run('ALTER TABLE agents ADD COLUMN system_prompt_suffix TEXT')
-      changed = true
-    }
-    if (!existingCols.has('thinking_mode')) {
-      db.run("ALTER TABLE agents ADD COLUMN thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled'))")
-      changed = true
-    }
-    if (!existingCols.has('allowed_tools')) {
-      db.run('ALTER TABLE agents ADD COLUMN allowed_tools TEXT')
-      changed = true
-    }
-    if (!existingCols.has('auto_launch')) {
-      db.run('ALTER TABLE agents ADD COLUMN auto_launch INTEGER NOT NULL DEFAULT 1')
-      changed = true
-      console.log('[migrateDb] added auto_launch column to agents')
-    }
-    if (!existingCols.has('permission_mode')) {
-      db.run("ALTER TABLE agents ADD COLUMN permission_mode TEXT CHECK(permission_mode IN ('default', 'auto')) DEFAULT 'default'")
-      changed = true
-      console.log('[migrateDb] added permission_mode column to agents')
-    }
-    if (!existingCols.has('max_sessions')) {
-      db.run('ALTER TABLE agents ADD COLUMN max_sessions INTEGER NOT NULL DEFAULT 3')
-      changed = true
-      console.log('[migrateDb] added max_sessions column to agents')
-    }
-
-    const tableResult = db.exec("SELECT name FROM sqlite_master WHERE type='table'")
-    const existingTables = new Set<string>()
-    if (tableResult.length > 0) {
-      for (const row of tableResult[0].values) existingTables.add(row[0] as string)
-    }
-    if (!existingTables.has('config')) {
-      db.run(`CREATE TABLE config (
-        key        TEXT NOT NULL PRIMARY KEY,
-        value      TEXT NOT NULL,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`)
-      db.run(`INSERT INTO config (key, value) VALUES
-        ('claude_md_commit', ''),
-        ('schema_version', '2')`)
-      changed = true
-    }
-
-    if (!existingTables.has('perimetres')) {
-      db.run(`CREATE TABLE perimetres (
-        id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        name        TEXT NOT NULL UNIQUE,
-        dossier     TEXT,
-        techno      TEXT,
-        description TEXT,
-        actif       INTEGER NOT NULL DEFAULT 1,
-        created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`)
-      db.run(`INSERT INTO perimetres (name, dossier, techno, description) VALUES
-        ('front-vuejs',   'renderer/', 'Vue 3 + TypeScript + Tailwind CSS', 'Interface utilisateur Electron'),
-        ('back-electron', 'main/',     'Electron + Node.js + SQLite',       'Process principal, IPC, accès DB'),
-        ('global',        '',          '—',                                  'Transversal, aucun périmètre spécifique')`)
-      changed = true
-    }
-
-    db.run('CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions(agent_id)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at DESC)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_agent_logs_agent_id ON agent_logs(agent_id)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_agent_logs_created_at ON agent_logs(created_at DESC)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_locks_released_at ON locks(released_at)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON tasks(updated_at DESC)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigne ON tasks(agent_assigne_id)')
-    // T374: Composite index for ROW_NUMBER() OVER (PARTITION BY agent_id ORDER BY started_at DESC)
-    db.run('CREATE INDEX IF NOT EXISTS idx_sessions_agent_started ON sessions(agent_id, started_at DESC)')
-    // T375: Index for task_comments JOIN on task_id
-    db.run('CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id)')
-    changed = true
-
-    // T414 (schema v4): task_agents table for multi-agent assignment
-    if (!existingTables.has('task_agents')) {
-      db.run(`CREATE TABLE IF NOT EXISTS task_agents (
-        id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        task_id     INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-        agent_id    INTEGER NOT NULL REFERENCES agents(id),
-        role        TEXT CHECK(role IN ('primary', 'support', 'reviewer')),
-        assigned_at TEXT DEFAULT (datetime('now')),
-        UNIQUE(task_id, agent_id)
-      )`)
-      changed = true
-      console.log('[migrateDb] created task_agents table')
-    }
-    db.run('CREATE INDEX IF NOT EXISTS idx_task_agents_task_id ON task_agents(task_id)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_task_agents_agent_id ON task_agents(agent_id)')
-
-    const convIdAdded = runAddConvIdToSessionsMigration(db)
-    if (convIdAdded) {
-      changed = true
-      console.log('[migrateDb] added claude_conv_id column to sessions')
-    }
-
-    const tokensAdded = runAddTokensToSessionsMigration(db)
-    if (tokensAdded > 0) {
-      changed = true
-      console.log(`[migrateDb] added ${tokensAdded} token tracking columns to sessions`)
-    }
-
-    const priorityAdded = runAddPriorityMigration(db)
-    if (priorityAdded) {
-      changed = true
-      console.log('[migrateDb] added priority column to tasks')
-    }
-
-    const i18nMigrated = runTaskStatutI18nMigration(db)
-    if (i18nMigrated > 0) {
-      changed = true
-      console.log(`[migrateDb] migrated ${i18nMigrated} tasks statuts from French to English`)
-    }
-
-    const thinkingModeMigrated = runRemoveThinkingModeBudgetTokensMigration(db)
-    if (thinkingModeMigrated) {
-      changed = true
-      console.log('[migrateDb] removed budget_tokens from agents.thinking_mode CHECK constraint')
-    }
-
-    const legacyMigrated = runTaskStatusMigration(db)
-    if (legacyMigrated > 0) {
-      changed = true
-      console.log(`[migrateDb] migrated ${legacyMigrated} tasks via legacy runTaskStatusMigration`)
-    }
-
-    // --- tasks: agent_assigne_id NOT NULL (T342) ---
-    const assigneMigrated = runMakeAgentAssigneNotNullMigration(db)
-    if (assigneMigrated) {
-      changed = true
-      console.log('[migrateDb] made agent_assigne_id and agent_createur_id NOT NULL on tasks table')
-    }
-
-    const commentAgentMigrated = runMakeCommentAgentNotNullMigration(db)
-    if (commentAgentMigrated) {
-      changed = true
-      console.log('[migrateDb] made agent_id NOT NULL on task_comments table')
-    }
-
-    // --- T556: agent_groups + agent_group_members ---
-    const agentGroupsMigrated = runAddAgentGroupsMigration(db)
-    if (agentGroupsMigrated) {
-      changed = true
-      console.log('[migrateDb] created agent_groups and agent_group_members tables')
-    }
-
-    // --- sessions: statut French → English (T329) ---
-    const sessionsMigrated = runSessionStatutI18nMigration(db)
-    if (sessionsMigrated > 0) {
-      changed = true
-      console.log(`[migrateDb] migrated ${sessionsMigrated} sessions statuts from French to English`)
-    }
-
-    if (changed) {
-      // T382: Stamp schema version so next startup skips full migration
-      db.run("INSERT OR REPLACE INTO config (key, value, updated_at) VALUES ('schema_version', ?, CURRENT_TIMESTAMP)", [CURRENT_SCHEMA_VERSION])
+    if (migrated > 0) {
       const exported = db.export()
       await writeFile(dbPath, Buffer.from(exported))
       console.log('[migrateDb] schema updated:', dbPath)
@@ -486,7 +302,6 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
       console.warn('[migrateDb] could not delete backup:', backupPath)
     })
 
-    const migrated = i18nMigrated + legacyMigrated + sessionsMigrated
     return { migrated }
   } catch (err) {
     console.error('[migrateDb] migration failed, backup kept at:', backupPath, err)
