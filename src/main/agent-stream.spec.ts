@@ -6,7 +6,7 @@
  * - JSONL is parsed line-by-line from stdout
  * - Multi-turn messages sent via stdin
  * - agent:kill terminates the process
- * - env: ANTHROPIC_API_KEY and PATH forwarded
+ * - env: PATH and Windows system vars forwarded (auth via OAuth in ~/.claude/)
  * - convId extracted from system:init event
  */
 
@@ -127,7 +127,8 @@ describe('agent-stream', () => {
     await handler(event, {})
 
     const [cmd, args] = mockSpawn.mock.calls[0] as [string, string[]]
-    expect(cmd).toBe('wsl.exe')
+    // cmd is now an absolute path (e.g. C:\Windows\System32\wsl.exe or fallback) — check suffix
+    expect(cmd.toLowerCase()).toMatch(/wsl\.exe$/)
     // Must contain 'bash', '-lc'
     expect(args).toContain('bash')
     expect(args).toContain('-lc')
@@ -278,14 +279,27 @@ describe('agent-stream', () => {
     expect(() => killHandler(event, 'unknown')).not.toThrow()
   })
 
+  it('forwards spawn error as error:spawn event to renderer', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, {})) as string
+
+    mockProc.emit('error', new Error('spawn ENOENT'))
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, {
+      type: 'error:spawn',
+      error: 'spawn ENOENT',
+    })
+  })
+
   // ── env forwarding ────────────────────────────────────────────────────────
 
-  it('forwards ANTHROPIC_API_KEY to process env', () => {
-    const originalKey = process.env.ANTHROPIC_API_KEY
-    process.env.ANTHROPIC_API_KEY = 'test-key-123'
+  it('does not forward ANTHROPIC_API_KEY — auth is via OAuth in ~/.claude/', () => {
+    process.env.ANTHROPIC_API_KEY = 'should-not-appear'
     const env = agentStream._testing.buildEnv()
-    expect(env.ANTHROPIC_API_KEY).toBe('test-key-123')
-    process.env.ANTHROPIC_API_KEY = originalKey
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined()
+    delete process.env.ANTHROPIC_API_KEY
   })
 
   it('forwards PATH to process env', () => {

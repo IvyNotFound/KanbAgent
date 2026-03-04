@@ -16,6 +16,7 @@
 import { ipcMain, webContents, app } from 'electron'
 import { spawn, type ChildProcess, execFile } from 'child_process'
 import { createInterface } from 'readline'
+import { join } from 'path'
 
 // ── Process registry ──────────────────────────────────────────────────────────
 
@@ -46,8 +47,9 @@ function toWslPath(winPath: string): string {
 
 /**
  * Build minimal env for the spawned process.
- * Forwards Windows system vars required by wsl.exe RPC + ANTHROPIC_API_KEY.
+ * Forwards Windows system vars required by wsl.exe RPC.
  * Sets TERM=dumb + NO_COLOR=1 to suppress any ANSI from bash startup.
+ * Note: no ANTHROPIC_API_KEY — auth is handled via OAuth tokens stored in ~/.claude/ (WSL).
  */
 function buildEnv(): Record<string, string> {
   const env: Record<string, string> = {
@@ -65,7 +67,6 @@ function buildEnv(): Record<string, string> {
     'WSL_DISTRO_NAME',
     'PATH',
     'HOME',
-    'ANTHROPIC_API_KEY',
   ]
   for (const v of forwardVars) {
     if (process.env[v]) env[v] = process.env[v]!
@@ -213,7 +214,14 @@ export function registerAgentStreamHandlers(): void {
       permissionMode: opts.permissionMode,
     })
 
-    const proc = spawn('wsl.exe', [...wslArgs, '--', 'bash', '-lc', claudeCmd], {
+    // Resolve wsl.exe via absolute path to avoid ENOENT in packaged app where
+    // C:\Windows\System32 may be absent from the spawned process PATH (Fix T692).
+    const wslExe = process.env.SystemRoot
+      ? join(process.env.SystemRoot, 'System32', 'wsl.exe')
+      : 'C:\\Windows\\System32\\wsl.exe'
+
+    console.log('[agent-stream] spawn', wslExe, wslArgs)
+    const proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-lc', claudeCmd], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: buildEnv(),
     })
@@ -257,6 +265,11 @@ export function registerAgentStreamHandlers(): void {
       rl.close()
       agents.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
+      // Send error event to renderer for visibility without DevTools (Fix T692)
+      const wc = webContents.fromId(wcId)
+      if (wc && !wc.isDestroyed()) {
+        wc.send(`agent:stream:${id}`, { type: 'error:spawn', error: err.message })
+      }
     })
 
     proc.on('close', (exitCode) => {
