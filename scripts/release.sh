@@ -43,6 +43,14 @@ echo "=== Pre-release Checks ==="
 echo "Running npm install..."
 npm install --silent 2>/dev/null
 
+# Bump version before build so electron-builder picks up the new version in artifact names
+echo ""
+echo "=== Bumping Version ==="
+NEW_VERSION=$(npm version "$BUMP_TYPE" --no-git-tag-version --allow-same-version)
+# Strip leading 'v' prefix from npm version output to avoid double-v (vv0.x.0)
+NEW_VERSION="${NEW_VERSION#v}"
+echo "New version: $NEW_VERSION"
+
 echo "Running build (vite + electron-builder packaging)..."
 # TODO(v1.0): move artifact production to GitHub Actions
 npm run build
@@ -51,14 +59,6 @@ echo "Running lint..."
 if ! npm run lint 2>&1 | grep -q "error\|warning\|0 warnings"; then
     echo "WARNING: Lint may have issues. Review above."
 fi
-
-# Bump version
-echo ""
-echo "=== Bumping Version ==="
-NEW_VERSION=$(npm version "$BUMP_TYPE" --no-git-tag-version --allow-same-version)
-# Strip leading 'v' prefix from npm version output to avoid double-v (vv0.x.0)
-NEW_VERSION="${NEW_VERSION#v}"
-echo "New version: $NEW_VERSION"
 
 # Generate/update CHANGELOG.md
 echo ""
