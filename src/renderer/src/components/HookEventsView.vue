@@ -19,12 +19,18 @@ function toggleType(t: string): void {
   else filterTypes.value.push(t)
 }
 
+// Iterate backwards — newest first, early exit at 200 items (T792)
+// Avoids .slice().reverse() O(N) on 2000 events on every hook event
+const MAX_DISPLAY = 200
 const filtered = computed(() => {
   const types = filterTypes.value
-  return store.events
-    .filter(e => !types.length || types.includes(e.event))
-    .slice()
-    .reverse()
+  const evts = store.events
+  const result: HookEvent[] = []
+  for (let i = evts.length - 1; i >= 0 && result.length < MAX_DISPLAY; i--) {
+    const e = evts[i]
+    if (!types.length || types.includes(e.event)) result.push(e)
+  }
+  return result
 })
 
 function relativeTime(ts: number): string {
