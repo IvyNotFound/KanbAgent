@@ -35,6 +35,14 @@ const FALLBACK_CLOSE_NOTASK_MS = 30 * 60 * 1000
 /** Delay (ms) between Ctrl+C and terminalKill */
 const KILL_DELAY_MS = 2_000
 
+/**
+ * Lookback window (ms) subtracted from notBefore when scheduling a close (T835).
+ * Covers the race condition where the agent writes ended_at before the renderer
+ * detects the task transition (async refresh + 80ms debounce). Without this,
+ * ended_at < notBefore → poll never finds the session → only fallback fires.
+ */
+const SCHEDULE_LOOKBACK_MS = 5 * 60 * 1000
+
 /** Cooldown (ms) between review auto-launches to prevent infinite loops */
 const REVIEW_COOLDOWN_MS = 5 * 60 * 1000
 
@@ -200,10 +208,12 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     const path = dbPath.value
     if (!path) return
 
-    // Capture current time: only sessions completing AFTER this point trigger a close.
-    // This prevents the poller from finding a previously-completed session and closing
-    // a freshly-launched terminal (regression introduced in T646).
-    const notBefore = new Date().toISOString()
+    // Use a lookback window to cover the race condition where the agent writes ended_at
+    // BEFORE the renderer detects the task-done transition (T835). Without this,
+    // notBefore could be after ended_at → poll never fires, only fallback triggers.
+    // The 5min window is acceptable: scheduleClose only runs when an agent has an
+    // active terminal AND its task just transitioned to done.
+    const notBefore = new Date(Date.now() - SCHEDULE_LOOKBACK_MS).toISOString()
 
     // Immediate poll — guarded to prevent N parallel polls when watch fires rapidly
     if (!pendingImmediatePolls.has(agentName)) {

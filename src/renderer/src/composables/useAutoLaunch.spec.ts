@@ -441,7 +441,7 @@ describe('composables/useAutoLaunch', () => {
       expect(api.terminalWrite).toHaveBeenCalledWith('pty-task-creator-close', '\x03')
     })
 
-    it('should pass a notBefore ISO timestamp as 2nd queryDb param', async () => {
+    it('should pass a notBefore ISO timestamp as 2nd queryDb param (with 5min lookback)', async () => {
       const capturedParams: unknown[][] = []
       api.queryDb.mockImplementation((_path, _query, params) => {
         capturedParams.push(params as unknown[])
@@ -466,12 +466,39 @@ describe('composables/useAutoLaunch', () => {
       expect(capturedParams.length).toBeGreaterThan(0)
       const [agentIdParam, notBeforeParam] = capturedParams[0] as [number, string]
       expect(agentIdParam).toBe(20)
-      // notBefore must be a valid ISO string >= the time before scheduling
+      // T835: notBefore includes 5min lookback — must be a valid ISO string before scheduling
       expect(typeof notBeforeParam).toBe('string')
       expect(new Date(notBeforeParam).toISOString()).toBe(notBeforeParam)
-      expect(new Date(notBeforeParam).getTime()).toBeGreaterThanOrEqual(
-        new Date(beforeSchedule).getTime() - 100
-      )
+      const LOOKBACK_MS = 5 * 60 * 1000
+      const notBeforeTime = new Date(notBeforeParam).getTime()
+      const scheduleTime = new Date(beforeSchedule).getTime()
+      // notBefore = now - 5min: within the lookback window
+      expect(notBeforeTime).toBeLessThanOrEqual(scheduleTime + 100)
+      expect(notBeforeTime).toBeGreaterThanOrEqual(scheduleTime - LOOKBACK_MS - 200)
+    })
+
+    it('T835: should close terminal when session completed BEFORE scheduleClose was called (race condition)', async () => {
+      // Session was already completed before the renderer detected the done transition
+      api.queryDb.mockResolvedValue([{ id: 77 }])
+
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = [makeTask({ id: 1, statut: 'in_progress', agent_assigne_id: 10 })]
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.ptyId = 'pty-race'
+
+      // Task transitions to done — agent session was already completed (race condition)
+      tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
+      await nextTick()
+
+      // Past debounce + immediate poll → lookback window covers the completed session
+      await vi.advanceTimersByTimeAsync(150)
+
+      expect(api.terminalWrite).toHaveBeenCalledWith('pty-race', '\x03')
     })
   })
 
