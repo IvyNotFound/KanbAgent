@@ -182,19 +182,18 @@ export async function writeDb<T = void>(dbPath: string, fn: (db: any) => T): Pro
           throw err
         }
       }
-      // Update cache: refresh buffer + recreate DB instance from exported data
-      // so the next queryLive doesn't need to reinstantiate (~10-50ms saved)
+      // Update cache: refresh buffer, invalidate DB instance (lazy recreation on next queryLive)
+      // Avoids creating a second WASM Database instance per write — WASM heap never shrinks (T908)
       const statResult = await stat(dbPath)
       const entry = dbCache.get(dbPath)
       if (entry?.db) { try { entry.db.close() } catch { /* ignore */ } }
-      const freshDb = new sqlJs.Database(newBuf)
       if (entry) {
         entry.buf = newBuf
         entry.mtime = statResult.mtimeMs
         entry.lastAccess = Date.now()
-        entry.db = freshDb
+        entry.db = null
       } else {
-        dbCache.set(dbPath, { buf: newBuf, mtime: statResult.mtimeMs, lastAccess: Date.now(), db: freshDb })
+        dbCache.set(dbPath, { buf: newBuf, mtime: statResult.mtimeMs, lastAccess: Date.now(), db: null })
       }
       return result
     } finally {
