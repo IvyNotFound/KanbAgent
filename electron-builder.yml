@@ -36,6 +36,7 @@ mac:
 
 linux:
   icon: build/icon.png
+  maintainer: "IvyNotFound <noreply@ivynotfound.dev>"
   target:
     - target: AppImage
       arch: [x64]
