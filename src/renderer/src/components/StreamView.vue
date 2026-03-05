@@ -407,7 +407,7 @@ onUnmounted(() => {
         </span>
         <span v-if="activeThinkingText" class="flex items-center gap-1 min-w-0">
           <span class="shrink-0 font-medium" data-testid="thinking-label">Thinking…</span>
-          <span class="truncate italic opacity-75 text-zinc-400" data-testid="thinking-preview">{{ activeThinkingText.slice(-120) }}</span>
+          <span class="truncate italic opacity-75 text-content-muted" data-testid="thinking-preview">{{ activeThinkingText.slice(-120) }}</span>
         </span>
         <span v-else class="opacity-75">En cours…</span>
       </div>

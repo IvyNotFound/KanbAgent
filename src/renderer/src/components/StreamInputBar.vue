@@ -38,12 +38,12 @@ function stopAgent(): void {
 
 <template>
   <!-- ── Input zone (T681: items-end aligne boutons sur bas textarea) ─── -->
-  <div class="border-t border-zinc-800 px-4 py-3 flex items-end gap-2">
+  <div class="border-t border-edge-subtle px-4 py-3 flex items-end gap-2">
     <textarea
       v-model="inputText"
       rows="2"
       placeholder="Envoyer un message…"
-      class="flex-1 resize-none bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 transition-colors"
+      class="flex-1 resize-none bg-surface-secondary border border-edge-default rounded-lg px-3 py-2 text-sm text-content-primary placeholder-content-subtle focus:outline-none focus:ring-1 transition-colors"
       @keydown="handleKeydown"
     />
     <!-- Stop button (T683) — visible only while agent is streaming and not yet stopped -->
@@ -58,7 +58,7 @@ function stopAgent(): void {
     <!-- Send button — couleur agent quand actif, zinc-700 quand disabled (T680) -->
     <button
       :disabled="!inputText.trim() || !sessionId"
-      class="px-4 py-2 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg text-sm font-medium transition-colors self-end"
+      class="px-4 py-2 disabled:bg-surface-tertiary disabled:text-content-subtle text-white rounded-lg text-sm font-medium transition-colors self-end"
       :style="inputText.trim() && sessionId ? { backgroundColor: accentFg } : {}"
       data-testid="send-button"
       @click="sendMessage"

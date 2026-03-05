@@ -37,14 +37,14 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     @click.self="emit('close')"
   >
     <!-- Modal -->
-    <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col max-h-[80vh]">
+    <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col max-h-[80vh]">
       <!-- Header -->
-      <div class="flex items-center gap-3 px-4 py-3 border-b border-zinc-700 shrink-0">
-        <span class="text-sm font-semibold text-zinc-100 font-mono">{{ event.event }}</span>
-        <span class="text-xs text-zinc-500 font-mono">{{ timestamp }}</span>
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-edge-default shrink-0">
+        <span class="text-sm font-semibold text-content-primary font-mono">{{ event.event }}</span>
+        <span class="text-xs text-content-subtle font-mono">{{ timestamp }}</span>
         <div class="flex-1" />
         <button
-          class="text-zinc-400 hover:text-zinc-200 transition-colors text-lg leading-none"
+          class="text-content-muted hover:text-content-secondary transition-colors text-lg leading-none"
           @click="emit('close')"
         >
           ×
@@ -55,9 +55,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       <div class="overflow-auto flex-1 p-4">
         <pre
           v-if="formattedPayload"
-          class="text-xs font-mono text-zinc-200 whitespace-pre-wrap select-text cursor-text"
+          class="text-xs font-mono text-content-secondary whitespace-pre-wrap select-text cursor-text"
         >{{ formattedPayload }}</pre>
-        <p v-else class="text-xs text-zinc-500 italic">No payload data</p>
+        <p v-else class="text-xs text-content-subtle italic">No payload data</p>
       </div>
     </div>
   </div>

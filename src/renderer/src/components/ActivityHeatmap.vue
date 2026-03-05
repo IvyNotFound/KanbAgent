@@ -81,7 +81,7 @@ function intensity(count: number): number {
 }
 
 const COLORS = [
-  'bg-zinc-800',      // 0 — empty
+  'bg-surface-secondary',  // 0 — empty
   'bg-emerald-900',   // 1
   'bg-emerald-700',   // 2
   'bg-emerald-500',   // 3
@@ -126,7 +126,7 @@ const maxCount = computed(() => Math.max(...Array.from(dayCountMap.value.values(
           :key="String(a.id)"
           class="text-[11px] font-mono px-2 py-0.5 rounded border transition-colors"
           :class="filterAgentId === a.id
-            ? 'border-emerald-600 text-emerald-300 bg-emerald-950/40'
+            ? 'border-emerald-500 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40'
             : 'border-edge-subtle text-content-subtle hover:text-content-secondary'"
           @click="filterAgentId = a.id"
         >

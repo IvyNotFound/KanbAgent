@@ -54,7 +54,7 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
     </button>
     <div
       v-show="!isCollapsed(eventId, blockIdx, true)"
-      class="px-4 py-3 bg-zinc-900 text-xs text-zinc-300 overflow-x-auto select-text cursor-text"
+      class="px-4 py-3 bg-surface-primary text-xs text-content-tertiary overflow-x-auto select-text cursor-text"
     >
       <pre class="whitespace-pre-wrap">{{ toolInputPreview(block.input) }}</pre>
     </div>
@@ -64,12 +64,12 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
   <div
     v-else-if="block.type === 'tool_result'"
     class="border rounded-lg overflow-hidden"
-    :class="block.is_error ? 'border-red-800 bg-red-950' : 'border-zinc-700 bg-zinc-900'"
+    :class="block.is_error ? 'border-red-800 bg-red-950' : 'border-edge-default bg-surface-primary'"
     data-testid="block-tool-result"
   >
     <button
       class="w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors"
-      :class="block.is_error ? 'text-red-400 hover:bg-red-900' : 'text-zinc-400 hover:bg-zinc-800'"
+      :class="block.is_error ? 'text-red-400 hover:bg-red-900' : 'text-content-muted hover:bg-surface-secondary'"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), !block.is_error && !!block._isLong)"
     >
       <span
@@ -85,7 +85,7 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
     <!-- eslint-disable vue/no-v-html -->
     <div
       v-show="!isCollapsed(eventId, blockIdx, !block.is_error && !!block._isLong)"
-      class="stream-markdown px-4 py-2 text-xs text-zinc-300 overflow-x-auto select-text cursor-text"
+      class="stream-markdown px-4 py-2 text-xs text-content-tertiary overflow-x-auto select-text cursor-text"
       v-html="block._html ?? ''"
     />
     <!-- eslint-enable vue/no-v-html -->

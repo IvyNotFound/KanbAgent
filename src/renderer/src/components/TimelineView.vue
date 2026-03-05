@@ -297,7 +297,7 @@ const legendItems = computed(() => [
         <div
           v-for="group in groups"
           :key="group.name"
-          class="flex items-stretch border-b border-edge-subtle/40 hover:bg-white/5 transition-colors"
+          class="flex items-stretch border-b border-edge-subtle/40 hover:bg-surface-secondary/50 transition-colors"
         >
           <!-- Agent label -->
           <div class="w-36 shrink-0 flex items-center px-3 py-2 border-r border-edge-subtle/40">
@@ -340,18 +340,18 @@ const legendItems = computed(() => [
     <Teleport to="body">
       <div
         v-if="tooltip"
-        class="fixed z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl p-3 text-xs pointer-events-none"
+        class="fixed z-50 bg-surface-primary border border-edge-default rounded-lg shadow-xl p-3 text-xs pointer-events-none"
         :style="{ left: (tooltip.x + 14) + 'px', top: (tooltip.y - 14) + 'px', maxWidth: '280px' }"
       >
-        <div class="font-semibold text-zinc-100 mb-1.5 leading-snug">{{ tooltip.task.titre }}</div>
-        <div class="space-y-0.5 text-zinc-400">
+        <div class="font-semibold text-content-primary mb-1.5 leading-snug">{{ tooltip.task.titre }}</div>
+        <div class="space-y-0.5 text-content-muted">
           <div>
             {{ t('timeline.tooltipStatus') }}:
             <span
               :class="{
                 'text-blue-400': tooltip.task.statut === 'in_progress',
                 'text-green-400': tooltip.task.statut === 'done',
-                'text-zinc-300': tooltip.task.statut === 'todo',
+                'text-content-tertiary': tooltip.task.statut === 'todo',
               }"
             >{{ tooltip.task.statut }}</span>
           </div>
@@ -361,7 +361,7 @@ const legendItems = computed(() => [
           </div>
           <div>{{ t('timeline.tooltipDuration') }}: {{ taskDurationLabel(tooltip.task) }}</div>
           <div>{{ t('timeline.tooltipEffort') }}: {{ effortLabel(tooltip.task.effort) }}</div>
-          <div class="text-zinc-600 mt-0.5">#{{ tooltip.task.id }}</div>
+          <div class="text-content-faint mt-0.5">#{{ tooltip.task.id }}</div>
         </div>
       </div>
     </Teleport>
