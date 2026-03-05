@@ -1,6 +1,6 @@
-# CLAUDE.md — [nom-du-projet]
+# CLAUDE.md — [project-name]
 
-> Lecture seule sauf `setup` (init) et `arch` (révisions structurantes). État vivant → `.claude/project.db`. Refs → `.claude/ADRS.md` · `.claude/WORKFLOW.md`
+> Read-only except `setup` (init) and `arch` (structural revisions). Live state → `.claude/project.db`. Refs → `.claude/ADRS.md` · `.claude/WORKFLOW.md`
 
 ---
 
@@ -10,13 +10,13 @@ MODE: solo · LANG_CONV: français · LANG_CODE: english · Solo: `review` = `re
 
 ---
 
-## Projet
+## Project
 
-**[nom-du-projet]** — [Description courte du projet.]
+**[project-name]** — [Short project description.]
 
-Périmètres: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind) · `back-electron` (`main/`, Electron + Node + SQLite)
+Scopes: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind) · `back-electron` (`main/`, Electron + Node + SQLite)
 
-Conventions: français (conv) · anglais (code) · tests obligatoires · 0 lint · Conventional Commits
+Conventions: français (conv) · english (code) · mandatory tests · 0 lint · Conventional Commits
 
 **Version: `0.1.0`** | Lead: [github-username] → `main` | `npm run dev/build/test/lint/release`
 
@@ -24,38 +24,38 @@ Conventions: français (conv) · anglais (code) · tests obligatoires · 0 lint 
 
 ## Agents
 
-Globaux: **review-master** (audit global) · **review** (périmètre) · **devops** (CI/CD) · **arch** (ADR, IPC, CLAUDE.md) · **doc** (README/JSDoc) · **setup** (init unique)
+Global: **review-master** (global audit) · **review** (scope) · **devops** (CI/CD) · **arch** (ADR, IPC, CLAUDE.md) · **doc** (README/JSDoc) · **setup** (one-time init)
 
-Scopés: `dev-front-vuejs` (Vue) · `dev-back-electron` (IPC/SQLite)
+Scoped: `dev-front-vuejs` (Vue) · `dev-back-electron` (IPC/SQLite)
 
 ---
 
-## Accès DB
+## DB Access
 
-`node scripts/dbq.js "<SQL>"` (lecture) · `node scripts/dbw.js "<SQL>"` (écriture)
+`node scripts/dbq.js "<SQL>"` (read) · `node scripts/dbw.js "<SQL>"` (write)
 
-SQL complexe → **heredoc obligatoire** :
+Complex SQL → **heredoc required**:
 ```
 node scripts/dbw.js <<'SQL'
-INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (1, 2, 'texte');
+INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (1, 2, 'text');
 SQL
 ```
-Démarrage session : `node scripts/dbstart.js <agent-name>`
+Start session: `node scripts/dbstart.js <agent-name>`
 
 ---
 
-## Workflow tickets
+## Ticket Workflow
 
-`todo` → `in_progress` → `done` → `archived` (rejeté → retour `todo`)
+`todo` → `in_progress` → `done` → `archived` (rejected → back to `todo`)
 
-1. **review** crée ticket (titre + description + commentaire risques)
-2. Agent démarre immédiatement sur ses tickets assignés
-3. Agent écrit commentaire de sortie **EN PREMIER** · puis `done`
-4. **review** archive ou rejette (`todo` + motif précis)
+1. **review** creates ticket (title + description + risk comment)
+2. Agent starts immediately on assigned tickets
+3. Agent writes exit comment **FIRST** · then `done`
+4. **review** archives or rejects (`todo` + precise reason)
 
 ---
 
-## Règles inter-agents
+## Inter-Agent Rules
 
-- Un agent = un périmètre — ne jamais déborder sans signaler
-- Interfaces IPC Electron ↔ Vue → passer par `arch` avant d'implémenter
+- One agent = one scope — never overflow without signaling
+- IPC Electron ↔ Vue interfaces → go through `arch` before implementing

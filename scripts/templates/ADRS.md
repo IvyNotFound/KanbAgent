@@ -1,31 +1,31 @@
 # ADRs — Architecture Decision Records
 
-> Décisions d'architecture validées. Toute nouvelle ADR → agent `arch`, révision CLAUDE.md.
+> Validated architecture decisions. Any new ADR → `arch` agent, CLAUDE.md revision.
 
 ---
 
-## ADR-001 — [Titre de la décision]
+## ADR-001 — [Decision Title]
 
-**Date :** AAAA-MM-JJ | **Statut :** proposé | **Auteur :** arch
+**Date:** YYYY-MM-DD | **Status:** proposed | **Author:** arch
 
-### Contexte
+### Context
 
-[Décrire le problème ou la situation qui nécessite une décision.]
+[Describe the problem or situation requiring a decision.]
 
-### Décision
+### Decision
 
-[Décrire la décision prise et pourquoi.]
+[Describe the decision made and why.]
 
-### Conséquences
+### Consequences
 
-[Décrire les impacts positifs et négatifs de cette décision.]
+[Describe the positive and negative impacts of this decision.]
 
 ---
 
-## Problèmes connus
+## Known Issues
 
-> Problèmes identifiés mais non encore résolus. Chaque entrée → ticket de suivi.
+> Identified issues not yet resolved. Each entry → tracking ticket.
 
-| Problème | Impact | Ticket |
+| Issue | Impact | Ticket |
 |---|---|---|
-| (aucun pour l'instant) | — | — |
+| (none for now) | — | — |

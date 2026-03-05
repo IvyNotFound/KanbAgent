@@ -1,60 +1,60 @@
-# RELEASE.md — Workflow de release
+# RELEASE.md — Release Workflow
 
-> Référence pour les releases du projet. Agent responsable : `devops`.
+> Reference for project releases. Responsible agent: `devops`.
 
 ---
 
-## Commandes
+## Commands
 
-| Commande | Description |
+| Command | Description |
 |---|---|
-| `npm run release` | Release patch (défaut) |
-| `npm run release:patch` | Release patch |
-| `npm run release:minor` | Release minor |
-| `npm run release:major` | Release major |
+| `npm run release` | Patch release (default) |
+| `npm run release:patch` | Patch release |
+| `npm run release:minor` | Minor release |
+| `npm run release:major` | Major release |
 
 ---
 
-## Prérequis
+## Prerequisites
 
-- Branche `main` propre (working tree clean)
-- 0 ticket `todo` / `in_progress`
+- `main` branch clean (working tree clean)
+- 0 tickets `todo` / `in_progress`
 - `npm run build` OK
-- Ticket doc mis à jour (README + JSDoc) → validé par review
+- Doc ticket updated (README + JSDoc) → validated by review
 
 ---
 
-## Ce que le script effectue
+## What the Script Does
 
-vérification branche → build + lint → bump version → CHANGELOG → commit + tag → push → draft GitHub Release
+branch check → build + lint → version bump → CHANGELOG → commit + tag → push → draft GitHub Release
 
 ---
 
 ## Post-release
 
-1. Vérifier le draft GitHub Release
-2. Publier manuellement
-3. Attacher les binaires (.exe, .dmg) si disponibles
+1. Check the GitHub Release draft
+2. Publish manually
+3. Attach binaries (.exe, .dmg) if available
 
 ---
 
-## Règles de bump
+## Bump Rules
 
-| Type | Quand | Exemple |
+| Type | When | Example |
 |---|---|---|
-| PATCH | fix, perf, refactor (sans breaking change) | 1.0.0 → 1.0.1 |
-| MINOR | feat rétrocompatible | 1.0.0 → 1.1.0 |
-| MAJOR | breaking change (schéma DB, refonte IPC) | 1.0.0 → 2.0.0 |
+| PATCH | fix, perf, refactor (no breaking change) | 1.0.0 → 1.0.1 |
+| MINOR | backward-compatible feat | 1.0.0 → 1.1.0 |
+| MAJOR | breaking change (DB schema, IPC overhaul) | 1.0.0 → 2.0.0 |
 
-> MAJOR bump : confirmation interactive obligatoire — validation `arch` + lead requise.
+> MAJOR bump: interactive confirmation required — `arch` + lead validation required.
 
 ---
 
-## Critères v1.0.0 (stable)
+## v1.0.0 Criteria (stable)
 
-| Critère | Responsable | Statut |
+| Criterion | Owner | Status |
 |---|---|---|
-| Session `doc` réalisée et validée (README, CONTRIBUTING, JSDoc minimal) | `doc` | ⬜ |
-| Session `sécu` réalisée (audit OWASP, contextBridge, IPC, accès fichiers) | `arch` + `review` | ⬜ |
-| 0 ticket `todo` / `in_progress` sur doc et sécu | `review-master` | ⬜ |
-| Build testé et fonctionnel (`npm run build` → installeur) | `devops` | ⬜ |
+| `doc` session completed and validated (README, CONTRIBUTING, minimal JSDoc) | `doc` | ⬜ |
+| `security` session completed (OWASP audit, contextBridge, IPC, file access) | `arch` + `review` | ⬜ |
+| 0 tickets `todo` / `in_progress` on doc and security | `review-master` | ⬜ |
+| Build tested and functional (`npm run build` → installer) | `devops` | ⬜ |
