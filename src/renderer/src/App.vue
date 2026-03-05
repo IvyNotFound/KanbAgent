@@ -64,6 +64,7 @@ defineExpose({
 <template>
   <div class="flex flex-col h-screen bg-surface-primary text-content-primary select-none">
     <TitleBar @open-search="isCommandPaletteOpen = true" />
+    <UpdateNotification />
     <div class="flex flex-1 overflow-hidden">
       <!-- Sidebar: only show when project is open -->
       <Sidebar v-if="store.projectPath" />
@@ -115,7 +116,6 @@ defineExpose({
         </template>
       </main>
     </div>
-    <UpdateNotification />
     <TaskDetailModal />
     <ToastContainer />
     <ConfirmDialog />
