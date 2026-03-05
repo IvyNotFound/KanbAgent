@@ -12,7 +12,7 @@
  * - **Window**: windowMinimize, windowMaximize, windowClose, windowIsMaximized
  *- **Agents**: createAgent, updateAgent, renameAgent, buildAgentPrompt, etc.
  * - **Config**: getConfigValue, setConfigValue
- * - **GitHub**: checkForUpdates, checkMasterClaudeMd
+ * - **GitHub**: checkForUpdates
  * - **Search**: searchTasks
  *
  * @module preload

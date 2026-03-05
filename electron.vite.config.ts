@@ -7,10 +7,7 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
-    define: {
-      __GH_TOKEN__: JSON.stringify(process.env.GH_TOKEN_UPDATER ?? '')
-    }
+    plugins: [externalizeDepsPlugin()]
   },
   preload: {
     plugins: [externalizeDepsPlugin()]

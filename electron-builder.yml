@@ -6,7 +6,7 @@ publish:
   provider: github
   owner: IvyNotFound
   repo: agent-viewer
-  private: true
+  private: false
 
 win:
   icon: build/icon.ico
