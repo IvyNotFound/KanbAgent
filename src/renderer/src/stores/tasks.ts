@@ -25,6 +25,9 @@ import { normalizeRow } from '@renderer/utils/db'
 /** Debounce: last notification timestamp per task (prevent spam). */
 const _lastNotifTs: Record<number, number> = {}
 
+/** Max number of 'done' tasks loaded in live refresh — older ones accessible via archive lazy-load. */
+export const DONE_TASKS_LIMIT = 100
+
 export const useTasksStore = defineStore('tasks', () => {
   const { push: pushToast } = useToast()
 
@@ -54,6 +57,8 @@ export const useTasksStore = defineStore('tasks', () => {
   const taskAssignees = ref<TaskAssignee[]>([])
   /** Board-level assignees indexed by task_id — loaded once in refresh(), no per-card IPC (T787) */
   const boardAssignees = ref<Map<number, TaskAssignee[]>>(new Map())
+  /** True when done tasks are capped at DONE_TASKS_LIMIT — signals UI that older done tasks exist */
+  const doneTasksLimited = ref(false)
 
   let pollInterval: ReturnType<typeof setInterval> | null = null
   let agentPollInterval: ReturnType<typeof setInterval> | null = null
@@ -112,15 +117,26 @@ export const useTasksStore = defineStore('tasks', () => {
     loading.value = true
     error.value = null
     try {
-      const [rawTasks, rawAgents, rawLocks, rawStats, rawPerimetres, rawBoardAssignees] = await Promise.all([
+      // Split tasks query: load all active tasks + cap done tasks to avoid memory bloat (T819)
+      const [rawLiveTasks, rawDoneTasks, rawAgents, rawLocks, rawStats, rawPerimetres, rawBoardAssignees] = await Promise.all([
         query<Task>(`
           SELECT t.*, a.name as agent_name, a.perimetre as agent_perimetre,
             c.name as agent_createur_name
           FROM tasks t
           LEFT JOIN agents a ON a.id = t.agent_assigne_id
           LEFT JOIN agents c ON c.id = t.agent_createur_id
-          WHERE t.statut != 'archived'
+          WHERE t.statut IN ('todo', 'in_progress')
           ORDER BY t.updated_at DESC
+        `),
+        query<Task>(`
+          SELECT t.*, a.name as agent_name, a.perimetre as agent_perimetre,
+            c.name as agent_createur_name
+          FROM tasks t
+          LEFT JOIN agents a ON a.id = t.agent_assigne_id
+          LEFT JOIN agents c ON c.id = t.agent_createur_id
+          WHERE t.statut = 'done'
+          ORDER BY t.updated_at DESC
+          LIMIT ${DONE_TASKS_LIMIT}
         `),
         query<Agent>(AGENT_CTE_SQL),
         query<Lock>(LOCKS_SQL),
@@ -140,6 +156,8 @@ export const useTasksStore = defineStore('tasks', () => {
           WHERE t.statut != 'archived'
         `)
       ])
+      const rawTasks = [...rawLiveTasks, ...rawDoneTasks]
+      doneTasksLimited.value = rawDoneTasks.length === DONE_TASKS_LIMIT
 
       const newTasks = rawTasks.map(normalizeRow) as Task[]
       // Desktop notifications — detect statut transitions (T755)
@@ -160,18 +178,17 @@ export const useTasksStore = defineStore('tasks', () => {
         }
       }
       tasks.value = newTasks
-      // Build boardAssignees Map<taskId, TaskAssignee[]> from flat batch result (T787)
-      const assigneesMap = new Map<number, TaskAssignee[]>()
+      // Rebuild boardAssignees in-place — avoids new Map allocation each refresh (T819)
+      boardAssignees.value.clear()
       for (const row of rawBoardAssignees) {
-        if (!assigneesMap.has(row.task_id)) assigneesMap.set(row.task_id, [])
-        assigneesMap.get(row.task_id)!.push({
+        if (!boardAssignees.value.has(row.task_id)) boardAssignees.value.set(row.task_id, [])
+        boardAssignees.value.get(row.task_id)!.push({
           agent_id: row.agent_id,
           agent_name: row.agent_name,
           role: row.role as TaskAssignee['role'],
           assigned_at: '',
         })
       }
-      boardAssignees.value = assigneesMap
       // Update agentsStore state via storeToRefs refs — mutations propagate to the sub-store
       agents.value = rawAgents.map(normalizeRow)
       locks.value = rawLocks.map(normalizeRow)
@@ -458,7 +475,7 @@ export const useTasksStore = defineStore('tasks', () => {
     agentRefresh, fetchAgentGroups,
     createAgentGroup, renameAgentGroup, deleteAgentGroup, setAgentGroup,
     // Tasks state
-    tasks, stats, lastRefresh, loading, error, staleThresholdMinutes,
+    tasks, stats, lastRefresh, loading, error, staleThresholdMinutes, doneTasksLimited,
     selectedAgentId, toggleAgentFilter,
     selectedPerimetre, togglePerimetreFilter, perimetres, perimetresData,
     filteredTasks, tasksByStatus,

@@ -171,8 +171,10 @@ describe('stores/tasks', () => {
       store.dbPath = '/test/db'
 
       // Simulate queryDb returning proper rows
+      // Order: live tasks (todo/in_progress), done tasks (capped), agents, locks, stats, perimetres
       mockElectronAPI.queryDb
-        .mockResolvedValueOnce([{ id: 1, titre: 'Task One', statut: 'todo', agent_assigne_id: null }]) // tasks
+        .mockResolvedValueOnce([{ id: 1, titre: 'Task One', statut: 'todo', agent_assigne_id: null }]) // live tasks
+        .mockResolvedValueOnce([]) // done tasks (capped)
         .mockResolvedValueOnce([{ id: 10, name: 'dev-front', type: 'scoped', perimetre: 'front-vuejs' }]) // agents
         .mockResolvedValueOnce([]) // locks
         .mockResolvedValueOnce([{ statut: 'todo', count: 1 }]) // stats
