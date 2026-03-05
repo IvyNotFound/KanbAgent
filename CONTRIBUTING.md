@@ -176,8 +176,6 @@ docs: update README with new commands
 |---------|-------------|
 | `get-config-value` | Reads a key from the `config` table (github_token auto-decrypted) |
 | `set-config-value` | Writes a key to the `config` table (github_token auto-encrypted) |
-| `check-master-md` | Checks master CLAUDE.md on GitHub (via encrypted token) |
-| `apply-master-md` | Applies the master CLAUDE.md to the project |
 | `test-github-connection` | Tests the GitHub connection with the stored token |
 | `check-for-updates` | Checks if a new version is available on GitHub |
 

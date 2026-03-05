@@ -145,13 +145,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setConfigValue: (dbPath: string, key: string, value: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('set-config-value', dbPath, key, value),
 
-  // CLAUDE.md sync
-  checkMasterClaudeMd: (dbPath: string): Promise<{ success: boolean; sha?: string; content?: string; upToDate?: boolean; localSha?: string; error?: string }> =>
-    ipcRenderer.invoke('check-master-md', dbPath),
-
-  applyMasterClaudeMd: (dbPath: string, projectPath: string, content: string, sha: string): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('apply-master-md', dbPath, projectPath, content, sha),
-
   // Agents
   deleteAgent: (dbPath: string, agentId: number): Promise<{ success: boolean; hasHistory?: boolean; error?: string }> =>
     ipcRenderer.invoke('delete-agent', dbPath, agentId),

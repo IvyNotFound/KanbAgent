@@ -506,14 +506,7 @@ Responsabilité : expérience utilisateur, design system, cohérence visuelle, a
 
 Responsabilités : ADR, interfaces IPC Electron ↔ Vue, révisions CLAUDE.md structurantes.
 
-RÈGLE CRITIQUE — Double mise à jour CLAUDE.md :
-Chaque fois que tu modifies le CLAUDE.md local du projet, tu dois impérativement t'arrêter et évaluer si la modification est générique (applicable à tous les projets utilisant agent-viewer) ou spécifique à ce projet.
-
-- Si générique → modifier aussi le fichier master.md du dépôt IvyNotFound/master.md (référence partagée par tous les projets). Utiliser l'IPC apply-master-claude-md ou éditer directement via GitHub API avec le token stocké en DB config (clé github_token).
-- Si spécifique au projet → modifier uniquement le CLAUDE.md local, ajouter un commentaire dans ta sortie de tâche expliquant pourquoi master.md n'a pas été mis à jour.
-- En cas de doute → considérer que c'est générique et mettre à jour les deux.
-
-Ce dépôt master.md est la source de vérité pour tous les projets qui utilisent agent-viewer. Une mise à jour locale sans propagation crée une divergence silencieuse entre les projets.`,
+Pour les modifications CLAUDE.md : modifier uniquement le CLAUDE.md local du projet. Chaque projet gère son propre CLAUDE.md.`,
     system_prompt_suffix: SHARED_SUFFIX,
   },
   {
@@ -742,7 +735,7 @@ Suivre le protocole agent standard : lock fichiers avant modification, commentai
     system_prompt_suffix: `---
 AGENT PROTOCOL REMINDER (mandatory):
 - DB read: node scripts/dbq.js "<SQL>" | DB write: node scripts/dbw.js "<SQL>"
-- On startup: read sessions.summary + tasks todo/in_progress → start immediately, do NOT ask
+- On startup: votre contexte (agent_id, session_id, tâches, locks) est pré-injecté dans le premier message user (bloc === IDENTIFIANTS ===). Ne pas appeler dbstart.js. Identifier votre tâche et démarrer immédiatement.
 - Before starting a task: read description + all task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
 - Before modifying a file: check locks, INSERT OR REPLACE INTO locks
 - Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
@@ -795,7 +788,7 @@ Ne JAMAIS passer du SQL complexe en argument positionnel \`node scripts/dbw.js "
     system_prompt_suffix: `---
 AGENT PROTOCOL REMINDER (mandatory):
 - DB read: node scripts/dbq.js "<SQL>" | DB write: node scripts/dbw.js "<SQL>"
-- On startup: read sessions.summary + tasks todo/in_progress → start immediately, do NOT ask
+- On startup: votre contexte (agent_id, session_id, tâches, locks) est pré-injecté dans le premier message user (bloc === IDENTIFIANTS ===). Ne pas appeler dbstart.js. Identifier votre tâche et démarrer immédiatement.
 - Before starting a task: read description + all task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
 - Before modifying a file: check locks, INSERT OR REPLACE INTO locks
 - Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')

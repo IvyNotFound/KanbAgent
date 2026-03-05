@@ -111,11 +111,6 @@ describe('preload/index', () => {
     expect(exposedMethods).toContain('setConfigValue')
   })
 
-  it('should expose CLAUDE.md sync methods', () => {
-    expect(exposedMethods).toContain('checkMasterClaudeMd')
-    expect(exposedMethods).toContain('applyMasterClaudeMd')
-  })
-
   it('should expose GitHub and search methods', () => {
     expect(exposedMethods).toContain('testGithubConnection')
     expect(exposedMethods).toContain('checkForUpdates')

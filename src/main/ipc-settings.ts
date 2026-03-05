@@ -1,16 +1,13 @@
 /**
  * IPC handlers — Settings, config & GitHub operations
  *
- * Handles config values, master.md sync, GitHub connection testing,
- * and update checks.
+ * Handles config values, GitHub connection testing, and update checks.
  *
  * @module ipc-settings
  */
 
 import { ipcMain } from 'electron'
-import { writeFile, rename } from 'fs/promises'
-import { join } from 'path'
-import { assertDbPathAllowed, assertProjectPathAllowed, queryLive, writeDb } from './db'
+import { assertDbPathAllowed, queryLive, writeDb } from './db'
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
@@ -64,78 +61,6 @@ export function registerSettingsHandlers(): void {
       return { success: true }
     } catch (err) {
       console.error('[IPC set-config-value]', err)
-      return { success: false, error: String(err) }
-    }
-  })
-
-  /**
-   * Fetch CLAUDE.md from GitHub master repo and compare SHA with local.
-   * @param dbPath - DB path (for token + local SHA)
-   * @returns {{ success: boolean, sha?: string, content?: string, upToDate?: boolean, localSha?: string, error?: string }}
-   */
-  ipcMain.handle('check-master-md', async (_event, dbPath: string) => {
-    try {
-      assertDbPathAllowed(dbPath)
-      const configRows = await queryLive(
-        dbPath,
-        "SELECT key, value FROM config WHERE key IN ('claude_md_commit', 'github_token')",
-        []
-      ) as { key: string; value: string }[]
-      const configMap = new Map(configRows.map(r => [r.key, r.value]))
-      const localSha = configMap.get('claude_md_commit') ?? ''
-      const githubToken = configMap.get('github_token') ?? ''
-      const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
-      if (githubToken) headers['Authorization'] = `token ${githubToken}`
-
-      // T304: 10s timeout prevents UI freeze when GitHub is unreachable
-      const response = await fetch(
-        'https://api.github.com/repos/IvyNotFound/master.md/contents/CLAUDE.md',
-        { headers, signal: AbortSignal.timeout(10_000) }
-      )
-      if (!response.ok) {
-        return { success: false, error: `GitHub API: HTTP ${response.status}` }
-      }
-      const data = await response.json() as { sha: string; content: string }
-      const remoteSha: string = data.sha
-      const content = Buffer.from(data.content, 'base64').toString('utf-8')
-      const upToDate = localSha !== '' && localSha === remoteSha
-
-      return { success: true, sha: remoteSha, content, upToDate, localSha }
-    } catch (err) {
-      console.error('[IPC check-master-md]', err)
-      return { success: false, error: String(err) }
-    }
-  })
-
-  /**
-   * Atomically write CLAUDE.md to disk and update local SHA in config.
-   * @param dbPath - Registered DB path
-   * @param projectPath - Registered project path
-   * @param content - CLAUDE.md content to write
-   * @param sha - GitHub blob SHA to store
-   * @returns {{ success: boolean, error?: string }}
-   */
-  ipcMain.handle('apply-master-md', async (_event, dbPath: string, projectPath: string, content: string, sha: string) => {
-    try {
-      assertDbPathAllowed(dbPath)
-      assertProjectPathAllowed(projectPath)
-      const claudeMdPath = join(projectPath, 'CLAUDE.md')
-      const tmpPath = claudeMdPath + '.tmp'
-
-      await writeFile(tmpPath, content, 'utf-8')
-      await rename(tmpPath, claudeMdPath)
-      console.log('[IPC apply-master-md] CLAUDE.md written atomically:', claudeMdPath)
-
-      await writeDb(dbPath, (db) => {
-        db.run(
-          "INSERT OR REPLACE INTO config (key, value, updated_at) VALUES ('claude_md_commit', ?, CURRENT_TIMESTAMP)",
-          [sha]
-        )
-      })
-
-      return { success: true }
-    } catch (err) {
-      console.error('[IPC apply-master-md]', err)
       return { success: false, error: String(err) }
     }
   })
