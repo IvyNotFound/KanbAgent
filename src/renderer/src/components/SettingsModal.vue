@@ -5,6 +5,7 @@ import { useSettingsStore } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
 import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
 import type { ClaudeInstance } from '@renderer/types'
+import { useUpdater } from '@renderer/composables/useUpdater'
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -36,12 +37,10 @@ async function exportZip() {
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
 const store = useTasksStore()
+const { status: updaterStatus, check: checkUpdaterNow } = useUpdater()
 
 const githubRepo = ref(settingsStore.github.repoUrl)
-const checkingUpdates = ref(false)
 const connectionError = ref('')
-const updateStatus = ref('')
-const updateAvailable = ref(false)
 
 // Claude instances for default selection (T857)
 const claudeInstances = ref<ClaudeInstance[]>([])
@@ -78,26 +77,6 @@ async function testGithubConnection() {
   }
 }
 
-async function checkUpdates() {
-  if (!store.dbPath || !githubRepo.value) return
-  checkingUpdates.value = true
-  updateStatus.value = ''
-  try {
-    const result = await window.electronAPI.checkForUpdates(store.dbPath, githubRepo.value, settingsStore.appInfo.version)
-    updateAvailable.value = result.hasUpdate
-    if (result.hasUpdate) {
-      updateStatus.value = `v${result.latestVersion} disponible`
-    } else if (result.latestVersion) {
-      updateStatus.value = `À jour (v${result.latestVersion})`
-    } else {
-      updateStatus.value = 'Erreur de vérification'
-    }
-  } catch {
-    updateStatus.value = 'Erreur de vérification'
-  } finally {
-    checkingUpdates.value = false
-  }
-}
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
@@ -315,7 +294,7 @@ function handleKeydown(e: KeyboardEvent) {
             </div>
           </div>
 
-          <!-- Check for Updates -->
+          <!-- Check for Updates (auto-updater T862/T864) -->
           <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
             <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.updates') }}</p>
             <div class="flex items-center justify-between">
@@ -324,20 +303,26 @@ function handleKeydown(e: KeyboardEvent) {
               </span>
               <button
                 class="px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
-                :disabled="!settingsStore.github.connected || checkingUpdates"
-                @click="checkUpdates"
+                :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
+                @click="checkUpdaterNow"
               >
-                {{ checkingUpdates ? '...' : t('settings.check') }}
+                {{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}
               </button>
             </div>
-            <div v-if="updateStatus" class="mt-2">
+            <div v-if="updaterStatus !== 'idle' && updaterStatus !== 'checking'" class="mt-2">
               <span
                 :class="[
                   'text-sm font-medium',
-                  updateAvailable ? 'text-amber-400' : 'text-emerald-400'
+                  updaterStatus === 'available' || updaterStatus === 'downloaded' ? 'text-amber-400' :
+                  updaterStatus === 'up-to-date' ? 'text-emerald-400' :
+                  updaterStatus === 'error' ? 'text-red-400' : 'text-content-muted'
                 ]"
               >
-                {{ updateStatus }}
+                <template v-if="updaterStatus === 'up-to-date'">À jour</template>
+                <template v-else-if="updaterStatus === 'available'">Mise à jour disponible</template>
+                <template v-else-if="updaterStatus === 'downloading'">Téléchargement en cours…</template>
+                <template v-else-if="updaterStatus === 'downloaded'">Prête à installer</template>
+                <template v-else-if="updaterStatus === 'error'">Erreur de vérification</template>
               </span>
             </div>
           </div>

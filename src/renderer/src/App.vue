@@ -10,6 +10,7 @@ import TabBar from '@renderer/components/TabBar.vue'
 import TaskDetailModal from '@renderer/components/TaskDetailModal.vue'
 import ToastContainer from '@renderer/components/ToastContainer.vue'
 import ConfirmDialog from '@renderer/components/ConfirmDialog.vue'
+import UpdateNotification from '@renderer/components/UpdateNotification.vue'
 
 // Lazy-loaded heavy components (CodeMirror, etc.)
 const StreamView = defineAsyncComponent(() => import('@renderer/components/StreamView.vue'))
@@ -114,6 +115,7 @@ defineExpose({
         </template>
       </main>
     </div>
+    <UpdateNotification />
     <TaskDetailModal />
     <ToastContainer />
     <ConfirmDialog />

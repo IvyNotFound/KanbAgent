@@ -79,6 +79,15 @@ declare global {
       tasksQualityStats(dbPath: string, params?: { perimetre?: string | null }): Promise<{ success: boolean; rows: unknown[]; error?: string }>
       /** Export project.db as ZIP to ~/Downloads (T771/T833). */
       projectExportZip(dbPath: string): Promise<{ success: boolean; path?: string; error?: string }>
+      /** Auto-updater (T862/T864): check, download, install, events. */
+      updater?: {
+        getToken(): Promise<string | null>
+        setToken(token: string): Promise<boolean>
+        check(): Promise<unknown>
+        download(): Promise<unknown>
+        install(): Promise<void>
+        on(event: 'available' | 'not-available' | 'progress' | 'downloaded' | 'error', cb: (data: unknown) => void): () => void
+      }
     }
   }
 }
