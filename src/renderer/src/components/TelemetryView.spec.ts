@@ -1,23 +1,50 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, shallowMount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { nextTick } from 'vue'
 import TelemetryView from '@renderer/components/TelemetryView.vue'
 import { mockElectronAPI } from '../../../test/setup'
 
+const BASE_DATA = {
+  languages: [],
+  totalFiles: 0,
+  totalLines: 0,
+  scannedAt: new Date().toISOString(),
+}
+
+const ADVANCED_DATA = {
+  languages: [
+    {
+      name: 'TypeScript', color: '#3178c6', files: 50, lines: 10000, percent: 60,
+      sourceFiles: 40, testFiles: 10, sourceLines: 8000, testLines: 2000,
+      blankLines: 500, commentLines: 300, codeLines: 9200,
+    },
+    {
+      name: 'Vue', color: '#42b883', files: 30, lines: 5000, percent: 30,
+      sourceFiles: 30, testFiles: 0, sourceLines: 5000, testLines: 0,
+      blankLines: 200, commentLines: 100, codeLines: 4700,
+    },
+  ],
+  totalFiles: 80,
+  totalLines: 15000,
+  scannedAt: new Date().toISOString(),
+  totalSourceLines: 13000,
+  totalTestLines: 2000,
+  testRatio: 13.3,
+  totalBlankLines: 700,
+  totalCommentLines: 400,
+  totalCodeLines: 13900,
+  totalSourceFiles: 70,
+  totalTestFiles: 10,
+}
+
 describe('TelemetryView (T842)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockResolvedValue({
-      languages: [],
-      totalFiles: 0,
-      totalLines: 0,
-      scannedAt: new Date().toISOString(),
-    })
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockResolvedValue(BASE_DATA)
   })
 
   it('shows loading indicator (Scanning) while IPC is pending', async () => {
-    // Make telemetryScan pending so loading stays true
     let resolve!: (v: unknown) => void
     ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockReturnValue(
       new Promise(r => { resolve = r }),
@@ -27,12 +54,9 @@ describe('TelemetryView (T842)', () => {
         plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
       },
     })
-    // Wait one tick so onMounted → scan() → loading=true is processed
     await nextTick()
-    const text = wrapper.text()
-    // Loading state shows "Scanning" (button shows "Scanning…" or loading area shows "Scanning project…")
-    expect(text).toMatch(/Scanning/)
-    resolve({ languages: [], totalFiles: 0, totalLines: 0, scannedAt: new Date().toISOString() })
+    expect(wrapper.text()).toMatch(/Scanning/)
+    resolve({ ...BASE_DATA })
     await flushPromises()
     wrapper.unmount()
   })
@@ -86,7 +110,6 @@ describe('TelemetryView (T842)', () => {
       },
     })
     await flushPromises()
-    // formatLines(15000) → '15.0k'
     expect(wrapper.text()).toContain('15.0k')
     wrapper.unmount()
   })
@@ -110,6 +133,84 @@ describe('TelemetryView (T842)', () => {
       },
     })
     expect(wrapper.text()).toContain('Open a project')
+    wrapper.unmount()
+  })
+})
+
+describe('TelemetryView advanced metrics (T897)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockResolvedValue(ADVANCED_DATA)
+  })
+
+  it('shows source/test bar when testRatio is present', async () => {
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('Source vs Tests')
+    expect(wrapper.text()).toContain('13.3% tests')
+    wrapper.unmount()
+  })
+
+  it('shows code quality section when advanced metrics present', async () => {
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('Code quality')
+    expect(wrapper.text()).toContain('Code réel')
+    expect(wrapper.text()).toContain('Commentaires')
+    expect(wrapper.text()).toContain('Lignes vides')
+    wrapper.unmount()
+  })
+
+  it('shows "Code réel" and "Fichiers test" stat cards with advanced data', async () => {
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('Fichiers test')
+    // totalCodeLines=13900 → formatLines → '13.9k'
+    expect(text).toContain('13.9k')
+    wrapper.unmount()
+  })
+
+  it('shows Source/Tests columns in language table when lang advanced data present', async () => {
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('Source')
+    expect(text).toContain('Tests')
+    // TypeScript sourceLines=8000 and testLines=2000
+    expect(text).toContain('8,000')
+    expect(text).toContain('2,000')
+    wrapper.unmount()
+  })
+
+  it('hides advanced sections when testRatio is absent (backward-compat)', async () => {
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockResolvedValue(BASE_DATA)
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).not.toContain('Source vs Tests')
+    expect(text).not.toContain('Code quality')
+    expect(text).not.toContain('Fichiers test')
     wrapper.unmount()
   })
 })
