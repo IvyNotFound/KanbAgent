@@ -31,15 +31,27 @@ watch(activeSubTab, (tab) => {
 interface GitCommit { hash: string; date: string; subject: string; author: string; taskIds: number[] }
 const gitCommits = ref<GitCommit[]>([])
 const gitLoading = ref(false)
+type GitError = 'no-project' | 'no-commits' | 'error' | null
+const gitError = ref<GitError>(null)
 
 async function fetchGitCommits(): Promise<void> {
-  if (!store.projectPath) return
+  if (!store.projectPath) {
+    gitError.value = 'no-project'
+    return
+  }
   gitLoading.value = true
+  gitError.value = null
   try {
     const result = await window.electronAPI.gitLog(store.projectPath, { limit: 100 })
     gitCommits.value = result as GitCommit[]
-  } catch { gitCommits.value = [] }
-  finally { gitLoading.value = false }
+    if (result.length === 0) gitError.value = 'no-commits'
+  } catch (err) {
+    console.warn('[GitTab] fetchGitCommits failed', err)
+    gitError.value = 'error'
+    gitCommits.value = []
+  } finally {
+    gitLoading.value = false
+  }
 }
 
 if (activeSubTab.value === 'git') fetchGitCommits()
@@ -81,12 +93,40 @@ const subTabs: { id: SubTab; label: string }[] = [
 
     <!-- Git -->
     <template v-if="activeSubTab === 'git'">
+      <!-- Toolbar -->
+      <div class="shrink-0 flex items-center justify-end px-4 py-1.5 border-b border-edge-subtle">
+        <button
+          class="flex items-center gap-1 px-2 py-1 text-xs text-content-muted hover:text-content-primary rounded transition-colors disabled:opacity-40"
+          :disabled="gitLoading"
+          @click="fetchGitCommits"
+        >
+          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5" :class="{ 'animate-spin': gitLoading }">
+            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+          </svg>
+          Actualiser
+        </button>
+      </div>
+      <!-- Loading -->
       <div v-if="gitLoading" class="flex items-center justify-center flex-1 py-8">
         <p class="text-xs text-content-faint animate-pulse">{{ t('common.loading') }}</p>
       </div>
-      <div v-else-if="gitCommits.length === 0" class="flex items-center justify-center flex-1 py-8">
-        <p class="text-xs text-content-faint italic">{{ t('git.noCommits') }}</p>
+      <!-- Error states -->
+      <div v-else-if="gitError" class="flex flex-col items-center justify-center flex-1 py-8 gap-3">
+        <p class="text-xs text-content-faint italic">
+          <template v-if="gitError === 'no-project'">Aucun projet ouvert</template>
+          <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
+          <template v-else>Erreur lors de la lecture du dépôt git</template>
+        </p>
+        <button
+          v-if="gitError === 'error'"
+          class="px-3 py-1 text-xs bg-surface-secondary hover:bg-surface-tertiary text-content-muted rounded transition-colors"
+          @click="fetchGitCommits"
+        >
+          Réessayer
+        </button>
       </div>
+      <!-- Commit list -->
       <GitCommitList
         v-else
         :commits="gitCommits"

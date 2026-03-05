@@ -42,7 +42,8 @@ export function registerGitHandlers(): void {
         const taskIds = [...subject.matchAll(/\bT(\d+)\b/g)].map(m => parseInt(m[1], 10))
         return { hash, date, subject, author, taskIds }
       })
-    } catch {
+    } catch (err) {
+      console.warn('[ipc-git] git:log failed for', projectPath, err)
       return []
     }
   })
