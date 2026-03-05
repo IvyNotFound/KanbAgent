@@ -151,6 +151,7 @@ onMounted(() => {
 })
 onUnmounted(() => { resizeObs?.disconnect() })
 watch(() => terminalTabs.value.map(t => t.id).join(), () => nextTick(updateScrollState))
+watch(collapsedAgents, () => nextTick(updateScrollState), { deep: true })
 
 
 async function handleCloseTab(tab: Tab): Promise<void> {
@@ -324,7 +325,7 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
     <!-- Onglets terminaux (groupés par agent, scrollable) -->
     <div
       ref="scrollContainer"
-      class="flex items-stretch gap-0.5 px-1.5 flex-1 min-w-0 overflow-x-hidden"
+      class="scroll-container flex items-stretch gap-0.5 px-1.5 flex-1 min-w-0 overflow-x-scroll"
       @wheel="onWheel"
       @scroll="updateScrollState"
     >
@@ -332,7 +333,7 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
       <div
         v-for="(group, groupIdx) in groupedTerminalTabs"
         :key="group.agentName ?? '__misc__'"
-        class="flex items-stretch gap-0.5"
+        class="flex items-stretch gap-0.5 shrink-0"
         :class="groupIdx < groupedTerminalTabs.length - 1 ? 'mr-3' : ''"
       >
         <!-- Onglet-agent (bouton principal du groupe) -->
@@ -379,7 +380,7 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
             <!-- Groupe actif : affichage complet pour tous les sous-onglets -->
             <button
               v-if="isGroupActive(group)"
-              class="relative flex items-center gap-1.5 px-2.5 text-sm font-medium transition-all select-none rounded-t shrink-0 cursor-pointer"
+              class="relative flex items-center gap-1.5 px-4 min-w-[90px] text-sm font-medium transition-all select-none rounded-t shrink-0 cursor-pointer"
               :style="tabStyleMap.get(tab.id)"
               :title="subTabLabel(tab)"
               @click="store.setActive(tab.id)"
@@ -452,3 +453,14 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
     @close="contextMenu = null"
   />
 </template>
+
+<style scoped>
+/* Hide native scrollbar on the tab scroll container — custom arrows handle navigation */
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
+.scroll-container {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+</style>
