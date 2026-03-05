@@ -412,6 +412,37 @@ describe('queryLive', () => {
     await expect(queryLive(dbPath, 'SELECT * FROM nonexistent_table', []))
       .rejects.toThrow(/no such table/)
   })
+
+  it('should release DB instance after DB_INSTANCE_TTL_MS (10s) but keep buffer (T910)', async () => {
+    vi.useFakeTimers()
+    try {
+      const sqlJs = await getSqlJs()
+      const db = new sqlJs.Database()
+      db.run('CREATE TABLE t (id INTEGER)')
+      db.run('INSERT INTO t VALUES (42)')
+      const buf = Buffer.from(db.export())
+      db.close()
+
+      const mtime = 9000
+      mockStat.mockResolvedValue({ mtimeMs: mtime })
+      mockReadFile.mockResolvedValue(buf)
+
+      // First query — populates buffer cache and DB instance
+      await queryLive(dbPath, 'SELECT * FROM t', [])
+      expect(mockReadFile).toHaveBeenCalledTimes(1)
+
+      // Advance past DB_INSTANCE_TTL_MS but within CACHE_TTL_MS
+      vi.advanceTimersByTime(15_000)
+
+      // Second query — evictStaleCacheEntries closes db instance
+      // but buf is still cached (60s TTL not reached)
+      await queryLive(dbPath, 'SELECT * FROM t', [])
+      // Buffer was NOT re-read from disk (cache hit on buf)
+      expect(mockReadFile).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 // ── migrateDb ────────────────────────────────────────────────────────────────

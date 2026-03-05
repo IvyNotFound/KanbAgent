@@ -59,15 +59,24 @@ interface DbCacheEntry {
   lastAccess: number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any | null // Cached sql.js Database instance (lazily created)
+  dbCreatedAt: number // timestamp when db was created (0 if db is null)
 }
 const dbCache = new Map<string, DbCacheEntry>()
 
-const CACHE_TTL_MS = 60000
+const DB_INSTANCE_TTL_MS = 10_000 // release WASM heap after 10s of inactivity
+const CACHE_TTL_MS = 60_000       // keep buffer in memory for 60s
 const MAX_CACHE_ENTRIES = 3
 
 function evictStaleCacheEntries(): void {
   const now = Date.now()
   for (const [path, entry] of dbCache.entries()) {
+    // Free the WASM instance if unused for DB_INSTANCE_TTL_MS (reduces WASM heap)
+    if (entry.db && now - entry.dbCreatedAt > DB_INSTANCE_TTL_MS) {
+      try { entry.db.close() } catch { /* already closed */ }
+      entry.db = null
+      entry.dbCreatedAt = 0
+    }
+    // Evict the entire entry (buf + db) if not accessed for CACHE_TTL_MS
     if (now - entry.lastAccess > CACHE_TTL_MS) {
       if (entry.db) { try { entry.db.close() } catch { /* already closed */ } }
       dbCache.delete(path)
@@ -115,7 +124,7 @@ export async function getDbBuffer(dbPath: string): Promise<Buffer> {
     if (cached?.db) { try { cached.db.close() } catch { /* already closed */ } }
 
     const buf = await readFile(dbPath)
-    dbCache.set(dbPath, { buf, mtime: mtimeMs, lastAccess: now, db: null })
+    dbCache.set(dbPath, { buf, mtime: mtimeMs, lastAccess: now, db: null, dbCreatedAt: 0 })
     return buf
   } catch {
     return readFile(dbPath)
@@ -193,7 +202,7 @@ export async function writeDb<T = void>(dbPath: string, fn: (db: any) => T): Pro
         entry.lastAccess = Date.now()
         entry.db = null
       } else {
-        dbCache.set(dbPath, { buf: newBuf, mtime: statResult.mtimeMs, lastAccess: Date.now(), db: null })
+        dbCache.set(dbPath, { buf: newBuf, mtime: statResult.mtimeMs, lastAccess: Date.now(), db: null, dbCreatedAt: 0 })
       }
       return result
     } finally {
@@ -230,7 +239,10 @@ async function queryLiveAttempt(
   let db = entry?.db
   if (!db) {
     db = new sqlJs.Database(buf)
-    if (entry) entry.db = db
+    if (entry) {
+      entry.db = db
+      entry.dbCreatedAt = Date.now()
+    }
   }
 
   try {
