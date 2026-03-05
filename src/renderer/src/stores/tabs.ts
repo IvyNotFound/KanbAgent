@@ -59,11 +59,8 @@ export interface Tab {
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<Tab[]>([
     { id: 'backlog', type: 'backlog', title: 'Backlog', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
-    { id: 'dashboard', type: 'dashboard', title: 'Dashboard',    ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
-    { id: 'hooks',    type: 'hooks',    title: 'Hooks',    ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
-    { id: 'workload',  type: 'workload',  title: 'Workload',  ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
-    { id: 'topology',  type: 'topology',  title: 'Topology',  ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
-    { id: 'timeline',   type: 'timeline',   title: 'Timeline',   ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
+    { id: 'dashboard', type: 'dashboard', title: 'Dashboard', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
+    { id: 'timeline',  type: 'timeline',  title: 'Timeline',  ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
     { id: 'telemetry', type: 'telemetry', title: 'Telemetry', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
   ])
   const activeTabId = ref<string>('backlog')

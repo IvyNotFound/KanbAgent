@@ -7,13 +7,6 @@ import { parseUtcDate } from '@renderer/utils/parseDate'
 import { usePolledData } from '@renderer/composables/usePolledData'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import type { AgentLog } from '@renderer/types'
-import TokenStatsView from './TokenStatsView.vue'
-import ActivityHeatmap from './ActivityHeatmap.vue'
-import GitCommitList from './GitCommitList.vue'
-import ToolStatsPanel from './ToolStatsPanel.vue'
-import AgentQualityPanel from './AgentQualityPanel.vue'
-
-type SubTab = 'logs' | 'tokenStats' | 'heatmap' | 'git' | 'tools' | 'quality'
 
 const props = defineProps<{
   initialAgentId?: number | null
@@ -22,9 +15,6 @@ const props = defineProps<{
 const { t, locale } = useI18n()
 const store = useTasksStore()
 const tabsStore = useTabsStore()
-
-// ── Sub-tab navigation ──────────────────────────────────────────────────
-const activeSubTab = ref<SubTab>('logs')
 
 // ── State ──────────────────────────────────────────────────────────────────
 const logs = ref<AgentLog[]>([])
@@ -195,122 +185,10 @@ watch(() => props.initialAgentId, (v) => {
   if (v != null) filterAgentId.value = v
 })
 
-// ── Git commits (T761) ────────────────────────────────────────────────────
-interface GitCommit { hash: string; date: string; subject: string; author: string; taskIds: number[] }
-const gitCommits = ref<GitCommit[]>([])
-const gitLoading = ref(false)
-
-async function fetchGitCommits(): Promise<void> {
-  if (!store.projectPath) return
-  gitLoading.value = true
-  try {
-    const result = await window.electronAPI.gitLog(store.projectPath, { limit: 100 })
-    gitCommits.value = result as GitCommit[]
-  } catch { gitCommits.value = [] }
-  finally { gitLoading.value = false }
-}
-
-watch(activeSubTab, (tab) => {
-  if (tab === 'git' && gitCommits.value.length === 0) fetchGitCommits()
-})
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-surface-primary min-h-0">
-
-    <!-- ── Sub-tab pills ─────────────────────────────────────────────────── -->
-    <div class="shrink-0 flex items-center gap-1 px-4 pt-2.5 pb-0 bg-surface-base">
-      <button
-        :class="[
-          'px-3 py-1 rounded-t text-[11px] font-mono font-medium transition-colors border border-b-0',
-          activeSubTab === 'logs'
-            ? 'text-content-secondary bg-surface-primary border-edge-subtle'
-            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
-        ]"
-        @click="activeSubTab = 'logs'"
-      >{{ t('tokenStats.logsTab') }}</button>
-      <button
-        :class="[
-          'px-3 py-1 rounded-t text-[11px] font-mono font-medium transition-colors border border-b-0',
-          activeSubTab === 'tokenStats'
-            ? 'text-content-secondary bg-surface-primary border-edge-subtle'
-            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
-        ]"
-        @click="activeSubTab = 'tokenStats'"
-      >{{ t('tokenStats.title') }}</button>
-      <button
-        :class="[
-          'px-3 py-1 rounded-t text-[11px] font-mono font-medium transition-colors border border-b-0',
-          activeSubTab === 'heatmap'
-            ? 'text-content-secondary bg-surface-primary border-edge-subtle'
-            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
-        ]"
-        @click="activeSubTab = 'heatmap'"
-      >Heatmap</button>
-      <button
-        :class="[
-          'px-3 py-1 rounded-t text-[11px] font-mono font-medium transition-colors border border-b-0',
-          activeSubTab === 'git'
-            ? 'text-content-secondary bg-surface-primary border-edge-subtle'
-            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
-        ]"
-        @click="activeSubTab = 'git'"
-      >Git</button>
-      <button
-        :class="[
-          'px-3 py-1 rounded-t text-[11px] font-mono font-medium transition-colors border border-b-0',
-          activeSubTab === 'tools'
-            ? 'text-content-secondary bg-surface-primary border-edge-subtle'
-            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
-        ]"
-        @click="activeSubTab = 'tools'"
-      >{{ t('toolStats.title') }}</button>
-      <button
-        :class="[
-          'px-3 py-1 rounded-t text-[11px] font-mono font-medium transition-colors border border-b-0',
-          activeSubTab === 'quality'
-            ? 'text-content-secondary bg-surface-primary border-edge-subtle'
-            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
-        ]"
-        @click="activeSubTab = 'quality'"
-      >Qualité</button>
-    </div>
-
-    <!-- ── Tool Stats sub-tab ────────────────────────────────────────────── -->
-    <ToolStatsPanel v-if="activeSubTab === 'tools'" class="flex-1 min-h-0" />
-
-    <!-- ── Quality sub-tab ───────────────────────────────────────────────── -->
-    <AgentQualityPanel v-if="activeSubTab === 'quality'" class="flex-1 min-h-0" />
-
-    <!-- ── Token Stats sub-tab ───────────────────────────────────────────── -->
-    <!-- v-show instead of v-if: keeps component mounted, avoids 5 IPC calls on every sub-tab switch -->
-    <TokenStatsView v-show="activeSubTab === 'tokenStats'" />
-
-    <!-- ── Heatmap sub-tab ───────────────────────────────────────────────── -->
-    <ActivityHeatmap
-      v-if="activeSubTab === 'heatmap' && store.dbPath"
-      :db-path="store.dbPath"
-      class="flex-1"
-    />
-
-    <!-- ── Git sub-tab ───────────────────────────────────────────────────── -->
-    <template v-if="activeSubTab === 'git'">
-      <div v-if="gitLoading" class="flex items-center justify-center flex-1 py-8">
-        <p class="text-xs text-content-faint animate-pulse">{{ t('common.loading') }}</p>
-      </div>
-      <div v-else-if="gitCommits.length === 0" class="flex items-center justify-center flex-1 py-8">
-        <p class="text-xs text-content-faint italic">{{ t('git.noCommits') }}</p>
-      </div>
-      <GitCommitList
-        v-else
-        :commits="gitCommits"
-        class="flex-1 min-h-0"
-        @open-task="(id) => { const task = store.tasks.find(x => x.id === id); if (task) store.openTask(task) }"
-      />
-    </template>
-
-    <!-- ── Logs sub-tab ──────────────────────────────────────────────────── -->
-    <template v-if="activeSubTab !== 'tokenStats' && activeSubTab !== 'heatmap' && activeSubTab !== 'git' && activeSubTab !== 'tools' && activeSubTab !== 'quality'">
 
     <!-- ── Barre de filtres ──────────────────────────────────────────────── -->
     <div class="shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-edge-subtle bg-surface-base">
@@ -492,6 +370,5 @@ watch(activeSubTab, (tab) => {
       </div>
     </div>
 
-    </template><!-- end logs sub-tab -->
   </div>
 </template>

@@ -14,10 +14,7 @@ import ConfirmDialog from '@renderer/components/ConfirmDialog.vue'
 // Lazy-loaded heavy components (CodeMirror, etc.)
 const StreamView = defineAsyncComponent(() => import('@renderer/components/StreamView.vue'))
 const FileView = defineAsyncComponent(() => import('@renderer/components/FileView.vue'))
-const AgentLogsView = defineAsyncComponent(() => import('@renderer/components/AgentLogsView.vue'))
-const HookEventsView = defineAsyncComponent(() => import('@renderer/components/HookEventsView.vue'))
-const WorkloadView = defineAsyncComponent(() => import('@renderer/components/WorkloadView.vue'))
-const TopologyView = defineAsyncComponent(() => import('@renderer/components/TopologyView.vue'))
+const DashboardView = defineAsyncComponent(() => import('@renderer/components/DashboardView.vue'))
 const TimelineView = defineAsyncComponent(() => import('@renderer/components/TimelineView.vue'))
 const TelemetryView = defineAsyncComponent(() => import('@renderer/components/TelemetryView.vue'))
 const ExplorerView = defineAsyncComponent(() => import('@renderer/components/ExplorerView.vue'))
@@ -93,21 +90,9 @@ defineExpose({
           <template v-else-if="tabsStore.activeTab.type === 'file'">
             <FileView :file-path="tabsStore.activeTab.filePath!" :tab-id="tabsStore.activeTab.id" class="flex-1" />
           </template>
-          <!-- Stat tab (Activité + Tokens) -->
+          <!-- Dashboard tab (sous-onglets analytiques) -->
           <template v-else-if="tabsStore.activeTab.type === 'dashboard'">
-            <AgentLogsView :initial-agent-id="tabsStore.activeTab.logsAgentId" class="flex-1" />
-          </template>
-          <!-- Hooks tab (vue globale cross-sessions) -->
-          <template v-else-if="tabsStore.activeTab.type === 'hooks'">
-            <HookEventsView class="flex-1" />
-          </template>
-          <!-- Workload tab (distribution effort/tâches par agent) -->
-          <template v-else-if="tabsStore.activeTab.type === 'workload'">
-            <WorkloadView class="flex-1" />
-          </template>
-          <!-- Topology tab (carte visuelle agents/périmètres/sessions) -->
-          <template v-else-if="tabsStore.activeTab.type === 'topology'">
-            <TopologyView class="flex-1" />
+            <DashboardView class="flex-1" />
           </template>
           <!-- Timeline tab (vue gantt des tâches par agent) -->
           <template v-else-if="tabsStore.activeTab.type === 'timeline'">
