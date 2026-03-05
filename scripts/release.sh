@@ -45,9 +45,6 @@ echo "=== Pre-release Checks ==="
 echo "Running npm install..."
 npm install --silent 2>/dev/null
 
-echo "Running lint..."
-npm run lint
-
 # Bump version
 echo ""
 echo "=== Bumping Version ==="

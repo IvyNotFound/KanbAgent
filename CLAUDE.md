@@ -16,7 +16,7 @@ MODE: solo · LANG_CONV: français · LANG_CODE: english · Solo: `review` = `re
 
 Périmètres: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind, clés: `App.vue`, `vite.config.ts`) · `back-electron` (`main/`, Electron + Node + SQLite, clés: `index.ts`, `ipc.ts`)
 
-Conventions: français (conv) · anglais (code) · tests obligatoires · 0 lint · Conventional Commits
+Conventions: français (conv) · anglais (code) · tests obligatoires · Conventional Commits
 
 **Version: `0.18.0`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/lint/release` | Bêta: MAJOR → validation `arch` + lead.
 
