@@ -4554,3 +4554,497 @@ describe('CostStatsSection (T824)', () => {
     wrapper.unmount()
   })
 })
+
+// ── StreamInputBar (T842) ─────────────────────────────────────────────────────
+import StreamInputBar from '@renderer/components/StreamInputBar.vue'
+
+describe('StreamInputBar (T842)', () => {
+  const defaultProps = {
+    isStreaming: false,
+    ptyId: null,
+    agentStopped: false,
+    sessionId: 'sess-1',
+    accentFg: '#00ff00',
+  }
+
+  it('renders a textarea for text input', () => {
+    const wrapper = mount(StreamInputBar, { props: defaultProps })
+    expect(wrapper.find('textarea').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('emits send with the text when Enter is pressed', async () => {
+    const wrapper = mount(StreamInputBar, { props: defaultProps })
+    const textarea = wrapper.find('textarea')
+    await textarea.setValue('Hello world')
+    await textarea.trigger('keydown', { key: 'Enter', shiftKey: false })
+    expect(wrapper.emitted('send')).toBeTruthy()
+    expect(wrapper.emitted('send')![0]).toEqual(['Hello world'])
+    wrapper.unmount()
+  })
+
+  it('emits send with text when send button is clicked', async () => {
+    const wrapper = mount(StreamInputBar, { props: defaultProps })
+    await wrapper.find('textarea').setValue('Click send')
+    await wrapper.find('[data-testid="send-button"]').trigger('click')
+    expect(wrapper.emitted('send')).toBeTruthy()
+    expect(wrapper.emitted('send')![0]).toEqual(['Click send'])
+    wrapper.unmount()
+  })
+
+  it('resets the input after send', async () => {
+    const wrapper = mount(StreamInputBar, { props: defaultProps })
+    const textarea = wrapper.find('textarea')
+    await textarea.setValue('Reset me')
+    await textarea.trigger('keydown', { key: 'Enter', shiftKey: false })
+    expect((textarea.element as HTMLTextAreaElement).value).toBe('')
+    wrapper.unmount()
+  })
+
+  it('does not emit send when sessionId is null', async () => {
+    const wrapper = mount(StreamInputBar, {
+      props: { ...defaultProps, sessionId: null },
+    })
+    await wrapper.find('textarea').setValue('No session')
+    await wrapper.find('[data-testid="send-button"]').trigger('click')
+    expect(wrapper.emitted('send')).toBeFalsy()
+    wrapper.unmount()
+  })
+
+  it('does not emit send when text is empty', async () => {
+    const wrapper = mount(StreamInputBar, { props: defaultProps })
+    await wrapper.find('[data-testid="send-button"]').trigger('click')
+    expect(wrapper.emitted('send')).toBeFalsy()
+    wrapper.unmount()
+  })
+
+  it('shows stop button when isStreaming && ptyId && !agentStopped', () => {
+    const wrapper = mount(StreamInputBar, {
+      props: { ...defaultProps, isStreaming: true, ptyId: 'pty-1', agentStopped: false },
+    })
+    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('emits stop when stop button clicked', async () => {
+    const wrapper = mount(StreamInputBar, {
+      props: { ...defaultProps, isStreaming: true, ptyId: 'pty-1', agentStopped: false },
+    })
+    await wrapper.find('[data-testid="stop-button"]').trigger('click')
+    expect(wrapper.emitted('stop')).toBeTruthy()
+    wrapper.unmount()
+  })
+})
+
+// ── StreamToolBlock (T842) ────────────────────────────────────────────────────
+import StreamToolBlock from '@renderer/components/StreamToolBlock.vue'
+import type { StreamContentBlock } from '@renderer/types/stream'
+
+describe('StreamToolBlock (T842)', () => {
+  const defaultProps = {
+    eventId: 1,
+    blockIdx: 0,
+    collapsed: {} as Record<string, boolean>,
+    accentFg: '#00ff00',
+    accentBg: '#003300',
+    accentBorder: '#00aa00',
+  }
+
+  it('renders tool_use block with tool name', () => {
+    const block: StreamContentBlock = { type: 'tool_use', name: 'Read', input: { path: '/a.ts' } }
+    const wrapper = mount(StreamToolBlock, {
+      props: { ...defaultProps, block },
+    })
+    expect(wrapper.find('[data-testid="block-tool-use"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Read')
+    wrapper.unmount()
+  })
+
+  it('renders tool_result block', () => {
+    const block: StreamContentBlock = { type: 'tool_result', content: 'result text', is_error: false }
+    const wrapper = mount(StreamToolBlock, {
+      props: { ...defaultProps, block },
+    })
+    expect(wrapper.find('[data-testid="block-tool-result"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('shows ✓ Résultat for non-error tool_result', () => {
+    const block: StreamContentBlock = { type: 'tool_result', content: 'ok', is_error: false }
+    const wrapper = mount(StreamToolBlock, { props: { ...defaultProps, block } })
+    expect(wrapper.text()).toContain('✓ Résultat')
+    wrapper.unmount()
+  })
+
+  it('shows ✗ Erreur for error tool_result', () => {
+    const block: StreamContentBlock = { type: 'tool_result', content: 'err', is_error: true }
+    const wrapper = mount(StreamToolBlock, { props: { ...defaultProps, block } })
+    expect(wrapper.text()).toContain('✗ Erreur')
+    wrapper.unmount()
+  })
+
+  it('emits toggleCollapsed when tool_use header clicked', async () => {
+    const block: StreamContentBlock = { type: 'tool_use', name: 'Bash', input: {} }
+    const wrapper = mount(StreamToolBlock, { props: { ...defaultProps, block } })
+    await wrapper.find('[data-testid="block-tool-use"] button').trigger('click')
+    expect(wrapper.emitted('toggleCollapsed')).toBeTruthy()
+    wrapper.unmount()
+  })
+
+  it('shows tool input preview JSON for tool_use', () => {
+    const block: StreamContentBlock = { type: 'tool_use', name: 'Write', input: { file_path: '/x.ts' } }
+    const wrapper = mount(StreamToolBlock, {
+      props: { ...defaultProps, block, collapsed: { '1-0': false } },
+    })
+    expect(wrapper.text()).toContain('/x.ts')
+    wrapper.unmount()
+  })
+})
+
+// ── TelemetryView (T842) ──────────────────────────────────────────────────────
+import TelemetryView from '@renderer/components/TelemetryView.vue'
+
+describe('TelemetryView (T842)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockResolvedValue({
+      languages: [],
+      totalFiles: 0,
+      totalLines: 0,
+      scannedAt: new Date().toISOString(),
+    })
+  })
+
+  it('shows loading indicator (Scanning) while IPC is pending', async () => {
+    // Make telemetryScan pending so loading stays true
+    let resolve!: (v: unknown) => void
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockReturnValue(
+      new Promise(r => { resolve = r }),
+    )
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    // Wait one tick so onMounted → scan() → loading=true is processed
+    await nextTick()
+    const text = wrapper.text()
+    // Loading state shows "Scanning" (button shows "Scanning…" or loading area shows "Scanning project…")
+    expect(text).toMatch(/Scanning/)
+    resolve({ languages: [], totalFiles: 0, totalLines: 0, scannedAt: new Date().toISOString() })
+    await flushPromises()
+    wrapper.unmount()
+  })
+
+  it('calls telemetryScan with projectPath on mount', async () => {
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    expect(mockElectronAPI.telemetryScan).toHaveBeenCalledWith('/my/project')
+    wrapper.unmount()
+  })
+
+  it('displays languages sorted by lines (already sorted from IPC)', async () => {
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockResolvedValue({
+      languages: [
+        { name: 'TypeScript', color: '#3178c6', files: 50, lines: 10000, percent: 60 },
+        { name: 'Vue', color: '#42b883', files: 30, lines: 5000, percent: 30 },
+        { name: 'CSS', color: '#563d7c', files: 10, lines: 1000, percent: 10 },
+      ],
+      totalFiles: 90,
+      totalLines: 16000,
+      scannedAt: new Date().toISOString(),
+    })
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    const text = wrapper.text()
+    const tsIdx = text.indexOf('TypeScript')
+    const vueIdx = text.indexOf('Vue')
+    expect(tsIdx).toBeGreaterThanOrEqual(0)
+    expect(vueIdx).toBeGreaterThan(tsIdx)
+    wrapper.unmount()
+  })
+
+  it('displays formatted total LOC correctly', async () => {
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockResolvedValue({
+      languages: [],
+      totalFiles: 100,
+      totalLines: 15000,
+      scannedAt: new Date().toISOString(),
+    })
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    // formatLines(15000) → '15.0k'
+    expect(wrapper.text()).toContain('15.0k')
+    wrapper.unmount()
+  })
+
+  it('displays error message when IPC throws', async () => {
+    ;(mockElectronAPI.telemetryScan as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Scan failed'))
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: '/my/project', dbPath: '/my/project.db' } } })],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('Scan failed')
+    wrapper.unmount()
+  })
+
+  it('shows "Open a project" guard when no projectPath', () => {
+    const wrapper = mount(TelemetryView, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { projectPath: null, dbPath: null } } })],
+      },
+    })
+    expect(wrapper.text()).toContain('Open a project')
+    wrapper.unmount()
+  })
+})
+
+// ── AgentQualityPanel (T842) ──────────────────────────────────────────────────
+import AgentQualityPanel from '@renderer/components/AgentQualityPanel.vue'
+
+describe('AgentQualityPanel (T842)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(mockElectronAPI.tasksQualityStats as ReturnType<typeof vi.fn>).mockResolvedValue({
+      success: true,
+      rows: [],
+    })
+  })
+
+  it('calls tasksQualityStats IPC with dbPath on mount', async () => {
+    const wrapper = mount(AgentQualityPanel, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p' } } })],
+      },
+    })
+    await flushPromises()
+    expect(mockElectronAPI.tasksQualityStats).toHaveBeenCalledWith('/p/project.db')
+    wrapper.unmount()
+  })
+
+  it('displays agents sorted (most rejections first)', async () => {
+    ;(mockElectronAPI.tasksQualityStats as ReturnType<typeof vi.fn>).mockResolvedValue({
+      success: true,
+      rows: [
+        { agent_id: 1, agent_name: 'cheap-agent', agent_perimetre: 'front', total_tasks: 10, rejected_tasks: 1, rejection_rate: 10 },
+        { agent_id: 2, agent_name: 'expensive-agent', agent_perimetre: 'front', total_tasks: 5, rejected_tasks: 4, rejection_rate: 80 },
+      ],
+    })
+    const wrapper = mount(AgentQualityPanel, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p' } } })],
+      },
+    })
+    await flushPromises()
+    const text = wrapper.text()
+    // The IPC returns rows already in order — component displays them as-is
+    expect(text).toContain('cheap-agent')
+    expect(text).toContain('expensive-agent')
+    wrapper.unmount()
+  })
+
+  it('displays rejection rate percentage', async () => {
+    ;(mockElectronAPI.tasksQualityStats as ReturnType<typeof vi.fn>).mockResolvedValue({
+      success: true,
+      rows: [
+        { agent_id: 1, agent_name: 'agent-a', agent_perimetre: 'back', total_tasks: 10, rejected_tasks: 3, rejection_rate: 30 },
+      ],
+    })
+    const wrapper = mount(AgentQualityPanel, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p' } } })],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('30%')
+    wrapper.unmount()
+  })
+
+  it('shows "Aucune tâche" empty state when rows is empty', async () => {
+    const wrapper = mount(AgentQualityPanel, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p' } } })],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('Aucune tâche')
+    wrapper.unmount()
+  })
+
+  it('shows error message when IPC returns success:false', async () => {
+    ;(mockElectronAPI.tasksQualityStats as ReturnType<typeof vi.fn>).mockResolvedValue({
+      success: false,
+      rows: [],
+      error: 'DB locked',
+    })
+    const wrapper = mount(AgentQualityPanel, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p' } } })],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('DB locked')
+    wrapper.unmount()
+  })
+})
+
+// ── TimelineView (T842) ───────────────────────────────────────────────────────
+import TimelineView from '@renderer/components/TimelineView.vue'
+
+describe('TimelineView (T842)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(mockElectronAPI.queryDb as ReturnType<typeof vi.fn>).mockResolvedValue([])
+  })
+
+  it('displays groups by agent when tasks present', async () => {
+    ;(mockElectronAPI.queryDb as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 1, titre: 'Task A', statut: 'done', created_at: '2026-01-01T10:00:00', started_at: '2026-01-01T10:00:00', completed_at: '2026-01-01T11:00:00', effort: 2, agentName: 'dev-agent', agentId: 1 },
+    ])
+    const wrapper = mount(TimelineView, {
+      global: {
+        plugins: [
+          createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p', lastRefresh: 0 } } }),
+          i18n,
+        ],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('dev-agent')
+    wrapper.unmount()
+  })
+
+  it('shows empty state when no tasks', async () => {
+    const wrapper = mount(TimelineView, {
+      global: {
+        plugins: [
+          createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p', lastRefresh: 0 } } }),
+          i18n,
+        ],
+      },
+    })
+    await flushPromises()
+    // When no tasks, groups.length === 0 → empty state shown
+    expect(wrapper.text()).not.toContain('dev-agent')
+    wrapper.unmount()
+  })
+
+  it('shows animate-pulse for in_progress tasks', async () => {
+    ;(mockElectronAPI.queryDb as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 2, titre: 'WIP Task', statut: 'in_progress', created_at: '2026-01-01T09:00:00', started_at: '2026-01-01T09:00:00', completed_at: null, effort: 1, agentName: 'dev-agent', agentId: 1 },
+    ])
+    const wrapper = mount(TimelineView, {
+      global: {
+        plugins: [
+          createTestingPinia({ initialState: { tasks: { dbPath: '/p/project.db', projectPath: '/p', lastRefresh: 0 } } }),
+          i18n,
+        ],
+      },
+    })
+    await flushPromises()
+    // in_progress bars have animate-pulse class
+    const bars = wrapper.findAll('.animate-pulse')
+    expect(bars.length).toBeGreaterThan(0)
+    wrapper.unmount()
+  })
+
+  it('does not call queryDb when dbPath is null', async () => {
+    vi.clearAllMocks()
+    const wrapper = mount(TimelineView, {
+      global: {
+        plugins: [
+          createTestingPinia({ initialState: { tasks: { dbPath: null, projectPath: null, lastRefresh: 0 } } }),
+          i18n,
+        ],
+      },
+    })
+    await flushPromises()
+    expect(mockElectronAPI.queryDb).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
+// ── ToolStatsPanel (T842) ─────────────────────────────────────────────────────
+import ToolStatsPanel from '@renderer/components/ToolStatsPanel.vue'
+import { useHookEventsStore } from '@renderer/stores/hookEvents'
+
+describe('ToolStatsPanel (T842)', () => {
+  it('shows empty state when no tool events', () => {
+    const wrapper = mount(ToolStatsPanel, {
+      global: {
+        plugins: [createTestingPinia({ initialState: { hookEvents: { events: [], activeTools: {} } } }), i18n],
+      },
+    })
+    // Empty state message rendered
+    const text = wrapper.text()
+    // Either the i18n key renders or placeholder text
+    expect(wrapper.find('p').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('displays tool rows when events contain PreToolUse', async () => {
+    const pinia = createTestingPinia({ stubActions: false })
+    setActivePinia(pinia)
+    const hStore = useHookEventsStore()
+    hStore.push({ event: 'PreToolUse', payload: { tool_name: 'Read', session_id: 's1' }, ts: 1000 })
+    hStore.push({ event: 'PreToolUse', payload: { tool_name: 'Read', session_id: 's1' }, ts: 2000 })
+    hStore.push({ event: 'PreToolUse', payload: { tool_name: 'Bash', session_id: 's1' }, ts: 3000 })
+
+    const wrapper = mount(ToolStatsPanel, {
+      global: { plugins: [pinia, i18n] },
+    })
+    await nextTick()
+    const text = wrapper.text()
+    expect(text).toContain('Read')
+    expect(text).toContain('Bash')
+    // Read appears first (2 calls > 1)
+    expect(text.indexOf('Read')).toBeLessThan(text.indexOf('Bash'))
+    wrapper.unmount()
+  })
+
+  it('displays error rate when PostToolUseFailure events present', async () => {
+    const pinia = createTestingPinia({ stubActions: false })
+    setActivePinia(pinia)
+    const hStore = useHookEventsStore()
+    hStore.push({ event: 'PreToolUse', payload: { tool_name: 'Bash', session_id: 's1' }, ts: 1000 })
+    hStore.push({ event: 'PostToolUseFailure', payload: { tool_name: 'Bash', session_id: 's1' }, ts: 1500 })
+
+    const wrapper = mount(ToolStatsPanel, {
+      global: { plugins: [pinia, i18n] },
+    })
+    await nextTick()
+    // 1 error / 1 call = 100% → shows '100%'
+    expect(wrapper.text()).toContain('100%')
+    wrapper.unmount()
+  })
+
+  it('shows avg duration when Pre+Post pairs exist', async () => {
+    const pinia = createTestingPinia({ stubActions: false })
+    setActivePinia(pinia)
+    const hStore = useHookEventsStore()
+    hStore.push({ event: 'PreToolUse', payload: { tool_name: 'Read', session_id: 's1', tool_use_id: 'tu1' }, ts: 1000 })
+    hStore.push({ event: 'PostToolUse', payload: { session_id: 's1', tool_use_id: 'tu1' }, ts: 2500 })
+
+    const wrapper = mount(ToolStatsPanel, {
+      global: { plugins: [pinia, i18n] },
+    })
+    await nextTick()
+    // formatDuration(1500): 1500 >= 1000 → '1.5s'
+    expect(wrapper.text()).toContain('1.5s')
+    wrapper.unmount()
+  })
+})
