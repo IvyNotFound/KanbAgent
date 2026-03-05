@@ -363,5 +363,19 @@
     "deleteGroup": "Supprimer le groupe",
     "deleteGroupDetail": "Les agents seront déplacés dans « Non groupés ». Continuer ?",
     "dropAgentHere": "Déposer ici"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "period": "Période",
+    "filterAgents": "Agents",
+    "clearFilter": "Réinitialiser",
+    "noData": "Aucune tâche sur cette période",
+    "unassigned": "Non assigné",
+    "legend": "Légende",
+    "tooltipStatus": "Statut",
+    "tooltipStart": "Début",
+    "tooltipEnd": "Fin",
+    "tooltipDuration": "Durée",
+    "tooltipEffort": "Effort"
   }
 }

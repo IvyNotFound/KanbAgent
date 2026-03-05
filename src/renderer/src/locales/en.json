@@ -363,5 +363,19 @@
     "deleteGroup": "Delete group",
     "deleteGroupDetail": "Agents will be moved to \"Ungrouped\". Continue?",
     "dropAgentHere": "Drop here"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "period": "Period",
+    "filterAgents": "Agents",
+    "clearFilter": "Clear",
+    "noData": "No tasks in this period",
+    "unassigned": "Unassigned",
+    "legend": "Legend",
+    "tooltipStatus": "Status",
+    "tooltipStart": "Start",
+    "tooltipEnd": "End",
+    "tooltipDuration": "Duration",
+    "tooltipEffort": "Effort"
   }
 }
