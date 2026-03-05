@@ -9,18 +9,22 @@ import ToolStatsPanel from './ToolStatsPanel.vue'
 import ActivityHeatmap from './ActivityHeatmap.vue'
 import AgentQualityPanel from './AgentQualityPanel.vue'
 import AgentLogsView from './AgentLogsView.vue'
+import SessionActivityChart from './SessionActivityChart.vue'
+import SuccessRateChart from './SuccessRateChart.vue'
+import DashboardOverview from './DashboardOverview.vue'
 
 const WorkloadView = defineAsyncComponent(() => import('./WorkloadView.vue'))
 const TopologyView = defineAsyncComponent(() => import('./TopologyView.vue'))
+const OrgChartView = defineAsyncComponent(() => import('./OrgChartView.vue'))
 
-type SubTab = 'tokenStats' | 'git' | 'hooks' | 'tools' | 'heatmap' | 'quality' | 'workload' | 'topology' | 'logs'
+type SubTab = 'overview' | 'tokenStats' | 'git' | 'hooks' | 'tools' | 'heatmap' | 'quality' | 'workload' | 'topology' | 'orgchart' | 'logs' | 'sessionActivity' | 'successRate'
 
 const { t } = useI18n()
 const store = useTasksStore()
 
 const STORAGE_KEY = 'dashboard.activeSubTab'
 const savedTab = localStorage.getItem(STORAGE_KEY) as SubTab | null
-const activeSubTab = ref<SubTab>(savedTab ?? 'logs')
+const activeSubTab = ref<SubTab>(savedTab ?? 'overview')
 
 watch(activeSubTab, (tab) => {
   localStorage.setItem(STORAGE_KEY, tab)
@@ -58,15 +62,19 @@ if (activeSubTab.value === 'git') fetchGitCommits()
 
 // ── Sub-tab definitions ──────────────────────────────────────────────────────
 const subTabs: { id: SubTab; label: string }[] = [
-  { id: 'tokenStats', label: t('tokenStats.title') },
-  { id: 'git',        label: 'Git' },
-  { id: 'hooks',      label: t('sidebar.hooks') },
-  { id: 'tools',      label: t('toolStats.title') },
-  { id: 'heatmap',    label: t('sidebar.heatmap') },
-  { id: 'quality',    label: t('sidebar.quality') },
-  { id: 'workload',   label: t('sidebar.workload') },
-  { id: 'topology',   label: t('sidebar.topology') },
-  { id: 'logs',       label: t('tokenStats.logsTab') },
+  { id: 'overview',        label: 'Vue d\'ensemble' },
+  { id: 'tokenStats',      label: t('tokenStats.title') },
+  { id: 'git',             label: 'Git' },
+  { id: 'hooks',           label: t('sidebar.hooks') },
+  { id: 'tools',           label: t('toolStats.title') },
+  { id: 'heatmap',         label: t('sidebar.heatmap') },
+  { id: 'sessionActivity', label: t('sidebar.sessionActivity') },
+  { id: 'successRate',     label: t('sidebar.successRate') },
+  { id: 'quality',         label: t('sidebar.quality') },
+  { id: 'workload',        label: t('sidebar.workload') },
+  { id: 'topology',        label: t('sidebar.topology') },
+  { id: 'orgchart',        label: t('orgchart.tabLabel') },
+  { id: 'logs',            label: t('tokenStats.logsTab') },
 ]
 </script>
 
@@ -87,6 +95,9 @@ const subTabs: { id: SubTab; label: string }[] = [
         @click="activeSubTab = tab.id"
       >{{ tab.label }}</button>
     </div>
+
+    <!-- Overview -->
+    <DashboardOverview v-if="activeSubTab === 'overview'" class="flex-1 min-h-0" />
 
     <!-- Token Stats -->
     <TokenStatsView v-show="activeSubTab === 'tokenStats'" />
@@ -148,6 +159,12 @@ const subTabs: { id: SubTab; label: string }[] = [
       class="flex-1"
     />
 
+    <!-- Session Activity Chart -->
+    <SessionActivityChart v-if="activeSubTab === 'sessionActivity'" class="flex-1 min-h-0" />
+
+    <!-- Success Rate Chart -->
+    <SuccessRateChart v-if="activeSubTab === 'successRate'" class="flex-1 min-h-0" />
+
     <!-- Quality -->
     <AgentQualityPanel v-if="activeSubTab === 'quality'" class="flex-1 min-h-0" />
 
@@ -156,6 +173,9 @@ const subTabs: { id: SubTab; label: string }[] = [
 
     <!-- Topology -->
     <TopologyView v-if="activeSubTab === 'topology'" class="flex-1 min-h-0" />
+
+    <!-- OrgChart -->
+    <OrgChartView v-if="activeSubTab === 'orgchart'" class="flex-1 min-h-0" />
 
     <!-- Logs -->
     <AgentLogsView v-if="activeSubTab === 'logs'" class="flex-1 min-h-0" />
