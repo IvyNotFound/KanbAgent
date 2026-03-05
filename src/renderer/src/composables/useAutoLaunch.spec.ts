@@ -228,8 +228,8 @@ describe('composables/useAutoLaunch', () => {
     tasks.value = [makeTask({ id: 1, statut: 'done', agent_assigne_id: 10 })]
     await nextTick()
 
-    // Advance 5 minutes + 80ms debounce (fallback timeout starts after debounce fires)
-    await vi.advanceTimersByTimeAsync(5 * 60 * 1000 + 80)
+    // Advance 1 minute + 80ms debounce (fallback timeout starts after debounce fires)
+    await vi.advanceTimersByTimeAsync(60 * 1000 + 80)
 
     // Force-close should have happened via agentKill
     expect(api.agentKill).toHaveBeenCalledWith('stream-fallback')
