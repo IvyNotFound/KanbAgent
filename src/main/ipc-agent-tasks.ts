@@ -73,11 +73,18 @@ export function registerAgentTaskHandlers(): void {
 
   /**
    * Build the complete launch prompt for a Claude Code agent session.
-   * Includes previous session summary and open task context if available.
-   * @param agentName - Agent name
-   * @param userPrompt - User-provided prompt text
-   * @param dbPath - Optional DB path for context enrichment
-   * @param agentId - Optional agent ID for context enrichment
+   * Creates a DB session and injects the startup context block (identifiers,
+   * previous session summary, assigned tasks, active locks) directly into the
+   * first user message — so the agent receives all context without needing to
+   * call dbstart.js itself.
+   *
+   * Format returned: "<context block>\n---\n<userPrompt>" or just "<userPrompt>"
+   * when no dbPath/agentId is provided (fallback).
+   *
+   * @param agentName - Agent name (unused, kept for API compatibility)
+   * @param userPrompt - User-provided prompt text (e.g. "T866")
+   * @param dbPath - Optional DB path
+   * @param agentId - Optional agent ID
    * @returns {string} Final prompt string
    */
   ipcMain.handle('build-agent-prompt', async (_event, _agentName: string, userPrompt: string, dbPath?: string, agentId?: number) => {
@@ -87,39 +94,77 @@ export function registerAgentTaskHandlers(): void {
 
     try {
       assertDbPathAllowed(dbPath)
-      const [sessionRows, taskRows] = await Promise.all([
-        queryLive(
-          dbPath,
-          `SELECT summary FROM sessions
-           WHERE agent_id = ? AND statut = 'completed' AND summary IS NOT NULL
-           ORDER BY id DESC LIMIT 1`,
-          [agentId]
-        ) as Promise<Array<{ summary: string }>>,
-        queryLive(
-          dbPath,
-          `SELECT id, titre, statut FROM tasks
-           WHERE agent_assigne_id = ? AND statut IN ('todo','in_progress')
-           ORDER BY id ASC LIMIT 5`,
-          [agentId]
-        ) as Promise<Array<{ id: number; titre: string; statut: string }>>
-      ])
 
-      const parts: string[] = []
+      const contextBlock = await writeDb(dbPath, (db) => {
+        // Get agent info
+        const agentRows = db.exec(`SELECT name, type, perimetre FROM agents WHERE id = ${agentId}`)
+        if (!agentRows.length || !agentRows[0].values.length) return null
+        const [name, type, perimetre] = agentRows[0].values[0] as [string, string | null, string | null]
 
-      if (sessionRows.length > 0 && sessionRows[0].summary) {
-        const summary = sessionRows[0].summary.slice(0, 120)
-        parts.push(`Session préc.: ${summary}`)
-      }
+        // Create session (claude_conv_id set later by session:setConvId when system:init arrives)
+        db.run(`INSERT INTO sessions (agent_id) VALUES (${agentId})`)
+        const sessionRows = db.exec('SELECT last_insert_rowid()')
+        const sessionId = sessionRows[0].values[0][0] as number
 
-      if (taskRows.length > 0) {
-        const taskList = taskRows.map(t => `#${t.id}[${t.statut}]`).join(' ')
-        parts.push(`Tâches: ${taskList}`)
-      }
+        // Last completed session summary
+        const prevRows = db.exec(`
+          SELECT summary FROM sessions
+          WHERE agent_id = ${agentId} AND statut = 'completed' AND summary IS NOT NULL
+          ORDER BY id DESC LIMIT 1
+        `)
+        const prevSummary = prevRows.length && prevRows[0].values.length
+          ? (prevRows[0].values[0][0] as string | null)
+          : null
 
-      if (parts.length === 0) return base
+        // Open tasks
+        const taskRows = db.exec(`
+          SELECT id, statut, perimetre, priority, titre
+          FROM tasks
+          WHERE agent_assigne_id = ${agentId} AND statut IN ('todo', 'in_progress')
+          ORDER BY statut DESC, updated_at DESC
+        `)
 
-      const contextPrefix = parts.join(' | ').slice(0, 300)
-      return base ? `${contextPrefix} -> ${base}` : contextPrefix
+        // Active locks
+        const lockRows = db.exec(`
+          SELECT l.fichier, a.name FROM locks l
+          JOIN agents a ON a.id = l.agent_id
+          WHERE l.released_at IS NULL
+        `)
+
+        const lines: string[] = [
+          '=== IDENTIFIANTS ===',
+          `agent: ${name} (type:${type ?? '-'} | périmètre:${perimetre ?? '-'})`,
+          `agent_id: ${agentId}`,
+          `session_id: ${sessionId}`,
+          '',
+          '=== SESSION PRÉCÉDENTE ===',
+          prevSummary ?? '(aucune session completed)',
+          '',
+          '=== TÂCHES ASSIGNÉES ===',
+        ]
+
+        if (!taskRows.length || !taskRows[0].values.length) {
+          lines.push('(aucune tâche todo / in_progress)')
+        } else {
+          for (const [id, statut, peri, priority, titre] of taskRows[0].values as [number, string, string, string, string][]) {
+            lines.push(`[T${id}] ${statut} | ${peri ?? '-'} | prio:${priority} | ${titre}`)
+          }
+        }
+
+        lines.push('', '=== LOCKS ACTIFS ===')
+        if (!lockRows.length || !lockRows[0].values.length) {
+          lines.push('(aucun)')
+        } else {
+          for (const [fichier, owner] of lockRows[0].values as [string, string][]) {
+            lines.push(`${fichier} → ${owner}`)
+          }
+        }
+
+        return lines.join('\n')
+      })
+
+      if (!contextBlock) return base
+      return base ? `${contextBlock}\n---\n${base}` : contextBlock
     } catch {
       return base
     }

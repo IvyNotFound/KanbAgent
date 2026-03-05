@@ -170,6 +170,19 @@ const migrations: Migration[] = [
     END`)
     db.run('INSERT INTO tasks_fts(rowid, titre, description) SELECT id, titre, description FROM tasks')
   } },
+
+  // v23: replace "On startup: node scripts/dbstart.js" in all agents' system_prompt_suffix.
+  // The launcher (build-agent-prompt IPC) now pre-creates the session and injects the startup
+  // context block directly into the first user message — agents must NOT call dbstart.js.
+  { version: 23, up: (db) => {
+    db.run(`UPDATE agents
+      SET system_prompt_suffix = REPLACE(
+        system_prompt_suffix,
+        '- On startup: node scripts/dbstart.js <agent-name> → read summary → identify YOUR task from initial prompt → start immediately on THAT task only',
+        '- On startup: votre contexte (agent_id, session_id, tâches, locks) est pré-injecté dans le premier message user (bloc === IDENTIFIANTS ===). Ne pas appeler dbstart.js. Identifier votre tâche dans le prompt et démarrer immédiatement.'
+      )
+      WHERE system_prompt_suffix LIKE '%scripts/dbstart.js%'`)
+  } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */

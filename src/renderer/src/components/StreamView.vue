@@ -70,6 +70,51 @@ const displayEvents = computed(() =>
   })
 )
 
+/**
+ * Extract session/task context block from a launch prompt.
+ *
+ * Supports two formats produced by build-agent-prompt:
+ *  - New (multi-line): "<context block>\n---\n<base>" where context starts with "=== IDENTIFIANTS ==="
+ *  - Legacy (single-line): "<context> -> <base>" where context contains "Session préc.:" or "Tâches:"
+ *
+ * Returns { context, base } — context is null if no prefix detected.
+ */
+function parsePromptContext(text: string): { context: string | null; base: string } {
+  const dashSep = '\n---\n'
+  const dashIdx = text.indexOf(dashSep)
+  if (dashIdx !== -1 && text.startsWith('=== IDENTIFIANTS ===')) {
+    return { context: text.slice(0, dashIdx), base: text.slice(dashIdx + dashSep.length) }
+  }
+  const arrowIdx = text.indexOf(' -> ')
+  if (arrowIdx !== -1) {
+    const context = text.slice(0, arrowIdx)
+    if (context.includes('Session préc.:') || context.includes('Tâches:')) {
+      return { context, base: text.slice(arrowIdx + 4) }
+    }
+  }
+  return { context: null, base: text }
+}
+
+/**
+ * Maps each system:init event _id to the context string of its first following user message.
+ * Used to display session/task metadata in the init block instead of the user bubble.
+ */
+const sessionContextMap = computed(() => {
+  const map = new Map<number, string>()
+  let lastInitId: number | null = null
+  for (const event of displayEvents.value) {
+    if (event.type === 'system' && event.subtype === 'init' && event._id != null) {
+      lastInitId = event._id
+    } else if (event.type === 'user' && event.message && lastInitId != null) {
+      const text = event.message.content.filter(b => b.type === 'text').map(b => b.text ?? '').join('')
+      const { context } = parsePromptContext(text)
+      if (context) map.set(lastInitId, context)
+      lastInitId = null
+    }
+  }
+  return map
+})
+
 // ── Collapse helpers ──────────────────────────────────────────────────────────
 
 function toggleCollapsed(key: string, defaultCollapsed = false): void {
@@ -250,6 +295,16 @@ onUnmounted(() => {
         >
           Session démarrée
           <span v-if="event.session_id" class="ml-1 font-mono">· {{ event.session_id.slice(0, 8) }}…</span>
+          <template v-if="sessionContextMap.get(event._id!)">
+            <button
+              class="ml-2 text-zinc-600 hover:text-zinc-400 transition-colors not-italic"
+              @click="toggleCollapsed(`init-ctx-${event._id}`, true)"
+            >{{ (collapsed[`init-ctx-${event._id}`] ?? true) ? '▶ ctx' : '▼ ctx' }}</button>
+            <div
+              v-show="!(collapsed[`init-ctx-${event._id}`] ?? true)"
+              class="mt-1 ml-4 not-italic text-zinc-600 whitespace-pre-wrap font-mono text-xs"
+            >{{ sessionContextMap.get(event._id!) }}</div>
+          </template>
         </div>
 
         <!-- error:spawn / error:exit -->
@@ -277,7 +332,7 @@ onUnmounted(() => {
             :style="{ borderColor: accentBorder }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
-              <span v-if="block.type === 'text'">{{ block.text }}</span>
+              <span v-if="block.type === 'text'">{{ parsePromptContext(block.text ?? '').base }}</span>
             </template>
           </div>
         </div>
