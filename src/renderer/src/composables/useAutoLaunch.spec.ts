@@ -358,6 +358,27 @@ describe('composables/useAutoLaunch', () => {
       expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(false)
     })
 
+    it('T928: should launch review when autoReviewEnabled=true even if autoLaunchAgentSessions=false', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.setAutoLaunchAgentSessions(false)
+      // autoReviewEnabled defaults to true
+
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+      agents.value = [makeAgent(), reviewAgent]
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      tasks.value = makeDoneTasks(10)
+      await nextTick()
+
+      await vi.waitFor(() => {
+        const tabsStore = useTabsStore()
+        expect(tabsStore.tabs.some(t => t.type === 'terminal' && t.agentName === 'review-master')).toBe(true)
+      })
+    })
+
     it('should NOT launch review when autoReviewEnabled is false', async () => {
       const settingsStore = useSettingsStore()
       settingsStore.setAutoReviewEnabled(false)
