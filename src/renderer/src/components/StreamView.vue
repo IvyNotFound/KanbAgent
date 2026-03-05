@@ -83,7 +83,7 @@ async function handleSend(text: string): Promise<void> {
   const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text }] } }
   assignEventId(userEvent)
   events.value.push(userEvent)
-  scrollToBottom()
+  scrollToBottom(true)
   try {
     if (ptyId.value) await window.electronAPI.agentSend(ptyId.value, text)
   } catch (err) {
@@ -117,7 +117,10 @@ function flushEvents(): void {
           block._html = renderMarkdown(block.text)
         } else if (block.type === 'tool_result') {
           const raw = !block.content ? '' : typeof block.content === 'string' ? block.content : Array.isArray(block.content) ? block.content.map(c => c.text ?? '').join('\n') : String(block.content)
-          block._html = renderMarkdown(raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, ''))
+          const stripped = raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')
+          block._lineCount = stripped.split('\n').length
+          block._isLong = block._lineCount > 15
+          block._html = renderMarkdown(stripped)
         }
       }
     }
@@ -137,7 +140,14 @@ function flushEvents(): void {
   scrollToBottom()
 }
 
-function scrollToBottom(): void {
+function isNearBottom(): boolean {
+  if (!scrollContainer.value) return true
+  const el = scrollContainer.value
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 150
+}
+
+function scrollToBottom(force = false): void {
+  if (!force && !isNearBottom()) return
   nextTick(() => { if (scrollContainer.value) scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight })
 }
 
@@ -184,7 +194,7 @@ onMounted(async () => {
       const autoEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text: tab.autoSend }] } }
       assignEventId(autoEvent)
       events.value.push(autoEvent)
-      scrollToBottom()
+      scrollToBottom(true)
       await window.electronAPI.agentSend(id, tab.autoSend)
     }
   } catch (err) {

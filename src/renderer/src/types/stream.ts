@@ -10,6 +10,10 @@ export interface StreamContentBlock {
   is_error?: boolean
   /** Pre-rendered HTML for text/tool_result blocks — computed once in flushEvents() (T791) */
   _html?: string
+  /** Whether a tool_result block exceeds the collapse threshold — computed once in flushEvents() (T843) */
+  _isLong?: boolean
+  /** Line count of a tool_result block — computed once in flushEvents() (T843) */
+  _lineCount?: number
 }
 
 export interface StreamEvent {
