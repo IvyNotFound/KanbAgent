@@ -78,13 +78,12 @@ export function registerSettingsHandlers(): void {
       assertDbPathAllowed(dbPath)
       const configRows = await queryLive(
         dbPath,
-        "SELECT key, value FROM config WHERE key = 'claude_md_commit'",
+        "SELECT key, value FROM config WHERE key IN ('claude_md_commit', 'github_token')",
         []
       ) as { key: string; value: string }[]
       const configMap = new Map(configRows.map(r => [r.key, r.value]))
       const localSha = configMap.get('claude_md_commit') ?? ''
-
-      const githubToken = await getGitHubToken(dbPath)
+      const githubToken = configMap.get('github_token') ?? ''
       const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
       if (githubToken) headers['Authorization'] = `token ${githubToken}`
 
