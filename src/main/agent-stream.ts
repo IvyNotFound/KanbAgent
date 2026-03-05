@@ -6,7 +6,8 @@
  * line wrapping, and enables true multi-turn via stdin JSONL without respawning.
  *
  * Architecture:
- * - spawn('wsl.exe', [..., 'bash', '-l', scriptPath], { stdio: 'pipe' })
+ * - WSL path:   spawn('wsl.exe', [..., 'bash', '-l', scriptPath], { stdio: 'pipe' })
+ * - Local Win:  spawn('powershell.exe', ['-File', scriptPath.ps1], { stdio: 'pipe' }) (T916)
  * - readline on stdout → JSONL events, 0 ANSI corruption
  * - proc.stdin.write() for multi-turn messages (no respawn)
  * - convId extracted from system:init event (no banner scanning needed)
@@ -16,25 +17,21 @@
 import { ipcMain, webContents, app } from 'electron'
 import { spawn, type ChildProcess, execFile } from 'child_process'
 import { createInterface } from 'readline'
-import { appendFileSync, writeFileSync, unlinkSync } from 'fs'
+import { writeFileSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { toWslPath } from './utils/wsl'
 import { queryLive, assertDbPathAllowed } from './db'
-
-// ── Debug logging ─────────────────────────────────────────────────────────────
-
-/**
- * Append a debug message to the agent-stream log file.
- * Writes to app.getPath('logs')/agent-stream-debug.log — visible in packaged app
- * without DevTools. Errors are silently swallowed so logging never crashes the app.
- */
-function logDebug(msg: string): void {
-  try {
-    const logPath = join(app.getPath('logs'), 'agent-stream-debug.log')
-    appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`)
-  } catch { /* logging must never crash the app */ }
-}
+import {
+  CLAUDE_CMD_REGEX,
+  UUID_REGEX,
+  MAX_STDERR_BUFFER_SIZE,
+  logDebug,
+  buildEnv,
+  buildClaudeCmd,
+  buildWindowsPS1Script,
+  getActiveTasksLine,
+} from './agent-stream-helpers'
 
 // ── Process registry ──────────────────────────────────────────────────────────
 
@@ -44,136 +41,6 @@ const agents = new Map<string, ChildProcess>()
 const webContentsAgents = new Map<number, Set<string>>()
 
 let nextAgentId = 1
-
-// Cap stderr accumulation to avoid unbounded memory growth (T818)
-const MAX_STDERR_BUFFER_SIZE = 10_000
-
-// ── Validation ────────────────────────────────────────────────────────────────
-
-const CLAUDE_CMD_REGEX = /^claude(-[a-z0-9-]+)?$/
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Build minimal env for the spawned process.
- * Forwards Windows system vars required by wsl.exe RPC.
- * Sets TERM=dumb + NO_COLOR=1 to suppress any ANSI from bash startup.
- * Note: no ANTHROPIC_API_KEY — auth is handled via OAuth tokens stored in ~/.claude/ (WSL).
- */
-function buildEnv(): Record<string, string> {
-  const env: Record<string, string> = {
-    TERM: 'dumb',
-    LANG: process.env.LANG ?? 'en_US.UTF-8',
-    NO_COLOR: '1',
-  }
-  const forwardVars = [
-    'SystemRoot', 'SYSTEMROOT',
-    'SYSTEMDRIVE',
-    'LOCALAPPDATA', 'APPDATA',
-    'USERPROFILE',
-    'USERNAME',
-    'COMPUTERNAME',
-    'TEMP', 'TMP',
-    'WINDIR',
-    'WSLENV',
-    'WSL_DISTRO_NAME',
-    'PATH',
-    'HOME',
-  ]
-  for (const v of forwardVars) {
-    if (process.env[v]) env[v] = process.env[v]!
-  }
-  if (!env.HOME && process.env.USERPROFILE) env.HOME = process.env.USERPROFILE
-  return env
-}
-
-/**
- * Build the bash -lc command string for launching Claude in stream-json mode.
- * System prompt is passed via `"$(cat 'WSL_PATH')"` — the content is read from a temp
- * file inside bash, bypassing Node.js Windows command-line serialization entirely.
- * This avoids the Windows CreateProcess quoting issue where $'...' ANSI-C sequences
- * were corrupted in the Node.js spawn → wsl.exe → bash pipeline (T705).
- *
- * @param opts - Launch options.
- * @param opts.claudeCommand - Claude binary name (validated against `CLAUDE_CMD_REGEX`; defaults to `'claude'`).
- * @param opts.convId - Existing conversation UUID to resume via `--resume`.
- * @param opts.systemPromptFile - WSL path to a temp file containing the raw system prompt.
- *   Path must not contain single quotes (e.g. `/mnt/c/Users/Cover/AppData/Local/Temp/claude-sp-1.txt`).
- * @param opts.thinkingMode - Set to `'disabled'` to inject `--settings '{"alwaysThinkingEnabled":false}'`.
- * @param opts.permissionMode - Set to `'auto'` to add `--dangerously-skip-permissions`.
- * @returns The full bash command string to embed in a launch script executed as `bash -l script.sh` (T706).
- *   Do NOT pass this string directly to `bash -lc` via wsl.exe — write it to a temp file first
- *   so wsl.exe outer-shell expansion cannot evaluate `$(cat ...)` before bash sees it.
- */
-function buildClaudeCmd(opts: {
-  claudeCommand?: string
-  convId?: string
-  systemPromptFile?: string
-  thinkingMode?: string
-  permissionMode?: string
-}): string {
-  const cmd = (opts.claudeCommand && CLAUDE_CMD_REGEX.test(opts.claudeCommand))
-    ? opts.claudeCommand
-    : 'claude'
-
-  const parts: string[] = [
-    cmd,
-    '-p',
-    '--verbose',
-    '--input-format', 'stream-json',
-    '--output-format', 'stream-json',
-  ]
-
-  if (opts.convId) {
-    parts.push('--resume', opts.convId)
-  }
-
-  if (opts.systemPromptFile) {
-    // Read system prompt from temp file inside bash — bypasses Windows command-line
-    // serialization entirely. The WSL path contains no apostrophes so single-quote
-    // wrapping of the path is safe. Content is passed verbatim to Claude.
-    parts.push(`--append-system-prompt "$(cat '${opts.systemPromptFile}')"`)
-  }
-
-  if (opts.thinkingMode === 'disabled') {
-    parts.push(`--settings '{"alwaysThinkingEnabled":false}'`)
-  }
-
-  if (opts.permissionMode === 'auto') {
-    parts.push('--dangerously-skip-permissions')
-  }
-
-  return parts.join(' ')
-}
-
-// ── Active tasks context injection (T772) ─────────────────────────────────────
-
-/**
- * Query active task IDs from other in-progress sessions (DB-first, no JSONL).
- * Returns a compact string like "Active tasks: #42 #67" or "" if none.
- *
- * Uses `tasks.session_id` JOIN to find tasks linked to started sessions
- * (excluding the current session). Ultra-compact format to minimize token cost.
- *
- * @param dbPath - Registered project DB path
- * @param currentSessionId - The session ID of the agent being spawned (excluded)
- */
-async function getActiveTasksLine(dbPath: string, currentSessionId: number): Promise<string> {
-  try {
-    const rows = await queryLive(dbPath, `
-      SELECT t.id
-      FROM sessions s
-      JOIN tasks t ON t.session_id = s.id
-      WHERE s.statut = 'started' AND s.id != ?
-      ORDER BY t.id
-    `, [currentSessionId]) as Array<{ id: number }>
-    if (!rows.length) return ''
-    return 'Active tasks: ' + rows.map(r => '#' + r.id).join(' ')
-  } catch {
-    return ''
-  }
-}
 
 // ── Kill helpers ──────────────────────────────────────────────────────────────
 
@@ -216,9 +83,8 @@ function killAllAgents(): void {
  *
  * Events emitted to renderer:
  * - `agent:stream:<id>` — parsed JSONL event object (StreamEvent)
- * - `agent:stream:<id>` `{ type: 'error:spawn', error }` — wsl.exe failed to start (ENOENT, EACCES…)
- * - `agent:stream:<id>` `{ type: 'error:exit', error, stderr? }` — process exited with non-zero code
- *   before emitting any JSONL event; stderr contains the buffered process output when available (T697)
+ * - `agent:stream:<id>` `{ type: 'error:spawn', error }` — process failed to start
+ * - `agent:stream:<id>` `{ type: 'error:exit', error, stderr? }` — process exited without output
  * - `agent:convId:<id>` — session_id extracted from system:init event
  * - `agent:exit:<id>`   — exitCode (number | null) when process closes
  */
@@ -261,14 +127,7 @@ export function registerAgentStreamHandlers(): void {
     }
     webContentsAgents.get(wcId)!.add(id)
 
-    // Build wsl.exe args
-    const wslArgs: string[] = []
-    if (opts.wslDistro) wslArgs.push('-d', opts.wslDistro)
-    if (opts.projectPath) wslArgs.push('--cd', toWslPath(opts.projectPath))
-
     // T772: Inject active tasks context into system prompt (DB-first, ultra-compact).
-    // Appends "Active tasks: #N #M" if other agents are in-progress sessions.
-    // Zero tokens injected when no other agents are active.
     let effectiveSystemPrompt = opts.systemPrompt ?? ''
     if (opts.dbPath && Number.isInteger(opts.sessionId) && opts.sessionId! > 0) {
       try {
@@ -282,54 +141,83 @@ export function registerAgentStreamHandlers(): void {
       } catch { /* never block spawn on context injection failure */ }
     }
 
-    // Write system prompt to a Windows temp file so bash reads it directly — avoids the
-    // Windows CreateProcess command-line serialization issue with $'...' ANSI-C quoting (T705).
+    // Write system prompt to a Windows temp file so the child process reads it directly —
+    // avoids command-line serialization issues on both WSL (T705) and Windows native (T916).
     let spTempFile: string | undefined
     if (effectiveSystemPrompt) {
       spTempFile = join(tmpdir(), `claude-sp-${id}.txt`)
       writeFileSync(spTempFile, effectiveSystemPrompt, 'utf-8')
     }
 
-    const claudeCmd = buildClaudeCmd({
-      claudeCommand: opts.claudeCommand,
-      convId: validConvId,
-      systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
-      thinkingMode: opts.thinkingMode,
-      permissionMode: opts.permissionMode,
-    })
+    // ── Spawn: local Windows vs WSL / Linux / macOS ────────────────────────────
+    const isLocalWindows = process.platform === 'win32' && opts.wslDistro === 'local'
+    let scriptTempFile: string
+    let proc: ChildProcess
 
-    // Write bash launch script to avoid wsl.exe outer-shell expansion of $(cat ...) (T706).
-    // When wsl.exe receives "bash -lc "cmd"", an intermediate shell evaluates $(cat file)
-    // before bash sees it — the system prompt content becomes the bash script, causing
-    // parse errors at line N (e.g. "syntax error near unexpected token '('").
-    // Solution: write the full command into a .sh file and pass only a plain path to wsl.exe.
-    const scriptTempFile = join(tmpdir(), `claude-start-${id}.sh`)
-    writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${claudeCmd}\n`, 'utf-8')
-    const scriptWslPath = toWslPath(scriptTempFile)
+    if (isLocalWindows) {
+      // T916: Local Windows — spawn PowerShell with a .ps1 script that runs claude directly.
+      // Avoids wsl.exe entirely; PowerShell handles system prompt quoting via List[string] args.
+      const ps1Content = buildWindowsPS1Script({
+        claudeCommand: opts.claudeCommand,
+        convId: validConvId,
+        spTempFile,  // Windows path — no toWslPath conversion
+        thinkingMode: opts.thinkingMode,
+        permissionMode: opts.permissionMode,
+      })
+      scriptTempFile = join(tmpdir(), `claude-start-${id}.ps1`)
+      writeFileSync(scriptTempFile, ps1Content, 'utf-8')
 
-    // Resolve wsl.exe via absolute path to avoid ENOENT in packaged app where
-    // C:\Windows\System32 may be absent from the spawned process PATH (Fix T692).
-    const wslExe = process.env.SystemRoot
-      ? join(process.env.SystemRoot, 'System32', 'wsl.exe')
-      : 'C:\\Windows\\System32\\wsl.exe'
+      logDebug(`spawn attempt (local Windows): powershell.exe -File ${scriptTempFile}`)
+      console.log('[agent-stream] spawn local Windows', scriptTempFile)
 
-    logDebug(`spawn attempt: exe=${wslExe} script=${scriptWslPath} args=${JSON.stringify([...wslArgs, '--', 'bash', '-l', scriptWslPath])}`)
-    console.log('[agent-stream] spawn', wslExe, wslArgs)
-    const proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-l', scriptWslPath], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: buildEnv(),
-    })
+      proc = spawn('powershell.exe', [
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptTempFile,
+      ], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: buildEnv(),
+        cwd: opts.projectPath || undefined,
+      })
+    } else {
+      // WSL / Linux / macOS path (existing behavior)
+      const wslArgs: string[] = []
+      if (opts.wslDistro) wslArgs.push('-d', opts.wslDistro)
+      if (opts.projectPath) wslArgs.push('--cd', toWslPath(opts.projectPath))
+
+      const claudeCmd = buildClaudeCmd({
+        claudeCommand: opts.claudeCommand,
+        convId: validConvId,
+        systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
+        thinkingMode: opts.thinkingMode,
+        permissionMode: opts.permissionMode,
+      })
+
+      // Write bash launch script to avoid wsl.exe outer-shell expansion of $(cat ...) (T706).
+      scriptTempFile = join(tmpdir(), `claude-start-${id}.sh`)
+      writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${claudeCmd}\n`, 'utf-8')
+      const scriptWslPath = toWslPath(scriptTempFile)
+
+      // Resolve wsl.exe via absolute path to avoid ENOENT in packaged app (Fix T692).
+      const wslExe = process.env.SystemRoot
+        ? join(process.env.SystemRoot, 'System32', 'wsl.exe')
+        : 'C:\\Windows\\System32\\wsl.exe'
+
+      logDebug(`spawn attempt: exe=${wslExe} script=${scriptWslPath} args=${JSON.stringify([...wslArgs, '--', 'bash', '-l', scriptWslPath])}`)
+      console.log('[agent-stream] spawn', wslExe, wslArgs)
+
+      proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-l', scriptWslPath], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: buildEnv(),
+      })
+    }
 
     agents.set(id, proc)
 
     let eventsReceived = 0
     let stderrBuffer = ''
     // Buffer non-JSON stdout lines for error context (WSL errors go to stdout, not stderr).
-    // Strip null bytes — wsl.exe error output is UTF-16LE which appears as char-space-char.
     let stdoutErrorBuffer = ''
 
     // Buffer stderr — do NOT emit line-by-line to avoid spamming the renderer (T697).
-    // Flushed only on abnormal exit (exitCode !== 0) as context for error:exit.
     proc.stderr!.on('data', (chunk: Buffer) => {
       stderrBuffer = (stderrBuffer + chunk.toString()).slice(-MAX_STDERR_BUFFER_SIZE)
     })
@@ -356,7 +244,6 @@ export function registerAgentStreamHandlers(): void {
           }
         }
 
-        // Use webContents.fromId to avoid stale sender closure (same fix as terminal.ts T633)
         const wc = webContents.fromId(wcId)
         if (!wc || wc.isDestroyed()) {
           killAgent(id)
@@ -364,8 +251,7 @@ export function registerAgentStreamHandlers(): void {
         }
         wc.send(`agent:stream:${id}`, parsed)
       } catch {
-        // Non-JSON line (bash startup, WSL error, profile output, etc.) — buffer for diagnostics.
-        // Strip null bytes: wsl.exe outputs UTF-16LE which reads as "c h a r   c h a r" over readline.
+        // Non-JSON line — buffer for diagnostics.
         const readable = clean.replace(/\x00/g, '').replace(/  +/g, ' ').trim()
         if (readable) {
           stdoutErrorBuffer = (stdoutErrorBuffer + '\n' + readable).slice(-1000)
@@ -379,7 +265,6 @@ export function registerAgentStreamHandlers(): void {
       rl.close()
       agents.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
-      // Send error event to renderer for visibility without DevTools (Fix T692)
       const wc = webContents.fromId(wcId)
       if (wc && !wc.isDestroyed()) {
         wc.send(`agent:stream:${id}`, { type: 'error:spawn', error: err.message })
@@ -395,21 +280,16 @@ export function registerAgentStreamHandlers(): void {
 
       logDebug(`close id=${id}: exitCode=${exitCode} eventsReceived=${eventsReceived} stderr=${stderrBuffer.slice(0, 200)} stdout_error=${stdoutErrorBuffer.slice(0, 200)}`)
 
-      // Signal exit without output — covers exitCode=0 (silent claude failure) and exitCode≠0.
-      // Replaces the previous exitCode!==0 check: if claude exits 0 but emits no JSONL,
-      // the renderer would see nothing (T704). Include buffered stderr/stdout as diagnostic context (T697).
       if (eventsReceived === 0) {
         const wc = webContents.fromId(wcId)
         if (wc && !wc.isDestroyed()) {
-          // Exit code -1 / 4294967295 = WSL process failed before producing output.
-          // Most common cause: distro name not found. Capture stdout error output from WSL (T885).
           const isAbnormalExit = exitCode === -1 || exitCode === 4294967295
           const stdoutCtx = stdoutErrorBuffer.trim()
           let msg: string
           if (isAbnormalExit && stdoutCtx) {
-            msg = `WSL exited abnormally (code ${exitCode}): ${stdoutCtx}`
+            msg = `Process exited abnormally (code ${exitCode}): ${stdoutCtx}`
           } else if (isAbnormalExit) {
-            msg = `WSL exited abnormally (code ${exitCode}). Check your distro name — run "wsl --list" in a terminal.`
+            msg = `Process exited abnormally (code ${exitCode}).`
           } else if (exitCode !== 0) {
             msg = `Process exited with code ${exitCode}`
           } else {
@@ -458,6 +338,7 @@ export function registerAgentStreamHandlers(): void {
 export const _testing = {
   toWslPath,
   buildClaudeCmd,
+  buildWindowsPS1Script,
   buildEnv,
   killAgent,
   agents,
