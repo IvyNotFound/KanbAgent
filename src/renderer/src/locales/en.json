@@ -335,7 +335,7 @@
     "backlog": "Backlog",
     "logs": "Log",
     "metrics": "Metrics",
-    "stat": "Stat",
+    "dashboard": "Dashboard",
     "hooks": "Hooks",
     "workload": "Workload",
     "topology": "Topology",

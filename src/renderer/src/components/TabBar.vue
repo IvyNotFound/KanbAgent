@@ -285,18 +285,18 @@ function openGroupMenu(event: MouseEvent, group: TabGroup): void {
     <button
       :class="[
         'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0',
-        store.activeTabId === 'stat'
+        store.activeTabId === 'dashboard'
           ? 'text-content-primary bg-surface-secondary'
           : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
       ]"
-      @click="store.setActive('stat')"
+      @click="store.setActive('dashboard')"
     >
       <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
         <path d="M0 11l4-5 3 3 4-6 5 3v5H0z"/>
       </svg>
-      <span>{{ t('sidebar.stat') }}</span>
+      <span>{{ t('sidebar.dashboard') }}</span>
       <span
-        v-if="store.activeTabId === 'stat'"
+        v-if="store.activeTabId === 'dashboard'"
         class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
       ></span>
     </button>

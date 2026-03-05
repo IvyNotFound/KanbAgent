@@ -31,7 +31,7 @@ describe('TokenStatsView (T353)', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db' },
-            tabs: { activeTabId: 'stat' },
+            tabs: { activeTabId: 'dashboard' },
           },
           stubActions: false,
         }), i18n],
@@ -50,7 +50,7 @@ describe('TokenStatsView (T353)', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db' },
-            tabs: { activeTabId: 'stat' },
+            tabs: { activeTabId: 'dashboard' },
           },
           stubActions: false,
         }), i18n],
@@ -67,7 +67,7 @@ describe('TokenStatsView (T353)', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db' },
-            tabs: { activeTabId: 'stat' },
+            tabs: { activeTabId: 'dashboard' },
           },
           stubActions: false,
         }), i18n],
@@ -93,7 +93,7 @@ describe('TokenStatsView (T353)', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db' },
-            tabs: { activeTabId: 'stat' },
+            tabs: { activeTabId: 'dashboard' },
           },
           stubActions: false,
         }), i18n],

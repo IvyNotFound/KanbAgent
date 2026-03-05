@@ -94,7 +94,7 @@ defineExpose({
             <FileView :file-path="tabsStore.activeTab.filePath!" :tab-id="tabsStore.activeTab.id" class="flex-1" />
           </template>
           <!-- Stat tab (Activité + Tokens) -->
-          <template v-else-if="tabsStore.activeTab.type === 'stat'">
+          <template v-else-if="tabsStore.activeTab.type === 'dashboard'">
             <AgentLogsView :initial-agent-id="tabsStore.activeTab.logsAgentId" class="flex-1" />
           </template>
           <!-- Hooks tab (vue globale cross-sessions) -->

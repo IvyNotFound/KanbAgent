@@ -110,7 +110,7 @@ async function fetchLogs(): Promise<void> {
 // usePolledData manages polling lifecycle, loading state, and cleanup
 const { loading } = usePolledData(
   fetchLogs,
-  () => tabsStore.activeTabId === 'stat',
+  () => tabsStore.activeTabId === 'dashboard',
   30000,
 )
 

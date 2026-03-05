@@ -13,7 +13,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'stat' | 'hooks' | 'workload' | 'topology' | 'timeline' | 'telemetry'
+export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'dashboard' | 'hooks' | 'workload' | 'topology' | 'timeline' | 'telemetry'
 
 export interface Tab {
   id: string
@@ -59,7 +59,7 @@ export interface Tab {
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<Tab[]>([
     { id: 'backlog', type: 'backlog', title: 'Backlog', ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
-    { id: 'stat',    type: 'stat',    title: 'Stat',    ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
+    { id: 'dashboard', type: 'dashboard', title: 'Dashboard',    ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true, logsAgentId: null },
     { id: 'hooks',    type: 'hooks',    title: 'Hooks',    ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
     { id: 'workload',  type: 'workload',  title: 'Workload',  ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
     { id: 'topology',  type: 'topology',  title: 'Topology',  ptyId: null, agentName: null, wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, permanent: true },
@@ -133,9 +133,9 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   function addLogs(agentId?: number | null): void {
-    const statTab = tabs.value.find(t => t.type === 'stat')
+    const statTab = tabs.value.find(t => t.type === 'dashboard')
     if (statTab && agentId != null) statTab.logsAgentId = agentId
-    activeTabId.value = 'stat'
+    activeTabId.value = 'dashboard'
   }
 
   function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'stream'): void {

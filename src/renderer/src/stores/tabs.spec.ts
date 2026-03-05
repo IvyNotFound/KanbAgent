@@ -359,7 +359,7 @@ describe('stores/tabs — missing actions', () => {
       store.closeTabGroup(null)
       // Only the terminal without agentName would be affected; permanent tabs must survive
       expect(store.tabs.find(t => t.id === 'backlog')).toBeDefined()
-      expect(store.tabs.find(t => t.id === 'stat')).toBeDefined()
+      expect(store.tabs.find(t => t.id === 'dashboard')).toBeDefined()
     })
 
     it('should reset activeTabId to backlog when active tab is in closed group', () => {
@@ -401,13 +401,13 @@ describe('stores/tabs — missing actions', () => {
   })
 
   describe('addLogs', () => {
-    it('should activate the stat tab', () => {
+    it('should activate the dashboard tab', () => {
       const store = useTabsStore()
-      // stat tab is permanent (id='stat' exists by default)
+      // dashboard tab is permanent (id='dashboard' exists by default)
 
       store.addLogs()
 
-      expect(store.activeTabId).toBe('stat')
+      expect(store.activeTabId).toBe('dashboard')
     })
 
     it('should set logsAgentId when agentId is provided', () => {
@@ -415,7 +415,7 @@ describe('stores/tabs — missing actions', () => {
 
       store.addLogs(42)
 
-      const statTab = store.tabs.find(t => t.type === 'stat')
+      const statTab = store.tabs.find(t => t.type === 'dashboard')
       expect(statTab?.logsAgentId).toBe(42)
     })
   })

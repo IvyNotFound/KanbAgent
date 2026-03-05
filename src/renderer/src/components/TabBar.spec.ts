@@ -27,15 +27,15 @@ describe('TabBar', () => {
     expect(wrapper.text()).toContain('Backlog')
   })
 
-  it('renders stat button', () => {
+  it('renders dashboard button', () => {
     const wrapper = shallowMount(TabBar, {
       global: {
         plugins: [createTestingPinia({
-          initialState: { tabs: { tabs: [{ id: 'backlog', type: 'backlog', title: 'Backlog', permanent: true }, { id: 'stat', type: 'stat', title: 'Stat', permanent: true }], activeTabId: 'backlog' } },
+          initialState: { tabs: { tabs: [{ id: 'backlog', type: 'backlog', title: 'Backlog', permanent: true }, { id: 'dashboard', type: 'dashboard', title: 'Dashboard', permanent: true }], activeTabId: 'backlog' } },
         }), i18n],
       },
     })
-    expect(wrapper.text()).toContain('Stat')
+    expect(wrapper.text()).toContain('Dashboard')
   })
 
   it('renders terminal tab titles', () => {
@@ -45,7 +45,7 @@ describe('TabBar', () => {
           initialState: { tabs: {
             tabs: [
               { id: 'backlog', type: 'backlog', title: 'Backlog', permanent: true },
-              { id: 'stat', type: 'stat', title: 'Stat', permanent: true },
+              { id: 'dashboard', type: 'dashboard', title: 'Dashboard', permanent: true },
               { id: 'term-1', type: 'terminal', title: 'review-master', permanent: false, agentName: 'review-master' },
             ],
             activeTabId: 'term-1',
@@ -77,9 +77,9 @@ describe('TabBar', () => {
       initialState: { tabs: {
         tabs: [
           { id: 'backlog', type: 'backlog', title: 'Backlog', permanent: true },
-          { id: 'stat', type: 'stat', title: 'Stat', permanent: true },
+          { id: 'dashboard', type: 'dashboard', title: 'Dashboard', permanent: true },
         ],
-        activeTabId: 'stat',
+        activeTabId: 'dashboard',
       } },
     })
     const wrapper = shallowMount(TabBar, {

@@ -19,7 +19,7 @@ describe('AgentLogsView', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db', agents: [] },
-            tabs: { activeTabId: 'stat' },
+            tabs: { activeTabId: 'dashboard' },
           },
         }), i18n],
         stubs: { TokenStatsView: true },
@@ -39,7 +39,7 @@ describe('AgentLogsView', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db', agents: [] },
-            tabs: { activeTabId: 'stat' },
+            tabs: { activeTabId: 'dashboard' },
           },
         }), i18n],
         stubs: { TokenStatsView: true },
@@ -61,7 +61,7 @@ describe('AgentLogsView', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db', agents: [] },
-            tabs: { activeTabId: 'stat' },
+            tabs: { activeTabId: 'dashboard' },
           },
         }), i18n],
         stubs: { TokenStatsView: true },
