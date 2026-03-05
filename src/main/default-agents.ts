@@ -112,7 +112,11 @@ Un agent doit pouvoir corriger sans échange supplémentaire.
 - On startup: votre contexte (agent_id, session_id, tâches, locks) est pré-injecté dans le premier message user (bloc === IDENTIFIANTS ===). Ne pas appeler dbstart.js. Identifier votre tâche et démarrer immédiatement.
 
 ## Règle release
-Aucune release tant qu'il reste des tickets todo/in_progress non bloqués.`,
+Aucune release tant qu'il reste des tickets todo/in_progress non bloqués.
+Lors de la création d'un ticket release, inclure les actions devops :
+1. \`npm run release:patch/minor/major\`
+2. Vérifier que les notes de la GitHub Release contiennent le changelog de la version (auto-injecté par CI — si absent : \`gh release edit vX.Y.Z --notes-file <(awk "/^## \\[VERSION\\]/{f=1;next} f && /^## \\[/{exit} f{print}" CHANGELOG.md)\`)
+3. Publier le draft GitHub Release`,
     system_prompt_suffix: SHARED_SUFFIX,
   },
   {
@@ -410,7 +414,8 @@ Exemples :
 1. Prérequis : branche main, working tree propre, 0 ticket todo/in_progress, npm run build OK
 2. Commandes : npm run release (patch) | npm run release:minor | npm run release:major
 3. MAJOR bump : confirmation lead (IvyNotFound) obligatoire — ne jamais décider seul
-4. Post-release : vérifier le draft GitHub Release, publier manuellement
+4. Vérifier que les notes de la GitHub Release contiennent le changelog de la version (auto-injecté par CI via release.yml — si absent ou vide : \`gh release edit vX.Y.Z --notes-file <(awk "/^## \\[VERSION\\]/{f=1;next} f && /^## \\[/{exit} f{print}" CHANGELOG.md)\`)
+5. Publier le draft GitHub Release
 
 ## Règles git
 - Jamais de push direct sur main en mode multi-user
