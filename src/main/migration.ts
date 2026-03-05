@@ -22,3 +22,5 @@ export {
   runMakeCommentAgentNotNullMigration,
   runAddAgentGroupsMigration,
 } from './migrations/v3-relations'
+
+export { runAddParentIdToAgentGroupsMigration } from './migrations/v4-agent-groups-hierarchy'

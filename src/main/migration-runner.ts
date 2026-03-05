@@ -2,6 +2,7 @@ import type { Database } from 'sql.js'
 import { runDropCommentaireColumnMigration, runRemoveThinkingModeBudgetTokensMigration, runAddTokensToSessionsMigration, runAddConvIdToSessionsMigration, runAddPriorityMigration } from './migrations/v1-columns'
 import { runTaskStatutI18nMigration, runTaskStatusMigration, runSessionStatutI18nMigration } from './migrations/v2-statuts'
 import { runMakeAgentAssigneNotNullMigration, runMakeCommentAgentNotNullMigration, runAddAgentGroupsMigration } from './migrations/v3-relations'
+import { runAddParentIdToAgentGroupsMigration } from './migrations/v4-agent-groups-hierarchy'
 
 // ── Numbered migration system ────────────────────────────────────────────────
 
@@ -183,6 +184,9 @@ const migrations: Migration[] = [
       )
       WHERE system_prompt_suffix LIKE '%scripts/dbstart.js%'`)
   } },
+
+  // v24: add parent_id to agent_groups for hierarchy support (T945)
+  { version: 24, up: (db) => { runAddParentIdToAgentGroupsMigration(db) } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */

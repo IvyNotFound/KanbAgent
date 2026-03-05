@@ -23,7 +23,7 @@ export function registerAgentGroupHandlers(): void {
       assertDbPathAllowed(dbPath)
       const groups = await queryLive(
         dbPath,
-        `SELECT ag.id, ag.name, ag.sort_order, ag.created_at,
+        `SELECT ag.id, ag.name, ag.sort_order, ag.parent_id, ag.created_at,
                 json_group_array(
                   CASE WHEN agm.agent_id IS NOT NULL
                     THEN json_object('agent_id', agm.agent_id, 'sort_order', agm.sort_order)
@@ -35,11 +35,12 @@ export function registerAgentGroupHandlers(): void {
          GROUP BY ag.id
          ORDER BY ag.sort_order`,
         []
-      ) as Array<{ id: number; name: string; sort_order: number; created_at: string; members_json: string }>
+      ) as Array<{ id: number; name: string; sort_order: number; parent_id: number | null; created_at: string; members_json: string }>
       const result = groups.map(g => ({
         id: g.id,
         name: g.name,
         sort_order: g.sort_order,
+        parent_id: g.parent_id ?? null,
         created_at: g.created_at,
         members: (JSON.parse(g.members_json) as Array<{ agent_id: number; sort_order: number } | null>)
           .filter((m): m is { agent_id: number; sort_order: number } => m !== null)
@@ -55,23 +56,28 @@ export function registerAgentGroupHandlers(): void {
    * Create a new agent group.
    * @param dbPath - Registered DB path
    * @param name - Group name
-   * @returns {{ success: boolean, group?: { id, name, sort_order, created_at }, error?: string }}
+   * @param parentId - Optional parent group ID for nesting (null = root)
+   * @returns {{ success: boolean, group?: { id, name, sort_order, parent_id, created_at }, error?: string }}
    */
-  ipcMain.handle('agent-groups:create', async (_event, dbPath: string, name: string) => {
+  ipcMain.handle('agent-groups:create', async (_event, dbPath: string, name: string, parentId?: number | null) => {
     if (!name || typeof name !== 'string' || !name.trim()) {
       return { success: false, error: 'Invalid group name' }
     }
+    if (parentId !== undefined && parentId !== null && (typeof parentId !== 'number' || !Number.isInteger(parentId))) {
+      return { success: false, error: 'Invalid parentId' }
+    }
     try {
       assertDbPathAllowed(dbPath)
-      const group = await writeDb<{ id: number; name: string; sort_order: number; created_at: string }>(dbPath, (db) => {
+      const resolvedParentId = parentId ?? null
+      const group = await writeDb<{ id: number; name: string; sort_order: number; parent_id: number | null; created_at: string }>(dbPath, (db) => {
         db.run(
-          `INSERT INTO agent_groups (name, sort_order)
-           VALUES (?, (SELECT COALESCE(MAX(sort_order) + 1, 0) FROM agent_groups))`,
-          [name.trim()]
+          `INSERT INTO agent_groups (name, sort_order, parent_id)
+           VALUES (?, (SELECT COALESCE(MAX(sort_order) + 1, 0) FROM agent_groups), ?)`,
+          [name.trim(), resolvedParentId]
         )
-        const rows = db.exec(`SELECT id, name, sort_order, created_at FROM agent_groups WHERE id = last_insert_rowid()`)
+        const rows = db.exec(`SELECT id, name, sort_order, parent_id, created_at FROM agent_groups WHERE id = last_insert_rowid()`)
         const row = rows[0].values[0]
-        return { id: row[0] as number, name: row[1] as string, sort_order: row[2] as number, created_at: row[3] as string }
+        return { id: row[0] as number, name: row[1] as string, sort_order: row[2] as number, parent_id: row[3] as number | null, created_at: row[4] as string }
       })
       return { success: true, group }
     } catch (err) {
@@ -184,6 +190,52 @@ export function registerAgentGroupHandlers(): void {
       return { success: true }
     } catch (err) {
       console.error('[IPC agent-groups:reorder]', err)
+      return { success: false, error: String(err) }
+    }
+  })
+
+  /**
+   * Set the parent of a group (move it in the hierarchy).
+   * Rejects if the operation would create a cycle (group cannot be its own ancestor).
+   * @param dbPath - Registered DB path
+   * @param groupId - Group to reparent
+   * @param parentId - New parent group ID, or null to make it a root group
+   * @returns {{ success: boolean, error?: string }}
+   */
+  ipcMain.handle('agent-groups:setParent', async (_event, dbPath: string, groupId: number, parentId: number | null) => {
+    if (typeof groupId !== 'number' || !Number.isInteger(groupId)) {
+      return { success: false, error: 'Invalid groupId' }
+    }
+    if (parentId !== null && (typeof parentId !== 'number' || !Number.isInteger(parentId))) {
+      return { success: false, error: 'Invalid parentId' }
+    }
+    if (parentId === groupId) {
+      return { success: false, error: 'A group cannot be its own parent' }
+    }
+    try {
+      assertDbPathAllowed(dbPath)
+      const result = await writeDb<{ success: boolean; error?: string }>(dbPath, (db) => {
+        // Cycle detection: walk up the ancestor chain of parentId
+        if (parentId !== null) {
+          let current: number | null = parentId
+          const visited = new Set<number>()
+          while (current !== null) {
+            if (current === groupId) {
+              return { success: false, error: 'Cycle detected: groupId is already an ancestor of parentId' }
+            }
+            if (visited.has(current)) break // safety: break on unexpected cycle in existing data
+            visited.add(current)
+            const rows = db.exec(`SELECT parent_id FROM agent_groups WHERE id = ${current}`)
+            if (rows.length === 0 || rows[0].values.length === 0) break
+            current = rows[0].values[0][0] as number | null
+          }
+        }
+        db.run('UPDATE agent_groups SET parent_id = ? WHERE id = ?', [parentId, groupId])
+        return { success: true }
+      })
+      return result
+    } catch (err) {
+      console.error('[IPC agent-groups:setParent]', err)
       return { success: false, error: String(err) }
     }
   })

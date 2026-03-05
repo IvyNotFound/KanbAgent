@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { runTaskStatusMigration, runAddPriorityMigration, runTaskStatutI18nMigration, runAddConvIdToSessionsMigration, runAddTokensToSessionsMigration, runRemoveThinkingModeBudgetTokensMigration, runDropCommentaireColumnMigration, runSessionStatutI18nMigration, runMakeAgentAssigneNotNullMigration, runMakeCommentAgentNotNullMigration, runAddAgentGroupsMigration } from './migration'
+import { runTaskStatusMigration, runAddPriorityMigration, runTaskStatutI18nMigration, runAddConvIdToSessionsMigration, runAddTokensToSessionsMigration, runRemoveThinkingModeBudgetTokensMigration, runDropCommentaireColumnMigration, runSessionStatutI18nMigration, runMakeAgentAssigneNotNullMigration, runMakeCommentAgentNotNullMigration, runAddAgentGroupsMigration, runAddParentIdToAgentGroupsMigration } from './migration'
 
 // Mock Database for sql.js
 interface MockDatabase {
@@ -1273,5 +1273,54 @@ describe('runAddAgentGroupsMigration', () => {
     const calls = (mockDb.run as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0] as string)
     expect(calls.some(s => s.includes('ROLLBACK TO SAVEPOINT add_agent_groups'))).toBe(true)
     expect(calls.some(s => s.includes('RELEASE SAVEPOINT add_agent_groups'))).toBe(true)
+  })
+})
+
+// ── runAddParentIdToAgentGroupsMigration ───────────────────────────────────────
+
+function createParentIdMockDb(existingCols: string[]): { exec: ReturnType<typeof vi.fn>; run: ReturnType<typeof vi.fn> } {
+  const pragmaValues = existingCols.map((name, idx) => [idx, name, 'TEXT', 0, null, 0])
+  return {
+    exec: vi.fn().mockImplementation((query: string) => {
+      if (query.includes('PRAGMA table_info(agent_groups)')) {
+        if (existingCols.length === 0) return []
+        return [{ columns: ['cid', 'name', 'type', 'notnull', 'dflt_value', 'pk'], values: pragmaValues }]
+      }
+      return []
+    }),
+    run: vi.fn(),
+  }
+}
+
+describe('runAddParentIdToAgentGroupsMigration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns false when agent_groups table does not exist', () => {
+    const mockDb = createParentIdMockDb([])
+    const result = runAddParentIdToAgentGroupsMigration(mockDb as unknown as import('sql.js').Database)
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('returns false when parent_id column already exists (idempotent)', () => {
+    const mockDb = createParentIdMockDb(['id', 'name', 'sort_order', 'created_at', 'parent_id'])
+    const result = runAddParentIdToAgentGroupsMigration(mockDb as unknown as import('sql.js').Database)
+    expect(result).toBe(false)
+    expect(mockDb.run).not.toHaveBeenCalled()
+  })
+
+  it('returns true and runs ALTER TABLE when parent_id is missing', () => {
+    const mockDb = createParentIdMockDb(['id', 'name', 'sort_order', 'created_at'])
+    const result = runAddParentIdToAgentGroupsMigration(mockDb as unknown as import('sql.js').Database)
+    expect(result).toBe(true)
+    expect(mockDb.run).toHaveBeenCalledWith('ALTER TABLE agent_groups ADD COLUMN parent_id INTEGER')
+  })
+
+  it('runs exactly one db.run call (no extra ops)', () => {
+    const mockDb = createParentIdMockDb(['id', 'name', 'sort_order', 'created_at'])
+    runAddParentIdToAgentGroupsMigration(mockDb as unknown as import('sql.js').Database)
+    expect(mockDb.run).toHaveBeenCalledTimes(1)
   })
 })

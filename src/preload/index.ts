@@ -208,11 +208,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('session:collectTokens', dbPath, agentName),
 
   // T556: Agent groups CRUD
-  agentGroupsList: (dbPath: string): Promise<{ success: boolean; groups: Array<{ id: number; name: string; sort_order: number; created_at: string; members: Array<{ agent_id: number; sort_order: number }> }>; error?: string }> =>
+  agentGroupsList: (dbPath: string): Promise<{ success: boolean; groups: Array<{ id: number; name: string; sort_order: number; parent_id: number | null; created_at: string; members: Array<{ agent_id: number; sort_order: number }> }>; error?: string }> =>
     ipcRenderer.invoke('agent-groups:list', dbPath),
 
-  agentGroupsCreate: (dbPath: string, name: string): Promise<{ success: boolean; group?: { id: number; name: string; sort_order: number; created_at: string }; error?: string }> =>
-    ipcRenderer.invoke('agent-groups:create', dbPath, name),
+  agentGroupsCreate: (dbPath: string, name: string, parentId?: number | null): Promise<{ success: boolean; group?: { id: number; name: string; sort_order: number; parent_id: number | null; created_at: string }; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:create', dbPath, name, parentId),
 
   agentGroupsRename: (dbPath: string, groupId: number, name: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('agent-groups:rename', dbPath, groupId, name),
@@ -225,6 +225,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   agentGroupsReorder: (dbPath: string, groupIds: number[]): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('agent-groups:reorder', dbPath, groupIds),
+
+  // T945: Set parent group for hierarchy
+  agentGroupsSetParent: (dbPath: string, groupId: number, parentId: number | null): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('agent-groups:setParent', dbPath, groupId, parentId),
 
   // ── Agent stream (ADR-009: child_process.spawn + stdio:pipe) ──────────────
 
