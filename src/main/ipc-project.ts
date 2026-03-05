@@ -184,6 +184,7 @@ export function registerProjectHandlers(): void {
   /**
    * Create a new project.db with full schema and default agents.
    * @param projectPath - Absolute path to the project root
+   * @param lang - Agent prompt language ('fr' | 'en'). Defaults to 'fr' when omitted or unrecognised.
    * @returns {{ success: boolean, dbPath: string, error?: string }}
    */
   ipcMain.handle('create-project-db', async (_event, projectPath: string, lang?: string) => {

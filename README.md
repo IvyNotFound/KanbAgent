@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.20.1-blue)
+![Version](https://img.shields.io/badge/version-0.21.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches Claude sessions in external WSL terminals, and monitors activity in real time.
@@ -232,14 +232,18 @@ agent-viewer/
 
 ### Default Agents (`default-agents.ts`)
 
-The file `src/main/default-agents.ts` exports two agent collections:
+The file `src/main/default-agents.ts` exports:
 
-| Export | Usage |
-|--------|-------|
-| `GENERIC_AGENTS` | Generic agents inserted into **every new project** created via `create-project-db`. No agent-viewer-specific references — designed to work on any project using the agent workflow. |
-| `DEFAULT_AGENTS` | Agents specific to the **agent-viewer** project (dev-front-vuejs, dev-back-electron, arch, secu, perf, etc.). Inserted only during this project's initialization. |
+| Export | Type | Usage |
+|--------|------|-------|
+| `AgentLanguage` | `'fr' \| 'en'` | Language discriminant for agent prompt selection. |
+| `GENERIC_AGENTS` | `DefaultAgent[]` | FR generic agents inserted into **every new project** created via `create-project-db`. No agent-viewer-specific references — designed to work on any project using the agent workflow. |
+| `GENERIC_AGENTS_BY_LANG` | `Record<AgentLanguage, DefaultAgent[]>` | Language-indexed map of generic agents. Passed a `lang` parameter (`'fr'` or `'en'`) from the `create-project-db` IPC handler to seed agents in the user's preferred language. |
+| `DEFAULT_AGENTS` | `DefaultAgent[]` | Agents specific to the **agent-viewer** project (dev-front-vuejs, dev-back-electron, arch, secu, perf, etc.). Inserted only during this project's initialization. |
 
-When creating a new project via the `create-project-db` script, only `GENERIC_AGENTS` are seeded: `dev`, `review`, `test`, `doc`, `task-creator`. This gives a fully functional project immediately, without agents tied to the agent-viewer scope.
+When creating a new project via the `create-project-db` IPC handler, `GENERIC_AGENTS_BY_LANG[lang]` is used: `dev`, `review`, `test`, `doc`, `task-creator` — in FR or EN depending on the user's language setting. This gives a fully functional project immediately, without agents tied to the agent-viewer scope.
+
+> ⚠️ **Sync rule**: `GENERIC_AGENTS_BY_LANG` contains parallel FR and EN versions of the same agents. Whenever a prompt changes in one language, the other language must be updated too.
 
 ### CLI Scripts
 
