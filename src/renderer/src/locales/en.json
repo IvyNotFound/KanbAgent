@@ -7,7 +7,12 @@
     "save": "Save",
     "saving": "Saving…",
     "confirm": "Confirm",
-    "noProject": "No project open"
+    "noProject": "No project open",
+    "retry": "Retry",
+    "unknownError": "Unknown error",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "edit": "Edit"
   },
   "board": {
     "backlog": "Backlog",
@@ -90,7 +95,15 @@
   },
   "orgchart": {
     "tabLabel": "OrgChart",
-    "noAgents": "No agents found"
+    "noAgents": "No agents found",
+    "status": {
+      "active": "active",
+      "blocked": "blocked",
+      "todo": "todo",
+      "todoAssigned": "todo assigned",
+      "idle": "idle",
+      "inactive": "inactive"
+    }
   },
   "logs": {
     "allAgents": "All agents",
@@ -322,7 +335,26 @@
     "deleting": "Deleting…",
     "newPerimetre": "New perimeter",
     "newPerimetrePlaceholder": "perimeter-name",
-    "noPerimetre": "No existing perimeter"
+    "noPerimetre": "No existing perimeter",
+    "updated": "Agent \"{name}\" updated",
+    "created": "Agent \"{name}\" created",
+    "createdWithClaude": "Agent \"{name}\" created and added to CLAUDE.md",
+    "createError": "Agent already exists",
+    "saveError": "Error saving",
+    "duplicated": "Agent duplicated: {name}",
+    "duplicateError": "Duplication error",
+    "systemPromptPlaceholder": "Agent-specific instructions...",
+    "systemPromptSuffixPlaceholder": "Suffix injected at end of system prompt (agent protocol, etc.)...",
+    "typeDesc": {
+      "dev": "Implementation / new features",
+      "test": "Tests & coverage",
+      "ux": "User interface & experience",
+      "review": "Local perimeter audit",
+      "reviewMaster": "Global audit, cross-perimeter arbitration",
+      "arch": "ADR, interfaces, structural decisions",
+      "devops": "Commits, branches, CI/CD, releases",
+      "doc": "README, CONTRIBUTING, JSDoc"
+    }
   },
   "dbSelector": {
     "tagline": "View your Claude agents' tasks in real time.",
@@ -386,7 +418,17 @@
     "ungrouped": "Ungrouped",
     "deleteGroup": "Delete group",
     "deleteGroupDetail": "Agents will be moved to \"Ungrouped\". Continue?",
-    "dropAgentHere": "Drop here"
+    "dropAgentHere": "Drop here",
+    "goToSession": "Go to session",
+    "openSession": "Open session",
+    "newSession": "New session",
+    "viewLogs": "View logs",
+    "viewTasks": "View tasks",
+    "duplicateAgent": "Duplicate agent",
+    "move": "Move",
+    "addPerimeterTitle": "Add perimeter",
+    "addPerimeterMessage": "A Claude Code session will be launched to create the new perimeter.",
+    "addPerimeterDetail": "The arch agent will guide the configuration. Continue?"
   },
   "quality": {
     "title": "Agent quality",
@@ -403,6 +445,19 @@
     "colRate": "Rate",
     "colBar": "Bar"
   },
+  "sessionActivityChart": {
+    "title": "Session activity — last 14 days",
+    "loading": "Loading…",
+    "empty": "No sessions in the last 14 days",
+    "maxPerDay": "max {n} / day"
+  },
+  "successRateChart": {
+    "title": "Session success rate — last 14 days",
+    "avg": "avg. {rate}%",
+    "loading": "Loading…",
+    "empty": "No completed sessions in the last 14 days",
+    "noTerminalSessions": "no terminal sessions"
+  },
   "timeline": {
     "title": "Timeline",
     "period": "Period",
@@ -416,5 +471,51 @@
     "tooltipEnd": "End",
     "tooltipDuration": "Duration",
     "tooltipEffort": "Effort"
+  },
+  "heatmap": {
+    "all": "All",
+    "agentLabel": "Agent:",
+    "tooltip": "{date} — {n} task | {date} — {n} tasks",
+    "less": "Less",
+    "more": "More",
+    "maxPerDay": "max: {n} task / day | max: {n} tasks / day"
+  },
+  "hooks": {
+    "noEvents": "No events",
+    "inProgress": "in progress…",
+    "filters": "Filters:"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "gitError": "Error reading git repository"
+  },
+  "project": {
+    "activeTitle": "Active project",
+    "changeProject": "Change project",
+    "close": "Close project",
+    "closeTitle": "Close project",
+    "closeMessage": "{n} open WSL session | {n} open WSL sessions",
+    "closeDetail": "All WSL sessions will be closed. Continue?"
+  },
+  "stream": {
+    "tool": "tool",
+    "error": "✗ Error",
+    "result": "✓ Result",
+    "lines": "lines"
+  },
+  "task": {
+    "running": "Task in progress",
+    "subtasks": "{n} subtask | {n} subtasks",
+    "staleFor": "In progress for {duration}",
+    "staleLong": "In progress for a long time"
+  },
+  "update": {
+    "available": "Update {version} available",
+    "download": "Download",
+    "downloading": "Downloading…",
+    "ready": "Update {version} ready to install",
+    "restart": "Restart now",
+    "later": "Later",
+    "error": "Error: {msg}"
   }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 
 interface DayRow {
@@ -18,6 +19,7 @@ interface DayBars {
 
 const CHART_H = 144 // px
 
+const { t } = useI18n()
 const store = useTasksStore()
 const rows = ref<DayRow[]>([])
 const loading = ref(false)
@@ -88,17 +90,17 @@ function tooltip(day: DayBars): string {
 <template>
   <div class="flex flex-col h-full min-h-0 px-4 py-3 gap-3 overflow-y-auto">
     <h3 class="shrink-0 text-xs font-semibold text-content-secondary">
-      Activité des sessions — 14 derniers jours
+      {{ t('sessionActivityChart.title') }}
     </h3>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center flex-1">
-      <span class="text-xs text-content-faint animate-pulse">Chargement…</span>
+      <span class="text-xs text-content-faint animate-pulse">{{ t('sessionActivityChart.loading') }}</span>
     </div>
 
     <!-- Empty state -->
     <div v-else-if="isEmpty" class="flex items-center justify-center flex-1">
-      <p class="text-xs text-content-faint italic">Aucune session sur les 14 derniers jours</p>
+      <p class="text-xs text-content-faint italic">{{ t('sessionActivityChart.empty') }}</p>
     </div>
 
     <!-- Chart -->
@@ -162,7 +164,7 @@ function tooltip(day: DayBars): string {
           <span class="text-[11px] text-content-faint">Blocked</span>
         </div>
         <span class="ml-auto text-[11px] text-content-faint font-mono">
-          max {{ maxTotal }} / jour
+          {{ t('sessionActivityChart.maxPerDay', { n: maxTotal }) }}
         </span>
       </div>
     </template>

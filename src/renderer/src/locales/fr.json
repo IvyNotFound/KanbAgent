@@ -7,7 +7,12 @@
     "save": "Enregistrer",
     "saving": "Enregistrement…",
     "confirm": "Confirmer",
-    "noProject": "Aucun projet ouvert"
+    "noProject": "Aucun projet ouvert",
+    "retry": "Réessayer",
+    "unknownError": "Erreur inconnue",
+    "expand": "Développer",
+    "collapse": "Réduire",
+    "edit": "Modifier"
   },
   "board": {
     "backlog": "Backlog",
@@ -90,7 +95,15 @@
   },
   "orgchart": {
     "tabLabel": "OrgChart",
-    "noAgents": "Aucun agent trouvé"
+    "noAgents": "Aucun agent trouvé",
+    "status": {
+      "active": "actif",
+      "blocked": "bloqué",
+      "todo": "todo",
+      "todoAssigned": "todo assigné",
+      "idle": "idle",
+      "inactive": "inactif"
+    }
   },
   "logs": {
     "allAgents": "Tous les agents",
@@ -322,7 +335,26 @@
     "deleting": "Suppression…",
     "newPerimetre": "Nouveau périmètre",
     "newPerimetrePlaceholder": "nom-du-perimetre",
-    "noPerimetre": "Aucun périmètre existant"
+    "noPerimetre": "Aucun périmètre existant",
+    "updated": "Agent « {name} » mis à jour",
+    "created": "Agent « {name} » créé",
+    "createdWithClaude": "Agent « {name} » créé et ajouté dans CLAUDE.md",
+    "createError": "L'agent existe déjà",
+    "saveError": "Erreur lors de la sauvegarde",
+    "duplicated": "Agent dupliqué : {name}",
+    "duplicateError": "Erreur lors de la duplication",
+    "systemPromptPlaceholder": "Instructions spécifiques à cet agent...",
+    "systemPromptSuffixPlaceholder": "Suffixe injecté en fin de system prompt (protocole agent, etc.)...",
+    "typeDesc": {
+      "dev": "Implémentation / nouvelles fonctionnalités",
+      "test": "Tests & couverture",
+      "ux": "Interface utilisateur & expérience",
+      "review": "Audit local de périmètre",
+      "reviewMaster": "Audit global, arbitrage inter-périmètres",
+      "arch": "ADR, interfaces, décisions structurantes",
+      "devops": "Commits, branches, CI/CD, releases",
+      "doc": "README, CONTRIBUTING, JSDoc"
+    }
   },
   "dbSelector": {
     "tagline": "Visualisez les tâches de vos agents Claude en temps réel.",
@@ -386,7 +418,17 @@
     "ungrouped": "Non groupés",
     "deleteGroup": "Supprimer le groupe",
     "deleteGroupDetail": "Les agents seront déplacés dans « Non groupés ». Continuer ?",
-    "dropAgentHere": "Déposer ici"
+    "dropAgentHere": "Déposer ici",
+    "goToSession": "Aller à la session",
+    "openSession": "Ouvrir session",
+    "newSession": "Nouvelle session",
+    "viewLogs": "Voir les logs",
+    "viewTasks": "Voir ses tâches",
+    "duplicateAgent": "Dupliquer l'agent",
+    "move": "Déplacer",
+    "addPerimeterTitle": "Ajouter un périmètre",
+    "addPerimeterMessage": "Une session Claude Code va être lancée pour créer le nouveau périmètre.",
+    "addPerimeterDetail": "L'agent arch guidera la configuration. Continuer ?"
   },
   "quality": {
     "title": "Qualité agents",
@@ -403,6 +445,19 @@
     "colRate": "Taux",
     "colBar": "Barre"
   },
+  "sessionActivityChart": {
+    "title": "Activité des sessions — 14 derniers jours",
+    "loading": "Chargement…",
+    "empty": "Aucune session sur les 14 derniers jours",
+    "maxPerDay": "max {n} / jour"
+  },
+  "successRateChart": {
+    "title": "Taux de succès sessions — 14 derniers jours",
+    "avg": "moy. {rate}%",
+    "loading": "Chargement…",
+    "empty": "Aucune session terminée sur les 14 derniers jours",
+    "noTerminalSessions": "aucune session terminale"
+  },
   "timeline": {
     "title": "Timeline",
     "period": "Période",
@@ -416,5 +471,51 @@
     "tooltipEnd": "Fin",
     "tooltipDuration": "Durée",
     "tooltipEffort": "Effort"
+  },
+  "heatmap": {
+    "all": "Tous",
+    "agentLabel": "Agent :",
+    "tooltip": "{date} — {n} tâche | {date} — {n} tâches",
+    "less": "Moins",
+    "more": "Plus",
+    "maxPerDay": "max : {n} tâche / jour | max : {n} tâches / jour"
+  },
+  "hooks": {
+    "noEvents": "Aucun événement",
+    "inProgress": "en cours…",
+    "filters": "Filtres :"
+  },
+  "dashboard": {
+    "overview": "Vue d'ensemble",
+    "gitError": "Erreur lors de la lecture du dépôt git"
+  },
+  "project": {
+    "activeTitle": "Projet actif",
+    "changeProject": "Changer de projet",
+    "close": "Fermer le projet",
+    "closeTitle": "Fermer le projet",
+    "closeMessage": "{n} session WSL ouverte | {n} sessions WSL ouvertes",
+    "closeDetail": "Toutes les sessions WSL seront fermées. Continuer ?"
+  },
+  "stream": {
+    "tool": "outil",
+    "error": "✗ Erreur",
+    "result": "✓ Résultat",
+    "lines": "lignes"
+  },
+  "task": {
+    "running": "Tâche en cours d'exécution",
+    "subtasks": "{n} sous-tâche | {n} sous-tâches",
+    "staleFor": "En cours depuis {duration}",
+    "staleLong": "En cours depuis longtemps"
+  },
+  "update": {
+    "available": "Mise à jour {version} disponible",
+    "download": "Télécharger",
+    "downloading": "Téléchargement en cours…",
+    "ready": "Mise à jour {version} prête à installer",
+    "restart": "Redémarrer maintenant",
+    "later": "Plus tard",
+    "error": "Erreur : {msg}"
   }
 }

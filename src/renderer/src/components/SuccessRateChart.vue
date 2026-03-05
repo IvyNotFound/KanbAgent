@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 
 interface DayRow {
@@ -17,6 +18,7 @@ interface DayRate {
 
 const CHART_H = 144 // px
 
+const { t } = useI18n()
 const store = useTasksStore()
 const rows = ref<DayRow[]>([])
 const loading = ref(false)
@@ -103,7 +105,7 @@ function shortDate(dateStr: string): string {
 }
 
 function tooltip(day: DayRate): string {
-  if (day.rate === null) return `${day.date} — aucune session terminale`
+  if (day.rate === null) return `${day.date} — ${t('successRateChart.noTerminalSessions')}`
   return `${day.date} — ${day.rate}% (${day.completed} completed, ${day.blocked} blocked)`
 }
 </script>
@@ -113,25 +115,25 @@ function tooltip(day: DayRate): string {
     <!-- Title with avg rate -->
     <div class="shrink-0 flex items-center gap-2">
       <h3 class="text-xs font-semibold text-content-secondary">
-        Taux de succès sessions — 14 derniers jours
+        {{ t('successRateChart.title') }}
       </h3>
       <span
         v-if="avgRate !== null"
         class="text-xs font-bold font-mono"
         :class="avgBadgeColor(avgRate)"
       >
-        moy. {{ avgRate }}%
+        {{ t('successRateChart.avg', { rate: avgRate }) }}
       </span>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center flex-1">
-      <span class="text-xs text-content-faint animate-pulse">Chargement…</span>
+      <span class="text-xs text-content-faint animate-pulse">{{ t('successRateChart.loading') }}</span>
     </div>
 
     <!-- Empty state -->
     <div v-else-if="isEmpty" class="flex items-center justify-center flex-1">
-      <p class="text-xs text-content-faint italic">Aucune session terminée sur les 14 derniers jours</p>
+      <p class="text-xs text-content-faint italic">{{ t('successRateChart.empty') }}</p>
     </div>
 
     <!-- Chart -->
