@@ -126,7 +126,15 @@ const PRIORITY_LABEL: Record<string, string> = {
   >
     <!-- Top row: title + effort/priority -->
     <div class="flex items-start justify-between gap-2 mb-2">
-      <p class="text-sm text-content-primary font-medium leading-snug flex-1 min-w-0 break-words">{{ task.titre }}</p>
+      <div class="flex items-start gap-1.5 flex-1 min-w-0">
+        <span
+          v-if="task.statut === 'in_progress'"
+          class="mt-1 shrink-0 w-2 h-2 rounded-full bg-cyan-400 animate-pulse"
+          title="Tâche en cours d'exécution"
+          aria-label="Tâche en cours d'exécution"
+        />
+        <p class="text-sm text-content-primary font-medium leading-snug min-w-0 break-words">{{ task.titre }}</p>
+      </div>
       <div class="flex items-center gap-1 shrink-0">
         <span
           v-if="isStaleTask"
