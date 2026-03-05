@@ -18,8 +18,8 @@
 
 import http from 'http'
 import os from 'os'
-import { join } from 'path'
-import { readFile, writeFile } from 'fs/promises'
+import { join, dirname } from 'path'
+import { readFile, writeFile, mkdir } from 'fs/promises'
 import { readFileSync, writeFileSync } from 'fs'
 import { randomBytes } from 'crypto'
 import { execSync } from 'child_process'
@@ -27,6 +27,16 @@ import type { BrowserWindow } from 'electron'
 import { writeDb } from './db'
 
 export const HOOK_PORT = 27182
+
+/** Hook routes managed by agent-viewer — bootstrapped automatically if absent. */
+const HOOK_ROUTES: Record<string, string> = {
+  Stop:          '/hooks/stop',
+  SessionStart:  '/hooks/session-start',
+  SubagentStart: '/hooks/subagent-start',
+  SubagentStop:  '/hooks/subagent-stop',
+  PreToolUse:    '/hooks/pre-tool-use',
+  PostToolUse:   '/hooks/post-tool-use',
+}
 
 // ── Hook auth secret ──────────────────────────────────────────────────────────
 
@@ -106,41 +116,72 @@ export function detectWslGatewayIp(): string | null {
  * Inject the detected Windows/WSL gateway IP into all http-type hook URLs
  * in a Claude Code settings.json file.
  *
- * Replaces the host part of any `http://<host>/hooks/*` URL with
- * `http://<ip>:HOOK_PORT/hooks/*`, enabling Claude Code in WSL to reach
- * the hook server running on Windows in NAT mode.
- * Best-effort: silently skips if the file is missing or unreadable.
+ * - If settings.json is missing: creates it with all 6 managed hooks.
+ * - If settings.json exists but `hooks` is absent: adds the full hooks structure.
+ * - If `hooks` is present but some events are missing: adds only the missing ones.
+ * - Always updates the host of existing http hook URLs to `ip:HOOK_PORT`.
+ * - Non-http hooks (type: command) are never modified.
+ *
+ * Best-effort: silently skips on unrecoverable errors.
  */
 export async function injectHookUrls(settingsPath: string, ip: string): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let settings: any = {}
+  let fileExists = true
+
   try {
     const raw = await readFile(settingsPath, 'utf-8')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const settings = JSON.parse(raw) as any
-    if (!settings.hooks) return
-    let changed = false
-    for (const eventGroups of Object.values(settings.hooks as Record<string, unknown[]>)) {
-      for (const group of eventGroups as Array<{ hooks?: Array<{ type: string; url?: string }> }>) {
-        if (!Array.isArray(group.hooks)) continue
-        for (const hook of group.hooks) {
-          if (hook.type === 'http' && hook.url) {
-            const updated = hook.url.replace(
-              /^http:\/\/[^/]+\/hooks\//,
-              `http://${ip}:${HOOK_PORT}/hooks/`
-            )
-            if (updated !== hook.url) {
-              hook.url = updated
-              changed = true
-            }
+    settings = JSON.parse(raw)
+  } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException)?.code
+    if (code === 'ENOENT') {
+      fileExists = false
+    } else {
+      console.warn('[hookServer] Could not inject hook URLs into settings:', err)
+      return
+    }
+  }
+
+  let changed = false
+
+  // Bootstrap hooks object if absent
+  if (!settings.hooks) {
+    settings.hooks = {}
+  }
+
+  // Add managed hook events that are missing
+  for (const [event, path] of Object.entries(HOOK_ROUTES)) {
+    if (!settings.hooks[event]) {
+      settings.hooks[event] = [{ hooks: [{ type: 'http', url: `http://${ip}:${HOOK_PORT}${path}` }] }]
+      changed = true
+    }
+  }
+
+  // Update host in existing http hook URLs
+  for (const eventGroups of Object.values(settings.hooks as Record<string, unknown[]>)) {
+    for (const group of eventGroups as Array<{ hooks?: Array<{ type: string; url?: string }> }>) {
+      if (!Array.isArray(group.hooks)) continue
+      for (const hook of group.hooks) {
+        if (hook.type === 'http' && hook.url) {
+          const updated = hook.url.replace(
+            /^http:\/\/[^/]+\/hooks\//,
+            `http://${ip}:${HOOK_PORT}/hooks/`
+          )
+          if (updated !== hook.url) {
+            hook.url = updated
+            changed = true
           }
         }
       }
     }
-    if (changed) {
-      await writeFile(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
-      console.log('[hookServer] Updated hook URLs with WSL gateway IP:', ip)
+  }
+
+  if (changed || !fileExists) {
+    if (!fileExists) {
+      await mkdir(dirname(settingsPath), { recursive: true })
     }
-  } catch (err) {
-    console.warn('[hookServer] Could not inject hook URLs into settings:', err)
+    await writeFile(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+    console.log('[hookServer] Updated hook URLs with WSL gateway IP:', ip, '| created:', !fileExists)
   }
 }
 

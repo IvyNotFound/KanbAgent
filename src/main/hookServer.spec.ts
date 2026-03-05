@@ -5,10 +5,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls, injectIntoWslDistros } from './hookServer'
 
 // ── Hoisted mocks (must be declared before vi.mock, which are hoisted) ────────
-const { mockNetworkInterfaces, mockReadFile, mockWriteFile, mockExecSync } = vi.hoisted(() => ({
+const { mockNetworkInterfaces, mockReadFile, mockWriteFile, mockMkdir, mockExecSync } = vi.hoisted(() => ({
   mockNetworkInterfaces: vi.fn(),
   mockReadFile: vi.fn(),
   mockWriteFile: vi.fn().mockResolvedValue(undefined),
+  mockMkdir: vi.fn().mockResolvedValue(undefined),
   mockExecSync: vi.fn(),
 }))
 
@@ -23,9 +24,10 @@ vi.mock('child_process', () => ({
 }))
 
 vi.mock('fs/promises', () => ({
-  default: { readFile: mockReadFile, writeFile: mockWriteFile },
+  default: { readFile: mockReadFile, writeFile: mockWriteFile, mkdir: mockMkdir },
   readFile: mockReadFile,
   writeFile: mockWriteFile,
+  mkdir: mockMkdir,
 }))
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -237,16 +239,30 @@ describe('injectHookUrls', () => {
     )
   })
 
-  it('does nothing when settings has no hooks', async () => {
+  it('creates all 6 hooks when settings.json exists but has no hooks section', async () => {
     mockReadFile.mockResolvedValue('{}')
     await injectHookUrls('/fake/settings.json', '172.17.240.1')
-    expect(mockWriteFile).not.toHaveBeenCalled()
+    expect(mockWriteFile).toHaveBeenCalledOnce()
+    const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
+    expect(written.hooks).toBeDefined()
+    expect(Object.keys(written.hooks)).toHaveLength(6)
+    expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
+    expect(written.hooks.SessionStart[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/session-start')
+    expect(written.hooks.SubagentStart[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/subagent-start')
+    expect(written.hooks.SubagentStop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/subagent-stop')
+    expect(written.hooks.PreToolUse[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/pre-tool-use')
+    expect(written.hooks.PostToolUse[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/post-tool-use')
   })
 
-  it('does not write when URLs already match', async () => {
+  it('does not write when all 6 hooks are present and URLs already match', async () => {
     const settings = {
       hooks: {
-        Stop: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
+        Stop:          [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
+        SessionStart:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
+        SubagentStart: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
+        SubagentStop:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-stop' }] }],
+        PreToolUse:    [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
+        PostToolUse:   [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
@@ -254,15 +270,54 @@ describe('injectHookUrls', () => {
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 
-  it('skips non-http hooks', async () => {
+  it('skips non-http hooks and does not overwrite Stop when all 6 events present', async () => {
     const settings = {
       hooks: {
         Stop: [{ hooks: [{ type: 'command', command: 'echo done' }] }],
+        SessionStart:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
+        SubagentStart: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
+        SubagentStop:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-stop' }] }],
+        PreToolUse:    [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
+        PostToolUse:   [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
     await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    // All 6 events present, no URL changes needed → no write
     expect(mockWriteFile).not.toHaveBeenCalled()
+  })
+
+  it('creates settings.json with all 6 hooks when file does not exist (ENOENT)', async () => {
+    const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    mockReadFile.mockRejectedValue(err)
+
+    await injectHookUrls('/fake/.claude/settings.json', '172.17.240.1')
+
+    expect(mockMkdir).toHaveBeenCalledWith('/fake/.claude', { recursive: true })
+    expect(mockWriteFile).toHaveBeenCalledOnce()
+    const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
+    expect(Object.keys(written.hooks)).toHaveLength(6)
+    expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
+  })
+
+  it('adds only missing hook events when hooks section is partially populated', async () => {
+    const settings = {
+      hooks: {
+        Stop: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
+        // SessionStart, SubagentStart, SubagentStop, PreToolUse, PostToolUse missing
+      },
+    }
+    mockReadFile.mockResolvedValue(JSON.stringify(settings))
+
+    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+
+    expect(mockWriteFile).toHaveBeenCalledOnce()
+    const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
+    expect(Object.keys(written.hooks)).toHaveLength(6)
+    // Existing Stop hook preserved
+    expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
+    // Missing hooks created
+    expect(written.hooks.SessionStart[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/session-start')
   })
 })
 
