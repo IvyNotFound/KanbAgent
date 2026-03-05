@@ -92,6 +92,16 @@ describe('composables/useLaunchSession', () => {
       expect(tabsStore.tabs.some(t => t.type === 'terminal' && t.agentName === 'dev-front-vuejs')).toBe(true)
     })
 
+    it('should call buildAgentPrompt with only the task ID (no duplicated prefix)', async () => {
+      const task = makeTask({ id: 42, statut: 'todo' })
+      const agent = makeAgent({ name: 'dev-front-vuejs' })
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(agent, task)
+
+      expect(api.buildAgentPrompt).toHaveBeenCalledWith('dev-front-vuejs', 'T42', '/test/db', 10)
+    })
+
     it('should return error when dbPath is null', async () => {
       const tasksStore = useTasksStore()
       ;(tasksStore as unknown as { dbPath: string | null }).dbPath = null

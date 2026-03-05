@@ -70,7 +70,7 @@ export function useLaunchSession() {
       const promptResult = await window.electronAPI.getAgentSystemPrompt(dbPath, agent.id)
       if (!promptResult.success) return 'error'
 
-      const userPrompt = `Tâches: #${task.id}[${task.statut}] -> Tu es agent ${agent.name}. Va voir ton prompt system dans la table agent.`
+      const userPrompt = `T${task.id}`
       const finalPrompt = await window.electronAPI.buildAgentPrompt(
         agent.name,
         userPrompt,
