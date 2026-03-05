@@ -217,7 +217,13 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     // notBefore could be after ended_at → poll never fires, only fallback triggers.
     // The 5min window is acceptable: scheduleClose only runs when an agent has an
     // active terminal AND its task just transitioned to done.
-    const notBefore = new Date(Date.now() - SCHEDULE_LOOKBACK_MS).toISOString()
+    //
+    // T906: SQLite stores ended_at via CURRENT_TIMESTAMP as "YYYY-MM-DD HH:MM:SS"
+    // (space separator, no T, no milliseconds, no Z). JS .toISOString() produces
+    // "YYYY-MM-DDTHH:MM:SS.mmmZ". Lexicographic comparison: space (ASCII 32) < T
+    // (ASCII 84), so ISO strings always compare GREATER than SQLite timestamps,
+    // making ended_at >= notBefore always false. Fix: use SQLite datetime format.
+    const notBefore = new Date(Date.now() - SCHEDULE_LOOKBACK_MS).toISOString().replace('T', ' ').slice(0, 19)
 
     // Immediate poll — guarded to prevent N parallel polls when watch fires rapidly
     if (!pendingImmediatePolls.has(agentName)) {

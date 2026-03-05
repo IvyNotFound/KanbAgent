@@ -507,11 +507,14 @@ describe('composables/useAutoLaunch', () => {
       expect(capturedParams.length).toBeGreaterThan(0)
       const [agentIdParam, notBeforeParam] = capturedParams[0] as [number, string]
       expect(agentIdParam).toBe(20)
-      // T835: notBefore includes 5min lookback — must be a valid ISO string before scheduling
+      // T906: notBefore must use SQLite datetime format "YYYY-MM-DD HH:MM:SS" (space, no T/Z)
+      // because SQLite CURRENT_TIMESTAMP stores ended_at in that format. ISO strings would
+      // compare GREATER than SQLite timestamps (space ASCII 32 < T ASCII 84), making
+      // ended_at >= notBefore always false and the poll never finding completed sessions.
       expect(typeof notBeforeParam).toBe('string')
-      expect(new Date(notBeforeParam).toISOString()).toBe(notBeforeParam)
+      expect(notBeforeParam).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
       const LOOKBACK_MS = 5 * 60 * 1000
-      const notBeforeTime = new Date(notBeforeParam).getTime()
+      const notBeforeTime = new Date(notBeforeParam.replace(' ', 'T') + 'Z').getTime()
       const scheduleTime = new Date(beforeSchedule).getTime()
       // notBefore = now - 5min: within the lookback window
       expect(notBeforeTime).toBeLessThanOrEqual(scheduleTime + 100)
