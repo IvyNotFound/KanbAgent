@@ -293,7 +293,7 @@ onUnmounted(() => {
     <div v-if="agentName" class="h-0.5 w-full shrink-0" :style="{ background: accentFg }" />
 
     <!-- Messages scroll area -->
-    <div ref="scrollContainer" class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+    <div ref="scrollContainer" class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3">
       <div
         v-if="displayEvents.length === 0 && !isStreaming"
         class="flex items-center justify-center h-full text-content-subtle text-xs"
@@ -344,7 +344,7 @@ onUnmounted(() => {
           data-testid="block-user"
         >
           <div
-            class="bg-surface-secondary border rounded-lg px-4 py-3 max-w-[80%] whitespace-pre-wrap text-sm text-content-primary leading-relaxed select-text cursor-text"
+            class="bg-surface-secondary border rounded-lg px-4 py-3 max-w-[80%] whitespace-pre-wrap break-words text-sm text-content-primary leading-relaxed select-text cursor-text"
             :style="{ borderColor: accentBorder }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
