@@ -6,7 +6,6 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { usePolledData } from '@renderer/composables/usePolledData'
 import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
 import { parseUtcDate } from '@renderer/utils/parseDate'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import CostStatsSection from '@renderer/components/CostStatsSection.vue'
 
 interface AgentTokenRow {
