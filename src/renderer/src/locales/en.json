@@ -187,7 +187,17 @@
     "about": "About",
     "aboutDesc": "Desktop interface to view Claude agent tasks",
     "database": "Database",
-    "fermer": "Close"
+    "fermer": "Close",
+    "exportData": "Data",
+    "exportBtn": "Export data (ZIP)",
+    "exportConfirmTitle": "Export data",
+    "exportConfirmMsg": "Export project.db to ~/Downloads?",
+    "exportConfirmWarn": "This file contains all your agents/tasks/sessions data.",
+    "exportCancel": "Cancel",
+    "exportConfirm": "Export",
+    "exporting": "Exporting...",
+    "exportSuccess": "Export downloaded: {path}",
+    "exportError": "Export error: {error}"
   },
   "setup": {
     "missingDb": "Missing database",

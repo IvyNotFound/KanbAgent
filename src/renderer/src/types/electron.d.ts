@@ -80,6 +80,8 @@ declare global {
       onHookEvent(callback: (event: { event: string; payload: unknown; ts: number }) => void): () => void
       /** Quality stats per agent: total tasks, rejections, rejection rate (T770). Heuristic-based. */
       tasksQualityStats(dbPath: string, params?: { perimetre?: string | null }): Promise<{ success: boolean; rows: unknown[]; error?: string }>
+      /** Export project.db as ZIP to ~/Downloads (T771/T833). */
+      projectExportZip(dbPath: string): Promise<{ success: boolean; path?: string; error?: string }>
     }
   }
 }

@@ -74,6 +74,8 @@ const mockElectronAPI = {
   agentGroupsDelete: vi.fn().mockResolvedValue({ success: true }),
   agentGroupsSetMember: vi.fn().mockResolvedValue({ success: true }),
   agentGroupsReorder: vi.fn().mockResolvedValue({ success: true }),
+  sessionsStatsCost: vi.fn().mockResolvedValue({ success: true, rows: [] }),
+  projectExportZip: vi.fn().mockResolvedValue({ success: true, path: '/home/user/Downloads/project.zip' }),
 }
 
 // Make it available globally (jsdom only — node environment has no window)

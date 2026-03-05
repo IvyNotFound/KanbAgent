@@ -187,7 +187,17 @@
     "about": "À propos",
     "aboutDesc": "Interface desktop pour visualiser les tâches des agents Claude",
     "database": "Base de données",
-    "fermer": "Fermer"
+    "fermer": "Fermer",
+    "exportData": "Données",
+    "exportBtn": "Exporter les données (ZIP)",
+    "exportConfirmTitle": "Exporter les données",
+    "exportConfirmMsg": "Exporter project.db dans ~/Downloads ?",
+    "exportConfirmWarn": "Ce fichier contient toutes vos données agents/tâches/sessions.",
+    "exportCancel": "Annuler",
+    "exportConfirm": "Exporter",
+    "exporting": "Export en cours...",
+    "exportSuccess": "Export téléchargé : {path}",
+    "exportError": "Erreur export : {error}"
   },
   "setup": {
     "missingDb": "Base de données manquante",

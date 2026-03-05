@@ -10,6 +10,28 @@ const emit = defineEmits<{
   (e: 'toast', message: string, type: 'success' | 'error'): void
 }>()
 
+// Export ZIP state
+const showExportConfirm = ref(false)
+const exporting = ref(false)
+
+async function exportZip() {
+  if (!store.dbPath) return
+  exporting.value = true
+  showExportConfirm.value = false
+  try {
+    const result = await window.electronAPI.projectExportZip(store.dbPath)
+    if (result.success && result.path) {
+      emit('toast', t('settings.exportSuccess', { path: result.path }), 'success')
+    } else {
+      emit('toast', t('settings.exportError', { error: result.error ?? 'Erreur inconnue' }), 'error')
+    }
+  } catch (err) {
+    emit('toast', t('settings.exportError', { error: String(err) }), 'error')
+  } finally {
+    exporting.value = false
+  }
+}
+
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
 const store = useTasksStore()
@@ -397,12 +419,55 @@ function handleKeydown(e: KeyboardEvent) {
             </p>
           </div>
 
+          <!-- Export ZIP -->
+          <div v-if="store.dbPath" class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
+            <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.exportData') }}</p>
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
+              :disabled="exporting"
+              @click="showExportConfirm = true"
+            >
+              <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+              </svg>
+              {{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}
+            </button>
+          </div>
+
           <!-- DB Info -->
           <div v-if="store.dbPath" class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
             <p class="text-[11px] text-content-subtle mb-2 uppercase tracking-wider">{{ t('settings.database') }}</p>
             <p class="text-sm text-content-muted font-mono break-all">{{ store.dbPath }}</p>
           </div>
 
+        </div>
+      </div>
+    </div>
+
+    <!-- Export confirmation dialog -->
+    <div
+      v-if="showExportConfirm"
+      class="fixed inset-0 z-60 flex items-center justify-center bg-black/60"
+      @click.self="showExportConfirm = false"
+    >
+      <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl w-[360px] p-5">
+        <h3 class="text-base font-semibold text-content-primary mb-2">{{ t('settings.exportConfirmTitle') }}</h3>
+        <p class="text-sm text-content-muted mb-2">{{ t('settings.exportConfirmMsg') }}</p>
+        <p class="text-xs text-amber-400 mb-4">{{ t('settings.exportConfirmWarn') }}</p>
+        <div class="flex gap-2 justify-end">
+          <button
+            class="px-3 py-1.5 text-sm bg-surface-secondary hover:bg-surface-tertiary text-content-primary rounded-md transition-colors"
+            @click="showExportConfirm = false"
+          >
+            {{ t('settings.exportCancel') }}
+          </button>
+          <button
+            class="px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors"
+            @click="exportZip"
+          >
+            {{ t('settings.exportConfirm') }}
+          </button>
         </div>
       </div>
     </div>
