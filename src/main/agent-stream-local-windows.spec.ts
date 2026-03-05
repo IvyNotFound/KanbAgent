@@ -89,19 +89,21 @@ describe('buildWindowsPS1Script', () => {
     expect(script).toContain('--input-format')
   })
 
-  it('ends with & claude @a invocation', () => {
+  it('ends with & $claudeExe @a invocation (T939)', () => {
     const script = buildWindowsPS1Script({})
-    expect(script.trimEnd()).toMatch(/^& claude @a$/m)
+    expect(script.trimEnd()).toMatch(/^\& \$claudeExe @a$/m)
   })
 
-  it('uses custom claudeCommand when valid', () => {
+  it('uses custom claudeCommand in Get-Command when valid (T939)', () => {
     const script = buildWindowsPS1Script({ claudeCommand: 'claude-dev' })
-    expect(script.trimEnd()).toMatch(/^& claude-dev @a$/m)
+    expect(script).toContain('Get-Command claude-dev')
+    expect(script.trimEnd()).toMatch(/^\& \$claudeExe @a$/m)
   })
 
-  it('falls back to claude for invalid claudeCommand', () => {
+  it('falls back to claude in Get-Command for invalid claudeCommand (T939)', () => {
     const script = buildWindowsPS1Script({ claudeCommand: 'rm -rf /' })
-    expect(script.trimEnd()).toMatch(/^& claude @a$/m)
+    expect(script).toContain('Get-Command claude')
+    expect(script.trimEnd()).toMatch(/^\& \$claudeExe @a$/m)
   })
 
   it('adds --resume with convId', () => {
@@ -141,15 +143,32 @@ describe('buildWindowsPS1Script', () => {
     expect(script).not.toContain('--append-system-prompt')
   })
 
-  it('includes PATH enrichment with .local\\bin and npm (T933)', () => {
+  it('includes expanded PATH enrichment (T933/T939)', () => {
     const script = buildWindowsPS1Script({})
     expect(script).toContain('$env:PATH')
     expect(script).toContain('.local\\bin')
     expect(script).toContain('\\npm')
-    // PATH line must appear before the & claude @a invocation
+    // New T939 candidates
+    expect(script).toContain('Programs\\claude')
+    expect(script).toContain('AnthropicClaude\\bin')
+    // PATH line must appear before the $claudeExe invocation
     const pathIdx = script.indexOf('$env:PATH')
-    const invokeIdx = script.indexOf('& claude @a')
+    const invokeIdx = script.indexOf('& $claudeExe @a')
     expect(pathIdx).toBeLessThan(invokeIdx)
+  })
+
+  it('uses Get-Command for dynamic claude discovery (T939)', () => {
+    const script = buildWindowsPS1Script({})
+    expect(script).toContain('Get-Command claude -ErrorAction SilentlyContinue')
+    expect(script).toContain('Select-Object -ExpandProperty Source')
+    expect(script).toContain('$claudeExe')
+  })
+
+  it('emits error and exits when claude not found (T939)', () => {
+    const script = buildWindowsPS1Script({})
+    expect(script).toContain('if (-not $claudeExe)')
+    expect(script).toContain("Write-Output")
+    expect(script).toContain('exit 1')
   })
 })
 
@@ -235,7 +254,7 @@ describe('agent:create — local Windows spawn (T916)', () => {
     const content = String(ps1Call![1])
     expect(content).toContain('--output-format')
     expect(content).toContain('stream-json')
-    expect(content).toContain('& claude @a')
+    expect(content).toContain('& $claudeExe @a')
   })
 
   it('uses cwd (projectPath) instead of --cd for local Windows', async () => {

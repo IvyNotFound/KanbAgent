@@ -148,10 +148,19 @@ export function buildWindowsPS1Script(opts: {
 
   const lines: string[] = [
     '$ErrorActionPreference = \'Continue\'',
-    // Enrich PATH with common Claude install locations (T933):
+    // Enrich PATH with all known Claude install locations (T933/T939):
     // Electron launched from Start Menu may not inherit full user PATH (HKCU\Environment).
-    // Adding .local\bin (Anthropic uv install) and npm (npm -g install) ensures claude.exe is found.
-    '$env:PATH = "$env:USERPROFILE\\.local\\bin;" + "$env:APPDATA\\npm;" + $env:PATH',
+    // Covers: uv/Anthropic (.local\bin), npm global (APPDATA\npm + LOCALAPPDATA\npm),
+    //         Electron installer (LOCALAPPDATA\Programs\claude), Winget (LOCALAPPDATA\Programs),
+    //         AnthropicClaude direct installer (LOCALAPPDATA\AnthropicClaude\bin).
+    '$env:PATH = "$env:USERPROFILE\\.local\\bin;$env:APPDATA\\npm;$env:LOCALAPPDATA\\Programs\\claude;$env:LOCALAPPDATA\\AnthropicClaude\\bin;$env:LOCALAPPDATA\\npm;$env:LOCALAPPDATA\\Programs;" + $env:PATH',
+    // Dynamic discovery: resolve the actual exe path via Get-Command (PS 5.1+).
+    // Works with .cmd wrappers (npm) and direct .exe — Get-Command returns Source path.
+    `$claudeExe = Get-Command ${cmd} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source`,
+    `if (-not $claudeExe) {`,
+    `  Write-Output "ERROR: '${cmd}' not found in PATH: $env:PATH"`,
+    `  exit 1`,
+    `}`,
     '$a = [System.Collections.Generic.List[string]]::new()',
     '$a.Add(\'-p\')',
     '$a.Add(\'--verbose\')',
@@ -184,7 +193,7 @@ export function buildWindowsPS1Script(opts: {
     lines.push('$a.Add(\'--dangerously-skip-permissions\')')
   }
 
-  lines.push(`& ${cmd} @a`)
+  lines.push(`& $claudeExe @a`)
 
   return lines.join('\n')
 }
