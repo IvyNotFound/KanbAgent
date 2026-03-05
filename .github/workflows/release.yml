@@ -93,10 +93,17 @@ jobs:
         with:
           path: artifacts
 
+      - name: Extract changelog for this version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md > /tmp/release_notes.md
+          cat /tmp/release_notes.md
+
       - name: Create draft GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
+          body_path: /tmp/release_notes.md
           files: |
             artifacts/installer-windows/*.exe
             artifacts/installer-mac/*.dmg
