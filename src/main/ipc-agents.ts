@@ -347,17 +347,21 @@ export function registerAgentHandlers(): void {
       let updated = 0
       const errors: string[] = []
 
-      // Collect all valid updates first (parseConvTokens is async/CPU-bound — keep per-session error handling)
+      // Collect all valid updates — run up to 5 parseConvTokens in parallel to reduce latency
+      const SYNC_CONCURRENCY = 5
       const updates: Array<{ id: number; counts: Awaited<ReturnType<typeof parseConvTokens>> }> = []
-      for (const row of rows) {
-        try {
-          const counts = await parseConvTokens(resolvedProjectPath, row.claude_conv_id)
-          if (counts.tokensIn > 0 || counts.tokensOut > 0) {
-            updates.push({ id: row.id, counts })
+      for (let i = 0; i < rows.length; i += SYNC_CONCURRENCY) {
+        const batch = rows.slice(i, i + SYNC_CONCURRENCY)
+        await Promise.all(batch.map(async (row) => {
+          try {
+            const counts = await parseConvTokens(resolvedProjectPath, row.claude_conv_id)
+            if (counts.tokensIn > 0 || counts.tokensOut > 0) {
+              updates.push({ id: row.id, counts })
+            }
+          } catch (err) {
+            errors.push(`session ${row.id}: ${String(err)}`)
           }
-        } catch (err) {
-          errors.push(`session ${row.id}: ${String(err)}`)
-        }
+        }))
       }
 
       // Single writeDb call for all updates — O(1) instead of O(N) full-file rewrites
