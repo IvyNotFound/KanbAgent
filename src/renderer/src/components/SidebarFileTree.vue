@@ -17,6 +17,7 @@ const tabsStore = useTabsStore()
 const sidebarTree = ref<FileNode[]>([])
 const sidebarOpenDirs = ref(new Set<string>())
 const loadingSidebarTree = ref(false)
+const loadingDirs = ref(new Set<string>())
 
 async function loadSidebarTree(): Promise<void> {
   if (!props.projectPath) return
@@ -26,21 +27,34 @@ async function loadSidebarTree(): Promise<void> {
   try {
     const nodes = (await window.electronAPI.fsListDir(props.projectPath, props.projectPath)) as FileNode[]
     sidebarTree.value = nodes
-    const dirs = new Set<string>()
-    for (const n of nodes) {
-      if (n.isDir) dirs.add(n.path)
-    }
-    sidebarOpenDirs.value = dirs
   } finally {
     loadingSidebarTree.value = false
   }
 }
 
-function toggleSidebarDir(path: string): void {
+async function toggleSidebarDir(path: string, node: FileNode): Promise<void> {
+  if (loadingDirs.value.has(path)) return
   const next = new Set(sidebarOpenDirs.value)
-  if (next.has(path)) next.delete(path)
-  else next.add(path)
-  sidebarOpenDirs.value = next
+  if (next.has(path)) {
+    next.delete(path)
+    sidebarOpenDirs.value = next
+  } else {
+    if (node.children === undefined && props.projectPath) {
+      const loading = new Set(loadingDirs.value)
+      loading.add(path)
+      loadingDirs.value = loading
+      try {
+        const children = await window.electronAPI.fsListDir(node.path, props.projectPath)
+        node.children = children as FileNode[]
+      } finally {
+        const loading2 = new Set(loadingDirs.value)
+        loading2.delete(path)
+        loadingDirs.value = loading2
+      }
+    }
+    next.add(path)
+    sidebarOpenDirs.value = next
+  }
 }
 
 function isDirOpen(path: string): boolean {
@@ -85,7 +99,7 @@ defineExpose({ loadSidebarTree })
       class="w-full flex items-center gap-2 py-1 text-left text-sm transition-colors rounded pr-2 group"
       :class="item.node.isDir ? 'hover:bg-surface-secondary/70' : 'hover:bg-surface-secondary/50'"
       :style="{ paddingLeft: `${6 + item.depth * 12}px` }"
-      @click="item.node.isDir ? toggleSidebarDir(item.node.path) : tabsStore.openFile(item.node.path, item.node.name)"
+      @click="item.node.isDir ? toggleSidebarDir(item.node.path, item.node) : tabsStore.openFile(item.node.path, item.node.name)"
     >
       <!-- Icône dossier ouvert/fermé ou fichier -->
       <svg v-if="item.node.isDir && isDirOpen(item.node.path)" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 shrink-0 text-amber-400">

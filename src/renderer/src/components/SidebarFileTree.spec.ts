@@ -99,13 +99,77 @@ describe('SidebarFileTree', () => {
     })
     await (wrapper.vm as { loadSidebarTree: () => Promise<void> }).loadSidebarTree()
     await flushPromises()
-    // The dir button should exist
+    // The dir button should exist; dirs start closed after loadSidebarTree
     const dirBtn = wrapper.find('button')
     expect(dirBtn.exists()).toBe(true)
-    // Click to close the dir (it should be open initially after loadSidebarTree)
-    await dirBtn.trigger('click')
-    // After toggling, child should not be visible
     expect(wrapper.text()).not.toContain('main.ts')
+    // Click to open the dir (children already set — no IPC call)
+    await dirBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('main.ts')
+    // Click to close
+    await dirBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('main.ts')
+    wrapper.unmount()
+  })
+
+  it('lazy-loads children when clicking a dir with children === undefined', async () => {
+    const topNodes: FileNode[] = [
+      makeFileNode({ name: 'src', path: '/project/src', isDir: true, children: undefined }),
+    ]
+    const childNodes: FileNode[] = [
+      makeFileNode({ name: 'index.ts', path: '/project/src/index.ts', isDir: false }),
+    ]
+    const fsListDir = mockElectronAPI.fsListDir as ReturnType<typeof vi.fn>
+    // onMounted call returns topNodes; lazy load call returns childNodes
+    fsListDir.mockResolvedValueOnce(topNodes).mockResolvedValueOnce(childNodes)
+    const wrapper = shallowMount(SidebarFileTree, {
+      props: { projectPath: '/project' },
+      global: { plugins: [createTestingPinia(), i18n] },
+    })
+    await flushPromises()
+    // src dir is present but closed (children undefined — not opened by loadSidebarTree)
+    expect(wrapper.text()).toContain('src')
+    expect(wrapper.text()).not.toContain('index.ts')
+    // Click the dir button to trigger lazy load
+    const dirBtn = wrapper.find('button')
+    await dirBtn.trigger('click')
+    await flushPromises()
+    // fsListDir should have been called for /project/src
+    expect(fsListDir).toHaveBeenCalledWith('/project/src', '/project')
+    // Children should now be visible
+    expect(wrapper.text()).toContain('index.ts')
+    wrapper.unmount()
+  })
+
+  it('does not re-fetch children on re-open when already loaded', async () => {
+    const topNodes: FileNode[] = [
+      makeFileNode({ name: 'src', path: '/project/src', isDir: true, children: undefined }),
+    ]
+    const childNodes: FileNode[] = [
+      makeFileNode({ name: 'index.ts', path: '/project/src/index.ts', isDir: false }),
+    ]
+    const fsListDir = mockElectronAPI.fsListDir as ReturnType<typeof vi.fn>
+    // onMounted call returns topNodes; lazy load call returns childNodes
+    fsListDir.mockResolvedValueOnce(topNodes).mockResolvedValueOnce(childNodes)
+    const wrapper = shallowMount(SidebarFileTree, {
+      props: { projectPath: '/project' },
+      global: { plugins: [createTestingPinia(), i18n] },
+    })
+    await flushPromises()
+    const dirBtn = wrapper.find('button')
+    // Open (lazy load)
+    await dirBtn.trigger('click')
+    await flushPromises()
+    // Close
+    await dirBtn.trigger('click')
+    await flushPromises()
+    // Re-open — should NOT call fsListDir again
+    fsListDir.mockClear()
+    await dirBtn.trigger('click')
+    await flushPromises()
+    expect(fsListDir).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
