@@ -324,4 +324,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   tasksQualityStats: (dbPath: string, params?: { perimetre?: string | null }): Promise<{ success: boolean; rows: unknown[]; error?: string }> =>
     ipcRenderer.invoke('tasks:qualityStats', dbPath, params),
 
+  /** Scan project source files and return LOC stats per language. */
+  telemetryScan: (projectPath: string): Promise<{ languages: Array<{ name: string; color: string; files: number; lines: number; percent: number }>; totalFiles: number; totalLines: number; scannedAt: string }> =>
+    ipcRenderer.invoke('telemetry:scan', projectPath),
+
 })

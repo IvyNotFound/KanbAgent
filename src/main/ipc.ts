@@ -19,6 +19,7 @@ import { registerFsHandlers } from './ipc-fs'
 import { registerAgentHandlers } from './ipc-agents'
 import { registerSettingsHandlers } from './ipc-settings'
 import { registerWslHandlers } from './ipc-wsl'
+import { registerTelemetryHandlers } from './ipc-telemetry'
 
 /** Register all IPC handlers by delegating to domain-specific modules. */
 export function registerIpcHandlers(): void {
@@ -31,4 +32,5 @@ export function registerIpcHandlers(): void {
   registerAgentHandlers()
   registerSettingsHandlers()
   registerWslHandlers()
+  registerTelemetryHandlers()
 }
