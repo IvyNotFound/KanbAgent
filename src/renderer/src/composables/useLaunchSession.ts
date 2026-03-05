@@ -9,6 +9,7 @@
 
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useSettingsStore } from '@renderer/stores/settings'
 import type { Task, Agent } from '@renderer/types'
 
 export const MAX_AGENT_SESSIONS = 3
@@ -65,7 +66,16 @@ export function useLaunchSession() {
       const instances = await getCachedClaudeInstances()
       if (instances.length === 0) return 'error'
 
-      const instance = instances.find(i => i.isDefault) ?? instances[0]
+      const settingsStore = useSettingsStore()
+      const storedDistro = settingsStore.defaultClaudeInstance
+      const instance = (storedDistro ? instances.find(i => i.distro === storedDistro) : undefined)
+        ?? instances.find(i => i.isDefault)
+        ?? instances[0]
+
+      const storedProfile = settingsStore.defaultClaudeProfile
+      const cmdProfile = (storedProfile && storedProfile !== 'claude' && instance.profiles.includes(storedProfile))
+        ? storedProfile
+        : undefined
 
       const promptResult = await window.electronAPI.getAgentSystemPrompt(dbPath, agent.id)
       if (!promptResult.success) return 'error'
@@ -91,7 +101,7 @@ export function useLaunchSession() {
         finalPrompt,
         fullSystemPrompt,
         thinkingMode,
-        undefined,
+        cmdProfile,
         undefined,
         false,
         task.id
@@ -117,7 +127,16 @@ export function useLaunchSession() {
       const instances = await getCachedClaudeInstances()
       if (instances.length === 0) return false
 
-      const instance = instances.find(i => i.isDefault) ?? instances[0]
+      const settingsStore = useSettingsStore()
+      const storedDistro = settingsStore.defaultClaudeInstance
+      const instance = (storedDistro ? instances.find(i => i.distro === storedDistro) : undefined)
+        ?? instances.find(i => i.isDefault)
+        ?? instances[0]
+
+      const storedProfile = settingsStore.defaultClaudeProfile
+      const cmdProfile = (storedProfile && storedProfile !== 'claude' && instance.profiles.includes(storedProfile))
+        ? storedProfile
+        : undefined
 
       const promptResult = await window.electronAPI.getAgentSystemPrompt(dbPath, agent.id)
       if (!promptResult.success) return false
@@ -146,7 +165,7 @@ export function useLaunchSession() {
         finalPrompt,
         fullSystemPrompt,
         thinkingMode,
-        undefined,
+        cmdProfile,
         undefined,
         false
       )

@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useLaunchSession } from './useLaunchSession'
-import { useTabsStore } from '@renderer/stores/tabs'
+import { useTabsStore, type Tab } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useSettingsStore } from '@renderer/stores/settings'
 import type { Task, Agent } from '@renderer/types'
 
 // Mock window.electronAPI
@@ -158,6 +159,82 @@ describe('composables/useLaunchSession', () => {
       const result = await launchAgentTerminal(makeAgent(), makeTask())
 
       expect(result).toBe('session-limit')
+    })
+
+    it('should use stored defaultClaudeInstance from settings (T879)', async () => {
+      api.getClaudeInstances.mockResolvedValueOnce([
+        { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, profiles: ['claude'] },
+        { distro: 'Debian', version: '2.1.58', isDefault: false, profiles: ['claude'] },
+      ])
+      const settingsStore = useSettingsStore()
+      settingsStore.setDefaultClaudeInstance('Debian')
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal') as Tab | undefined
+      expect(terminal?.wslDistro).toBe('Debian')
+    })
+
+    it('should fallback to isDefault instance when stored distro not found (T879)', async () => {
+      api.getClaudeInstances.mockResolvedValueOnce([
+        { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, profiles: ['claude'] },
+      ])
+      const settingsStore = useSettingsStore()
+      settingsStore.setDefaultClaudeInstance('NonExistent')
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal') as Tab | undefined
+      expect(terminal?.wslDistro).toBe('Ubuntu-24.04')
+    })
+
+    it('should use stored defaultClaudeProfile when available in instance profiles (T879)', async () => {
+      api.getClaudeInstances.mockResolvedValueOnce([
+        { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, profiles: ['claude', 'claude-work'] },
+      ])
+      const settingsStore = useSettingsStore()
+      settingsStore.setDefaultClaudeProfile('claude-work')
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal') as Tab | undefined
+      expect(terminal?.claudeCommand).toBe('claude-work')
+    })
+
+    it('should not set cmdProfile when defaultClaudeProfile is "claude" (T879)', async () => {
+      api.getClaudeInstances.mockResolvedValueOnce([
+        { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, profiles: ['claude', 'claude-work'] },
+      ])
+      const settingsStore = useSettingsStore()
+      settingsStore.setDefaultClaudeProfile('claude')
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal') as Tab | undefined
+      expect(terminal?.claudeCommand).toBeNull()
+    })
+
+    it('should not set cmdProfile when stored profile not in instance profiles (T879)', async () => {
+      api.getClaudeInstances.mockResolvedValueOnce([
+        { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, profiles: ['claude'] },
+      ])
+      const settingsStore = useSettingsStore()
+      settingsStore.setDefaultClaudeProfile('claude-nonexistent')
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal') as Tab | undefined
+      expect(terminal?.claudeCommand).toBeNull()
     })
   })
 
