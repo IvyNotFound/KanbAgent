@@ -76,6 +76,8 @@ export interface StreamEvent {
   error?: string
   /** Full stderr buffer captured on abnormal exit (error:exit only, T697) */
   stderr?: string
+  /** Stable monotonic ID assigned on push — used as collapse key (T823). */
+  _id?: number
 }
 
 // ── Props ────────────────────────────────────────────────────────────────────
@@ -99,8 +101,14 @@ const sessionId = ref<string | null>(null)
 /** Agent process ID returned by agentCreate — used for IPC send and kill. */
 const ptyId = ref<string | null>(null)
 
-/** Collapsible state keyed by "eventIndex-blockIndex". */
+/** Collapsible state keyed by "eventId-blockIndex" — eventId is stable (_id field, T823). */
 const collapsed = ref<Record<string, boolean>>({})
+
+/** Monotonic counter — assigns a unique stable _id to every event on push (T823). */
+let nextEventId = 1
+function assignEventId(e: StreamEvent): void {
+  if (e._id == null) e._id = nextEventId++
+}
 
 /**
  * True once the user has clicked "Stop" (T683).
@@ -198,10 +206,9 @@ async function sendMessage(): Promise<void> {
   // Reset so the Stop button re-appears on the new agent response (T683).
   agentStopped.value = false
   // Optimistic UI: display user bubble immediately
-  events.value.push({
-    type: 'user',
-    message: { role: 'user', content: [{ type: 'text', text: msgText }] }
-  })
+  const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text: msgText }] } }
+  assignEventId(userEvent)
+  events.value.push(userEvent)
   scrollToBottom()
 
   // ADR-009: agentSend writes a JSONL message to the agent's stdin — no respawn needed.
@@ -210,7 +217,9 @@ async function sendMessage(): Promise<void> {
       await window.electronAPI.agentSend(ptyId.value, msgText)
     }
   } catch (err) {
-    events.value.push({ type: 'system', subtype: 'error', session_id: `Erreur agent: ${String(err)}` })
+    const errEvent: StreamEvent = { type: 'system', subtype: 'error', session_id: `Erreur agent: ${String(err)}` }
+    assignEventId(errEvent)
+    events.value.push(errEvent)
   }
 }
 
@@ -237,12 +246,13 @@ function toggleCollapsed(key: string, defaultCollapsed = false): void {
   collapsed.value[key] = !(collapsed.value[key] ?? defaultCollapsed)
 }
 
-function collapseKey(eventIdx: number, blockIdx: number): string {
-  return `${eventIdx}-${blockIdx}`
+/** Key uses stable event._id so it survives sliding-window eviction (T823). */
+function collapseKey(eventId: number, blockIdx: number): string {
+  return `${eventId}-${blockIdx}`
 }
 
-function isCollapsed(eventIdx: number, blockIdx: number, defaultCollapsed = false): boolean {
-  const key = collapseKey(eventIdx, blockIdx)
+function isCollapsed(eventId: number, blockIdx: number, defaultCollapsed = false): boolean {
+  const key = collapseKey(eventId, blockIdx)
   return collapsed.value[key] ?? defaultCollapsed
 }
 
@@ -259,6 +269,8 @@ let flushPending = false
 function flushEvents(): void {
   if (pendingEvents.length === 0) { flushPending = false; return }
   for (const e of pendingEvents) {
+    // Assign stable ID before pushing — collapse keys rely on this (T823).
+    assignEventId(e)
     // Pre-render markdown HTML once on flush — avoids re-computing on every Vue render (T791)
     if (e.message?.content) {
       for (const block of e.message.content) {
@@ -276,13 +288,13 @@ function flushEvents(): void {
 
   // Sliding window: evict oldest events beyond MAX_EVENTS (T817).
   if (events.value.length > MAX_EVENTS) {
-    const evicted = events.value.length - MAX_EVENTS
-    events.value.splice(0, evicted)
-    // Purge collapsed keys for evicted event indices — they are now stale.
-    const minIdx = evicted
+    const evicted = events.value.splice(0, events.value.length - MAX_EVENTS)
+    // Purge collapsed keys for evicted events by stable ID — index-based purge was broken
+    // after splice because remaining event indices shifted (T823).
+    const evictedIds = new Set(evicted.map(e => e._id))
     for (const key of Object.keys(collapsed.value)) {
-      const eventIdx = parseInt(key.split('-')[0], 10)
-      if (eventIdx < minIdx) {
+      const eventId = parseInt(key.split('-')[0], 10)
+      if (evictedIds.has(eventId)) {
         delete collapsed.value[key]
       }
     }
@@ -361,22 +373,25 @@ onMounted(async () => {
     // Needed when the agent is killed via stopAgent() which produces no 'result' JSONL line.
     unsubExit = window.electronAPI.onAgentExit(id, (_exitCode: number | null) => {
       if (isStreaming.value) {
-        events.value.push({ type: 'result' })
+        const exitEvent: StreamEvent = { type: 'result' }
+        assignEventId(exitEvent)
+        events.value.push(exitEvent)
       }
     })
 
     // Push user bubble immediately, then send via stdin JSONL (no respawn needed).
     // agentSend is called AFTER all subscriptions are registered (T689 race condition fix).
     if (tab.autoSend) {
-      events.value.push({
-        type: 'user',
-        message: { role: 'user', content: [{ type: 'text', text: tab.autoSend }] }
-      })
+      const autoSendEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text: tab.autoSend }] } }
+      assignEventId(autoSendEvent)
+      events.value.push(autoSendEvent)
       scrollToBottom()
       await window.electronAPI.agentSend(id, tab.autoSend)
     }
   } catch (err) {
-    events.value.push({ type: 'system', subtype: 'init', session_id: `Erreur agent: ${String(err)}` })
+    const initErrEvent: StreamEvent = { type: 'system', subtype: 'init', session_id: `Erreur agent: ${String(err)}` }
+    assignEventId(initErrEvent)
+    events.value.push(initErrEvent)
   }
 
   // Attach link-click interceptor after DOM is ready (T753).
@@ -483,8 +498,8 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
       </div>
 
       <template
-        v-for="(event, eIdx) in displayEvents"
-        :key="eIdx"
+        v-for="event in displayEvents"
+        :key="event._id"
       >
         <!-- system:init -->
         <div
@@ -533,7 +548,7 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
         <template v-if="event.type === 'assistant' && event.message">
           <template
             v-for="(block, bIdx) in event.message.content"
-            :key="`${eIdx}-${bIdx}`"
+            :key="`${event._id}-${bIdx}`"
           >
             <!-- text block — rendu Markdown DOMPurify (T678), fond couleur agent (T720) -->
             <div
@@ -552,13 +567,13 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
             >
               <button
                 class="w-full flex items-center gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 transition-colors text-zinc-400 text-xs"
-                @click="toggleCollapsed(collapseKey(eIdx, bIdx), true)"
+                @click="toggleCollapsed(collapseKey(event._id!, bIdx), true)"
               >
-                <span class="transition-transform duration-200" :class="isCollapsed(eIdx, bIdx, true) ? '' : 'rotate-90'">▶</span>
+                <span class="transition-transform duration-200" :class="isCollapsed(event._id!, bIdx, true) ? '' : 'rotate-90'">▶</span>
                 <span>Thinking…</span>
               </button>
               <div
-                v-show="!isCollapsed(eIdx, bIdx, true)"
+                v-show="!isCollapsed(event._id!, bIdx, true)"
                 class="px-4 py-3 bg-zinc-900 text-zinc-400 text-xs whitespace-pre-wrap select-text cursor-text"
               >
                 {{ block.text }}
@@ -575,14 +590,14 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
               <button
                 class="w-full flex items-center gap-2 px-3 py-2 transition-colors text-xs"
                 :style="{ backgroundColor: accentBg, color: accentFg }"
-                @click="toggleCollapsed(collapseKey(eIdx, bIdx), true)"
+                @click="toggleCollapsed(collapseKey(event._id!, bIdx), true)"
               >
-                <span class="transition-transform duration-200" :class="isCollapsed(eIdx, bIdx, true) ? '' : 'rotate-90'">▶</span>
+                <span class="transition-transform duration-200" :class="isCollapsed(event._id!, bIdx, true) ? '' : 'rotate-90'">▶</span>
                 <span class="font-semibold">{{ block.name }}</span>
                 <span class="ml-auto opacity-60">outil</span>
               </button>
               <div
-                v-show="!isCollapsed(eIdx, bIdx, true)"
+                v-show="!isCollapsed(event._id!, bIdx, true)"
                 class="px-4 py-3 bg-zinc-900 text-xs text-zinc-300 overflow-x-auto select-text cursor-text"
               >
                 <pre class="whitespace-pre-wrap">{{ toolInputPreview(block.input) }}</pre>
@@ -599,20 +614,20 @@ function toolResultIsLong(content: StreamContentBlock['content']): boolean {
               <button
                 class="w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors"
                 :class="block.is_error ? 'text-red-400 hover:bg-red-900' : 'text-zinc-400 hover:bg-zinc-800'"
-                @click="toggleCollapsed(collapseKey(eIdx, bIdx), !block.is_error && toolResultIsLong(block.content))"
+                @click="toggleCollapsed(collapseKey(event._id!, bIdx), !block.is_error && toolResultIsLong(block.content))"
               >
                 <span
                   class="transition-transform duration-200"
-                  :class="isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content)) ? '' : 'rotate-90'"
+                  :class="isCollapsed(event._id!, bIdx, !block.is_error && toolResultIsLong(block.content)) ? '' : 'rotate-90'"
                 >▶</span>
                 <span>{{ block.is_error ? '✗ Erreur' : '✓ Résultat' }}</span>
                 <span
-                  v-if="isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content))"
+                  v-if="isCollapsed(event._id!, bIdx, !block.is_error && toolResultIsLong(block.content))"
                   class="ml-1 opacity-60"
                 >({{ toolResultText(block.content).split('\n').length }} lignes)</span>
               </button>
               <div
-                v-show="!isCollapsed(eIdx, bIdx, !block.is_error && toolResultIsLong(block.content))"
+                v-show="!isCollapsed(event._id!, bIdx, !block.is_error && toolResultIsLong(block.content))"
                 class="stream-markdown px-4 py-2 text-xs text-zinc-300 overflow-x-auto select-text cursor-text"
                 v-html="block._html ?? ''"
               />
