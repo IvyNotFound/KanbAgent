@@ -15,7 +15,7 @@ import type { Server } from 'http'
 import { registerIpcHandlers } from './ipc'
 import { restoreTrustedPaths } from './ipc-project'
 import { registerAgentStreamHandlers } from './agent-stream'
-import { startHookServer, setHookWindow } from './hookServer'
+import { startHookServer, setHookWindow, injectHookSecret } from './hookServer'
 
 // ── GPU flags for improved rendering performance ─────────────────────────────────
 // These MUST be set BEFORE app.whenReady() to take effect
@@ -162,7 +162,9 @@ app.whenReady().then(async () => {
   registerIpcHandlers()
   await restoreTrustedPaths()
   registerAgentStreamHandlers()
-  hookServer = startHookServer()
+  hookServer = startHookServer(app.getPath('userData'))
+  // Inject auth secret into .claude/settings.json so Claude Code hooks include the Authorization header
+  injectHookSecret(join(process.cwd(), '.claude', 'settings.json')).catch(() => {})
   createWindow()
 })
 app.on('window-all-closed', () => {

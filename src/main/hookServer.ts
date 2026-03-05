@@ -18,11 +18,69 @@
 
 import http from 'http'
 import { join } from 'path'
-import { readFile } from 'fs/promises'
+import { readFile, writeFile } from 'fs/promises'
+import { readFileSync, writeFileSync } from 'fs'
+import { randomBytes } from 'crypto'
 import type { BrowserWindow } from 'electron'
 import { writeDb } from './db'
 
 export const HOOK_PORT = 27182
+
+// ── Hook auth secret ──────────────────────────────────────────────────────────
+
+let hookSecret = ''
+
+/** Returns the current hook auth secret (available after startHookServer). */
+export function getHookSecret(): string { return hookSecret }
+
+function loadOrGenerateSecret(userDataPath?: string): string {
+  if (userDataPath) {
+    const secretFile = join(userDataPath, 'hook-secret')
+    try {
+      const existing = readFileSync(secretFile, 'utf-8').trim()
+      if (existing.length === 64) return existing
+    } catch { /* file doesn't exist yet — generate */ }
+    const secret = randomBytes(32).toString('hex')
+    try { writeFileSync(secretFile, secret, { mode: 0o600 }) } catch { /* ignore */ }
+    return secret
+  }
+  return randomBytes(32).toString('hex')
+}
+
+/**
+ * Inject the hook auth secret into a Claude Code settings.json file.
+ * Adds `Authorization: Bearer <secret>` header to all http-type hooks.
+ * Best-effort: silently skips if the file is missing or unreadable.
+ */
+export async function injectHookSecret(settingsPath: string): Promise<void> {
+  try {
+    const raw = await readFile(settingsPath, 'utf-8')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const settings = JSON.parse(raw) as any
+    if (!settings.hooks) return
+    let changed = false
+    for (const eventGroups of Object.values(settings.hooks as Record<string, unknown[]>)) {
+      for (const group of eventGroups as Array<{ hooks?: Array<{ type: string; headers?: Record<string, string> }> }>) {
+        if (!Array.isArray(group.hooks)) continue
+        for (const hook of group.hooks) {
+          if (hook.type === 'http') {
+            const expected = `Bearer ${hookSecret}`
+            if (hook.headers?.['Authorization'] !== expected) {
+              hook.headers = { ...hook.headers, Authorization: expected }
+              changed = true
+            }
+          }
+        }
+      }
+    }
+    if (changed) {
+      await writeFile(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+      console.log('[hookServer] Injected auth secret into', settingsPath)
+    }
+  } catch (err) {
+    console.warn('[hookServer] Could not inject secret into settings:', err)
+  }
+}
 
 // ── Token types ────────────────────────────────────────────────────────────────
 
@@ -243,14 +301,27 @@ const LIFECYCLE_ROUTES: Record<string, boolean> = {
  * Tries port HOOK_PORT (27182). If the port is already in use, logs a warning
  * and continues — Claude Code hooks will fail silently (non-blocking per spec).
  *
+ * @param userDataPath - Electron userData path for persisting the auth secret.
+ *   If omitted, a fresh random secret is generated per process (not persisted).
  * @returns The http.Server instance (call server.close() on app quit)
  */
-export function startHookServer(): http.Server {
+export function startHookServer(userDataPath?: string): http.Server {
+  hookSecret = loadOrGenerateSecret(userDataPath)
+
   const server = http.createServer((req, res) => {
     // Only accept POST /hooks/*
     if (req.method !== 'POST' || !req.url?.startsWith('/hooks/')) {
       res.writeHead(404)
       res.end()
+      return
+    }
+
+    // Auth check — always respond 2xx to not block Claude Code, but skip if unauthorized
+    const authHeader = req.headers['authorization']
+    if (authHeader !== `Bearer ${hookSecret}`) {
+      console.warn('[hookServer] Unauthorized request rejected (bad or missing Authorization header)')
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end('{}')
       return
     }
 
