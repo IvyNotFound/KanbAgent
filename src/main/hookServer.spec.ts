@@ -50,6 +50,7 @@ describe('hookServer constants', () => {
     expect(convert('/hooks/subagent-stop')).toBe('subagentStop')
     expect(convert('/hooks/pre-tool-use')).toBe('preToolUse')
     expect(convert('/hooks/post-tool-use')).toBe('postToolUse')
+    expect(convert('/hooks/instructions-loaded')).toBe('instructionsLoaded')
   })
 })
 
@@ -242,30 +243,32 @@ describe('injectHookUrls', () => {
     )
   })
 
-  it('creates all 6 hooks when settings.json exists but has no hooks section', async () => {
+  it('creates all 7 hooks when settings.json exists but has no hooks section', async () => {
     mockReadFile.mockResolvedValue('{}')
     await injectHookUrls('/fake/settings.json', '172.17.240.1')
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     expect(written.hooks).toBeDefined()
-    expect(Object.keys(written.hooks)).toHaveLength(6)
+    expect(Object.keys(written.hooks)).toHaveLength(7)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
     expect(written.hooks.SessionStart[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/session-start')
     expect(written.hooks.SubagentStart[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/subagent-start')
     expect(written.hooks.SubagentStop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/subagent-stop')
     expect(written.hooks.PreToolUse[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/pre-tool-use')
     expect(written.hooks.PostToolUse[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/post-tool-use')
+    expect(written.hooks.InstructionsLoaded[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/instructions-loaded')
   })
 
-  it('does not write when all 6 hooks are present and URLs already match', async () => {
+  it('does not write when all 7 hooks are present and URLs already match', async () => {
     const settings = {
       hooks: {
-        Stop:          [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
-        SessionStart:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
-        SubagentStart: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
-        SubagentStop:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-stop' }] }],
-        PreToolUse:    [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
-        PostToolUse:   [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
+        Stop:               [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
+        SessionStart:       [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
+        SubagentStart:      [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
+        SubagentStop:       [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-stop' }] }],
+        PreToolUse:         [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
+        PostToolUse:        [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
+        InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/instructions-loaded' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
@@ -273,24 +276,52 @@ describe('injectHookUrls', () => {
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 
-  it('skips non-http hooks and does not overwrite Stop when all 6 events present', async () => {
+  it('adds http hook alongside existing command hook (peon-ping coexistence)', async () => {
     const settings = {
       hooks: {
         Stop: [{ hooks: [{ type: 'command', command: 'echo done' }] }],
-        SessionStart:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
-        SubagentStart: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
-        SubagentStop:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-stop' }] }],
-        PreToolUse:    [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
-        PostToolUse:   [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
+        SessionStart:  [{ hooks: [{ type: 'command', command: 'peon-ping' }] }],
+        SubagentStart: [{ hooks: [{ type: 'command', command: 'peon-ping' }] }],
+        SubagentStop:  [{ hooks: [{ type: 'command', command: 'peon-ping' }] }],
+        PreToolUse:    [{ hooks: [{ type: 'command', command: 'peon-ping' }] }],
+        PostToolUse:   [{ hooks: [{ type: 'command', command: 'peon-ping' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
     await injectHookUrls('/fake/settings.json', '172.17.240.1')
-    // All 6 events present, no URL changes needed → no write
+    expect(mockWriteFile).toHaveBeenCalledOnce()
+    const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
+    // Command hooks preserved
+    expect(written.hooks.Stop[0].hooks[0].type).toBe('command')
+    expect(written.hooks.SessionStart[0].hooks[0].type).toBe('command')
+    // HTTP hooks added as new group
+    expect(written.hooks.Stop[1].hooks[0].type).toBe('http')
+    expect(written.hooks.Stop[1].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
+    expect(written.hooks.SessionStart[1].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/session-start')
+  })
+
+  it('does not duplicate http hook when event already has one', async () => {
+    const settings = {
+      hooks: {
+        Stop: [
+          { hooks: [{ type: 'command', command: 'echo done' }] },
+          { hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] },
+        ],
+        SessionStart:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
+        SubagentStart: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
+        SubagentStop:       [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-stop' }] }],
+        PreToolUse:         [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
+        PostToolUse:        [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
+        InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/instructions-loaded' }] }],
+      },
+    }
+    mockReadFile.mockResolvedValue(JSON.stringify(settings))
+    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    // All http hooks already present, URLs already match → no write
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 
-  it('creates settings.json with all 6 hooks when file does not exist (ENOENT)', async () => {
+  it('creates settings.json with all 7 hooks when file does not exist (ENOENT)', async () => {
     const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     mockReadFile.mockRejectedValue(err)
 
@@ -299,7 +330,7 @@ describe('injectHookUrls', () => {
     expect(mockMkdir).toHaveBeenCalledWith('/fake/.claude', { recursive: true })
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
-    expect(Object.keys(written.hooks)).toHaveLength(6)
+    expect(Object.keys(written.hooks)).toHaveLength(7)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
   })
 
@@ -307,7 +338,7 @@ describe('injectHookUrls', () => {
     const settings = {
       hooks: {
         Stop: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
-        // SessionStart, SubagentStart, SubagentStop, PreToolUse, PostToolUse missing
+        // SessionStart, SubagentStart, SubagentStop, PreToolUse, PostToolUse, InstructionsLoaded missing
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
@@ -316,7 +347,7 @@ describe('injectHookUrls', () => {
 
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
-    expect(Object.keys(written.hooks)).toHaveLength(6)
+    expect(Object.keys(written.hooks)).toHaveLength(7)
     // Existing Stop hook preserved
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
     // Missing hooks created

@@ -9,6 +9,7 @@
  * - POST /hooks/subagent-stop  → log event + push IPC hook:event
  * - POST /hooks/pre-tool-use   → push IPC hook:event (no DB write — high volume)
  * - POST /hooks/post-tool-use  → push IPC hook:event (no DB write — high volume)
+ * - POST /hooks/instructions-loaded → push IPC hook:event (InstructionsLoaded)
  *
  * Uses sql.js via writeDb() (same as IPC handlers) — no better-sqlite3.
  * Always returns 2xx to avoid blocking Claude Code shutdown.
@@ -35,8 +36,9 @@ const HOOK_ROUTES: Record<string, string> = {
   SessionStart:  '/hooks/session-start',
   SubagentStart: '/hooks/subagent-start',
   SubagentStop:  '/hooks/subagent-stop',
-  PreToolUse:    '/hooks/pre-tool-use',
-  PostToolUse:   '/hooks/post-tool-use',
+  PreToolUse:          '/hooks/pre-tool-use',
+  PostToolUse:         '/hooks/post-tool-use',
+  InstructionsLoaded:  '/hooks/instructions-loaded',
 }
 
 // ── Hook auth secret ──────────────────────────────────────────────────────────
@@ -150,11 +152,19 @@ export async function injectHookUrls(settingsPath: string, ip: string): Promise<
     settings.hooks = {}
   }
 
-  // Add managed hook events that are missing
+  // Add managed hook events that are missing, or inject http hook into existing events
   for (const [event, path] of Object.entries(HOOK_ROUTES)) {
     if (!settings.hooks[event]) {
       settings.hooks[event] = [{ hooks: [{ type: 'http', url: `http://${ip}:${HOOK_PORT}${path}` }] }]
       changed = true
+    } else {
+      // Event exists (e.g. peon-ping command hooks) — add http hook if not already present
+      const groups = settings.hooks[event] as Array<{ hooks?: Array<{ type: string; url?: string }> }>
+      const hasHttp = groups.some(g => Array.isArray(g.hooks) && g.hooks.some(h => h.type === 'http'))
+      if (!hasHttp) {
+        groups.push({ hooks: [{ type: 'http', url: `http://${ip}:${HOOK_PORT}${path}` }] })
+        changed = true
+      }
     }
   }
 
@@ -468,8 +478,9 @@ const LIFECYCLE_ROUTES: Record<string, boolean> = {
   '/hooks/session-start':  true,  // persistDb = true
   '/hooks/subagent-start': true,
   '/hooks/subagent-stop':  true,
-  '/hooks/pre-tool-use':   false, // high volume — IPC only, no DB write
-  '/hooks/post-tool-use':  false,
+  '/hooks/pre-tool-use':        false, // high volume — IPC only, no DB write
+  '/hooks/post-tool-use':       false,
+  '/hooks/instructions-loaded': false, // IPC only — potentially high volume
 }
 
 /**
