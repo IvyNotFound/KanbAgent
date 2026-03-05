@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.20.0] - 2026-03-05
+
+### Changes
+- docs(front-vuejs,back-electron): update README and JSDoc for v0.20.0 (T869) (fc08532)
+- chore(devops): injecter changelog dans les GitHub Releases (T872) (7cd4c5a)
+- fix(front-vuejs): git tab — diagnostics erreurs et messages différenciés (T865) (c80c7c6)
+- feat(back-electron): bake GH_TOKEN dans le binaire via GitHub Actions (T871) (8d94cf6)
+- feat(front-vuejs): UI auto-update (bannière, progression, install) (T864) (beb38a5)
+- fix(front-vuejs): remplacer font-mono par typo système dans stats (T860) (7e93deb)
+- feat(back-electron): auto-update depuis GitHub (repo privé, token sécurisé) (T862) (9aad467)
+- fix(back-electron): mettre à jour GENERIC_AGENTS pour cohérence T867 (pre-injection contexte) (T868) (0349b36)
+- feat(front-vuejs): créer DashboardView avec sous-onglets (T859) (90c7756)
+- feat(front+back): pre-inject session context into first agent message (T867) (44f4b57)
+- fix(back-electron): hooks WSL→Windows — listen 0.0.0.0 + inject WSL gateway IP (T858) (d173159)
+- chore(back-electron): supprimer handlers check-master-md et apply-master-md (T861) (b06050b)
+- chore(front-vuejs): supprimer la section CLAUDE.md Sync de SettingsModal (T863) (9ac5d26)
+- feat(front-vuejs): instance Claude Code par défaut dans les paramètres (T857) (0a24f35)
+- chore(devops): migrer le build release vers GitHub Actions (T866) (0c0a405)
+- fix(back-electron): robust error handling for db scripts on Windows (T854) (3fd8077)
+- test(front-vuejs): ajouter specs pour 6 composants sans couverture (T853) (a7dbd0a)
+- fix(front-vuejs): SidebarFileTree — ajouter onMounted pour charger l'arbre (T856) (8b18205)
+- feat(front-vuejs): renommer l'onglet 'Stat' en 'Dashboard' (T855) (f9c7247)
 ## [0.19.0] - 2026-03-05
 
 ### Changes
