@@ -1,8 +1,26 @@
 /**
- * Tests for hookServer — JSONL transcript parsing (T737) + exports (T741)
+ * Tests for hookServer — JSONL transcript parsing (T737) + exports (T741) + WSL fix (T858)
  */
-import { describe, it, expect } from 'vitest'
-import { parseTokensFromJSONL, HOOK_PORT } from './hookServer'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls } from './hookServer'
+
+// ── Hoisted mocks (must be declared before vi.mock, which are hoisted) ────────
+const { mockNetworkInterfaces, mockReadFile, mockWriteFile } = vi.hoisted(() => ({
+  mockNetworkInterfaces: vi.fn(),
+  mockReadFile: vi.fn(),
+  mockWriteFile: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('os', () => ({
+  default: { networkInterfaces: mockNetworkInterfaces },
+  networkInterfaces: mockNetworkInterfaces,
+}))
+
+vi.mock('fs/promises', () => ({
+  default: { readFile: mockReadFile, writeFile: mockWriteFile },
+  readFile: mockReadFile,
+  writeFile: mockWriteFile,
+}))
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -148,5 +166,96 @@ describe('parseTokensFromJSONL', () => {
       cacheRead: 0,
       cacheWrite: 0,
     })
+  })
+})
+
+// ── detectWslGatewayIp ────────────────────────────────────────────────────────
+
+describe('detectWslGatewayIp', () => {
+  const originalPlatform = process.platform
+
+  afterEach(() => {
+    vi.resetAllMocks()
+    Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true })
+  })
+
+  it('returns null on non-Windows platforms', () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true })
+    expect(detectWslGatewayIp()).toBeNull()
+  })
+
+  it('returns null when no WSL interface found on Windows', () => {
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
+    mockNetworkInterfaces.mockReturnValue({
+      Ethernet: [{ family: 'IPv4', address: '192.168.1.2', internal: false, netmask: '', mac: '', cidr: '' }],
+    })
+    expect(detectWslGatewayIp()).toBeNull()
+  })
+
+  it('returns IPv4 address of WSL interface on Windows', () => {
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
+    mockNetworkInterfaces.mockReturnValue({
+      'vEthernet (WSL)': [
+        { family: 'IPv6', address: 'fe80::1', internal: false, netmask: '', mac: '', cidr: '' },
+        { family: 'IPv4', address: '172.17.240.1', internal: false, netmask: '', mac: '', cidr: '' },
+      ],
+    })
+    expect(detectWslGatewayIp()).toBe('172.17.240.1')
+  })
+})
+
+// ── injectHookUrls ────────────────────────────────────────────────────────────
+
+describe('injectHookUrls', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    mockWriteFile.mockResolvedValue(undefined)
+  })
+
+  it('replaces 127.0.0.1 URLs in http hooks with the given IP', async () => {
+    const settings = {
+      hooks: {
+        Stop: [{ hooks: [{ type: 'http', url: 'http://127.0.0.1:27182/hooks/stop' }] }],
+        SessionStart: [{ hooks: [{ type: 'http', url: 'http://127.0.0.1:27182/hooks/session-start' }] }],
+      },
+    }
+    mockReadFile.mockResolvedValue(JSON.stringify(settings))
+
+    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+
+    expect(mockWriteFile).toHaveBeenCalledOnce()
+    const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
+    expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
+    expect(written.hooks.SessionStart[0].hooks[0].url).toBe(
+      'http://172.17.240.1:27182/hooks/session-start'
+    )
+  })
+
+  it('does nothing when settings has no hooks', async () => {
+    mockReadFile.mockResolvedValue('{}')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    expect(mockWriteFile).not.toHaveBeenCalled()
+  })
+
+  it('does not write when URLs already match', async () => {
+    const settings = {
+      hooks: {
+        Stop: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
+      },
+    }
+    mockReadFile.mockResolvedValue(JSON.stringify(settings))
+    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    expect(mockWriteFile).not.toHaveBeenCalled()
+  })
+
+  it('skips non-http hooks', async () => {
+    const settings = {
+      hooks: {
+        Stop: [{ hooks: [{ type: 'command', command: 'echo done' }] }],
+      },
+    }
+    mockReadFile.mockResolvedValue(JSON.stringify(settings))
+    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    expect(mockWriteFile).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,7 @@
 /**
  * Hook server — embedded HTTP server for Claude Code lifecycle hooks (T737, T741)
  *
- * Listens on 127.0.0.1:27182 (HOOK_PORT) and handles POST requests from
+ * Listens on 0.0.0.0:27182 (HOOK_PORT) and handles POST requests from
  * Claude Code HTTP hooks (type: "http"). Handles:
  * - POST /hooks/stop          → parse JSONL transcript, update session tokens in DB
  * - POST /hooks/session-start → log event + push IPC hook:event to renderer
@@ -17,6 +17,7 @@
  */
 
 import http from 'http'
+import os from 'os'
 import { join } from 'path'
 import { readFile, writeFile } from 'fs/promises'
 import { readFileSync, writeFileSync } from 'fs'
@@ -79,6 +80,66 @@ export async function injectHookSecret(settingsPath: string): Promise<void> {
     }
   } catch (err) {
     console.warn('[hookServer] Could not inject secret into settings:', err)
+  }
+}
+
+/**
+ * Detect the Windows IP address visible from WSL (vEthernet WSL interface).
+ *
+ * Returns null on non-Windows platforms or when no WSL network interface is found.
+ * Used to inject the correct hook server URL into .claude/settings.json so that
+ * Claude Code running inside WSL can reach the Electron hook server on Windows.
+ */
+export function detectWslGatewayIp(): string | null {
+  if (process.platform !== 'win32') return null
+  const ifaces = os.networkInterfaces()
+  for (const [name, addrs] of Object.entries(ifaces)) {
+    if (!/wsl/i.test(name)) continue
+    const ipv4 = addrs?.find((a) => a.family === 'IPv4' && !a.internal)
+    if (ipv4) return ipv4.address
+  }
+  return null
+}
+
+/**
+ * Inject the detected Windows/WSL gateway IP into all http-type hook URLs
+ * in a Claude Code settings.json file.
+ *
+ * Replaces the host part of any `http://<host>/hooks/*` URL with
+ * `http://<ip>:HOOK_PORT/hooks/*`, enabling Claude Code in WSL to reach
+ * the hook server running on Windows in NAT mode.
+ * Best-effort: silently skips if the file is missing or unreadable.
+ */
+export async function injectHookUrls(settingsPath: string, ip: string): Promise<void> {
+  try {
+    const raw = await readFile(settingsPath, 'utf-8')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const settings = JSON.parse(raw) as any
+    if (!settings.hooks) return
+    let changed = false
+    for (const eventGroups of Object.values(settings.hooks as Record<string, unknown[]>)) {
+      for (const group of eventGroups as Array<{ hooks?: Array<{ type: string; url?: string }> }>) {
+        if (!Array.isArray(group.hooks)) continue
+        for (const hook of group.hooks) {
+          if (hook.type === 'http' && hook.url) {
+            const updated = hook.url.replace(
+              /^http:\/\/[^/]+\/hooks\//,
+              `http://${ip}:${HOOK_PORT}/hooks/`
+            )
+            if (updated !== hook.url) {
+              hook.url = updated
+              changed = true
+            }
+          }
+        }
+      }
+    }
+    if (changed) {
+      await writeFile(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+      console.log('[hookServer] Updated hook URLs with WSL gateway IP:', ip)
+    }
+  } catch (err) {
+    console.warn('[hookServer] Could not inject hook URLs into settings:', err)
   }
 }
 
@@ -381,10 +442,10 @@ export function startHookServer(userDataPath?: string): http.Server {
     }
   })
 
-  server.listen(HOOK_PORT, '127.0.0.1', () => {
+  server.listen(HOOK_PORT, () => {
     const addr = server.address()
     const port = typeof addr === 'object' && addr !== null ? addr.port : HOOK_PORT
-    console.log(`[hookServer] Listening on 127.0.0.1:${port}`)
+    console.log(`[hookServer] Listening on 0.0.0.0:${port}`)
   })
 
   return server
