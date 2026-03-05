@@ -290,6 +290,7 @@ export const useTasksStore = defineStore('tasks', () => {
   function watchForDb(path: string): void {
     if (dbWatchInterval) clearInterval(dbWatchInterval)
     dbWatchInterval = setInterval(async () => {
+      if (document.visibilityState === 'hidden') return
       const db = await window.electronAPI.findProjectDb(path)
       if (db) {
         clearInterval(dbWatchInterval!)
