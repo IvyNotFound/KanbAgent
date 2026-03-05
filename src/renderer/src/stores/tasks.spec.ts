@@ -1199,7 +1199,7 @@ describe('stores/tasks — agentGroups actions', () => {
       mockElectronAPI.agentGroupsCreate.mockResolvedValue({ success: true, group: { id: 5, name: 'Ops', sort_order: 0, created_at: '' } })
       await store.createAgentGroup('Ops')
 
-      expect(mockElectronAPI.agentGroupsCreate).toHaveBeenCalledWith(DB_PATH, 'Ops')
+      expect(mockElectronAPI.agentGroupsCreate).toHaveBeenCalledWith(DB_PATH, 'Ops', undefined)
     })
 
     it('returns AgentGroup and appends to store.agentGroups on success', async () => {

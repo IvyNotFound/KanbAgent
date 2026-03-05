@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Agent, Lock, AgentGroup } from '@renderer/types'
 import { useProjectStore } from '@renderer/stores/project'
 import { normalizeRow } from '@renderer/utils/db'
@@ -38,12 +38,39 @@ export const LOCKS_SQL = `
   WHERE l.released_at IS NULL
 `
 
+/**
+ * Builds a tree structure from a flat list of agent groups.
+ * Groups without a parent_id (or whose parent is not found) become roots.
+ * Each group's `children` array is populated and sorted by sort_order.
+ */
+export function buildGroupTree(flat: AgentGroup[]): AgentGroup[] {
+  const map = new Map<number, AgentGroup>()
+  for (const g of flat) {
+    map.set(g.id, { ...g, children: [] })
+  }
+  const roots: AgentGroup[] = []
+  for (const g of map.values()) {
+    if (g.parent_id === null || g.parent_id === undefined || !map.has(g.parent_id)) {
+      roots.push(g)
+    } else {
+      map.get(g.parent_id)!.children!.push(g)
+    }
+  }
+  const sortRecursive = (arr: AgentGroup[]): void => {
+    arr.sort((a, b) => a.sort_order - b.sort_order)
+    for (const g of arr) if (g.children?.length) sortRecursive(g.children)
+  }
+  sortRecursive(roots)
+  return roots
+}
+
 export const useAgentsStore = defineStore('agents', () => {
   const projectStore = useProjectStore()
 
   const agents = ref<Agent[]>([])
   const locks = ref<Lock[]>([])
   const agentGroups = ref<AgentGroup[]>([])
+  const agentGroupsTree = computed(() => buildGroupTree(agentGroups.value))
 
   async function query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]> {
     if (!projectStore.dbPath) return []
@@ -90,9 +117,9 @@ export const useAgentsStore = defineStore('agents', () => {
    * @param name - Display name for the group.
    * @returns The created AgentGroup (with empty members array), or null on failure.
    */
-  async function createAgentGroup(name: string): Promise<AgentGroup | null> {
+  async function createAgentGroup(name: string, parentId?: number | null): Promise<AgentGroup | null> {
     if (!projectStore.dbPath) return null
-    const res = await window.electronAPI.agentGroupsCreate(projectStore.dbPath, name)
+    const res = await window.electronAPI.agentGroupsCreate(projectStore.dbPath, name, parentId)
     if (!res.success || !res.group) return null
     const newGroup: AgentGroup = { ...res.group, members: [] }
     agentGroups.value = [...agentGroups.value, newGroup]
@@ -138,10 +165,19 @@ export const useAgentsStore = defineStore('agents', () => {
     })
   }
 
+  /**
+   * Changes the parent of a group (hierarchy). Refetches groups after success.
+   */
+  async function setGroupParent(groupId: number, parentId: number | null): Promise<void> {
+    if (!projectStore.dbPath) return
+    await window.electronAPI.agentGroupsSetParent(projectStore.dbPath, groupId, parentId)
+    await fetchAgentGroups()
+  }
+
   return {
-    agents, locks, agentGroups,
+    agents, locks, agentGroups, agentGroupsTree,
     agentRefresh, fetchAgentGroups,
-    createAgentGroup, renameAgentGroup, deleteAgentGroup, setAgentGroup,
+    createAgentGroup, renameAgentGroup, deleteAgentGroup, setAgentGroup, setGroupParent,
     // Expose SQL constants and query helper for use by useTasksStore
     AGENT_CTE_SQL, LOCKS_SQL, query,
   }

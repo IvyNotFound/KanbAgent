@@ -167,8 +167,11 @@ export interface AgentGroup {
   id: number
   name: string
   sort_order: number
+  parent_id: number | null
   created_at: string
   members: Array<{ agent_id: number; sort_order: number }>
+  /** Built client-side by buildGroupTree — not from DB directly. */
+  children?: AgentGroup[]
 }
 
 /** Quality stat row for one agent (from tasks:qualityStats IPC). */

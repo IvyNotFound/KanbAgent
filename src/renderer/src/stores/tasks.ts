@@ -38,7 +38,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
   // Reactive refs delegated from sub-stores (storeToRefs gives back the original refs — mutations propagate)
   const { projectPath, dbPath, setupWizardTarget } = storeToRefs(projectStore)
-  const { agents, locks, agentGroups } = storeToRefs(agentsStore)
+  const { agents, locks, agentGroups, agentGroupsTree } = storeToRefs(agentsStore)
 
   // Local tasks state
   const tasks = ref<Task[]>([])
@@ -398,6 +398,10 @@ export const useTasksStore = defineStore('tasks', () => {
     return agentsStore.setAgentGroup(agentId, groupId, sortOrder)
   }
 
+  async function setGroupParent(groupId: number, parentId: number | null): Promise<void> {
+    return agentsStore.setGroupParent(groupId, parentId)
+  }
+
   async function setTaskStatut(taskId: number, statut: 'in_progress'): Promise<void> {
     if (!dbPath.value) return
     // Optimistic update — move card instantly, rollback on failure
@@ -476,9 +480,9 @@ export const useTasksStore = defineStore('tasks', () => {
     projectPath, dbPath, setupWizardTarget,
     setProjectPathOnly, closeWizard,
     // Agents state (via agentsStore)
-    agents, locks, agentGroups,
+    agents, locks, agentGroups, agentGroupsTree,
     agentRefresh, fetchAgentGroups,
-    createAgentGroup, renameAgentGroup, deleteAgentGroup, setAgentGroup,
+    createAgentGroup, renameAgentGroup, deleteAgentGroup, setAgentGroup, setGroupParent,
     // Tasks state
     tasks, stats, lastRefresh, loading, error, staleThresholdMinutes, doneTasksLimited,
     selectedAgentId, toggleAgentFilter,

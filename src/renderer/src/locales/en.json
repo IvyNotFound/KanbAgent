@@ -417,6 +417,8 @@
     "newGroup": "New group",
     "newGroupPlaceholder": "Group name…",
     "ungrouped": "Ungrouped",
+    "renameGroup": "Rename group",
+    "addSubgroup": "Add subgroup",
     "deleteGroup": "Delete group",
     "deleteGroupDetail": "Agents will be moved to \"Ungrouped\". Continue?",
     "dropAgentHere": "Drop here",

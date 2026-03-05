@@ -256,3 +256,69 @@ describe('stores/agents — fetchAgentGroups() (T838)', () => {
     expect(store.agentGroups).toHaveLength(0)
   })
 })
+
+
+import { buildGroupTree } from '@renderer/stores/agents'
+import type { AgentGroup } from '@renderer/types'
+
+const makeGroup = (id: number, name: string, parentId: number | null = null, sortOrder = 0): AgentGroup => ({
+  id, name, sort_order: sortOrder, parent_id: parentId, created_at: '', members: [],
+})
+
+describe('buildGroupTree (T946)', () => {
+  it('returns empty array for empty input', () => {
+    expect(buildGroupTree([])).toEqual([])
+  })
+
+  it('returns all groups as roots when none have parent_id', () => {
+    const flat = [makeGroup(1, 'A'), makeGroup(2, 'B'), makeGroup(3, 'C')]
+    const tree = buildGroupTree(flat)
+    expect(tree).toHaveLength(3)
+    expect(tree.every(g => g.children?.length === 0)).toBe(true)
+  })
+
+  it('nests child under parent', () => {
+    const flat = [makeGroup(1, 'Parent'), makeGroup(2, 'Child', 1)]
+    const tree = buildGroupTree(flat)
+    expect(tree).toHaveLength(1)
+    expect(tree[0].id).toBe(1)
+    expect(tree[0].children).toHaveLength(1)
+    expect(tree[0].children![0].id).toBe(2)
+  })
+
+  it('handles multiple levels of nesting', () => {
+    const flat = [makeGroup(1, 'L1'), makeGroup(2, 'L2', 1), makeGroup(3, 'L3', 2)]
+    const tree = buildGroupTree(flat)
+    expect(tree).toHaveLength(1)
+    expect(tree[0].children![0].children![0].id).toBe(3)
+  })
+
+  it('sorts children by sort_order', () => {
+    const flat = [
+      makeGroup(1, 'Root'),
+      makeGroup(3, 'Z-last', 1, 10),
+      makeGroup(2, 'A-first', 1, 0),
+    ]
+    const tree = buildGroupTree(flat)
+    expect(tree[0].children![0].id).toBe(2)
+    expect(tree[0].children![1].id).toBe(3)
+  })
+
+  it('treats group with unknown parent_id as root', () => {
+    const flat = [makeGroup(1, 'Orphan', 99)]
+    const tree = buildGroupTree(flat)
+    expect(tree).toHaveLength(1)
+    expect(tree[0].id).toBe(1)
+  })
+
+  it('handles multiple top-level groups each with children', () => {
+    const flat = [
+      makeGroup(1, 'Root A'), makeGroup(2, 'Root B'),
+      makeGroup(3, 'Child A1', 1), makeGroup(4, 'Child B1', 2),
+    ]
+    const tree = buildGroupTree(flat)
+    expect(tree).toHaveLength(2)
+    expect(tree.find(g => g.id === 1)!.children).toHaveLength(1)
+    expect(tree.find(g => g.id === 2)!.children).toHaveLength(1)
+  })
+})

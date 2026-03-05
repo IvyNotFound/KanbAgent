@@ -134,18 +134,15 @@ describe('SidebarAgentSection', () => {
     wrapper.unmount()
   })
 
-  it('renders groups from store.agentGroups', () => {
+  it('renders groups from store.agentGroupsTree via SidebarGroupNode', () => {
     const agents = [makeAgent({ id: 1, name: 'grouped-agent' })]
+    const group = { id: 10, name: 'My Group', sort_order: 0, parent_id: null, members: [{ agent_id: 1, sort_order: 0 }] }
     const pinia = createTestingPinia({
       initialState: {
         tasks: {
           agents,
-          agentGroups: [{
-            id: 10,
-            name: 'My Group',
-            sort_order: 0,
-            members: [{ agent_id: 1, sort_order: 0 }],
-          }],
+          agentGroups: [group],
+          agentGroupsTree: [group],
           selectedAgentId: null,
           dbPath: '/db',
         },
@@ -155,7 +152,10 @@ describe('SidebarAgentSection', () => {
     const wrapper = shallowMount(SidebarAgentSection, {
       global: { plugins: [pinia, i18n] },
     })
-    expect(wrapper.text()).toContain('My Group')
+    // SidebarGroupNode is stubbed in shallowMount — verify it receives the group as a prop
+    const groupNode = wrapper.findComponent({ name: 'SidebarGroupNode' })
+    expect(groupNode.exists()).toBe(true)
+    expect(groupNode.props('group')).toMatchObject({ id: 10, name: 'My Group' })
     wrapper.unmount()
   })
 

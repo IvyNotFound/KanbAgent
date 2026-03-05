@@ -1,20 +1,22 @@
 <script setup lang="ts">
 /**
- * SidebarAgentSection — section agents + groupes de la sidebar (T815).
+ * SidebarAgentSection — section agents + groupes de la sidebar (T815/T946).
  * Gère : drag & drop, renommage/création/suppression de groupes, modales agents.
+ * Les groupes sont affichés en arbre hiérarchique via SidebarGroupNode (T946).
  */
-import { computed, ref } from 'vue'
+import { computed, ref, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg } from '@renderer/utils/agentColor'
 import { useToast } from '@renderer/composables/useToast'
-import { useSidebarDragDrop } from '@renderer/composables/useSidebarDragDrop'
-import { useSidebarGroups } from '@renderer/composables/useSidebarGroups'
+import { useSidebarDragDrop, sidebarDragDropKey } from '@renderer/composables/useSidebarDragDrop'
+import { useSidebarGroups, sidebarGroupsKey } from '@renderer/composables/useSidebarGroups'
 import LaunchSessionModal from './LaunchSessionModal.vue'
 import ContextMenu from './ContextMenu.vue'
 import CreateAgentModal from './CreateAgentModal.vue'
 import ConfirmModal from './ConfirmModal.vue'
+import SidebarGroupNode from './SidebarGroupNode.vue'
 import type { ContextMenuItem } from './ContextMenu.vue'
 import type { Agent } from '@renderer/types'
 
@@ -24,37 +26,51 @@ const tabsStore = useTabsStore()
 const { push: pushToast } = useToast()
 
 // ── Composables ───────────────────────────────────────────────────────────────
+const dragDrop = useSidebarDragDrop()
+const sidebarGroups = useSidebarGroups()
+
+// Provide composable state to SidebarGroupNode children (recursive)
+provide(sidebarDragDropKey, dragDrop)
+provide(sidebarGroupsKey, sidebarGroups)
+
 const {
   dragOverGroupId,
   onAgentDragStart,
   onGroupDragOver,
   onGroupDragLeave,
   onGroupDrop,
-} = useSidebarDragDrop()
+} = dragDrop
 
 const {
   confirmDeleteGroup,
-  renamingGroupId,
-  renameGroupName,
-  renameGroupInputEl,
-  startRename,
-  confirmRename,
-  cancelRename,
   creatingGroup,
   newGroupName,
   createGroupInputEl,
   startCreateGroup,
   confirmCreateGroup,
   cancelCreateGroup,
-  handleDeleteGroup,
   onConfirmDeleteGroup,
-} = useSidebarGroups()
+} = sidebarGroups
 
 // ── Modal state ───────────────────────────────────────────────────────────────
 const launchTarget = ref<Agent | null>(null)
 const showCreateAgent = ref(false)
 const editAgentTarget = ref<Agent | null>(null)
 const contextMenu = ref<{ x: number; y: number; agent: Agent } | null>(null)
+
+// Provide agent interaction callbacks to SidebarGroupNode
+provide('openLaunchModal', (event: MouseEvent, agent: Agent) => {
+  event.stopPropagation()
+  openAgentSession(agent)
+})
+provide('openContextMenu', (event: MouseEvent, agent: Agent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  contextMenu.value = { x: event.clientX, y: event.clientY, agent }
+})
+provide('openEditAgent', (agent: Agent) => {
+  editAgentTarget.value = agent
+})
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 const openTerminalAgents = computed(() => {
@@ -80,18 +96,6 @@ const ungroupedAgents = computed(() =>
   store.agents.filter(a => !groupedAgentIds.value.has(a.id))
 )
 
-const groupedAgents = computed(() => {
-  const map = new Map<number, Agent[]>()
-  for (const group of store.agentGroups) {
-    const agents = [...group.members]
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map(m => store.agents.find(a => a.id === m.agent_id))
-      .filter(Boolean) as Agent[]
-    map.set(group.id, agents)
-  }
-  return map
-})
-
 function isAgentSelected(id: number | string): boolean {
   return store.selectedAgentId !== null && Number(store.selectedAgentId) === Number(id)
 }
@@ -112,27 +116,27 @@ function openLaunchModal(event: MouseEvent, agent: Agent) {
   openAgentSession(agent)
 }
 
-function openContextMenu(event: MouseEvent, agent: Agent) {
+function openContextMenuLocal(event: MouseEvent, agent: Agent) {
   event.preventDefault()
   event.stopPropagation()
   contextMenu.value = { x: event.clientX, y: event.clientY, agent }
 }
 
 function contextMenuItemsFor(agent: Agent): ContextMenuItem[] {
-  const terminalCount = tabsStore.tabs.filter(t => t.type === 'terminal' && t.agentName === agent.name).length
+  const terminalCount = tabsStore.tabs.filter(tab => tab.type === 'terminal' && tab.agentName === agent.name).length
   const maxSessions = agent.max_sessions ?? 1
   const multiSession = maxSessions === -1 || maxSessions > 1
   const atLimit = maxSessions !== -1 && terminalCount >= maxSessions
   const primaryLabel = multiSession && !atLimit
-    ? 'Nouvelle session'
-    : (hasOpenTerminal(agent.name) ? 'Aller à la session' : 'Ouvrir session')
+    ? t('sidebar.newSession')
+    : (hasOpenTerminal(agent.name) ? t('sidebar.goToSession') : t('sidebar.openSession'))
   return [
     { label: primaryLabel, action: () => openAgentSession(agent) },
-    { label: 'Voir les logs', action: () => tabsStore.addLogs(agent.id) },
-    { label: 'Voir ses tâches', action: () => store.toggleAgentFilter(agent.id) },
+    { label: t('sidebar.viewLogs'), action: () => tabsStore.addLogs(agent.id) },
+    { label: t('sidebar.viewTasks'), action: () => store.toggleAgentFilter(agent.id) },
     { separator: true, label: '', action: () => {} },
-    { label: 'Éditer l\'agent', action: () => { editAgentTarget.value = agent } },
-    { label: 'Dupliquer l\'agent', action: () => duplicateAgent(agent) },
+    { label: t('sidebar.editAgent'), action: () => { editAgentTarget.value = agent } },
+    { label: t('sidebar.duplicateAgent'), action: () => duplicateAgent(agent) },
   ]
 }
 
@@ -141,10 +145,10 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   if (!dbPath) return
   const result = await window.electronAPI.duplicateAgent(dbPath, agent.id)
   if (result.success) {
-    pushToast(`Agent dupliqué : ${result.name}`, 'success')
+    pushToast(t('agent.duplicated', { name: result.name }), 'success')
     await store.refresh()
   } else {
-    pushToast(result.error ?? 'Erreur lors de la duplication', 'error')
+    pushToast(result.error ?? t('agent.duplicateError'), 'error')
   }
 }
 </script>
@@ -158,7 +162,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       >{{ t('sidebar.reset') }}</button>
     </div>
 
-    <!-- Création de groupe inline -->
+    <!-- Création de groupe inline (top-level) -->
     <div v-if="creatingGroup" class="mb-2 flex items-center gap-1">
       <input
         ref="createGroupInputEl"
@@ -172,76 +176,13 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       <button class="w-6 h-6 flex items-center justify-center rounded text-content-faint hover:text-content-secondary hover:bg-surface-secondary transition-colors text-xs" @click="cancelCreateGroup">✕</button>
     </div>
 
-    <!-- ── Groupes dynamiques ── -->
-    <div
-      v-for="group in store.agentGroups"
+    <!-- ── Groupes hiérarchiques ── -->
+    <SidebarGroupNode
+      v-for="group in store.agentGroupsTree"
       :key="group.id"
-      class="mb-3"
-      @dragover="onGroupDragOver($event, group.id)"
-      @dragleave="onGroupDragLeave"
-      @drop="onGroupDrop($event, group.id)"
-    >
-      <div
-        class="flex items-center gap-0.5 mb-0.5 group/header rounded px-1 transition-colors"
-        :class="dragOverGroupId === group.id ? 'bg-violet-500/10 ring-1 ring-violet-500/40' : ''"
-      >
-        <template v-if="renamingGroupId === group.id">
-          <input
-            ref="renameGroupInputEl"
-            v-model="renameGroupName"
-            class="flex-1 bg-surface-secondary border border-edge-default rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-content-primary outline-none focus:ring-1 focus:ring-violet-500"
-            @keydown.enter="confirmRename(group.id)"
-            @keydown.esc="cancelRename"
-            @blur="confirmRename(group.id)"
-          />
-        </template>
-        <span
-          v-else
-          class="flex-1 text-[11px] font-semibold text-content-subtle uppercase tracking-wider cursor-pointer select-none truncate py-0.5"
-          @dblclick="startRename(group)"
-        >{{ group.name }}</span>
-        <button class="w-5 h-5 flex items-center justify-center rounded text-content-dim hover:text-content-secondary hover:bg-surface-secondary transition-colors opacity-0 group-hover/header:opacity-100" :title="t('sidebar.editAgent')" @click.stop="startRename(group)">
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5"><path d="M9.5 1.5a2.121 2.121 0 0 1 3 3L4 13H1v-3L9.5 1.5z"/></svg>
-        </button>
-        <button class="w-5 h-5 flex items-center justify-center rounded text-content-dim hover:text-red-400 hover:bg-surface-secondary transition-colors opacity-0 group-hover/header:opacity-100" :title="t('sidebar.deleteGroup')" @click.stop="handleDeleteGroup(group.id)">
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5">
-            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-          </svg>
-        </button>
-      </div>
-      <div v-if="dragOverGroupId === group.id" class="mx-1 py-1 text-[10px] text-violet-400/70 text-center border border-dashed border-violet-500/40 rounded mb-1">{{ t('sidebar.dropAgentHere') }}</div>
-      <div class="space-y-0.5">
-        <div
-          v-for="agent in groupedAgents.get(group.id) ?? []"
-          :key="agent.id"
-          class="group"
-          draggable="true"
-          @dragstart="onAgentDragStart($event, agent)"
-          @contextmenu.prevent="openContextMenu($event, agent)"
-        >
-          <div class="relative">
-            <button
-              :class="['w-full flex items-center gap-3 px-2 py-1.5 rounded-md text-left transition-colors cursor-pointer pr-[80px]', isAgentSelected(agent.id) ? 'bg-surface-secondary ring-1 ring-content-faint' : 'hover:bg-surface-primary']"
-              @click="store.toggleAgentFilter(agent.id)"
-            >
-              <span class="relative shrink-0 flex items-center justify-center w-4 h-4">
-                <svg v-if="tabsStore.isAgentActive(agent.name)" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 16 16" fill="none" :style="{ color: agentFg(agent.name) }"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-opacity="0.25"/><path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                <svg v-else-if="hasOpenTerminal(agent.name) && !tabsStore.isAgentActive(agent.name)" class="w-3.5 h-3.5 animate-pulse" viewBox="0 0 14 14" fill="none" :style="{ color: agentFg(agent.name) }"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
-                <span v-else class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: agentFg(agent.name) }" />
-              </span>
-              <span :class="['text-sm truncate font-mono', isAgentSelected(agent.id) ? 'text-content-primary' : 'text-content-muted']">{{ agent.name }}</span>
-            </button>
-            <div class="absolute right-1 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="w-5 h-5 flex items-center justify-center cursor-grab text-content-dim" title="Déplacer"><svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg></span>
-              <button class="w-5 h-5 flex items-center justify-center rounded transition-colors text-content-subtle hover:text-content-secondary hover:bg-surface-tertiary" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = agent"><svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3"><path d="M9.5 1.5a2.121 2.121 0 0 1 3 3L4 13H1v-3L9.5 1.5z"/></svg></button>
-              <button class="w-5 h-5 flex items-center justify-center rounded transition-colors" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3"><path d="M3.5 2.635a.5.5 0 0 1 .752-.43l9 5.364a.5.5 0 0 1 0 .862l-9 5.365A.5.5 0 0 1 3.5 13.364V2.635z"/></svg></button>
-            </div>
-          </div>
-        </div>
-        <div v-if="(groupedAgents.get(group.id) ?? []).length === 0 && dragOverGroupId !== group.id" class="text-[11px] text-content-dim px-2 py-1 italic">{{ t('sidebar.dropAgentHere') }}</div>
-      </div>
-    </div>
+      :group="group"
+      :level="0"
+    />
 
     <!-- ── Non groupés ── -->
     <div
@@ -261,7 +202,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
           class="group"
           draggable="true"
           @dragstart="onAgentDragStart($event, agent)"
-          @contextmenu.prevent="openContextMenu($event, agent)"
+          @contextmenu.prevent="openContextMenuLocal($event, agent)"
         >
           <div class="relative">
             <button
@@ -276,7 +217,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
               <span :class="['text-sm truncate font-mono', isAgentSelected(agent.id) ? 'text-content-primary' : 'text-content-muted']">{{ agent.name }}</span>
             </button>
             <div class="absolute right-1 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="w-5 h-5 flex items-center justify-center cursor-grab text-content-dim" title="Déplacer"><svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg></span>
+              <span class="w-5 h-5 flex items-center justify-center cursor-grab text-content-dim" :title="t('sidebar.move')"><svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg></span>
               <button class="w-5 h-5 flex items-center justify-center rounded transition-colors text-content-subtle hover:text-content-secondary hover:bg-surface-tertiary" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = agent"><svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3"><path d="M9.5 1.5a2.121 2.121 0 0 1 3 3L4 13H1v-3L9.5 1.5z"/></svg></button>
               <button class="w-5 h-5 flex items-center justify-center rounded transition-colors" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3"><path d="M3.5 2.635a.5.5 0 0 1 .752-.43l9 5.364a.5.5 0 0 1 0 .862l-9 5.365A.5.5 0 0 1 3.5 13.364V2.635z"/></svg></button>
             </div>

@@ -1,11 +1,12 @@
 /**
- * Composable: agent group management (rename, create, delete) in the Sidebar.
+ * Composable: agent group management (rename, create, delete, subgroup) in the Sidebar.
  *
- * Provides inline rename state, create-group flow and delete confirmation
- * (with a guard when the group still has members). All mutations are delegated
- * to `useTasksStore`.
+ * Provides inline rename state, create-group flow (top-level or sub-group) and
+ * delete confirmation (with a guard when the group still has members).
+ * All mutations are delegated to `useTasksStore`.
  */
 import { ref, nextTick } from 'vue'
+import type { InjectionKey } from 'vue'
 import { useTasksStore } from '@renderer/stores/tasks'
 
 export function useSidebarGroups() {
@@ -35,7 +36,7 @@ export function useSidebarGroups() {
     renamingGroupId.value = null
   }
 
-  // ── Create group ────────────────────────────────────────────────────────────
+  // ── Create top-level group ──────────────────────────────────────────────────
   const creatingGroup = ref(false)
   const newGroupName = ref('')
   const createGroupInputEl = ref<HTMLInputElement | null>(null)
@@ -55,6 +56,31 @@ export function useSidebarGroups() {
 
   function cancelCreateGroup(): void {
     creatingGroup.value = false
+  }
+
+  // ── Create sub-group ────────────────────────────────────────────────────────
+  /** ID of the parent group for which a sub-group is being created. */
+  const creatingSubgroupForId = ref<number | null>(null)
+  const newSubgroupName = ref('')
+  const createSubgroupInputEl = ref<HTMLInputElement | null>(null)
+
+  async function startCreateSubgroup(parentId: number): Promise<void> {
+    creatingSubgroupForId.value = parentId
+    newSubgroupName.value = ''
+    await nextTick()
+    createSubgroupInputEl.value?.focus()
+  }
+
+  async function confirmCreateSubgroup(): Promise<void> {
+    const name = newSubgroupName.value.trim()
+    if (name && creatingSubgroupForId.value !== null) {
+      await store.createAgentGroup(name, creatingSubgroupForId.value)
+    }
+    creatingSubgroupForId.value = null
+  }
+
+  function cancelCreateSubgroup(): void {
+    creatingSubgroupForId.value = null
   }
 
   // ── Delete group ────────────────────────────────────────────────────────────
@@ -87,7 +113,16 @@ export function useSidebarGroups() {
     startCreateGroup,
     confirmCreateGroup,
     cancelCreateGroup,
+    creatingSubgroupForId,
+    newSubgroupName,
+    createSubgroupInputEl,
+    startCreateSubgroup,
+    confirmCreateSubgroup,
+    cancelCreateSubgroup,
     handleDeleteGroup,
     onConfirmDeleteGroup,
   }
 }
+
+export type SidebarGroupsState = ReturnType<typeof useSidebarGroups>
+export const sidebarGroupsKey: InjectionKey<SidebarGroupsState> = Symbol('sidebarGroups')

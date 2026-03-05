@@ -49,13 +49,14 @@ declare global {
       tasksUpdateStatus(dbPath: string, taskId: number, statut: string): Promise<{ success: boolean; error?: string }>
       duplicateAgent(dbPath: string, agentId: number): Promise<{ success: boolean; agentId?: number; name?: string; error?: string }>
       getTaskLinks(dbPath: string, taskId: number): Promise<{ success: boolean; links: Array<{ id: number; type: string; from_task: number; to_task: number; from_titre: string; from_statut: string; to_titre: string; to_statut: string }>; error?: string }>
-      // Agent groups (T556/T557)
+      // Agent groups (T556/T557/T945/T946)
       agentGroupsList(dbPath: string): Promise<{ success: boolean; groups: AgentGroup[]; error?: string }>
-      agentGroupsCreate(dbPath: string, name: string): Promise<{ success: boolean; group?: { id: number; name: string; sort_order: number; created_at: string }; error?: string }>
+      agentGroupsCreate(dbPath: string, name: string, parentId?: number | null): Promise<{ success: boolean; group?: { id: number; name: string; sort_order: number; parent_id: number | null; created_at: string }; error?: string }>
       agentGroupsRename(dbPath: string, groupId: number, name: string): Promise<{ success: boolean; error?: string }>
       agentGroupsDelete(dbPath: string, groupId: number): Promise<{ success: boolean; error?: string }>
       agentGroupsSetMember(dbPath: string, agentId: number, groupId: number | null, sortOrder?: number): Promise<{ success: boolean; error?: string }>
       agentGroupsReorder(dbPath: string, groupIds: number[]): Promise<{ success: boolean; error?: string }>
+      agentGroupsSetParent(dbPath: string, groupId: number, parentId: number | null): Promise<{ success: boolean; error?: string }>
       // Detect Claude Code instances (WSL distros and/or native installs) (T721/T775)
       getClaudeInstances(): Promise<Array<{ distro: string; version: string; isDefault: boolean; profiles: string[]; type?: 'wsl' | 'local' }>>
       // Agent stream (ADR-009: child_process.spawn + stdio:pipe — T647/T648)
