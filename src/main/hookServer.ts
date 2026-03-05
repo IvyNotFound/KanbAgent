@@ -20,7 +20,8 @@ import http from 'http'
 import os from 'os'
 import { join, dirname } from 'path'
 import { readFile, writeFile, mkdir } from 'fs/promises'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, writeFileSync, createReadStream } from 'fs'
+import { createInterface } from 'readline'
 import { randomBytes } from 'crypto'
 import { execSync } from 'child_process'
 import type { BrowserWindow } from 'electron'
@@ -314,6 +315,34 @@ export function parseTokensFromJSONL(content: string): TokenCounts {
   return { tokensIn, tokensOut, cacheRead, cacheWrite }
 }
 
+/**
+ * Stream-based variant — reads the transcript file line by line without loading
+ * the whole content into memory.  Used by handleStop to avoid OOM on large files.
+ */
+export function parseTokensFromJSONLStream(transcriptPath: string): Promise<TokenCounts> {
+  return new Promise((resolve, reject) => {
+    const counts: TokenCounts = { tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheWrite: 0 }
+    const rl = createInterface({ input: createReadStream(transcriptPath), crlfDelay: Infinity })
+    rl.on('line', (line) => {
+      const trimmed = line.trim()
+      if (!trimmed) return
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const obj = JSON.parse(trimmed) as any
+        if (obj.type !== 'assistant') return
+        if (!obj.message?.usage || obj.message.stop_reason == null) return
+        const u = obj.message.usage
+        counts.tokensIn    += (u.input_tokens                 ?? 0)
+        counts.tokensOut   += (u.output_tokens                ?? 0)
+        counts.cacheRead   += (u.cache_read_input_tokens       ?? 0)
+        counts.cacheWrite  += (u.cache_creation_input_tokens   ?? 0)
+      } catch { /* malformed line — skip */ }
+    })
+    rl.on('close', () => resolve(counts))
+    rl.on('error', reject)
+  })
+}
+
 // ── Stop handler ──────────────────────────────────────────────────────────────
 
 /**
@@ -332,15 +361,13 @@ async function handleStop(payload: StopPayload): Promise<void> {
     return
   }
 
-  let content: string
+  let tokens: TokenCounts
   try {
-    content = await readFile(transcriptPath, 'utf-8')
+    tokens = await parseTokensFromJSONLStream(transcriptPath)
   } catch (err) {
     console.warn('[hookServer] Cannot read transcript:', err)
     return
   }
-
-  const tokens = parseTokensFromJSONL(content)
   if (tokens.tokensIn === 0 && tokens.tokensOut === 0) return
 
   const dbPath = join(cwd, '.claude', 'project.db')

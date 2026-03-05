@@ -2,7 +2,10 @@
  * Tests for hookServer — JSONL transcript parsing (T737) + exports (T741) + WSL fix (T858)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls, injectIntoWslDistros } from './hookServer'
+import { writeFileSync, unlinkSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { parseTokensFromJSONL, parseTokensFromJSONLStream, HOOK_PORT, detectWslGatewayIp, injectHookUrls, injectIntoWslDistros } from './hookServer'
 
 // ── Hoisted mocks (must be declared before vi.mock, which are hoisted) ────────
 const { mockNetworkInterfaces, mockReadFile, mockWriteFile, mockMkdir, mockExecSync } = vi.hoisted(() => ({
@@ -411,5 +414,57 @@ describe('injectIntoWslDistros', () => {
 
     // Only one execSync call for printenv (no injectHookUrls → no readFile for URLs)
     expect(mockExecSync).toHaveBeenCalledTimes(2)
+  })
+})
+
+// ── parseTokensFromJSONLStream ────────────────────────────────────────────────
+
+describe('parseTokensFromJSONLStream', () => {
+  const tmpFile = join(tmpdir(), 'hookServer_test_transcript.jsonl')
+
+  afterEach(() => {
+    try { unlinkSync(tmpFile) } catch { /* file may not exist */ }
+  })
+
+  it('returns zero counts for an empty file', async () => {
+    writeFileSync(tmpFile, '')
+    await expect(parseTokensFromJSONLStream(tmpFile)).resolves.toEqual(
+      { tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheWrite: 0 }
+    )
+  })
+
+  it('counts tokens across multiple finalized assistant messages', async () => {
+    const lines = [
+      makeAssistantLine({ stopReason: 'tool_use', inputTokens: 100, outputTokens: 50 }),
+      makeAssistantLine({ stopReason: null, inputTokens: 200, outputTokens: 1 }), // streaming start — ignored
+      makeAssistantLine({ stopReason: 'end_turn', inputTokens: 200, outputTokens: 80, cacheRead: 30, cacheWrite: 10 }),
+    ].join('\n')
+    writeFileSync(tmpFile, lines)
+    await expect(parseTokensFromJSONLStream(tmpFile)).resolves.toEqual({
+      tokensIn: 300, tokensOut: 130, cacheRead: 30, cacheWrite: 10,
+    })
+  })
+
+  it('processes 10 000 lines without error and returns correct totals', async () => {
+    const LINE_COUNT = 10_000
+    // Each even line: finalized assistant (1 token in/out), odd line: noise
+    const lines: string[] = []
+    for (let i = 0; i < LINE_COUNT; i++) {
+      if (i % 2 === 0) {
+        lines.push(makeAssistantLine({ stopReason: 'end_turn', inputTokens: 1, outputTokens: 1 }))
+      } else {
+        lines.push(JSON.stringify({ type: 'user', message: { content: 'hello' } }))
+      }
+    }
+    writeFileSync(tmpFile, lines.join('\n'))
+    const result = await parseTokensFromJSONLStream(tmpFile)
+    expect(result.tokensIn).toBe(LINE_COUNT / 2)
+    expect(result.tokensOut).toBe(LINE_COUNT / 2)
+    expect(result.cacheRead).toBe(0)
+    expect(result.cacheWrite).toBe(0)
+  })
+
+  it('rejects when file does not exist', async () => {
+    await expect(parseTokensFromJSONLStream('/nonexistent/path/file.jsonl')).rejects.toThrow()
   })
 })
