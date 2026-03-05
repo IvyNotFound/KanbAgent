@@ -77,7 +77,7 @@ export function registerFsHandlers(): void {
       return []
     }
     try { assertProjectPathAllowed(allowedDir) } catch {
-      console.warn('[IPC fs:listDir] allowedDir not in allowlist:', allowedDir)
+      console.error('[IPC fs:listDir] BLOCKED: allowedDir not in allowlist:', allowedDir)
       return []
     }
     if (dirPath.includes('..')) {

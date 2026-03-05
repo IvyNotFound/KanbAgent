@@ -363,8 +363,8 @@ export function registerProjectHandlers(): void {
 
   /**
    * Locate project.db inside .claude/ subdirectory.
-   * Does NOT register the path in the allowlist (T782: only native dialogs may register).
-   * On cold start, allowlist is restored from the trusted-project-paths.json file via restoreTrustedPaths().
+   * Registers projectPath in the session allowlist so fsListDir works immediately after.
+   * On cold start, trusted-project-paths.json may be absent — this registration is essential (T896).
    * @param projectPath - Project root path
    * @returns {string|null} Found DB path, or null
    */
@@ -372,6 +372,7 @@ export function registerProjectHandlers(): void {
     if (!projectPath) throw new Error('PROJECT_PATH_REQUIRED')
     const dbPath = await findProjectDb(projectPath)
     registerDbPath(dbPath)
+    registerProjectPath(projectPath)
     return dbPath
   })
 
