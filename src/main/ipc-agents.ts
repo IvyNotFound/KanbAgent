@@ -210,10 +210,8 @@ export function registerAgentHandlers(): void {
    * @param agentId - Optional agent ID for context enrichment
    * @returns {string} Final prompt string
    */
-  ipcMain.handle('build-agent-prompt', async (_event, agentName: string, userPrompt: string, dbPath?: string, agentId?: number) => {
-    const HIDDEN_SUFFIX = `Tu es agent ${agentName}. Va voir ton prompt system dans la table agent.`
-    const body = userPrompt && userPrompt.trim() ? `${userPrompt.trim()}\n\n` : ''
-    const base = `${body}${HIDDEN_SUFFIX}`
+  ipcMain.handle('build-agent-prompt', async (_event, _agentName: string, userPrompt: string, dbPath?: string, agentId?: number) => {
+    const base = userPrompt?.trim() ?? ''
 
     if (!dbPath || !agentId) return base
 
@@ -251,7 +249,7 @@ export function registerAgentHandlers(): void {
       if (parts.length === 0) return base
 
       const contextPrefix = parts.join(' | ').slice(0, 300)
-      return `${contextPrefix} -> ${base}`
+      return base ? `${contextPrefix} -> ${base}` : contextPrefix
     } catch {
       return base
     }

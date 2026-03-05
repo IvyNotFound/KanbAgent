@@ -495,10 +495,15 @@ describe('IPC handlers — src/main/ipc.ts', () => {
   // ── build-agent-prompt ───────────────────────────────────────────────────────
 
   describe('build-agent-prompt handler', () => {
-    it('should concatenate agentName and userPrompt', async () => {
+    it('should return the trimmed userPrompt when no dbPath provided', async () => {
       const result = await callHandler('build-agent-prompt', 'dev-front', 'Tu es dev') as string
       expect(typeof result).toBe('string')
-      expect(result).toContain('dev-front')
+      expect(result).toBe('Tu es dev')
+    })
+
+    it('should return empty string when userPrompt is empty and no dbPath provided', async () => {
+      const result = await callHandler('build-agent-prompt', 'dev-front', '') as string
+      expect(result).toBe('')
     })
   })
 
