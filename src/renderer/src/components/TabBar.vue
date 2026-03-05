@@ -164,6 +164,15 @@ async function handleCloseTab(tab: Tab): Promise<void> {
     })
     if (!ok) return
   }
+  if (tab.type === 'terminal' && tab.streamId) {
+    const ok = await confirm({
+      title: t('tabBar.closeTerminalTitle'),
+      message: t('tabBar.closeTerminalMessage'),
+      type: 'danger',
+      confirmLabel: t('tabBar.closeTerminalConfirm'),
+    })
+    if (!ok) return
+  }
   store.closeTab(tab.id)
 }
 
