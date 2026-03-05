@@ -169,14 +169,14 @@ const hoveredBar = ref<number | null>(null)
 
     <!-- Header + period selector -->
     <div class="flex items-center justify-between">
-      <h3 class="text-[11px] font-mono uppercase tracking-wider text-content-faint">
+      <h3 class="text-[11px] uppercase tracking-wider text-content-faint">
         {{ t('costStats.title') }}
       </h3>
       <div class="flex gap-1">
         <button
           v-for="p in PERIODS"
           :key="p.key"
-          class="px-2 py-0.5 rounded-full text-[11px] font-mono border transition-colors"
+          class="px-2 py-0.5 rounded-full text-[11px] border transition-colors"
           :class="selectedPeriod === p.key
             ? 'bg-accent-primary border-accent-primary text-white'
             : 'bg-surface-secondary border-edge-default text-content-secondary hover:border-accent-primary hover:text-content-primary'"
@@ -202,22 +202,22 @@ const hoveredBar = ref<number | null>(null)
       <!-- Global summary row -->
       <div class="grid grid-cols-3 gap-2">
         <div class="flex flex-col gap-0.5 p-2.5 rounded-lg bg-surface-secondary border border-edge-default">
-          <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('costStats.totalCost') }}</span>
+          <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.totalCost') }}</span>
           <span class="text-base font-bold text-content-primary tabular-nums">{{ formatCost(globalCost) }}</span>
         </div>
         <div class="flex flex-col gap-0.5 p-2.5 rounded-lg bg-surface-secondary border border-edge-default">
-          <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('costStats.sessions') }}</span>
+          <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.sessions') }}</span>
           <span class="text-base font-bold text-content-primary tabular-nums">{{ globalSessions }}</span>
         </div>
         <div class="flex flex-col gap-0.5 p-2.5 rounded-lg bg-surface-secondary border border-edge-default">
-          <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('costStats.turns') }}</span>
+          <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.turns') }}</span>
           <span class="text-base font-bold text-content-primary tabular-nums">{{ globalTurns }}</span>
         </div>
       </div>
 
       <!-- Cost sparkline (last 7 periods) -->
       <div v-if="sparkPeriods.length > 1" class="flex flex-col gap-1">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('costStats.trend') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.trend') }}</span>
         <div class="flex items-end gap-1 h-[40px]">
           <div
             v-for="(bar, i) in sparkPeriods"
@@ -234,7 +234,7 @@ const hoveredBar = ref<number | null>(null)
             <div v-if="bar.cost === 0" class="w-full h-[2px] rounded bg-edge-subtle" />
             <div
               v-if="hoveredBar === i"
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded text-[10px] font-mono whitespace-nowrap bg-surface-tooltip text-content-primary border border-edge-default shadow-lg pointer-events-none"
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded text-[10px] whitespace-nowrap bg-surface-tooltip text-content-primary border border-edge-default shadow-lg pointer-events-none"
             >
               {{ bar.label }} : {{ formatCost(bar.cost) }}
             </div>
@@ -244,7 +244,7 @@ const hoveredBar = ref<number | null>(null)
 
       <!-- Per-agent cost table -->
       <div class="space-y-1.5">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('costStats.perAgent') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.perAgent') }}</span>
 
         <div
           v-for="row in byAgent"

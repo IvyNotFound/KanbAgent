@@ -350,12 +350,12 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
 
     <!-- ── Period selector ────────────────────────────────────────────── -->
     <div class="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
-      <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.period.label') }}</span>
+      <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('tokenStats.period.label') }}</span>
       <div class="flex gap-1">
         <button
           v-for="period in PERIODS"
           :key="period.key"
-          class="px-2.5 py-0.5 rounded-full text-[11px] font-mono border transition-colors"
+          class="px-2.5 py-0.5 rounded-full text-[11px] border transition-colors"
           :class="selectedPeriod === period.key
             ? 'bg-accent-primary border-accent-primary text-white'
             : 'bg-surface-secondary border-edge-default text-content-secondary hover:border-accent-primary hover:text-content-primary'"
@@ -371,7 +371,7 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
 
       <!-- Period total tokens -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.total') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.total') }}</span>
         <span class="text-base font-bold text-content-primary tabular-nums">{{ formatNumber(globalStats.total) }}</span>
         <div class="flex gap-1.5 text-[10px] font-mono text-content-subtle">
           <span class="text-emerald-600 dark:text-emerald-400">↓ {{ formatNumber(globalStats.tokens_in) }}</span>
@@ -381,16 +381,16 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
 
       <!-- Sessions count -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.sessions') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.sessions') }}</span>
         <span class="text-base font-bold text-content-primary tabular-nums">{{ globalStats.session_count }}</span>
-        <div class="text-[10px] font-mono text-content-subtle truncate">
+        <div class="text-[10px] text-content-subtle truncate">
           {{ t('tokenStats.avgPerSession') }} {{ formatNumber(avgPerSession) }}
         </div>
       </div>
 
       <!-- Cache tokens -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cache') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cache') }}</span>
         <span class="text-base font-bold text-content-primary tabular-nums">{{ formatNumber(globalStats.tokens_cache_read + globalStats.tokens_cache_write) }}</span>
         <div class="flex gap-1.5 text-[10px] font-mono text-content-subtle">
           <span class="text-amber-600 dark:text-amber-400">R {{ formatNumber(globalStats.tokens_cache_read) }}</span>
@@ -400,29 +400,29 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
 
       <!-- Cache hit rate (T635) -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cacheHit') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cacheHit') }}</span>
         <span class="text-base font-bold tabular-nums" :class="cacheHitColor">{{ cacheHitRate }}%</span>
-        <div class="text-[10px] font-mono text-content-subtle truncate">
+        <div class="text-[10px] text-content-subtle truncate">
           {{ t('tokenStats.cacheHitLabel') }}
         </div>
       </div>
 
       <!-- Estimated cost (T635) -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cost') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cost') }}</span>
         <span class="text-base font-bold text-content-primary tabular-nums">{{ formatCost(estimatedCost) }}</span>
-        <div class="text-[10px] font-mono text-content-faint truncate">
+        <div class="text-[10px] text-content-faint truncate">
           {{ t('tokenStats.costNote') }}
         </div>
       </div>
 
       <!-- Output ratio -->
       <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.ratio') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.ratio') }}</span>
         <span class="text-base font-bold text-content-primary tabular-nums">
           {{ globalStats.total > 0 ? Math.round((globalStats.tokens_out / Math.max(globalStats.total, 1)) * 100) : 0 }}%
         </span>
-        <div class="text-[10px] font-mono text-content-subtle truncate">
+        <div class="text-[10px] text-content-subtle truncate">
           <span class="text-sky-600 dark:text-sky-400">{{ t('tokenStats.outputRatio') }}</span>
         </div>
       </div>
@@ -431,7 +431,7 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
     <!-- ── Sparkline 30 days ─────────────────────────────────────────── -->
     <div class="shrink-0 px-4 py-2 border-b border-edge-subtle bg-surface-base">
       <div class="flex items-center gap-2 mb-1">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-content-faint">{{ t('tokenStats.evolution') }}</span>
+        <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('tokenStats.evolution') }}</span>
       </div>
       <div class="flex items-end gap-1 h-[60px]">
         <div
@@ -457,7 +457,7 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
           <!-- Tooltip -->
           <div
             v-if="hoveredSparkBar === i"
-            class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded text-[10px] font-mono whitespace-nowrap bg-surface-tooltip text-content-primary border border-edge-default shadow-lg pointer-events-none"
+            class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded text-[10px] whitespace-nowrap bg-surface-tooltip text-content-primary border border-edge-default shadow-lg pointer-events-none"
           >
             {{ bar.label }} : {{ formatNumber(bar.total) }}
           </div>
@@ -473,7 +473,7 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
 
       <!-- Per-agent table with bars -->
       <section>
-        <h3 class="text-[11px] font-mono uppercase tracking-wider text-content-faint mb-2">{{ t('tokenStats.perAgent') }}</h3>
+        <h3 class="text-[11px] uppercase tracking-wider text-content-faint mb-2">{{ t('tokenStats.perAgent') }}</h3>
 
         <div v-if="agentRows.length === 0" class="text-sm text-content-faint py-4 text-center">
           {{ t('tokenStats.noData') }}
@@ -517,13 +517,13 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
 
       <!-- Per-session table -->
       <section>
-        <h3 class="text-[11px] font-mono uppercase tracking-wider text-content-faint mb-2">{{ t('tokenStats.perSession') }}</h3>
+        <h3 class="text-[11px] uppercase tracking-wider text-content-faint mb-2">{{ t('tokenStats.perSession') }}</h3>
 
         <div v-if="sessionRows.length === 0" class="text-sm text-content-faint py-4 text-center">
           {{ t('tokenStats.noData') }}
         </div>
 
-        <table v-else class="w-full text-[11px] font-mono">
+        <table v-else class="w-full text-[11px]">
           <thead>
             <tr class="text-content-faint text-left border-b border-edge-subtle">
               <th class="py-1.5 px-2 font-medium">ID</th>
@@ -550,9 +550,9 @@ const agentStyles = computed<Map<string, AgentStyle>>(() => {
                 <span v-else class="text-content-dim">—</span>
               </td>
               <td class="py-1.5 px-2 text-content-subtle">{{ formatDate(s.started_at) }}</td>
-              <td class="py-1.5 px-2 text-right text-emerald-600 dark:text-emerald-400 tabular-nums">{{ formatNumber(s.tokens_in) }}</td>
-              <td class="py-1.5 px-2 text-right text-sky-600 dark:text-sky-400 tabular-nums">{{ formatNumber(s.tokens_out) }}</td>
-              <td class="py-1.5 px-2 text-right text-content-secondary font-semibold tabular-nums">{{ formatNumber(s.total) }}</td>
+              <td class="py-1.5 px-2 text-right text-emerald-600 dark:text-emerald-400 tabular-nums font-mono">{{ formatNumber(s.tokens_in) }}</td>
+              <td class="py-1.5 px-2 text-right text-sky-600 dark:text-sky-400 tabular-nums font-mono">{{ formatNumber(s.tokens_out) }}</td>
+              <td class="py-1.5 px-2 text-right text-content-secondary font-semibold tabular-nums font-mono">{{ formatNumber(s.total) }}</td>
             </tr>
           </tbody>
         </table>
