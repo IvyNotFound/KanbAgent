@@ -151,10 +151,8 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 
 <template>
   <div class="flex-1 overflow-y-auto min-h-0 px-4 py-3">
-    <div class="flex items-center justify-between mb-3">
-      <p class="text-[11px] font-semibold text-content-subtle uppercase tracking-wider">{{ t('sidebar.agents') }}</p>
+    <div v-if="store.selectedAgentId !== null" class="flex justify-end mb-2">
       <button
-        v-if="store.selectedAgentId !== null"
         class="text-xs text-violet-400 hover:text-violet-300 transition-colors"
         @click="store.selectedAgentId = null"
       >{{ t('sidebar.reset') }}</button>

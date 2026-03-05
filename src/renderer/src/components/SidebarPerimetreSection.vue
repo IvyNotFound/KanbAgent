@@ -81,10 +81,8 @@ async function addPerimetre() {
 
 <template>
   <div class="flex-1 overflow-y-auto min-h-0 px-4 py-3 flex flex-col gap-1">
-    <div class="flex items-center justify-between mb-2">
-      <p class="text-[11px] font-semibold text-content-subtle uppercase tracking-wider">{{ t('sidebar.perimeters') }}</p>
+    <div v-if="store.selectedPerimetre !== null" class="flex justify-end mb-2">
       <button
-        v-if="store.selectedPerimetre !== null"
         class="text-xs text-violet-400 hover:text-violet-300 transition-colors"
         @click="store.selectedPerimetre = null"
       >{{ t('sidebar.reset') }}</button>
