@@ -6,25 +6,21 @@ import TokenStatsView from './TokenStatsView.vue'
 import GitCommitList from './GitCommitList.vue'
 import HookEventsView from './HookEventsView.vue'
 import ToolStatsPanel from './ToolStatsPanel.vue'
-import ActivityHeatmap from './ActivityHeatmap.vue'
-import AgentQualityPanel from './AgentQualityPanel.vue'
 import AgentLogsView from './AgentLogsView.vue'
-import SessionActivityChart from './SessionActivityChart.vue'
-import SuccessRateChart from './SuccessRateChart.vue'
 import DashboardOverview from './DashboardOverview.vue'
 
-const WorkloadView = defineAsyncComponent(() => import('./WorkloadView.vue'))
 const TopologyView = defineAsyncComponent(() => import('./TopologyView.vue'))
 const OrgChartView = defineAsyncComponent(() => import('./OrgChartView.vue'))
 
-type SubTab = 'overview' | 'tokenStats' | 'git' | 'hooks' | 'tools' | 'heatmap' | 'quality' | 'workload' | 'topology' | 'orgchart' | 'logs' | 'sessionActivity' | 'successRate'
+type SubTab = 'overview' | 'tokenStats' | 'git' | 'hooks' | 'tools' | 'topology' | 'orgchart' | 'logs'
 
 const { t } = useI18n()
 const store = useTasksStore()
 
 const STORAGE_KEY = 'dashboard.activeSubTab'
+const VALID_TABS: SubTab[] = ['overview', 'tokenStats', 'git', 'hooks', 'tools', 'topology', 'orgchart', 'logs']
 const savedTab = localStorage.getItem(STORAGE_KEY) as SubTab | null
-const activeSubTab = ref<SubTab>(savedTab ?? 'overview')
+const activeSubTab = ref<SubTab>(savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'overview')
 
 watch(activeSubTab, (tab) => {
   localStorage.setItem(STORAGE_KEY, tab)
@@ -62,19 +58,14 @@ if (activeSubTab.value === 'git') fetchGitCommits()
 
 // ── Sub-tab definitions ──────────────────────────────────────────────────────
 const subTabs: { id: SubTab; label: string }[] = [
-  { id: 'overview',        label: 'Vue d\'ensemble' },
-  { id: 'tokenStats',      label: t('tokenStats.title') },
-  { id: 'git',             label: 'Git' },
-  { id: 'hooks',           label: t('sidebar.hooks') },
-  { id: 'tools',           label: t('toolStats.title') },
-  { id: 'heatmap',         label: t('sidebar.heatmap') },
-  { id: 'sessionActivity', label: t('sidebar.sessionActivity') },
-  { id: 'successRate',     label: t('sidebar.successRate') },
-  { id: 'quality',         label: t('sidebar.quality') },
-  { id: 'workload',        label: t('sidebar.workload') },
-  { id: 'topology',        label: t('sidebar.topology') },
-  { id: 'orgchart',        label: t('orgchart.tabLabel') },
-  { id: 'logs',            label: t('tokenStats.logsTab') },
+  { id: 'overview',  label: t('dashboard.overview') },
+  { id: 'tokenStats', label: t('tokenStats.title') },
+  { id: 'git',       label: 'Git' },
+  { id: 'hooks',     label: t('sidebar.hooks') },
+  { id: 'tools',     label: t('toolStats.title') },
+  { id: 'topology',  label: t('sidebar.topology') },
+  { id: 'orgchart',  label: t('orgchart.tabLabel') },
+  { id: 'logs',      label: t('tokenStats.logsTab') },
 ]
 </script>
 
@@ -115,7 +106,7 @@ const subTabs: { id: SubTab; label: string }[] = [
             <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
             <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
           </svg>
-          Actualiser
+          {{ t('common.refresh') }}
         </button>
       </div>
       <!-- Loading -->
@@ -125,16 +116,16 @@ const subTabs: { id: SubTab; label: string }[] = [
       <!-- Error states -->
       <div v-else-if="gitError" class="flex flex-col items-center justify-center flex-1 py-8 gap-3">
         <p class="text-xs text-content-faint italic">
-          <template v-if="gitError === 'no-project'">Aucun projet ouvert</template>
+          <template v-if="gitError === 'no-project'">{{ t('common.noProject') }}</template>
           <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
-          <template v-else>Erreur lors de la lecture du dépôt git</template>
+          <template v-else>{{ t('dashboard.gitError') }}</template>
         </p>
         <button
           v-if="gitError === 'error'"
           class="px-3 py-1 text-xs bg-surface-secondary hover:bg-surface-tertiary text-content-muted rounded transition-colors"
           @click="fetchGitCommits"
         >
-          Réessayer
+          {{ t('common.retry') }}
         </button>
       </div>
       <!-- Commit list -->
@@ -151,25 +142,6 @@ const subTabs: { id: SubTab; label: string }[] = [
 
     <!-- Tools -->
     <ToolStatsPanel v-if="activeSubTab === 'tools'" class="flex-1 min-h-0" />
-
-    <!-- Heatmap -->
-    <ActivityHeatmap
-      v-if="activeSubTab === 'heatmap' && store.dbPath"
-      :db-path="store.dbPath"
-      class="flex-1"
-    />
-
-    <!-- Session Activity Chart -->
-    <SessionActivityChart v-if="activeSubTab === 'sessionActivity'" class="flex-1 min-h-0" />
-
-    <!-- Success Rate Chart -->
-    <SuccessRateChart v-if="activeSubTab === 'successRate'" class="flex-1 min-h-0" />
-
-    <!-- Quality -->
-    <AgentQualityPanel v-if="activeSubTab === 'quality'" class="flex-1 min-h-0" />
-
-    <!-- Workload -->
-    <WorkloadView v-if="activeSubTab === 'workload'" class="flex-1 min-h-0" />
 
     <!-- Topology -->
     <TopologyView v-if="activeSubTab === 'topology'" class="flex-1 min-h-0" />
