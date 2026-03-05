@@ -45,8 +45,6 @@ const mockElectronAPI = {
   checkMasterClaudeMd: vi.fn(),
   applyMasterClaudeMd: vi.fn(),
   createAgent: vi.fn(),
-  testGithubConnection: vi.fn(),
-  checkForUpdates: vi.fn(),
   searchTasks: vi.fn(),
   onTerminalConvId: vi.fn(() => () => {}),
   setSessionConvId: vi.fn().mockResolvedValue(undefined),

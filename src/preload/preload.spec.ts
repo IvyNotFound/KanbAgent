@@ -111,8 +111,7 @@ describe('preload/index', () => {
     expect(exposedMethods).toContain('setConfigValue')
   })
 
-  it('should expose GitHub and search methods', () => {
-    expect(exposedMethods).toContain('testGithubConnection')
+  it('should expose search methods', () => {
     expect(exposedMethods).toContain('checkForUpdates')
     expect(exposedMethods).toContain('searchTasks')
     expect(exposedMethods).toContain('tasksGetArchived')

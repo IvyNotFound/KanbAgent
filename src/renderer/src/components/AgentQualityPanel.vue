@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg } from '@renderer/utils/agentColor'
 import type { AgentQualityRow } from '@renderer/types'
 
+const { t } = useI18n()
 const store = useTasksStore()
 
 const rows = ref<AgentQualityRow[]>([])
@@ -73,51 +75,51 @@ watch(() => store.dbPath, fetchQuality)
     <!-- Header -->
     <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
       <div class="flex items-center gap-3">
-        <h2 class="text-sm font-semibold text-content-secondary">Qualité agents</h2>
+        <h2 class="text-sm font-semibold text-content-secondary">{{ t('quality.title') }}</h2>
         <!-- Perimetre filter -->
         <select
           v-if="perimetres.length > 1"
           v-model="filterPerimetre"
           class="text-xs bg-surface-secondary border border-edge-subtle rounded px-2 py-0.5 text-content-tertiary focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option :value="null">Tous</option>
+          <option :value="null">{{ t('quality.all') }}</option>
           <option v-for="p in perimetres" :key="p" :value="p">{{ p }}</option>
         </select>
       </div>
       <button
         class="text-xs text-content-subtle hover:text-content-secondary transition-colors"
         @click="fetchQuality"
-      >Rafraîchir</button>
+      >{{ t('quality.refresh') }}</button>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center flex-1 py-12">
-      <p class="text-sm text-content-faint animate-pulse">Chargement…</p>
+      <p class="text-sm text-content-faint animate-pulse">{{ t('quality.loading') }}</p>
     </div>
 
     <!-- Error -->
     <div v-else-if="error" class="flex items-center justify-center flex-1 py-12">
-      <p class="text-sm text-red-400 italic">Erreur : {{ error }}</p>
+      <p class="text-sm text-red-400 italic">{{ t('quality.error', { msg: error }) }}</p>
     </div>
 
     <!-- Empty -->
     <div v-else-if="filteredRows.length === 0" class="flex items-center justify-center flex-1 py-12">
-      <p class="text-sm text-content-faint italic">Aucune tâche done/archived trouvée.</p>
+      <p class="text-sm text-content-faint italic">{{ t('quality.empty') }}</p>
     </div>
 
     <template v-else>
       <!-- Global indicator -->
       <div class="shrink-0 px-5 py-3 border-b border-edge-subtle bg-surface-base/60">
         <div class="flex items-center gap-4">
-          <span class="text-[11px] text-content-faint uppercase tracking-wider font-semibold">Taux de rejet projet</span>
+          <span class="text-[11px] text-content-faint uppercase tracking-wider font-semibold">{{ t('quality.rejectionRate') }}</span>
           <span
             class="text-lg font-mono font-bold"
             :style="{ color: rateColor(globalRejectionRate) }"
           >{{ globalRejectionRate }}%</span>
-          <span v-if="!hasRejections" class="text-[11px] text-green-400 italic">Aucun rejet détecté</span>
+          <span v-if="!hasRejections" class="text-[11px] text-green-400 italic">{{ t('quality.noRejections') }}</span>
         </div>
         <p class="text-[10px] text-content-faint mt-1 italic">
-          Détection heuristique — commentaires reviewer contenant "rejet", "retour" ou "todo"
+          {{ t('quality.heuristicNote') }}
         </p>
       </div>
 
@@ -126,10 +128,10 @@ watch(() => store.dbPath, fetchQuality)
         <!-- Column headers -->
         <div class="grid grid-cols-[minmax(130px,1fr)_70px_60px_50px_minmax(0,2fr)] gap-3 text-[10px] font-semibold uppercase tracking-wider text-content-faint pb-1 border-b border-edge-subtle">
           <span>Agent</span>
-          <span class="text-right">Total</span>
-          <span class="text-right">Rejets</span>
-          <span class="text-right">Taux</span>
-          <span>Barre</span>
+          <span class="text-right">{{ t('quality.colTotal') }}</span>
+          <span class="text-right">{{ t('quality.colRejected') }}</span>
+          <span class="text-right">{{ t('quality.colRate') }}</span>
+          <span>{{ t('quality.colBar') }}</span>
         </div>
 
         <!-- Rows -->

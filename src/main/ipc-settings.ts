@@ -1,7 +1,7 @@
 /**
- * IPC handlers — Settings, config & GitHub operations
+ * IPC handlers — Settings & config operations
  *
- * Handles config values, GitHub connection testing, and update checks.
+ * Handles config values and update checks (public repo, no auth required).
  *
  * @module ipc-settings
  */
@@ -11,17 +11,7 @@ import { assertDbPathAllowed, queryLive, writeDb } from './db'
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
-/** Read github_token from config table; returns empty string if absent. */
-async function getGitHubToken(dbPath: string): Promise<string> {
-  try {
-    const rows = await queryLive(dbPath, "SELECT value FROM config WHERE key = 'github_token'", [])
-    return rows.length > 0 ? ((rows[0] as { value: string }).value ?? '') : ''
-  } catch {
-    return ''
-  }
-}
-
-/** Register all settings & GitHub IPC handlers. */
+/** Register all settings IPC handlers. */
 export function registerSettingsHandlers(): void {
   /**
    * Read a config value by key.
@@ -66,45 +56,13 @@ export function registerSettingsHandlers(): void {
   })
 
   /**
-   * Test GitHub repo access with optional token authentication.
-   * @param dbPath - DB path (for stored token)
-   * @param repoUrl - GitHub repository URL
-   * @returns {{ connected: boolean, error?: string }}
-   */
-  ipcMain.handle('test-github-connection', async (_event, dbPath: string, repoUrl: string) => {
-    try {
-      const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/)
-      if (!match) return { connected: false, error: 'URL invalide' }
-      const owner = match[1]
-      const repo = match[2].replace(/\.git$/, '')
-      // Validate owner/repo format to prevent unexpected chars being forwarded to GitHub API
-      if (!/^[a-zA-Z0-9_.-]{1,100}$/.test(owner) || !/^[a-zA-Z0-9_.-]{1,100}$/.test(repo)) {
-        return { connected: false, error: 'owner/repo invalide' }
-      }
-
-      const githubToken = await getGitHubToken(dbPath)
-      const headers: Record<string, string> = {}
-      if (githubToken) headers['Authorization'] = `token ${githubToken}`
-
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-        headers,
-        signal: AbortSignal.timeout(10_000)
-      })
-      return { connected: response.ok }
-    } catch (err) {
-      console.error('[IPC test-github-connection]', err)
-      return { connected: false, error: String(err) }
-    }
-  })
-
-  /**
-   * Check GitHub releases for a newer version.
-   * @param dbPath - DB path (for stored token)
+   * Check GitHub releases for a newer version (public repo — no auth required).
+   * @param dbPath - DB path (registered project DB path)
    * @param repoUrl - GitHub repository URL
    * @param currentVersion - Current app version (e.g. "0.5.1")
    * @returns {{ hasUpdate: boolean, latestVersion: string, error?: string }}
    */
-  ipcMain.handle('check-for-updates', async (_event, dbPath: string, repoUrl: string, currentVersion: string) => {
+  ipcMain.handle('check-for-updates', async (_event, _dbPath: string, repoUrl: string, currentVersion: string) => {
     try {
       const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/)
       if (!match) return { hasUpdate: false, latestVersion: '', error: 'URL invalide' }
@@ -115,9 +73,7 @@ export function registerSettingsHandlers(): void {
         return { hasUpdate: false, latestVersion: '', error: 'owner/repo invalide' }
       }
 
-      const githubToken = await getGitHubToken(dbPath)
       const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
-      if (githubToken) headers['Authorization'] = `token ${githubToken}`
 
       // T304: 10s timeout prevents UI freeze when GitHub is unreachable
       const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, { headers, signal: AbortSignal.timeout(10_000) })

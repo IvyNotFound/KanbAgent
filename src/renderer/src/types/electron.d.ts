@@ -40,7 +40,6 @@ declare global {
       // Agents
       updateAgent(dbPath: string, agentId: number, updates: { name?: string; type?: string; perimetre?: string | null; thinkingMode?: string | null; allowedTools?: string | null; systemPrompt?: string | null; systemPromptSuffix?: string | null; autoLaunch?: boolean; permissionMode?: 'default' | 'auto' | null; maxSessions?: number }): Promise<{ success: boolean; error?: string }>
       createAgent(dbPath: string, projectPath: string, data: { name: string; type: string; perimetre: string | null; thinkingMode: string | null; systemPrompt: string | null; description: string }): Promise<{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }>
-      checkForUpdates(dbPath: string, repoUrl: string, currentVersion: string): Promise<{ hasUpdate: boolean; latestVersion: string; error?: string }>
       // Task assignees (multi-agent — ADR-008)
       getTaskAssignees(dbPath: string, taskId: number): Promise<{ success: boolean; assignees: Array<{ agent_id: number; agent_name: string; role: string | null; assigned_at: string }>; error?: string }>
       setTaskAssignees(dbPath: string, taskId: number, assignees: Array<{ agentId: number; role?: string | null }>): Promise<{ success: boolean; error?: string }>
@@ -79,8 +78,6 @@ declare global {
       projectExportZip(dbPath: string): Promise<{ success: boolean; path?: string; error?: string }>
       /** Auto-updater (T862/T864): check, download, install, events. */
       updater?: {
-        getToken(): Promise<string | null>
-        setToken(token: string): Promise<boolean>
         check(): Promise<unknown>
         download(): Promise<unknown>
         install(): Promise<void>

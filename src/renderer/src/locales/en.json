@@ -336,6 +336,8 @@
     "hooks": "Hooks",
     "workload": "Workload",
     "topology": "Topology",
+    "heatmap": "Heatmap",
+    "quality": "Quality",
     "project": "Project",
     "agents": "Agents",
     "perimeters": "Perimeters",
@@ -370,6 +372,21 @@
     "deleteGroup": "Delete group",
     "deleteGroupDetail": "Agents will be moved to \"Ungrouped\". Continue?",
     "dropAgentHere": "Drop here"
+  },
+  "quality": {
+    "title": "Agent quality",
+    "all": "All",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "error": "Error: {msg}",
+    "empty": "No done/archived tasks found.",
+    "rejectionRate": "Project rejection rate",
+    "noRejections": "No rejections detected",
+    "heuristicNote": "Heuristic detection — reviewer comments containing \"reject\", \"return\" or \"todo\"",
+    "colTotal": "Total",
+    "colRejected": "Rejections",
+    "colRate": "Rate",
+    "colBar": "Bar"
   },
   "timeline": {
     "title": "Timeline",

@@ -12,7 +12,7 @@
  * - **Window**: windowMinimize, windowMaximize, windowClose, windowIsMaximized
  *- **Agents**: createAgent, updateAgent, renameAgent, buildAgentPrompt, etc.
  * - **Config**: getConfigValue, setConfigValue
- * - **GitHub**: testGithubConnection, checkForUpdates, checkMasterClaudeMd
+ * - **GitHub**: checkForUpdates, checkMasterClaudeMd
  * - **Search**: searchTasks
  *
  * @module preload
@@ -159,10 +159,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ): Promise<{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }> =>
     ipcRenderer.invoke('create-agent', dbPath, projectPath, data),
 
-  // GitHub (secure — token stays in main process)
-  testGithubConnection: (dbPath: string, repoUrl: string): Promise<{ connected: boolean; error?: string }> =>
-    ipcRenderer.invoke('test-github-connection', dbPath, repoUrl),
-
+  // GitHub (public repo — no auth required)
   checkForUpdates: (dbPath: string, repoUrl: string, currentVersion: string): Promise<{ hasUpdate: boolean; latestVersion: string; error?: string }> =>
     ipcRenderer.invoke('check-for-updates', dbPath, repoUrl, currentVersion),
 
@@ -321,16 +318,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   telemetryScan: (projectPath: string): Promise<{ languages: Array<{ name: string; color: string; files: number; lines: number; percent: number }>; totalFiles: number; totalLines: number; scannedAt: string }> =>
     ipcRenderer.invoke('telemetry:scan', projectPath),
 
-  // Auto-updater (GitHub Releases — private repo, token stored via safeStorage)
+  // Auto-updater (GitHub Releases — public repo)
   updater: {
-    /** Returns '****' if a token is saved, null otherwise. Token is never sent to renderer. */
-    getToken: (): Promise<string | null> =>
-      ipcRenderer.invoke('updater:get-token'),
-
-    /** Save the GitHub PAT (scope: repo read) encrypted via safeStorage. */
-    setToken: (token: string): Promise<boolean> =>
-      ipcRenderer.invoke('updater:set-token', token),
-
     /** Trigger an update check (no-op in dev). */
     check: (): Promise<unknown> =>
       ipcRenderer.invoke('updater:check'),
