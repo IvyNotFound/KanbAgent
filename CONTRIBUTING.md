@@ -118,107 +118,143 @@ docs: update README with new commands
 - **sandbox**: enabled
 - **All Node.js access**: via IPC only
 - **No direct filesystem access** from the renderer
-- **GitHub Token**: OS-level encryption via `safeStorage` (DPAPI / Keychain), never stored in plaintext
 
-### IPC Handlers — `src/main/ipc.ts` (core)
-
-| Handler | Description |
-|---------|-------------|
-| `query-db` | Read-only SQL query on the DB (sql.js, bypasses lock via `readFile`) |
-| `watch-db` | Watches DB file changes (fs.watch) |
-| `unwatch-db` | Stops watching |
-| `select-project-dir` | Project folder selector (Electron dialog) |
-| `select-new-project-dir` | Selector for creating a new project |
-| `create-project-db` | Creates a blank SQLite DB in `.claude/` |
-| `find-project-db` | Finds `project.db` in a folder's `.claude/` |
-| `init-new-project` | Initializes a project (creates DB + inserts default agents) |
-| `migrate-db` | Migrates the SQLite schema to the current version |
-| `get-locks` | Returns active locks |
-| `show-confirm-dialog` | Displays a native confirmation dialog |
-| `window-minimize` | Minimizes the window |
-| `window-maximize` | Maximizes / restores the window |
-| `window-close` | Closes the application |
-| `window-is-maximized` | Returns the maximized state |
-| `tasks:getArchived` | Paginated archived tasks query (page, pageSize, optional filters) |
-
-### IPC Handlers — `src/main/ipc-agents.ts`
+### IPC Handlers — `src/main/ipc-db.ts`
 
 | Handler | Description |
 |---------|-------------|
-| `close-agent-sessions` | Closes an agent's `en_cours` sessions |
-| `rename-agent` | Renames an agent in the DB |
-| `update-perimetre` | Updates a scope name/description and cascades to tasks/agents |
-| `add-perimetre` | Creates a new scope in the `perimetres` table |
-| `update-agent-system-prompt` | Updates an agent's system prompt |
-| `update-agent-thinking-mode` | Updates an agent's thinking mode |
-| `update-agent` | Updates agent fields (name, type, scope, permission_mode, max_sessions…) |
-| `agent:duplicate` | Duplicates an agent (copies name, type, scope, prompt, thinking_mode, max_sessions) |
-| `get-agent-system-prompt` | Returns system_prompt, suffix, thinking_mode of an agent |
-| `build-agent-prompt` | Builds the launch prompt with session summary + task context |
-| `create-agent` | Creates an agent + inserts into CLAUDE.md if present |
-| `delete-agent` | Deletes an agent and all associated data (sessions, locks, tasks) |
-| `task:getAssignees` | Returns all agents assigned to a task (with role) |
-| `task:setAssignees` | Replaces a task's assignee list (primary / support / reviewer) |
-| `search-tasks` | Full-text search in tasks with filters |
-| `session:setConvId` | Stores the `claude_conv_id` of a session for `--resume` |
+| `query-db` | Read-only SQL query on the DB (write keywords blocked) |
+| `watch-db` | Watch DB file changes — emits `db-changed` to all windows |
+| `unwatch-db` | Stop watching, clear DB cache entry |
+| `migrate-db` | Run all pending schema migrations |
+| `get-locks` | Return active (unreleased) locks with agent names |
+
+### IPC Handlers — `src/main/ipc-project.ts`
+
+| Handler | Description |
+|---------|-------------|
+| `select-project-dir` | Native directory picker — registers path and finds DB |
+| `select-new-project-dir` | Directory picker for a new project (with create option) |
+| `create-project-db` | Create a blank SQLite DB in `.claude/` with default agents |
+| `find-project-db` | Locate `project.db` inside `.claude/` |
+| `init-new-project` | Create `.claude/` dir and download `CLAUDE.md` from GitHub |
+| `project:exportZip` | Export `project.db` as a ZIP archive to Downloads |
+
+### IPC Handlers — `src/main/ipc-window.ts`
+
+| Handler | Description |
+|---------|-------------|
+| `window-minimize` | Minimize the focused window |
+| `window-maximize` | Toggle maximize/restore |
+| `window-close` | Close the focused window |
+| `window-is-maximized` | Return maximized state |
+| `show-confirm-dialog` | Show a native confirmation dialog |
+| `shell:openExternal` | Open a URL in the default browser (https only) |
 
 ### IPC Handlers — `src/main/ipc-fs.ts`
 
 | Handler | Description |
 |---------|-------------|
-| `fs:listDir` | Lists a directory (file explorer, max 4 levels) |
-| `fs:readFile` | Reads a text file (restricted to project directory) |
-| `fs:writeFile` | Writes a text file (restricted to project directory, sensitive paths blocked) |
+| `fs:listDir` | List a directory (max 4 levels, restricted to project) |
+| `fs:readFile` | Read a text file (restricted to project directory) |
+| `fs:writeFile` | Write a text file (sensitive paths blocked) |
 
 ### IPC Handlers — `src/main/ipc-settings.ts`
 
 | Handler | Description |
 |---------|-------------|
-| `get-config-value` | Reads a key from the `config` table (github_token auto-decrypted) |
-| `set-config-value` | Writes a key to the `config` table (github_token auto-encrypted) |
-| `test-github-connection` | Tests the GitHub connection with the stored token |
-| `check-for-updates` | Checks if a new version is available on GitHub |
+| `get-config-value` | Read a key from the `config` table |
+| `set-config-value` | Write a key to the `config` table |
+| `check-for-updates` | Check GitHub releases for a newer version |
 
-### IPC Handlers — `src/main/terminal.ts`
+### IPC Handlers — `src/main/ipc-agents.ts` (facade → sub-modules)
+
+#### `ipc-agent-crud.ts` — Agent CRUD
 
 | Handler | Description |
 |---------|-------------|
-| `terminal:getWslUsers` | Lists available WSL users (`/etc/passwd`) |
-| `terminal:getClaudeProfiles` | Lists Claude profiles in `~/bin/` (WSL) |
-| `terminal:getClaudeInstances` | Detects WSL distributions with Claude Code installed |
-| `terminal:create` | Creates a WSL PTY (with agent / resume / plain bash) |
-| `terminal:write` | Sends data to the PTY |
-| `terminal:resize` | Resizes the PTY |
-| `terminal:kill` | Kills the PTY (graceful for agent sessions) |
-| `terminal:subscribe` | No-op — kept for re-subscription after hot-reload |
-| `terminal:relaunch` | Relaunches a crashed PTY with the same parameters |
-| `terminal:dismissCrash` | Clears crash recovery parameters |
-| `terminal:getActiveCount` | Returns the number of active PTYs |
-| `terminal:isAlive` | Checks if a PTY is still alive |
-| `terminal:getMemoryStatus` | Returns WSL memory usage on demand |
-| `terminal:releaseMemory` | Releases WSL memory (sync + optional drop_caches) |
+| `create-agent` | Create agent + insert into CLAUDE.md |
+| `delete-agent` | Delete agent if it has no history |
+| `rename-agent` | Rename an agent |
+| `update-agent` | Bulk update agent fields (name, type, scope, prompt…) |
+| `agent:duplicate` | Duplicate an agent with a unique name |
+| `get-agent-system-prompt` | Fetch prompt, suffix, thinking_mode, permission_mode |
+| `update-agent-system-prompt` | Update system_prompt for an agent |
+| `update-agent-thinking-mode` | Set thinking_mode (`auto`\|`disabled`\|null) |
+
+#### `ipc-agent-groups.ts` — Agent groups
+
+| Handler | Description |
+|---------|-------------|
+| `agent-groups:list` | List all groups with members |
+| `agent-groups:create` | Create a group (supports parent_id for nesting) |
+| `agent-groups:rename` | Rename a group |
+| `agent-groups:delete` | Delete a group and its members |
+| `agent-groups:setMember` | Assign/remove an agent from a group |
+| `agent-groups:reorder` | Reorder groups by sort_order |
+| `agent-groups:setParent` | Move a group in the hierarchy (cycle detection) |
+
+#### `ipc-agent-sessions.ts` — Sessions & tokens
+
+| Handler | Description |
+|---------|-------------|
+| `session:setConvId` | Store Claude Code conv UUID for `--resume` support |
+| `session:parseTokens` | Parse JSONL file and persist token counts for a session |
+| `session:syncAllTokens` | Retroactively sync tokens for all sessions with a conv_id |
+| `session:collectTokens` | Collect tokens for the latest session of an agent |
+
+#### `ipc-agent-tasks.ts` — Tasks, perimeters & prompts
+
+| Handler | Description |
+|---------|-------------|
+| `close-agent-sessions` | Mark all started sessions as completed for an agent |
+| `update-perimetre` | Update perimeter name/description with cascade |
+| `add-perimetre` | Insert a new perimeter |
+| `build-agent-prompt` | Build launch prompt with session context + task list |
+| `task:getAssignees` | Get all agents assigned to a task (with role) |
+| `task:setAssignees` | Atomically replace a task's assignee list |
+| `task:getLinks` | Get dependency links for a task |
+| `search-tasks` | Full-text search tasks with FTS4 / LIKE fallback |
+
+### IPC Handlers — `src/main/ipc-session-stats.ts`
+
+| Handler | Description |
+|---------|-------------|
+| `session:updateResult` | Persist cost_usd, duration_ms, num_turns from Claude result event |
+| `sessions:statsCost` | Aggregate cost/token stats per agent and period |
+| `tasks:getArchived` | Paginated archived tasks query (page, pageSize, optional filters) |
+| `tasks:qualityStats` | Rejection rate per agent (heuristic-based) |
+| `tasks:updateStatus` | Update a task status (drag & drop) with blocker check |
+
+### IPC Handlers — Utility modules
+
+| Module | Handler | Description |
+|--------|---------|-------------|
+| `ipc-git.ts` | `git:log` | Run `git log` and return parsed commits (limit 1–500) |
+| `ipc-telemetry.ts` | `telemetry:scan` | Recursively scan project directory for per-language statistics |
+| `ipc-wsl.ts` | `wsl:getClaudeInstances` | Detect Claude Code instances (local + WSL distros) |
+| `ipc-wsl.ts` | `wsl:openTerminal` | Open an external WSL terminal window |
+| `updater.ts` | `updater:check` | Trigger an update check via electron-updater |
+| `updater.ts` | `updater:download` | Start downloading the available update |
+| `updater.ts` | `updater:install` | Quit and install the downloaded update |
 
 ### IPC Events (main → renderer)
 
 | Event | Description |
 |-------|-------------|
-| `db-changed` | DB has changed on disk (triggers refresh) |
+| `db-changed` | DB changed on disk (triggers store refresh) |
 | `window-state-changed` | Window maximized/restored |
-| `terminal:data:<id>` | PTY data |
-| `terminal:exit:<id>` | PTY terminated (includes crash recovery info) |
-| `terminal:convId:<id>` | Claude Code session UUID detected at startup |
-| `terminal:memoryStatus` | Periodic broadcast of WSL memory usage |
+| `update:available` | New version available (includes release info) |
+| `update:not-available` | No update found |
+| `update:progress` | Download progress |
+| `update:downloaded` | Update downloaded — ready to install |
+| `update:error` | Auto-updater error |
 
 ### Adding a New Handler
 
-1. Define the handler in the appropriate IPC file with JSDoc (`@param`, `@returns`, `@throws`):
-   - `src/main/ipc.ts` — core (SQL, window, locks)
-   - `src/main/ipc-agents.ts` — agents (CRUD, sessions, search)
-   - `src/main/ipc-fs.ts` — filesystem (read/write files)
-   - `src/main/ipc-settings.ts` — settings (config, GitHub)
-   - `src/main/terminal.ts` — WSL terminal (PTY)
+1. Add the handler in the domain-specific file (see sections above for which file covers which domain). Include JSDoc: `@param`, `@returns`, `@throws`.
 2. Expose via `contextBridge` in `src/preload/index.ts`
-3. Declare the type in the `Window.electronAPI` interface in `src/renderer/src/stores/tasks.ts`
+3. Declare the type in `Window.electronAPI` in `src/renderer/src/types/electron.d.ts`
 4. Update the handlers table in `CONTRIBUTING.md`
 
 ---
@@ -237,11 +273,19 @@ npm run test:coverage   # Istanbul coverage report
 
 | File | Scope |
 |------|-------|
-| `src/main/ipc.spec.ts` | IPC handlers (main process) |
-| `src/main/ipc-agents.spec.ts` | Agent IPC handlers (CRUD, assignees) |
-| `src/main/db.spec.ts` | SQLite utilities (queryLive, writeLive) |
+| `src/main/ipc-agents.spec.ts` | Agent IPC handlers (CRUD, assignees, groups) |
+| `src/main/ipc-tasks.spec.ts` | Task status handlers (getArchived, updateStatus) |
+| `src/main/ipc-db.spec.ts` | DB query and watch handlers |
+| `src/main/ipc-settings.spec.ts` | Config and update-check handlers |
+| `src/main/ipc-git.spec.ts` | Git log handler |
+| `src/main/ipc-wsl.spec.ts` | WSL instance detection |
+| `src/main/ipc-telemetry.spec.ts` | Telemetry scan handler |
+| `src/main/ipc-window.spec.ts` | Window control handlers |
+| `src/main/ipc-fs.spec.ts` | Filesystem read/write handlers |
+| `src/main/ipc-project.spec.ts` | Project management handlers |
+| `src/main/ipc-session-stats.spec.ts` | Session stats and cost handlers |
+| `src/main/db.spec.ts` | SQLite utilities (queryLive, writeDb) |
 | `src/main/migration.spec.ts` | SQLite migrations |
-| `src/main/terminal.spec.ts` | WSL terminal (PTY) |
 | `src/main/claude-md.spec.ts` | CLAUDE.md manipulation |
 | `src/preload/preload.spec.ts` | contextBridge / preload |
 | `src/renderer/src/stores/stores.spec.ts` | Pinia stores |
@@ -259,16 +303,21 @@ npm run test:coverage   # Istanbul coverage report
 
 ## Creating a Task
 
+Preferred: use `node scripts/dbstart.js <agent-name>` — it creates the session and displays assigned tasks automatically.
+
+To create a task manually:
+
 ```sql
 INSERT INTO tasks (
   titre, description,
-  statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority
+  statut, agent_createur_id, agent_assigne_id, agent_valideur_id, perimetre, effort, priority
 ) VALUES (
   'Task title',
   'Full description with context and acceptance criteria',
   'todo',
   (SELECT id FROM agents WHERE name = 'review'),
   (SELECT id FROM agents WHERE name = 'dev-front-vuejs'),
+  (SELECT id FROM agents WHERE name = 'review'),
   'front-vuejs',
   2,        -- effort: 1 (small) | 2 (medium) | 3 (large)
   'normal'  -- priority: low | normal | high | critical
@@ -304,6 +353,9 @@ The application automatically attempts to **resume** the previous session via `-
 | `secu` | global | Security |
 | `perf` | global | Performance |
 | `data` | global | Database, schema |
+| `task-creator` | global | Automatic ticket creation |
+| `infra` | global | Infrastructure, deployment |
+| `infra-prod` | global | Production infrastructure (human validation required) |
 
 ### Permission Mode
 
