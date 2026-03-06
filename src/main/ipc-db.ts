@@ -16,6 +16,7 @@ import {
   migrateDb,
   clearDbCacheEntry,
 } from './db'
+import { startSessionCloser, stopSessionCloser } from './session-closer'
 
 // ── Shared watcher state ──────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ export function registerDbHandlers(): void {
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = setTimeout(() => notifyRenderer(), 300)
       })
+      startSessionCloser(dbPath)
     } catch (err) {
       console.error('[IPC watch-db]', err)
     }
@@ -76,6 +78,7 @@ export function registerDbHandlers(): void {
   ipcMain.handle('unwatch-db', (_event, dbPath?: string) => {
     if (watcher) { watcher.close(); watcher = null }
     if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null }
+    stopSessionCloser()
     if (dbPath) {
       clearDbCacheEntry(dbPath)
       console.log('[IPC unwatch-db] Cache cleared for:', dbPath)
