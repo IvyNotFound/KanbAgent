@@ -162,3 +162,21 @@ chmod +x ~/bin/claude-minimax
 | `CLAUDE_CONFIG_DIR` | ✅ Officially documented | No side effects |
 | `HOME` override | ⚠️ Undocumented | Breaks nvm, `.bashrc`, node_modules paths |
 | `ANTHROPIC_API_KEY` alone | ❌ Insufficient for OAuth | Conflict if OAuth token present |
+
+---
+
+## Known Git Anomalies
+
+### Commit 3cda7ee — T987 label bundles T961 changes (2026-03-06)
+
+**Commit:** `3cda7ee test: configure stryker mutation testing (T987)`
+
+**Problem:** This commit contains changes from two distinct tickets:
+- **T987** (stryker): `stryker.config.mjs`, `package.json` (`test:mutation` script)
+- **T961** (language selector dropdown, 18 locales): `DbSelector.vue`, `SettingsModal.vue`, `SettingsModal.spec.ts`, `src/renderer/src/plugins/i18n.ts`, `src/renderer/src/stores/settings.ts`, `src/main/default-agents.ts`
+
+**Context:** T961 was archived (code correct, in production). T987 was rejected for unrelated reasons but its code (stryker config) was merged. The commit message only references T987.
+
+**Impact:** No code issue — all changes are in production and correct. Convention violation only: one commit should map to one ticket scope.
+
+**Resolution:** Documented here. No code change required.
