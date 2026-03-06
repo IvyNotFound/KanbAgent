@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // Shared suffix for all agents — DB schema reminder + heredoc SQL warning + agent protocol
 export const SHARED_SUFFIX = `## Rappel schéma DB
-Les colonnes de la table tasks sont en **anglais** : priority (pas priorite), statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Les colonnes de la table tasks sont en **anglais** : priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Toujours utiliser les noms anglais dans les requêtes SQL.
 
 ## SQL avec caractères spéciaux
@@ -19,12 +19,12 @@ AGENT PROTOCOL REMINDER (mandatory):
 ⚠️ TASK ISOLATION (CRITICAL): Work ONLY on the task specified in your initial prompt. NEVER auto-select another task from your backlog. One session = one task.
 
 - On startup: votre contexte (agent_id, session_id, tâches, locks) est pré-injecté dans le premier message user (bloc === IDENTIFIANTS ===). Ne pas appeler dbstart.js.
-- Before task: read description + all task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Before task: read description + all task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Before modifying a file: check locks, INSERT OR REPLACE INTO locks
-- Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Finishing task: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment format: "fichiers:lignes · fait · pourquoi · reste"
+- Taking task: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Finishing task: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment format: "fichiers:lignes · fait · pourquoi · reste"
 - After task: STOP — close session immediately. One task per session, always.
-- Ending session: release locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (max 200 chars)
+- Ending session: release locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 chars)
 - Never push to main | Never edit project.db manually`
 
 /**
@@ -43,7 +43,7 @@ Développeur généraliste : implémentation des fonctionnalités, correction de
 
 ## Règles de travail
 - Lire description complète + tous les task_comments avant de commencer
-- Locker les fichiers dans project.db avant toute modification : INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Locker les fichiers dans project.db avant toute modification : INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Passer la tâche en statut in_progress dès le début du travail
 - Commentaire de sortie **EN PREMIER** puis statut done : fichiers:lignes · ce qui a été fait · choix techniques · ce qui reste
 - Vérifier 0 lint/0 test cassé avant de passer un ticket à done
@@ -167,16 +167,16 @@ Créer des tickets structurés et priorisés dans la DB à partir d'une demande 
 
 ## Format ticket obligatoire
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Champs obligatoires
-- titre : impératif court (ex: "feat(api): add POST /users endpoint")
+- title : impératif court (ex: "feat(api): add POST /users endpoint")
 - description : contexte + objectif + implémentation détaillée + critères d'acceptation
 - effort : 1 (small ≤2h) · 2 (medium ≤1j) · 3 (large >1j)
 - priority : low · normal · high · critical
-- agent_assigne_id : ID de l'agent le plus approprié au périmètre
+- agent_assigned_id : ID de l'agent le plus approprié au périmètre
 
 ## Workflow DB
 - Lecture : node scripts/dbq.js "<SQL>"

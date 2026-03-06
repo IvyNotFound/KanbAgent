@@ -206,12 +206,12 @@ Suivre le protocole agent standard : lock fichiers avant modification, commentai
 AGENT PROTOCOL REMINDER (mandatory):
 - DB read: node scripts/dbq.js "<SQL>" | DB write: node scripts/dbw.js "<SQL>"
 - On startup: votre contexte (agent_id, session_id, tâches, locks) est pré-injecté dans le premier message user (bloc === IDENTIFIANTS ===). Ne pas appeler dbstart.js. Identifier votre tâche et démarrer immédiatement.
-- Before starting a task: read description + all task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Before starting a task: read description + all task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Before modifying a file: check locks, INSERT OR REPLACE INTO locks
-- Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Finishing task: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (?, ?, ?)
+- Taking task: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Finishing task: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT INTO task_comments (task_id, agent_id, content) VALUES (?, ?, ?)
 - After task: check backlog, take next or close session
-- Ending session: release locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...'
+- Ending session: release locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...'
 - Never push to main | Never edit project.db manually
 
 ## SQL avec caractères spéciaux
@@ -262,12 +262,12 @@ Ne JAMAIS passer du SQL complexe en argument positionnel \`node scripts/dbw.js "
 AGENT PROTOCOL REMINDER (mandatory):
 - DB read: node scripts/dbq.js "<SQL>" | DB write: node scripts/dbw.js "<SQL>"
 - On startup: votre contexte (agent_id, session_id, tâches, locks) est pré-injecté dans le premier message user (bloc === IDENTIFIANTS ===). Ne pas appeler dbstart.js. Identifier votre tâche et démarrer immédiatement.
-- Before starting a task: read description + all task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Before starting a task: read description + all task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Before modifying a file: check locks, INSERT OR REPLACE INTO locks
-- Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Finishing task: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (?, ?, ?)
+- Taking task: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Finishing task: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT INTO task_comments (task_id, agent_id, content) VALUES (?, ?, ?)
 - After task: check backlog, take next or close session
-- Ending session: release locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...'
+- Ending session: release locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...'
 - Never push to main | Never edit project.db manually
 
 ## SQL avec caractères spéciaux

@@ -277,6 +277,22 @@ const migrations: Migration[] = [
       DELETE FROM tasks_fts WHERE rowid = old.id;
     END`)
     db.run('INSERT INTO tasks_fts(rowid, title, description) SELECT id, title, description FROM tasks')
+
+    // Patch stored agent prompts: replace French column/table refs with English equivalents
+    // system_prompt_suffix (shared suffix + scoped agent suffixes)
+    db.run("UPDATE agents SET system_prompt_suffix = REPLACE(system_prompt_suffix, 'agent_id, contenu,', 'agent_id, content,') WHERE system_prompt_suffix IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt_suffix = REPLACE(system_prompt_suffix, 'agent_id, contenu)', 'agent_id, content)') WHERE system_prompt_suffix IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt_suffix = REPLACE(system_prompt_suffix, 'SET statut=''', 'SET status=''') WHERE system_prompt_suffix IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt_suffix = REPLACE(system_prompt_suffix, '(fichier, agent_id', '(file, agent_id') WHERE system_prompt_suffix IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt_suffix = REPLACE(system_prompt_suffix, 'statut, effort, perimetre', 'status, effort, scope') WHERE system_prompt_suffix IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt_suffix = REPLACE(system_prompt_suffix, 'agent_createur_id, agent_assigne_id, agent_valideur_id', 'agent_creator_id, agent_assigned_id, agent_validator_id') WHERE system_prompt_suffix IS NOT NULL")
+    // system_prompt (dev agent locks line, task-creator INSERT/field names)
+    db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '(fichier, agent_id, session_id)', '(file, agent_id, session_id)') WHERE system_prompt IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '(titre, description, statut, agent_createur_id, agent_assigne_id, perimetre', '(title, description, status, agent_creator_id, agent_assigned_id, scope') WHERE system_prompt IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '- titre :', '- title :') WHERE system_prompt IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '- titre:', '- title:') WHERE system_prompt IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '- agent_assigne_id :', '- agent_assigned_id :') WHERE system_prompt IS NOT NULL")
+    db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '- agent_assigne_id:', '- agent_assigned_id:') WHERE system_prompt IS NOT NULL")
   } },
 ]
 
