@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.26.0] - 2026-03-06
+
+### Changes
+- chore(license): add MIT + Commons Clause — prohibit commercial sale (6308883)
+- ci(mutation): add push trigger on main branch (3b08f26)
+- fix(ci): add --no-sandbox for Electron launch in CI environment (5a43d60)
+- fix(front-vuejs): commit missing it.json and ru.json locale files (T971 T974) (9981efe)
+- docs: update README and JSDoc for v0.26.0 (T997) (8cecf1f)
+- fix(front-vuejs): file tab — contenu absent + icône/label incorrect dans la TabBar (T1002) (a0ce456)
+- feat(front-vuejs): add Turkish (tr) locale — i18n + agent prompts (T979) (e642c91)
+- fix(front-vuejs): wire GENERIC_AGENTS_KO in default-agents index (T981) (deddd51)
+- fix(front-vuejs): wire GENERIC_AGENTS_ZH_CN in default-agents index (T980) (75c50e7)
+- feat(front-vuejs): add Chinese Simplified (zh-CN) locale — i18n + agent prompts (T980) (45292f8)
+- test(front-vuejs): add snapshot tests for 5 key UI components (T984) (2a062fa)
+- fix(ci): replace libasound2 with libasound2t64 for Ubuntu 24.04 (082d686)
+- feat(front-vuejs): add Korean (ko) locale — i18n + agent prompts (T981) (b96d7e4)
+- feat(front-vuejs): add Finnish (fi) agent prompts — agents-fi.ts (T977) (496e366)
+- fix(devops): block release if E2E CI tests are failing on HEAD (d770407)
+- feat(front-vuejs): add Japanese (ja) locale — i18n + agent prompts (T982) (37027af)
+- feat(front-vuejs): add Spanish (es) locale — i18n + agent prompts (T964) (e42bf94)
+- chore(back-electron): split default-agents.ts into modules ≤400 lines (T999) (4d490b3)
+- feat(front-vuejs): add Finnish (fi) locale — i18n + agent prompts (T977) (6f40784)
+- feat(front-vuejs): add German (de) locale — i18n + agent prompts (T969) (532a896)
+- feat(front-vuejs): add Brazilian Portuguese (pt-BR) locale — i18n + agent prompts (T972) (7c8d652)
+- feat(front-vuejs): add Polish (pl) locale — i18n + agent prompts (T975) (9890d4b)
+- feat(front-vuejs): add Swedish (sv) locale — i18n + agent prompts (T976) (ba07444)
+- feat(front-vuejs): add Arabic (ar) locale — i18n + RTL support (T973) (9594440)
+- feat(front-vuejs): add Italian (it) locale — i18n + agent prompts (T971) (2c6a210)
+- feat(front-vuejs): add Russian (ru) locale — i18n + agent prompts (T974) (db43e96)
+- chore(devops): add i18n completeness check to release script (T1001) (9da50b3)
+- feat(front-vuejs): add Norwegian (no) locale — i18n (T970) (1f313d6)
+- fix(back-electron): read HKCU registry for full user PATH + readable error (T996/T995) (8ad7eb8)
+- fix(front): add heatmap title and reduce gap with activity section (T994) (a6ba441)
 ## [0.25.0] - 2026-03-06
 
 ### Changes
