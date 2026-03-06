@@ -110,24 +110,24 @@ export function registerSessionStatsHandlers(): void {
   }) => {
     assertDbPathAllowed(dbPath)
     const offset = params.page * params.pageSize
-    const conditions: string[] = ["t.statut = 'archived'"]
+    const conditions: string[] = ["t.status = 'archived'"]
     const binds: unknown[] = []
     if (params.agentId != null) {
-      conditions.push('t.agent_assigne_id = ?')
+      conditions.push('t.agent_assigned_id = ?')
       binds.push(params.agentId)
     }
     if (params.perimetre != null) {
-      conditions.push('t.perimetre = ?')
+      conditions.push('t.scope = ?')
       binds.push(params.perimetre)
     }
     const where = conditions.join(' AND ')
     const [rows, countRows] = await Promise.all([
       queryLive(dbPath, `
-        SELECT t.*, a.name as agent_name, a.perimetre as agent_perimetre,
+        SELECT t.*, a.name as agent_name, a.scope as agent_perimetre,
           c.name as agent_createur_name
         FROM tasks t
-        LEFT JOIN agents a ON a.id = t.agent_assigne_id
-        LEFT JOIN agents c ON c.id = t.agent_createur_id
+        LEFT JOIN agents a ON a.id = t.agent_assigned_id
+        LEFT JOIN agents c ON c.id = t.agent_creator_id
         WHERE ${where}
         ORDER BY t.updated_at DESC
         LIMIT ? OFFSET ?
@@ -151,10 +151,10 @@ export function registerSessionStatsHandlers(): void {
     perimetre?: string | null
   }) => {
     assertDbPathAllowed(dbPath)
-    const conditions: string[] = ["t.statut IN ('done','archived')"]
+    const conditions: string[] = ["t.status IN ('done','archived')"]
     const binds: unknown[] = []
     if (params?.perimetre != null) {
-      conditions.push('t.perimetre = ?')
+      conditions.push('t.scope = ?')
       binds.push(params.perimetre)
     }
     const where = conditions.join(' AND ')
@@ -163,7 +163,7 @@ export function registerSessionStatsHandlers(): void {
         SELECT
           a.id as agent_id,
           a.name as agent_name,
-          a.perimetre as agent_perimetre,
+          a.scope as agent_perimetre,
           COUNT(DISTINCT t.id) as total_tasks,
           COUNT(DISTINCT CASE WHEN tc.id IS NOT NULL THEN t.id END) as rejected_tasks,
           ROUND(
@@ -172,11 +172,11 @@ export function registerSessionStatsHandlers(): void {
             1
           ) as rejection_rate
         FROM agents a
-        LEFT JOIN tasks t ON t.agent_assigne_id = a.id AND ${where}
+        LEFT JOIN tasks t ON t.agent_assigned_id = a.id AND ${where}
         LEFT JOIN task_comments tc ON tc.task_id = t.id
           AND tc.agent_id = 4
-          AND (tc.contenu LIKE '%rejet%' OR tc.contenu LIKE '%retour%' OR tc.contenu LIKE '%todo%')
-        GROUP BY a.id, a.name, a.perimetre
+          AND (tc.content LIKE '%rejet%' OR tc.content LIKE '%retour%' OR tc.content LIKE '%todo%')
+        GROUP BY a.id, a.name, a.scope
         HAVING total_tasks > 0
         ORDER BY rejected_tasks DESC, total_tasks DESC
       `, binds)
@@ -203,22 +203,22 @@ export function registerSessionStatsHandlers(): void {
       if (statut === 'in_progress') {
         const blockers = await queryLive(
           dbPath,
-          `SELECT t.id, t.titre, t.statut
+          `SELECT t.id, t.title, t.status
            FROM task_links tl JOIN tasks t ON t.id = tl.from_task
-           WHERE tl.to_task = ? AND tl.type = 'bloque' AND t.statut NOT IN ('done','archived')
+           WHERE tl.to_task = ? AND tl.type = 'blocks' AND t.status NOT IN ('done','archived')
            UNION
-           SELECT t.id, t.titre, t.statut
+           SELECT t.id, t.title, t.status
            FROM task_links tl JOIN tasks t ON t.id = tl.to_task
-           WHERE tl.from_task = ? AND tl.type = 'dépend_de' AND t.statut NOT IN ('done','archived')`,
+           WHERE tl.from_task = ? AND tl.type = 'depends_on' AND t.status NOT IN ('done','archived')`,
           [taskId, taskId]
-        ) as Array<{ id: number; titre: string; statut: string }>
+        ) as Array<{ id: number; title: string; status: string }>
         if (blockers.length) {
           return { success: false, error: 'TASK_BLOCKED', blockers }
         }
       }
       await writeDb(dbPath, (db) => {
         db.run(
-          `UPDATE tasks SET statut=?, updated_at=datetime('now') WHERE id=?`,
+          `UPDATE tasks SET status=?, updated_at=datetime('now') WHERE id=?`,
           [statut, taskId]
         )
       })

@@ -133,7 +133,7 @@ describe('create-agent (T985)', () => {
       null,
       TEST_DB_PATH,
       TEST_PROJECT_PATH,
-      { name: 'new-agent', type: 'dev', perimetre: 'front-vuejs', thinkingMode: null, systemPrompt: null, description: 'Test agent' }
+      { name: 'new-agent', type: 'dev', scope: 'front-vuejs', thinkingMode: null, systemPrompt: null, description: 'Test agent' }
     ) as { success: boolean; agentId: number; claudeMdUpdated: boolean }
 
     expect(result.success).toBe(true)
@@ -153,7 +153,7 @@ describe('create-agent (T985)', () => {
       null,
       TEST_DB_PATH,
       TEST_PROJECT_PATH,
-      { name: 'duplicate-agent', type: 'test', perimetre: null, thinkingMode: null, systemPrompt: null, description: '' }
+      { name: 'duplicate-agent', type: 'test', scope: null, thinkingMode: null, systemPrompt: null, description: '' }
     ) as { success: boolean; error: string }
 
     expect(result.success).toBe(false)
@@ -165,7 +165,7 @@ describe('create-agent (T985)', () => {
       null,
       '/evil/db.db',
       TEST_PROJECT_PATH,
-      { name: 'evil-agent', type: 'test', perimetre: null, thinkingMode: null, systemPrompt: null, description: '' }
+      { name: 'evil-agent', type: 'test', scope: null, thinkingMode: null, systemPrompt: null, description: '' }
     ) as { success: boolean; error: string }
 
     expect(result.success).toBe(false)
@@ -328,8 +328,8 @@ describe('build-agent-prompt (T985)', () => {
   })
 
   it('creates a session and includes context block for valid agent', async () => {
-    const agentId = await insertAgent('context-agent', { type: 'test', perimetre: 'back-electron' })
-    await insertTask('open-task', { statut: 'todo', agentId })
+    const agentId = await insertAgent('context-agent', { type: 'test', scope: 'back-electron' })
+    await insertTask('open-task', { status: 'todo', agentId })
 
     const result = await handlers['build-agent-prompt'](
       null, 'context-agent', 'T999', TEST_DB_PATH, agentId
@@ -362,7 +362,7 @@ describe('build-agent-prompt (T985)', () => {
     const agentId = await insertAgent('agent-with-history')
     await writeDb<void>(TEST_DB_PATH, (db) => {
       db.run(
-        "INSERT INTO sessions (agent_id, statut, summary) VALUES (?, 'completed', ?)",
+        "INSERT INTO sessions (agent_id, status, summary) VALUES (?, 'completed', ?)",
         [agentId, 'Done:T123. Pending:none. Next:backlog']
       )
     })
@@ -377,7 +377,7 @@ describe('build-agent-prompt (T985)', () => {
   it('shows active locks in context block', async () => {
     const agentId = await insertAgent('agent-locked')
     await writeDb<void>(TEST_DB_PATH, (db) => {
-      db.run('INSERT INTO locks (fichier, agent_id) VALUES (?, ?)', ['src/main/ipc.ts', agentId])
+      db.run('INSERT INTO locks (file, agent_id) VALUES (?, ?)', ['src/main/ipc.ts', agentId])
     })
 
     const result = await handlers['build-agent-prompt'](

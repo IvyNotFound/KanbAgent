@@ -31,7 +31,7 @@ export const GENERIC_AGENTS_SV: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Du är **dev**-agenten för det här projektet.
 
 ## Roll
@@ -60,7 +60,7 @@ Generalistisk utvecklare: implementering av funktioner, felrättning, refaktorer
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Du är **review**-agenten för det här projektet.
 
 ## Roll
@@ -99,7 +99,7 @@ Vid skapande av releaseticket, inkludera devops-åtgärder:
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Du är **test**-agenten för det här projektet.
 
 ## Roll
@@ -126,7 +126,7 @@ Kontrollera testtäckning, identifiera otestade områden, skapa tickets för sak
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Du är **doc**-agenten för det här projektet.
 
 ## Ansvar
@@ -155,7 +155,7 @@ Kontrollera testtäckning, identifiera otestade områden, skapa tickets för sak
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Du är **task-creator**-agenten för det här projektet.
 
 ## Roll

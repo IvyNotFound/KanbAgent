@@ -2,7 +2,7 @@
 /**
  * dbstart.js — All-in-one agent session startup (single DB open)
  *
- * Usage: node scripts/dbstart.js <agent-name> [type] [perimetre]
+ * Usage: node scripts/dbstart.js <agent-name> [type] [scope]
  *
  * Performs in one pass:
  *   1. Registers agent (INSERT OR IGNORE)
@@ -23,15 +23,15 @@ const { acquireLock, releaseLock, cleanupOrphanTmp } = require('./dblock')
 
 const agent = process.argv[2]
 const type = process.argv[3] || agent
-const perimetre = process.argv[4] || 'global'
+const scope = process.argv[4] || 'global'
 
 if (agent === '--help' || agent === '-h') {
-  console.log('Usage: node scripts/dbstart.js <agent-name> [type] [perimetre]')
+  console.log('Usage: node scripts/dbstart.js <agent-name> [type] [scope]')
   process.exit(0)
 }
 
 if (!agent) {
-  console.error('Usage: node scripts/dbstart.js <agent-name> [type] [perimetre]')
+  console.error('Usage: node scripts/dbstart.js <agent-name> [type] [scope]')
   process.exit(1)
 }
 
@@ -80,7 +80,7 @@ initSqlJs().then((SQL) => {
 
   // 1. Register agent (idempotent)
   db.run(
-    `INSERT OR IGNORE INTO agents (name, type, perimetre) VALUES ('${agent}', '${type}', '${perimetre}')`
+    `INSERT OR IGNORE INTO agents (name, type, scope) VALUES ('${agent}', '${type}', '${scope}')`
   )
 
   // 2. Get agent_id
@@ -93,7 +93,7 @@ initSqlJs().then((SQL) => {
     WHERE released_at IS NULL
       AND session_id IN (
         SELECT id FROM sessions
-        WHERE statut = 'started'
+        WHERE status = 'started'
           AND ended_at IS NULL
           AND started_at < datetime('now', '-60 minutes')
       )
@@ -105,7 +105,7 @@ initSqlJs().then((SQL) => {
       WHERE released_at IS NULL
         AND session_id IN (
           SELECT id FROM sessions
-          WHERE statut = 'started'
+          WHERE status = 'started'
             AND ended_at IS NULL
             AND started_at < datetime('now', '-60 minutes')
         )
@@ -116,7 +116,7 @@ initSqlJs().then((SQL) => {
   // 2c. Mark zombie sessions as terminated
   const zombieSessions = db.exec(`
     SELECT COUNT(*) FROM sessions
-    WHERE statut = 'started'
+    WHERE status = 'started'
       AND ended_at IS NULL
       AND started_at < datetime('now', '-60 minutes')
   `)
@@ -124,10 +124,10 @@ initSqlJs().then((SQL) => {
   if (zombieSessionCount > 0) {
     db.run(`
       UPDATE sessions
-      SET statut = 'completed',
+      SET status = 'completed',
           ended_at = datetime('now'),
           summary = 'Auto-closed: zombie session (no activity for 60min)'
-      WHERE statut = 'started'
+      WHERE status = 'started'
         AND ended_at IS NULL
         AND started_at < datetime('now', '-60 minutes')
     `)
@@ -143,7 +143,7 @@ initSqlJs().then((SQL) => {
     ? (db.exec(`SELECT max_sessions FROM agents WHERE id = ${agentId}`)[0]?.values[0]?.[0] ?? 3)
     : 3
   const activeRow = db.exec(
-    `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND statut = 'started'`
+    `SELECT COUNT(*) FROM sessions WHERE agent_id = ${agentId} AND status = 'started'`
   )
   const activeCount = activeRow[0].values[0][0]
   if (maxSessions !== -1 && activeCount >= maxSessions) {
@@ -165,14 +165,14 @@ initSqlJs().then((SQL) => {
   const released = db.exec(`
     SELECT COUNT(*) FROM locks
     WHERE released_at IS NULL
-      AND session_id IN (SELECT id FROM sessions WHERE statut = 'completed')
+      AND session_id IN (SELECT id FROM sessions WHERE status = 'completed')
   `)
   const orphanCount = released[0].values[0][0]
   if (orphanCount > 0) {
     db.run(`
       UPDATE locks SET released_at = datetime('now')
       WHERE released_at IS NULL
-        AND session_id IN (SELECT id FROM sessions WHERE statut = 'completed')
+        AND session_id IN (SELECT id FROM sessions WHERE status = 'completed')
     `)
     console.log(`\n[auto-release] ${orphanCount} orphan lock(s) released from terminated sessions`)
   }
@@ -193,7 +193,7 @@ initSqlJs().then((SQL) => {
   // 4. Last terminated session
   const session = db.exec(`
     SELECT s.summary, s.ended_at FROM sessions s
-    WHERE s.agent_id = ${agentId} AND s.statut = 'completed' AND s.id != ${sessionId}
+    WHERE s.agent_id = ${agentId} AND s.status = 'completed' AND s.id != ${sessionId}
     ORDER BY s.ended_at DESC LIMIT 1
   `)
 
@@ -208,25 +208,26 @@ initSqlJs().then((SQL) => {
 
   // 5. Open tasks (todo + in_progress)
   const tasks = db.exec(`
-    SELECT t.id, t.statut, t.perimetre, t.priority, t.titre, t.description
+    SELECT t.id, t.status, t.scope, t.priority, t.title, t.description
     FROM tasks t
-    WHERE t.agent_assigne_id = ${agentId} AND t.statut IN ('todo', 'in_progress')
-    ORDER BY t.statut DESC, t.updated_at DESC
+    WHERE t.agent_assigned_id = ${agentId} AND t.status IN ('todo', 'in_progress')
+    ORDER BY t.status DESC, t.updated_at DESC
   `)
 
   console.log('\n=== TÂCHES ASSIGNÉES ===')
   if (!tasks.length || !tasks[0].values.length) {
     console.log('(aucune tâche todo / in_progress)')
   } else {
-    for (const [id, statut, peri, priority, titre, description] of tasks[0].values) {
-      console.log(`\n[T${id}] ${statut} | ${peri ?? '-'} | prio:${priority} | ${titre}`)
+    for (const [id, status, peri, priority, title, description] of tasks[0].values) {
+      console.log(`
+[T${id}] ${status} | ${peri ?? '-'} | prio:${priority} | ${title}`)
       if (description) console.log(description)
     }
   }
 
   // 6. Active locks (conflict check)
   const locks = db.exec(`
-    SELECT l.fichier, a.name FROM locks l
+    SELECT l.file, a.name FROM locks l
     JOIN agents a ON a.id = l.agent_id
     WHERE l.released_at IS NULL
   `)
@@ -235,8 +236,8 @@ initSqlJs().then((SQL) => {
   if (!locks.length || !locks[0].values.length) {
     console.log('(aucun)')
   } else {
-    for (const [fichier, owner] of locks[0].values) {
-      console.log(`${fichier} → ${owner}`)
+    for (const [file, owner] of locks[0].values) {
+      console.log(`${file} → ${owner}`)
     }
   }
 

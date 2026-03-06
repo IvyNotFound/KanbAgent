@@ -33,7 +33,7 @@ export interface DefaultAgent {
   /** Agent role category (dev, review, test, doc, devops, arch, ux, secu, perf, data). */
   type: string
   /** Target scope (front-vuejs, back-electron, global) or null for generic agents. */
-  perimetre: string | null
+  scope: string | null
   /** Main system prompt injected at session start. Null means no dedicated prompt. */
   system_prompt: string | null
   /** Suffix appended after system_prompt — typically contains DB schema and SQL reminders. */

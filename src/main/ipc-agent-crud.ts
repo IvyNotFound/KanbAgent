@@ -19,9 +19,9 @@ export const STANDARD_AGENT_SUFFIX = [
   'AGENT PROTOCOL REMINDER (mandatory — do not override):',
   '- On startup: read input session (sessions.summary) + open tasks from project.db',
   '- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks',
-  "- When taking a task: UPDATE tasks SET statut='in_progress'",
-  "- When finishing a task: UPDATE tasks SET statut='done' + INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (?, ?, '<files changed · what was done · what remains>')",
-  "- When ending session: release all locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)",
+  "- When taking a task: UPDATE tasks SET status='in_progress'",
+  "- When finishing a task: UPDATE tasks SET status='done' + INSERT INTO task_comments (task_id, agent_id, content) VALUES (?, ?, '<files changed · what was done · what remains>')",
+  "- When ending session: release all locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)",
   '- Never commit directly to main in multi-user mode',
   '- Never edit project.db manually',
 ].join('\n')
@@ -156,7 +156,7 @@ export function registerAgentCrudHandlers(): void {
         const vals: (string | number | null)[] = []
         if (updates.name !== undefined) { cols.push('name = ?'); vals.push(updates.name) }
         if (updates.type !== undefined) { cols.push('type = ?'); vals.push(updates.type) }
-        if (updates.perimetre !== undefined) { cols.push('perimetre = ?'); vals.push(updates.perimetre || null) }
+        if (updates.perimetre !== undefined) { cols.push('scope = ?'); vals.push(updates.perimetre || null) }
         if (updates.thinkingMode !== undefined) { cols.push('thinking_mode = ?'); vals.push(updates.thinkingMode || null) }
         if (updates.allowedTools !== undefined) { cols.push('allowed_tools = ?'); vals.push(updates.allowedTools || null) }
         if (updates.systemPrompt !== undefined) { cols.push('system_prompt = ?'); vals.push(updates.systemPrompt || null) }
@@ -192,7 +192,7 @@ export function registerAgentCrudHandlers(): void {
         dbPath,
         `SELECT (
           (SELECT COUNT(*) FROM sessions WHERE agent_id = ?) +
-          (SELECT COUNT(*) FROM tasks WHERE agent_assigne_id = ?) +
+          (SELECT COUNT(*) FROM tasks WHERE agent_assigned_id = ?) +
           (SELECT COUNT(*) FROM task_comments WHERE agent_id = ?) +
           (SELECT COUNT(*) FROM agent_logs WHERE agent_id = ?)
         ) as history_count`,
@@ -228,7 +228,7 @@ export function registerAgentCrudHandlers(): void {
     _event,
     dbPath: string,
     projectPath: string,
-    data: { name: string; type: string; perimetre: string | null; thinkingMode: string | null; systemPrompt: string | null; description: string }
+    data: { name: string; type: string; perimetre?: string | null; scope?: string | null; thinkingMode: string | null; systemPrompt: string | null; description: string }
   ) => {
     try {
       assertDbPathAllowed(dbPath)
@@ -236,8 +236,8 @@ export function registerAgentCrudHandlers(): void {
 
       const agentId = await writeDb<number>(dbPath, (db) => {
         db.run(
-          'INSERT INTO agents (name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix) VALUES (?, ?, ?, ?, ?, ?)',
-          [data.name, data.type, data.perimetre ?? null, data.thinkingMode ?? null, data.systemPrompt ?? null, STANDARD_AGENT_SUFFIX]
+          'INSERT INTO agents (name, type, scope, thinking_mode, system_prompt, system_prompt_suffix) VALUES (?, ?, ?, ?, ?, ?)',
+          [data.name, data.type, data.scope ?? data.perimetre ?? null, data.thinkingMode ?? null, data.systemPrompt ?? null, STANDARD_AGENT_SUFFIX]
         )
         const rows = db.exec('SELECT last_insert_rowid() as id')
         return rows[0].values[0][0] as number
@@ -281,12 +281,12 @@ export function registerAgentCrudHandlers(): void {
     try {
       assertDbPathAllowed(dbPath)
       const result = await writeDb<{ id: number; name: string }>(dbPath, (db) => {
-        const stmt = db.prepare('SELECT name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools FROM agents WHERE id = ?')
+        const stmt = db.prepare('SELECT name, type, scope, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools FROM agents WHERE id = ?')
         stmt.bind([agentId])
         if (!stmt.step()) { stmt.free(); throw new Error('Agent not found') }
         const row = stmt.getAsObject()
         stmt.free()
-        const { name, type, perimetre, thinking_mode: thinkingMode, system_prompt: systemPrompt, system_prompt_suffix: systemPromptSuffix, allowed_tools: allowedTools } = row as Record<string, string | null>
+        const { name, type, scope, thinking_mode: thinkingMode, system_prompt: systemPrompt, system_prompt_suffix: systemPromptSuffix, allowed_tools: allowedTools } = row as Record<string, string | null>
 
         // Generate unique name: <name>-copy, then -copy-2, -copy-3, …
         const baseName = `${name}-copy`
@@ -303,8 +303,8 @@ export function registerAgentCrudHandlers(): void {
         }
 
         db.run(
-          'INSERT INTO agents (name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))',
-          [newName, type, perimetre, thinkingMode, systemPrompt, systemPromptSuffix, allowedTools]
+          'INSERT INTO agents (name, type, scope, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))',
+          [newName, type, scope, thinkingMode, systemPrompt, systemPromptSuffix, allowedTools]
         )
         const idRows = db.exec('SELECT last_insert_rowid() as id')
         const newId = idRows[0].values[0][0] as number

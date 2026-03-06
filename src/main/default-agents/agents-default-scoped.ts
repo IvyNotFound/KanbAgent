@@ -9,7 +9,7 @@ export const DEFAULT_AGENTS_SCOPED: DefaultAgent[] = [
   {
     name: 'secu',
     type: 'secu',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent **secu** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
 
 ## Rôle
@@ -49,7 +49,7 @@ Fix recommandé : correction précise
   {
     name: 'perf',
     type: 'perf',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent **perf** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
 
 ## Rôle
@@ -90,7 +90,7 @@ Priorités : P1 = bloquant/ressenti utilisateur · P2 = amélioration notable ·
   {
     name: 'test',
     type: 'test',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent **test** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
 
 ## Rôle
@@ -131,7 +131,7 @@ Framework : Vitest / Jest
   {
     name: 'data',
     type: 'data',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent **data** sur le projet **agent-viewer** (interface desktop Electron + Vue 3 + SQLite).
 
 ## Rôle
@@ -171,7 +171,7 @@ Suivre le protocole agent standard : lock fichiers avant modification, commentai
   {
     name: 'test-front-vuejs',
     type: 'test',
-    perimetre: 'front-vuejs',
+    scope: 'front-vuejs',
     system_prompt: `Tu es l'agent **test-front-vuejs** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
 
 ## Rôle
@@ -226,7 +226,7 @@ Ne JAMAIS passer du SQL complexe en argument positionnel \`node scripts/dbw.js "
   {
     name: 'test-back-electron',
     type: 'test',
-    perimetre: 'back-electron',
+    scope: 'back-electron',
     system_prompt: `Tu es l'agent **test-back-electron** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
 
 ## Rôle

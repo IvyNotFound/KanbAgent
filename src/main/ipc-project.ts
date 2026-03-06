@@ -199,7 +199,7 @@ export function registerProjectHandlers(): void {
       db.run(`
         CREATE TABLE IF NOT EXISTS agents (
           id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE,
-          type TEXT NOT NULL, perimetre TEXT, system_prompt TEXT,
+          type TEXT NOT NULL, scope TEXT, system_prompt TEXT,
           system_prompt_suffix TEXT,
           thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled')),
           allowed_tools TEXT,
@@ -210,7 +210,7 @@ export function registerProjectHandlers(): void {
           agent_id INTEGER NOT NULL REFERENCES agents(id),
           started_at DATETIME DEFAULT CURRENT_TIMESTAMP, ended_at DATETIME,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          statut TEXT NOT NULL DEFAULT 'started' CHECK(statut IN ('started','completed','blocked')),
+          status TEXT NOT NULL DEFAULT 'started' CHECK(status IN ('started','completed','blocked')),
           summary TEXT,
           claude_conv_id TEXT,
           tokens_in INTEGER DEFAULT 0,
@@ -222,21 +222,21 @@ export function registerProjectHandlers(): void {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           session_id INTEGER NOT NULL REFERENCES sessions(id),
           agent_id INTEGER NOT NULL REFERENCES agents(id),
-          niveau TEXT NOT NULL DEFAULT 'info' CHECK(niveau IN ('info','warn','error','debug')),
-          action TEXT NOT NULL, detail TEXT, fichiers TEXT,
+          level TEXT NOT NULL DEFAULT 'info' CHECK(level IN ('info','warn','error','debug')),
+          action TEXT NOT NULL, detail TEXT, files TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS tasks (
-          id INTEGER PRIMARY KEY AUTOINCREMENT, titre TEXT NOT NULL,
+          id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
           description TEXT,
-          statut TEXT NOT NULL DEFAULT 'todo'
-            CHECK(statut IN ('todo','in_progress','done','archived')),
-          agent_createur_id INTEGER REFERENCES agents(id),
-          agent_assigne_id INTEGER REFERENCES agents(id),
-          agent_valideur_id INTEGER REFERENCES agents(id),
+          status TEXT NOT NULL DEFAULT 'todo'
+            CHECK(status IN ('todo','in_progress','done','archived')),
+          agent_creator_id INTEGER REFERENCES agents(id),
+          agent_assigned_id INTEGER REFERENCES agents(id),
+          agent_validator_id INTEGER REFERENCES agents(id),
           parent_task_id INTEGER REFERENCES tasks(id),
           session_id INTEGER REFERENCES sessions(id),
-          perimetre TEXT, effort INTEGER CHECK(effort IN (1,2,3)),
+          scope TEXT, effort INTEGER CHECK(effort IN (1,2,3)),
           priority TEXT NOT NULL DEFAULT 'normal'
             CHECK(priority IN ('low','normal','high','critical')),
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -247,17 +247,17 @@ export function registerProjectHandlers(): void {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           from_task INTEGER NOT NULL REFERENCES tasks(id),
           to_task INTEGER NOT NULL REFERENCES tasks(id),
-          type TEXT NOT NULL CHECK(type IN ('bloque','dépend_de','lié_à','duplique')),
+          type TEXT NOT NULL CHECK(type IN ('blocks','depends_on','related_to','duplicates')),
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS task_comments (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           task_id INTEGER NOT NULL REFERENCES tasks(id),
           agent_id INTEGER REFERENCES agents(id),
-          contenu TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          content TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS locks (
-          id INTEGER PRIMARY KEY AUTOINCREMENT, fichier TEXT NOT NULL UNIQUE,
+          id INTEGER PRIMARY KEY AUTOINCREMENT, file TEXT NOT NULL UNIQUE,
           agent_id INTEGER NOT NULL REFERENCES agents(id),
           session_id INTEGER REFERENCES sessions(id),
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP, released_at DATETIME
@@ -266,14 +266,14 @@ export function registerProjectHandlers(): void {
           key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
-        CREATE TABLE IF NOT EXISTS perimetres (
+        CREATE TABLE IF NOT EXISTS scopes (
           id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE,
-          dossier TEXT, techno TEXT, description TEXT,
-          actif INTEGER NOT NULL DEFAULT 1,
+          folder TEXT, techno TEXT, description TEXT,
+          active INTEGER NOT NULL DEFAULT 1,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         INSERT OR IGNORE INTO config (key, value) VALUES ('claude_md_commit',''),('schema_version','3');
-        INSERT OR IGNORE INTO perimetres (name, dossier, techno, description) VALUES
+        INSERT OR IGNORE INTO scopes (name, folder, techno, description) VALUES
           ('global','','—','Transversal — aucun périmètre spécifique');
         CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions(agent_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at DESC);
@@ -281,7 +281,7 @@ export function registerProjectHandlers(): void {
         CREATE INDEX IF NOT EXISTS idx_agent_logs_created_at ON agent_logs(created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_locks_released_at ON locks(released_at);
         CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON tasks(updated_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigne ON tasks(agent_assigne_id);
+        CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigned ON tasks(agent_assigned_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_agent_started ON sessions(agent_id, started_at DESC);
         CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id);
         CREATE INDEX IF NOT EXISTS idx_task_links_from_task ON task_links(from_task);
@@ -289,9 +289,9 @@ export function registerProjectHandlers(): void {
       `)
       for (const agent of GENERIC_AGENTS_BY_LANG[agentLang]) {
         db.run(
-          `INSERT OR IGNORE INTO agents (name, type, perimetre, system_prompt, system_prompt_suffix)
+          `INSERT OR IGNORE INTO agents (name, type, scope, system_prompt, system_prompt_suffix)
            VALUES (?, ?, ?, ?, ?)`,
-          [agent.name, agent.type, agent.perimetre ?? null, agent.system_prompt ?? null, agent.system_prompt_suffix ?? null]
+          [agent.name, agent.type, agent.scope ?? null, agent.system_prompt ?? null, agent.system_prompt_suffix ?? null]
         )
       }
       const exported = db.export()

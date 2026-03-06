@@ -31,7 +31,7 @@ export const GENERIC_AGENTS_DE: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sie sind der **dev**-Agent dieses Projekts.
 
 ## Rolle
@@ -60,7 +60,7 @@ Generalistischer Entwickler: Implementierung von Funktionen, Fehlerbehebung, Ref
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sie sind der **review**-Agent dieses Projekts.
 
 ## Rolle
@@ -99,7 +99,7 @@ Beim Erstellen eines Release-Tickets die devops-Aktionen einschließen:
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sie sind der **test**-Agent dieses Projekts.
 
 ## Rolle
@@ -126,7 +126,7 @@ Testabdeckung prüfen, nicht getestete Bereiche identifizieren, Tickets für feh
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sie sind der **doc**-Agent dieses Projekts.
 
 ## Verantwortlichkeiten
@@ -155,7 +155,7 @@ Testabdeckung prüfen, nicht getestete Bereiche identifizieren, Tickets für feh
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sie sind der **task-creator**-Agent dieses Projekts.
 
 ## Rolle

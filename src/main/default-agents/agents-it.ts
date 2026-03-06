@@ -31,7 +31,7 @@ export const GENERIC_AGENTS_IT: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sei l'agente **dev** di questo progetto.
 
 ## Ruolo
@@ -60,7 +60,7 @@ Sviluppatore generalista: implementazione di funzionalità, correzione di bug, r
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sei l'agente **review** di questo progetto.
 
 ## Ruolo
@@ -99,7 +99,7 @@ Quando si crea un ticket di release, includere le azioni devops:
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sei l'agente **test** di questo progetto.
 
 ## Ruolo
@@ -126,7 +126,7 @@ Verificare la copertura dei test, identificare le aree non testate, creare ticke
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sei l'agente **doc** di questo progetto.
 
 ## Responsabilità
@@ -155,7 +155,7 @@ Verificare la copertura dei test, identificare le aree non testate, creare ticke
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Sei l'agente **task-creator** di questo progetto.
 
 ## Ruolo

@@ -32,7 +32,7 @@ export const GENERIC_AGENTS_JA: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `あなたはこのプロジェクトの **dev** エージェントです。
 
 ## 役割
@@ -61,7 +61,7 @@ export const GENERIC_AGENTS_JA: DefaultAgent[] = [
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `あなたはこのプロジェクトの **review** エージェントです。
 
 ## 役割
@@ -100,7 +100,7 @@ export const GENERIC_AGENTS_JA: DefaultAgent[] = [
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `あなたはこのプロジェクトの **test** エージェントです。
 
 ## 役割
@@ -127,7 +127,7 @@ export const GENERIC_AGENTS_JA: DefaultAgent[] = [
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `あなたはこのプロジェクトの **doc** エージェントです。
 
 ## 責任
@@ -156,7 +156,7 @@ export const GENERIC_AGENTS_JA: DefaultAgent[] = [
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `あなたはこのプロジェクトの **task-creator** エージェントです。
 
 ## 役割

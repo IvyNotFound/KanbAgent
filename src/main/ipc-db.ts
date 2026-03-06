@@ -94,7 +94,7 @@ export function registerDbHandlers(): void {
     assertDbPathAllowed(dbPath)
     return queryLive(
       dbPath,
-      `SELECT l.id, l.fichier, l.agent_id, a.name as agent_name,
+      `SELECT l.id, l.file, l.agent_id, a.name as agent_name,
               l.session_id, l.created_at, l.released_at
        FROM locks l
        JOIN agents a ON a.id = l.agent_id

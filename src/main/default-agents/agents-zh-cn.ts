@@ -32,7 +32,7 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `您是此项目的 **dev** Agent。
 
 ## 角色
@@ -61,7 +61,7 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `您是此项目的 **review** Agent。
 
 ## 角色
@@ -100,7 +100,7 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `您是此项目的 **test** Agent。
 
 ## 角色
@@ -127,7 +127,7 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `您是此项目的 **doc** Agent。
 
 ## 职责
@@ -156,7 +156,7 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `您是此项目的 **task-creator** Agent。
 
 ## 角色

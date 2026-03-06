@@ -49,7 +49,7 @@ export async function buildSchema(): Promise<any> {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     type TEXT,
-    perimetre TEXT,
+    scope TEXT,
     system_prompt TEXT,
     system_prompt_suffix TEXT,
     thinking_mode TEXT,
@@ -62,15 +62,15 @@ export async function buildSchema(): Promise<any> {
 
   db.run(`CREATE TABLE tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    titre TEXT,
+    title TEXT,
     description TEXT,
-    statut TEXT DEFAULT 'todo',
-    agent_createur_id INTEGER,
-    agent_assigne_id INTEGER,
-    agent_valideur_id INTEGER,
+    status TEXT DEFAULT 'todo',
+    agent_creator_id INTEGER,
+    agent_assigned_id INTEGER,
+    agent_validator_id INTEGER,
     parent_task_id INTEGER,
     session_id INTEGER,
-    perimetre TEXT,
+    scope TEXT,
     effort INTEGER,
     priority TEXT DEFAULT 'normal',
     created_at TEXT DEFAULT (datetime('now')),
@@ -86,7 +86,7 @@ export async function buildSchema(): Promise<any> {
     started_at TEXT DEFAULT (datetime('now')),
     ended_at TEXT,
     updated_at TEXT DEFAULT (datetime('now')),
-    statut TEXT DEFAULT 'started',
+    status TEXT DEFAULT 'started',
     summary TEXT,
     claude_conv_id TEXT,
     cost_usd REAL,
@@ -102,7 +102,7 @@ export async function buildSchema(): Promise<any> {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id INTEGER,
     agent_id INTEGER,
-    contenu TEXT,
+    content TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   )`)
 
@@ -116,7 +116,7 @@ export async function buildSchema(): Promise<any> {
 
   db.run(`CREATE TABLE locks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    fichier TEXT,
+    file TEXT,
     agent_id INTEGER,
     session_id INTEGER,
     created_at TEXT DEFAULT (datetime('now')),
@@ -127,10 +127,10 @@ export async function buildSchema(): Promise<any> {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id INTEGER,
     agent_id INTEGER,
-    niveau TEXT,
+    level TEXT,
     action TEXT,
     detail TEXT,
-    fichiers TEXT,
+    files TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   )`)
 
@@ -140,13 +140,13 @@ export async function buildSchema(): Promise<any> {
     updated_at TEXT
   )`)
 
-  db.run(`CREATE TABLE perimetres (
+  db.run(`CREATE TABLE scopes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    dossier TEXT,
+    folder TEXT,
     techno TEXT,
     description TEXT,
-    actif INTEGER NOT NULL DEFAULT 1,
+    active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
   )`)
 
@@ -182,13 +182,13 @@ export async function buildSchema(): Promise<any> {
 
 export async function insertAgent(
   name: string,
-  extra?: { type?: string; perimetre?: string }
+  extra?: { type?: string; scope?: string; perimetre?: string }
 ): Promise<number> {
   await writeDb<void>(TEST_DB_PATH, (db) => {
-    db.run('INSERT INTO agents (name, type, perimetre) VALUES (?, ?, ?)', [
+    db.run('INSERT INTO agents (name, type, scope) VALUES (?, ?, ?)', [
       name,
       extra?.type ?? 'test',
-      extra?.perimetre ?? null,
+      extra?.scope ?? extra?.perimetre ?? null,
     ])
   })
   const rows = (await queryLive(TEST_DB_PATH, 'SELECT id FROM agents WHERE name = ?', [
@@ -201,6 +201,7 @@ export async function insertSession(
   agentId: number,
   opts?: {
     statut?: string
+    status?: string
     convId?: string
     costUsd?: number
     startedAt?: string
@@ -208,10 +209,10 @@ export async function insertSession(
 ): Promise<number> {
   await writeDb<void>(TEST_DB_PATH, (db) => {
     db.run(
-      'INSERT INTO sessions (agent_id, statut, claude_conv_id, cost_usd, started_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO sessions (agent_id, status, claude_conv_id, cost_usd, started_at) VALUES (?, ?, ?, ?, ?)',
       [
         agentId,
-        opts?.statut ?? 'started',
+        opts?.status ?? opts?.statut ?? 'started',
         opts?.convId ?? null,
         opts?.costUsd ?? null,
         opts?.startedAt ?? "datetime('now')",
@@ -227,30 +228,32 @@ export async function insertSession(
 }
 
 export async function insertTask(
-  titre: string,
+  title: string,
   opts?: {
     statut?: string
+    status?: string
     agentId?: number | null
+    scope?: string | null
     perimetre?: string | null
     description?: string
   }
 ): Promise<number> {
   await writeDb<void>(TEST_DB_PATH, (db) => {
     db.run(
-      'INSERT INTO tasks (titre, statut, agent_assigne_id, perimetre, description) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO tasks (title, status, agent_assigned_id, scope, description) VALUES (?, ?, ?, ?, ?)',
       [
-        titre,
-        opts?.statut ?? 'todo',
+        title,
+        opts?.status ?? opts?.statut ?? 'todo',
         opts?.agentId ?? null,
-        opts?.perimetre ?? null,
+        opts?.scope ?? opts?.perimetre ?? null,
         opts?.description ?? null,
       ]
     )
   })
   const rows = (await queryLive(
     TEST_DB_PATH,
-    'SELECT id FROM tasks WHERE titre = ? ORDER BY id DESC LIMIT 1',
-    [titre]
+    'SELECT id FROM tasks WHERE title = ? ORDER BY id DESC LIMIT 1',
+    [title]
   )) as Array<{ id: number }>
   return rows[0].id
 }

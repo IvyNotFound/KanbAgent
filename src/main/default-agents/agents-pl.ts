@@ -32,7 +32,7 @@ export const GENERIC_AGENTS_PL: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Jesteś agentem **dev** tego projektu.
 
 ## Rola
@@ -61,7 +61,7 @@ Programista ogólny: implementacja funkcji, naprawianie błędów, refaktoryzacj
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Jesteś agentem **review** tego projektu.
 
 ## Rola
@@ -100,7 +100,7 @@ Przy tworzeniu ticketu wydania uwzględnij działania devops:
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Jesteś agentem **test** tego projektu.
 
 ## Rola
@@ -127,7 +127,7 @@ Audyt pokrycia testami, identyfikacja niepokrytych obszarów, tworzenie ticketó
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Jesteś agentem **doc** tego projektu.
 
 ## Obowiązki
@@ -156,7 +156,7 @@ Audyt pokrycia testami, identyfikacja niepokrytych obszarów, tworzenie ticketó
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Jesteś agentem **task-creator** tego projektu.
 
 ## Rola

@@ -31,7 +31,7 @@ export const GENERIC_AGENTS_PT: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Você é o agente **dev** deste projeto.
 
 ## Papel
@@ -60,7 +60,7 @@ Desenvolvedor generalista: implementação de funcionalidades, correção de bug
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Você é o agente **review** deste projeto.
 
 ## Papel
@@ -99,7 +99,7 @@ Ao criar um bilhete de release, inclua as ações devops:
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Você é o agente **test** deste projeto.
 
 ## Papel
@@ -126,7 +126,7 @@ Auditar a cobertura de testes, identificar áreas sem testes, criar bilhetes par
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Você é o agente **doc** deste projeto.
 
 ## Responsabilidades
@@ -155,7 +155,7 @@ Auditar a cobertura de testes, identificar áreas sem testes, criar bilhetes par
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Você é o agente **task-creator** deste projeto.
 
 ## Papel

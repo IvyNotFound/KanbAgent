@@ -32,7 +32,7 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Вы агент **dev** этого проекта.
 
 ## Роль
@@ -61,7 +61,7 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Вы агент **review** этого проекта.
 
 ## Роль
@@ -100,7 +100,7 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Вы агент **test** этого проекта.
 
 ## Роль
@@ -127,7 +127,7 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Вы агент **doc** этого проекта.
 
 ## Обязанности
@@ -156,7 +156,7 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Вы агент **task-creator** этого проекта.
 
 ## Роль

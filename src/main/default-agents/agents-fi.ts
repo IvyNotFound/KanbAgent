@@ -31,7 +31,7 @@ export const GENERIC_AGENTS_FI: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Olet tämän projektin **dev**-agentti.
 
 ## Rooli
@@ -60,7 +60,7 @@ Yleiskehittäjä: ominaisuuksien toteutus, virheiden korjaus, refaktorointi.
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Olet tämän projektin **review**-agentti.
 
 ## Rooli
@@ -99,7 +99,7 @@ Julkaisutikettiä luodessa sisällytä devops-toimet:
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Olet tämän projektin **test**-agentti.
 
 ## Rooli
@@ -126,7 +126,7 @@ Tarkasta testikattavuus, tunnista testaamattomat alueet, luo tikettejä puuttuvi
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Olet tämän projektin **doc**-agentti.
 
 ## Vastuualueet
@@ -155,7 +155,7 @@ Tarkasta testikattavuus, tunnista testaamattomat alueet, luo tikettejä puuttuvi
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Olet tämän projektin **task-creator**-agentti.
 
 ## Rooli

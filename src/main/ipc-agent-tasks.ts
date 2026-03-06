@@ -12,8 +12,10 @@ import { assertDbPathAllowed, queryLive, writeDb } from './db'
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 interface SearchFilters {
+  status?: string
   statut?: string
   agent_id?: number
+  scope?: string
   perimetre?: string
 }
 
@@ -32,8 +34,8 @@ export function registerAgentTaskHandlers(): void {
       assertDbPathAllowed(dbPath)
       await writeDb(dbPath, (db) => {
         db.run(
-          `UPDATE sessions SET statut='completed', ended_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
-           WHERE statut='started'
+          `UPDATE sessions SET status='completed', ended_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
+           WHERE status='started'
              AND agent_id=(SELECT id FROM agents WHERE name=?)`,
           [agentName]
         )
@@ -58,10 +60,10 @@ export function registerAgentTaskHandlers(): void {
     try {
       assertDbPathAllowed(dbPath)
       await writeDb(dbPath, (db) => {
-        db.run('UPDATE perimetres SET name = ?, description = ? WHERE id = ?', [newName, description || null, id])
+        db.run('UPDATE scopes SET name = ?, description = ? WHERE id = ?', [newName, description || null, id])
         if (newName !== oldName) {
-          db.run('UPDATE tasks SET perimetre = ? WHERE perimetre = ?', [newName, oldName])
-          db.run('UPDATE agents SET perimetre = ? WHERE perimetre = ?', [newName, oldName])
+          db.run('UPDATE tasks SET scope = ? WHERE scope = ?', [newName, oldName])
+          db.run('UPDATE agents SET scope = ? WHERE scope = ?', [newName, oldName])
         }
       })
       return { success: true }
@@ -97,9 +99,9 @@ export function registerAgentTaskHandlers(): void {
 
       const contextBlock = await writeDb(dbPath, (db) => {
         // Get agent info
-        const agentRows = db.exec(`SELECT name, type, perimetre FROM agents WHERE id = ${agentId}`)
+        const agentRows = db.exec(`SELECT name, type, scope FROM agents WHERE id = ${agentId}`)
         if (!agentRows.length || !agentRows[0].values.length) return null
-        const [name, type, perimetre] = agentRows[0].values[0] as [string, string | null, string | null]
+        const [name, type, scope] = agentRows[0].values[0] as [string, string | null, string | null]
 
         // Create session (claude_conv_id set later by session:setConvId when system:init arrives)
         db.run(`INSERT INTO sessions (agent_id) VALUES (${agentId})`)
@@ -109,7 +111,7 @@ export function registerAgentTaskHandlers(): void {
         // Last completed session summary
         const prevRows = db.exec(`
           SELECT summary FROM sessions
-          WHERE agent_id = ${agentId} AND statut = 'completed' AND summary IS NOT NULL
+          WHERE agent_id = ${agentId} AND status = 'completed' AND summary IS NOT NULL
           ORDER BY id DESC LIMIT 1
         `)
         const prevSummary = prevRows.length && prevRows[0].values.length
@@ -118,22 +120,22 @@ export function registerAgentTaskHandlers(): void {
 
         // Open tasks
         const taskRows = db.exec(`
-          SELECT id, statut, perimetre, priority, titre
+          SELECT id, status, scope, priority, title
           FROM tasks
-          WHERE agent_assigne_id = ${agentId} AND statut IN ('todo', 'in_progress')
-          ORDER BY statut DESC, updated_at DESC
+          WHERE agent_assigned_id = ${agentId} AND status IN ('todo', 'in_progress')
+          ORDER BY status DESC, updated_at DESC
         `)
 
         // Active locks
         const lockRows = db.exec(`
-          SELECT l.fichier, a.name FROM locks l
+          SELECT l.file, a.name FROM locks l
           JOIN agents a ON a.id = l.agent_id
           WHERE l.released_at IS NULL
         `)
 
         const lines: string[] = [
           '=== IDENTIFIANTS ===',
-          `agent: ${name} (type:${type ?? '-'} | périmètre:${perimetre ?? '-'})`,
+          `agent: ${name} (type:${type ?? '-'} | périmètre:${scope ?? '-'})`,
           `agent_id: ${agentId}`,
           `session_id: ${sessionId}`,
           '',
@@ -146,8 +148,8 @@ export function registerAgentTaskHandlers(): void {
         if (!taskRows.length || !taskRows[0].values.length) {
           lines.push('(aucune tâche todo / in_progress)')
         } else {
-          for (const [id, statut, peri, priority, titre] of taskRows[0].values as [number, string, string, string, string][]) {
-            lines.push(`[T${id}] ${statut} | ${peri ?? '-'} | prio:${priority} | ${titre}`)
+          for (const [id, taskStatus, taskScope, priority, title] of taskRows[0].values as [number, string, string, string, string][]) {
+            lines.push(`[T${id}] ${taskStatus} | ${taskScope ?? '-'} | prio:${priority} | ${title}`)
           }
         }
 
@@ -155,8 +157,8 @@ export function registerAgentTaskHandlers(): void {
         if (!lockRows.length || !lockRows[0].values.length) {
           lines.push('(aucun)')
         } else {
-          for (const [fichier, owner] of lockRows[0].values as [string, string][]) {
-            lines.push(`${fichier} → ${owner}`)
+          for (const [file, owner] of lockRows[0].values as [string, string][]) {
+            lines.push(`${file} → ${owner}`)
           }
         }
 
@@ -200,7 +202,7 @@ export function registerAgentTaskHandlers(): void {
 
   /**
    * Atomically replace all assignees for a task in task_agents.
-   * Syncs tasks.agent_assigne_id: role='primary' takes precedence, else first assignee, else NULL.
+   * Syncs tasks.agent_assigned_id: role='primary' takes precedence, else first assignee, else NULL.
    * @param dbPath - Registered DB path
    * @param taskId - Task ID
    * @param assignees - Array of { agentId, role? } to set
@@ -237,10 +239,10 @@ export function registerAgentTaskHandlers(): void {
             [taskId, a.agentId, a.role ?? null]
           )
         }
-        // Sync tasks.agent_assigne_id: primary > first > NULL
+        // Sync tasks.agent_assigned_id: primary > first > NULL
         const primary = assignees.find(a => a.role === 'primary')
         const newAssigne = primary?.agentId ?? assignees[0]?.agentId ?? null
-        db.run('UPDATE tasks SET agent_assigne_id = ? WHERE id = ?', [newAssigne, taskId])
+        db.run('UPDATE tasks SET agent_assigned_id = ? WHERE id = ?', [newAssigne, taskId])
       })
       return { success: true }
     } catch (err) {
@@ -250,9 +252,9 @@ export function registerAgentTaskHandlers(): void {
   })
 
   /**
-   * Full-text search tasks with optional filters (statut, agent_id, perimetre).
+   * Full-text search tasks with optional filters (status, agent_id, scope).
    * @param dbPath - DB path
-   * @param query - Search text (LIKE match on titre/description)
+   * @param query - Search text (LIKE match on title/description)
    * @param filters - Optional filters
    * @returns {{ success: boolean, results: Array, error?: string }}
    */
@@ -270,17 +272,17 @@ export function registerAgentTaskHandlers(): void {
       const filterConditions: string[] = []
       const filterParams: unknown[] = []
 
-      if (filters?.statut) {
-        filterConditions.push('t.statut = ?')
-        filterParams.push(filters.statut)
+      if (filters?.status ?? filters?.statut) {
+        filterConditions.push('t.status = ?')
+        filterParams.push(filters?.status ?? filters?.statut)
       }
       if (filters?.agent_id) {
-        filterConditions.push('t.agent_assigne_id = ?')
+        filterConditions.push('t.agent_assigned_id = ?')
         filterParams.push(filters.agent_id)
       }
-      if (filters?.perimetre) {
-        filterConditions.push('t.perimetre = ?')
-        filterParams.push(filters.perimetre)
+      if (filters?.scope ?? filters?.perimetre) {
+        filterConditions.push('t.scope = ?')
+        filterParams.push(filters?.scope ?? filters?.perimetre)
       }
 
       if (useFts) {
@@ -299,16 +301,16 @@ export function registerAgentTaskHandlers(): void {
         const sql = `
           SELECT
             t.id,
-            t.titre,
-            t.statut,
-            t.perimetre,
+            t.title,
+            t.status,
+            t.scope,
             t.updated_at,
             t.description,
             SUBSTR(t.description, 1, 100) as description_excerpt,
             a.name as agent_assigne
           FROM tasks_fts f
           JOIN tasks t ON t.id = f.rowid
-          LEFT JOIN agents a ON a.id = t.agent_assigne_id
+          LEFT JOIN agents a ON a.id = t.agent_assigned_id
           WHERE tasks_fts MATCH ?
           ${ftsWhere}
           ORDER BY t.updated_at DESC
@@ -320,19 +322,19 @@ export function registerAgentTaskHandlers(): void {
         } catch {
           // FTS table not available (pre-migration DB) — fall back to LIKE
           const q = `%${trimmed}%`
-          const fallbackWhere = `WHERE (t.titre LIKE ? OR t.description LIKE ?)${filterConditions.length > 0 ? ` AND ${filterConditions.join(' AND ')}` : ''}`
+          const fallbackWhere = `WHERE (t.title LIKE ? OR t.description LIKE ?)${filterConditions.length > 0 ? ` AND ${filterConditions.join(' AND ')}` : ''}`
           const fallbackSql = `
             SELECT
               t.id,
-              t.titre,
-              t.statut,
-              t.perimetre,
+              t.title,
+              t.status,
+              t.scope,
               t.updated_at,
               t.description,
               SUBSTR(t.description, 1, 100) as description_excerpt,
               a.name as agent_assigne
             FROM tasks t
-            LEFT JOIN agents a ON a.id = t.agent_assigne_id
+            LEFT JOIN agents a ON a.id = t.agent_assigned_id
             ${fallbackWhere}
             ORDER BY t.updated_at DESC
             LIMIT 20
@@ -349,15 +351,15 @@ export function registerAgentTaskHandlers(): void {
       const sql = `
         SELECT
           t.id,
-          t.titre,
-          t.statut,
-          t.perimetre,
+          t.title,
+          t.status,
+          t.scope,
           t.updated_at,
           t.description,
           SUBSTR(t.description, 1, 100) as description_excerpt,
           a.name as agent_assigne
         FROM tasks t
-        LEFT JOIN agents a ON a.id = t.agent_assigne_id
+        LEFT JOIN agents a ON a.id = t.agent_assigned_id
         ${whereClause}
         ORDER BY t.updated_at DESC
         LIMIT 20
@@ -372,7 +374,7 @@ export function registerAgentTaskHandlers(): void {
   })
 
   /**
-   * Insert a new perimeter into the perimetres table.
+   * Insert a new scope into the scopes table.
    * @param dbPath - Registered DB path
    * @param name - Perimeter name (must be unique)
    * @returns {{ success: boolean, id?: number, error?: string }}
@@ -384,7 +386,7 @@ export function registerAgentTaskHandlers(): void {
     try {
       assertDbPathAllowed(dbPath)
       const id = await writeDb<number>(dbPath, (db) => {
-        db.run('INSERT INTO perimetres (name) VALUES (?)', [name.trim()])
+        db.run('INSERT INTO scopes (name) VALUES (?)', [name.trim()])
         const rows = db.exec('SELECT last_insert_rowid() as id')
         return rows[0].values[0][0] as number
       })
@@ -414,8 +416,8 @@ export function registerAgentTaskHandlers(): void {
       const rows = await queryLive(
         dbPath,
         `SELECT tl.id, tl.type, tl.from_task, tl.to_task,
-          tf.titre as from_titre, tf.statut as from_statut,
-          tt.titre as to_titre, tt.statut as to_statut
+          tf.title as from_title, tf.status as from_status,
+          tt.title as to_title, tt.status as to_status
          FROM task_links tl
          JOIN tasks tf ON tf.id = tl.from_task
          JOIN tasks tt ON tt.id = tl.to_task

@@ -41,16 +41,16 @@ export function recreateTasksTableWithArchive(db: Database): void {
   db.run(`
     CREATE TABLE tasks (
       id                INTEGER PRIMARY KEY AUTOINCREMENT,
-      titre             TEXT NOT NULL,
+      title             TEXT NOT NULL,
       description       TEXT,
-      statut            TEXT NOT NULL DEFAULT 'todo'
-        CHECK(statut IN ('todo','in_progress','done','archived')),
-      agent_createur_id INTEGER REFERENCES agents(id),
-      agent_assigne_id  INTEGER REFERENCES agents(id),
-      agent_valideur_id INTEGER REFERENCES agents(id),
+      status            TEXT NOT NULL DEFAULT 'todo'
+        CHECK(status IN ('todo','in_progress','done','archived')),
+      agent_creator_id  INTEGER REFERENCES agents(id),
+      agent_assigned_id INTEGER REFERENCES agents(id),
+      agent_validator_id INTEGER REFERENCES agents(id),
       parent_task_id    INTEGER REFERENCES tasks(id),
       session_id        INTEGER REFERENCES sessions(id),
-      perimetre         TEXT,
+      scope             TEXT,
       effort            INTEGER CHECK(effort IN (1,2,3)),
       priority          TEXT NOT NULL DEFAULT 'normal'
         CHECK(priority IN ('low','normal','high','critical')),
@@ -75,24 +75,32 @@ export function recreateTasksTableWithArchive(db: Database): void {
   const priorityExpr = oldColNames.includes('priority') ? 'priority' : "'normal'"
 
   // Build dynamic INSERT based on old columns (handles old schemas without various columns)
+  // Source columns may be French (pre-v25) or English (post-v25 already migrated)
+  const titleSrc = oldColNames.includes('title') ? 'title' : 'titre'
+  const scopeSrc = oldColNames.includes('scope') ? 'scope' : 'perimetre'
+  const statusSrc = oldColNames.includes('status') ? 'status' : statutExpr
+  const creatorSrc = oldColNames.includes('agent_creator_id') ? 'agent_creator_id' : (oldColNames.includes('agent_createur_id') ? 'agent_createur_id' : 'NULL')
+  const assignedSrc = oldColNames.includes('agent_assigned_id') ? 'agent_assigned_id' : (oldColNames.includes('agent_assigne_id') ? 'agent_assigne_id' : 'NULL')
+  const validatorSrc = oldColNames.includes('agent_validator_id') ? 'agent_validator_id' : (oldColNames.includes('agent_valideur_id') ? 'agent_valideur_id' : 'NULL')
+
   const colMapping: Record<string, string> = {
-    id:               'id',
-    titre:            'titre',
-    description:      'description',
-    statut:           statutExpr,
-    agent_createur_id: oldColNames.includes('agent_createur_id') ? 'agent_createur_id' : 'NULL',
-    agent_assigne_id:  oldColNames.includes('agent_assigne_id')  ? 'agent_assigne_id'  : 'NULL',
-    agent_valideur_id: oldColNames.includes('agent_valideur_id') ? 'agent_valideur_id' : 'NULL',
-    parent_task_id:    oldColNames.includes('parent_task_id')    ? 'parent_task_id'    : 'NULL',
-    session_id:        oldColNames.includes('session_id')        ? 'session_id'        : 'NULL',
-    perimetre:        'perimetre',
-    effort:            oldColNames.includes('effort')            ? 'effort'            : 'NULL',
-    priority:         priorityExpr,
-    created_at:       'created_at',
-    updated_at:       'updated_at',
-    started_at:        oldColNames.includes('started_at')   ? 'started_at'   : 'NULL',
-    completed_at:      oldColNames.includes('completed_at') ? 'completed_at' : 'NULL',
-    validated_at:      oldColNames.includes('validated_at') ? 'validated_at' : 'NULL',
+    id:                 'id',
+    title:              titleSrc,
+    description:        'description',
+    status:             statusSrc,
+    agent_creator_id:   creatorSrc,
+    agent_assigned_id:  assignedSrc,
+    agent_validator_id: validatorSrc,
+    parent_task_id:     oldColNames.includes('parent_task_id') ? 'parent_task_id' : 'NULL',
+    session_id:         oldColNames.includes('session_id')     ? 'session_id'     : 'NULL',
+    scope:              scopeSrc,
+    effort:             oldColNames.includes('effort')         ? 'effort'         : 'NULL',
+    priority:           priorityExpr,
+    created_at:         'created_at',
+    updated_at:         'updated_at',
+    started_at:         oldColNames.includes('started_at')   ? 'started_at'   : 'NULL',
+    completed_at:       oldColNames.includes('completed_at') ? 'completed_at' : 'NULL',
+    validated_at:       oldColNames.includes('validated_at') ? 'validated_at' : 'NULL',
   }
 
   const insertCols = Object.keys(colMapping).join(', ')

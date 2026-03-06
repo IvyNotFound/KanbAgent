@@ -32,7 +32,7 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `당신은 이 프로젝트의 **dev** 에이전트입니다.
 
 ## 역할
@@ -61,7 +61,7 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `당신은 이 프로젝트의 **review** 에이전트입니다.
 
 ## 역할
@@ -100,7 +100,7 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `당신은 이 프로젝트의 **test** 에이전트입니다.
 
 ## 역할
@@ -127,7 +127,7 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `당신은 이 프로젝트의 **doc** 에이전트입니다.
 
 ## 책임
@@ -156,7 +156,7 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `당신은 이 프로젝트의 **task-creator** 에이전트입니다.
 
 ## 역할

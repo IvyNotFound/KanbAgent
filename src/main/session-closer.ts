@@ -49,11 +49,11 @@ export async function closeZombieSessions(dbPath: string): Promise<void> {
   await writeDb(dbPath, (db) => {
     db.run(`
       UPDATE sessions
-      SET statut = 'completed', ended_at = datetime('now')
-      WHERE statut = 'started'
+      SET status = 'completed', ended_at = datetime('now')
+      WHERE status = 'started'
         AND EXISTS (
           SELECT 1 FROM tasks t
-          WHERE t.statut = 'done'
+          WHERE t.status = 'done'
             AND t.updated_at < datetime('now', '-1 minute')
             AND sessions.summary LIKE '%T' || CAST(t.id AS TEXT) || '[%'
         )

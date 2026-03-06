@@ -159,7 +159,7 @@ describe('IPC DB handlers', () => {
     const dbPath = '/fake/project.db'
 
     it('should block INSERT queries', async () => {
-      const result = await callHandler('query-db', dbPath, "INSERT INTO tasks (titre) VALUES ('hack')")
+      const result = await callHandler('query-db', dbPath, "INSERT INTO tasks (title) VALUES ('hack')")
       expect(result).toMatchObject({
         success: false,
         error: expect.stringContaining('Write operations'),
@@ -197,7 +197,7 @@ describe('IPC DB handlers', () => {
     })
 
     it('should block case-insensitive write attempts', async () => {
-      const result = await callHandler('query-db', dbPath, 'insert into tasks (titre) values (1)')
+      const result = await callHandler('query-db', dbPath, 'insert into tasks (title) values (1)')
       expect(result).toMatchObject({ success: false })
     })
 
@@ -211,7 +211,7 @@ describe('IPC DB handlers', () => {
     })
 
     it('should document known limitation: INSERT in WHERE value is incorrectly blocked', async () => {
-      const result = await callHandler('query-db', dbPath, "SELECT * FROM tasks WHERE titre = 'INSERT something'", [])
+      const result = await callHandler('query-db', dbPath, "SELECT * FROM tasks WHERE title = 'INSERT something'", [])
       expect(result).toMatchObject({ success: false, error: expect.stringContaining('Write operations') })
     })
   })

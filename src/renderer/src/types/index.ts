@@ -12,7 +12,7 @@ export interface Agent {
   id: number
   name: string
   type: string
-  perimetre: string | null
+  scope: string | null
   system_prompt: string | null
   system_prompt_suffix: string | null
   thinking_mode: 'auto' | 'disabled' | null
@@ -24,15 +24,15 @@ export interface Agent {
   /** Maximum number of parallel active sessions for this agent. DEFAULT 3. */
   max_sessions: number
   created_at: string
-  /** Session statut (English, migrated from French in T329). */
-  session_statut?: 'started' | 'completed' | 'blocked' | null
+  /** Session status. */
+  session_status?: 'started' | 'completed' | 'blocked' | null
   session_started_at?: string | null
   last_log_at?: string | null
   /** 1 if the agent has associated sessions, tasks, comments, or logs; 0 otherwise. */
   has_history?: number
 }
 
-/** Task statut values (English, as stored in DB from v0.4.0+). */
+/** Task status values. */
 export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'archived'
 
 /** Task priority values. */
@@ -41,18 +41,18 @@ export type TaskPriority = 'low' | 'normal' | 'high' | 'critical'
 /** Task record from the `tasks` table, enriched with agent names via JOINs. */
 export interface Task {
   id: number
-  titre: string
+  title: string
   description: string | null
-  statut: TaskStatus
-  agent_assigne_id: number
-  agent_createur_id: number
-  agent_valideur_id: number | null
+  status: TaskStatus
+  agent_assigned_id: number
+  agent_creator_id: number
+  agent_validator_id: number | null
   agent_name: string | null
-  agent_createur_name: string | null
-  agent_perimetre: string | null
+  agent_creator_name: string | null
+  agent_scope: string | null
   parent_task_id: number | null
   session_id: number | null
-  perimetre: string | null
+  scope: string | null
   effort: 1 | 2 | 3 | null
   priority: TaskPriority
   created_at: string
@@ -76,7 +76,7 @@ export interface TaskComment {
   task_id: number
   agent_id: number
   agent_name: string | null
-  contenu: string
+  content: string
   created_at: string
 }
 
@@ -86,16 +86,16 @@ export interface TaskLink {
   type: string
   from_task: number
   to_task: number
-  from_titre: string
-  from_statut: string
-  to_titre: string
-  to_statut: string
+  from_title: string
+  from_status: string
+  to_title: string
+  to_status: string
 }
 
 /** File lock record from the `locks` table. */
 export interface Lock {
   id: number
-  fichier: string
+  file: string
   agent_id: number
   agent_name: string
   session_id: number | null
@@ -111,14 +111,14 @@ export interface Stats {
   archived: number
 }
 
-/** Perimeter (scope) record from the `perimetres` table. */
+/** Scope record from the `scopes` table. */
 export interface Perimetre {
   id: number
   name: string
-  dossier: string | null
+  folder: string | null
   techno: string | null
   description: string | null
-  actif: number
+  active: number
 }
 
 /** File tree node used by ExplorerView. */
@@ -153,7 +153,7 @@ export interface Session {
   started_at: string
   ended_at: string | null
   updated_at: string
-  statut: 'started' | 'completed' | 'blocked'
+  status: 'started' | 'completed' | 'blocked'
   summary: string | null
   claude_conv_id: string | null
   tokens_in: number
@@ -178,7 +178,7 @@ export interface AgentGroup {
 export interface AgentQualityRow {
   agent_id: number
   agent_name: string
-  agent_perimetre: string | null
+  agent_scope: string | null
   total_tasks: number
   rejected_tasks: number
   /** Rejection rate as a percentage (0–100). */
@@ -192,9 +192,9 @@ export interface AgentLog {
   agent_id: number
   agent_name: string | null
   agent_type: string | null
-  niveau: 'info' | 'warn' | 'error' | 'debug'
+  level: 'info' | 'warn' | 'error' | 'debug'
   action: string
   detail: string | null
-  fichiers: string | null
+  files: string | null
   created_at: string
 }

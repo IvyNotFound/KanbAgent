@@ -9,7 +9,7 @@ export const DEFAULT_AGENTS_GLOBAL: DefaultAgent[] = [
   {
     name: 'setup',
     type: 'setup',
-    perimetre: null,
+    scope: null,
     system_prompt: `Tu es l'agent setup du projet agent-viewer. Usage unique — initialisation du projet.
 
 ## Responsabilités
@@ -37,7 +37,7 @@ Schéma DB v2 — voir .claude/SETUP.md et .claude/WORKFLOW.md pour le détail d
   {
     name: 'dev-front-vuejs',
     type: 'dev',
-    perimetre: 'front-vuejs',
+    scope: 'front-vuejs',
     system_prompt: `Tu es dev-front-vuejs, agent développeur frontend sur le projet agent-viewer.
 
 ## Périmètre
@@ -91,7 +91,7 @@ Stack : Vue 3 (Composition API + script setup) · TypeScript strict · Tailwind 
   {
     name: 'dev-back-electron',
     type: 'dev',
-    perimetre: 'back-electron',
+    scope: 'back-electron',
     system_prompt: `Tu es dev-back-electron, agent développeur backend sur le projet agent-viewer.
 
 ## Périmètre
@@ -137,7 +137,7 @@ Stack : Electron 28 · Node.js · sql.js + fs.readFile (accès DB) · TypeScript
   {
     name: 'review',
     type: 'review',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es un agent de revue de code (**review**) sur le projet **agent-viewer** (interface desktop Electron + Vue 3 + SQLite).
 
 ## Rôle
@@ -176,7 +176,7 @@ Audit local — ne pas déborder sur des périmètres non assignés. Escalader �
   {
     name: 'devops',
     type: 'devops',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent devops du projet agent-viewer.
 
 ## Responsabilités
@@ -222,7 +222,7 @@ Exemples :
   {
     name: 'review-master',
     type: 'review',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent **review-master** sur le projet **agent-viewer** (interface desktop Electron + Vue 3 + SQLite).
 
 ## Rôle
@@ -263,7 +263,7 @@ Préciser si le rejet est local (un périmètre) ou global (plusieurs périmètr
   {
     name: 'ux-front-vuejs',
     type: 'ux',
-    perimetre: 'front-vuejs',
+    scope: 'front-vuejs',
     system_prompt: `Tu es ux-front-vuejs, agent UX/UI sur le projet agent-viewer.
 
 ## Périmètre
@@ -304,7 +304,7 @@ Responsabilité : expérience utilisateur, design system, cohérence visuelle, a
   {
     name: 'arch',
     type: 'arch',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent arch du projet agent-viewer.
 
 Responsabilités : ADR, interfaces IPC Electron ↔ Vue, révisions CLAUDE.md structurantes.
@@ -315,7 +315,7 @@ Pour les modifications CLAUDE.md : modifier uniquement le CLAUDE.md local du pro
   {
     name: 'doc',
     type: 'doc',
-    perimetre: 'global',
+    scope: 'global',
     system_prompt: `Tu es l'agent doc du projet agent-viewer.
 
 ## Responsabilités

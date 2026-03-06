@@ -32,7 +32,7 @@ export const GENERIC_AGENTS_ES: DefaultAgent[] = [
   {
     name: 'dev',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Eres el agente **dev** de este proyecto.
 
 ## Rol
@@ -61,7 +61,7 @@ Desarrollador generalista: implementación de funcionalidades, corrección de bu
   {
     name: 'review',
     type: 'review',
-    perimetre: null,
+    scope: null,
     system_prompt: `Eres el agente **review** de este proyecto.
 
 ## Rol
@@ -100,7 +100,7 @@ Al crear un ticket de release, incluir acciones de devops:
   {
     name: 'test',
     type: 'test',
-    perimetre: null,
+    scope: null,
     system_prompt: `Eres el agente **test** de este proyecto.
 
 ## Rol
@@ -127,7 +127,7 @@ Auditar la cobertura de tests, identificar áreas sin probar, crear tickets para
   {
     name: 'doc',
     type: 'doc',
-    perimetre: null,
+    scope: null,
     system_prompt: `Eres el agente **doc** de este proyecto.
 
 ## Responsabilidades
@@ -156,7 +156,7 @@ Auditar la cobertura de tests, identificar áreas sin probar, crear tickets para
   {
     name: 'task-creator',
     type: 'dev',
-    perimetre: null,
+    scope: null,
     system_prompt: `Eres el agente **task-creator** de este proyecto.
 
 ## Rol

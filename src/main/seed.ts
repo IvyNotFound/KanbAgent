@@ -22,27 +22,27 @@ async function main() {
   const db = new SQL.Database(buffer)
 
   db.run(`
-INSERT OR IGNORE INTO agents (name, type, perimetre) VALUES
+INSERT OR IGNORE INTO agents (name, type, scope) VALUES
   ('dev-front-vuejs', 'dev', 'front-vuejs'),
   ('dev-back-electron', 'dev', 'back-electron'),
   ('review', 'review', NULL),
   ('git', 'git', NULL);
 
-INSERT INTO sessions (agent_id, statut) VALUES
+INSERT INTO sessions (agent_id, status) VALUES
   ((SELECT id FROM agents WHERE name = 'dev-front-vuejs'), 'started'),
   ((SELECT id FROM agents WHERE name = 'dev-back-electron'), 'completed');
 
 UPDATE sessions SET ended_at = CURRENT_TIMESTAMP, summary = 'Done: IPC handlers. Next: renderer store.'
-WHERE agent_id = (SELECT id FROM agents WHERE name = 'dev-back-electron') AND statut = 'completed';
+WHERE agent_id = (SELECT id FROM agents WHERE name = 'dev-back-electron') AND status = 'completed';
 
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre) VALUES
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope) VALUES
   ('Setup Electron + Vite config', 'Configurer electron-vite, tsconfig, tailwind', 'archived',
     (SELECT id FROM agents WHERE name = 'dev-back-electron'),
     (SELECT id FROM agents WHERE name = 'dev-back-electron'), 'back-electron'),
   ('IPC handlers better-sqlite3', 'query-db, select-db-file, window controls', 'done',
     (SELECT id FROM agents WHERE name = 'dev-back-electron'),
     (SELECT id FROM agents WHERE name = 'dev-back-electron'), 'back-electron'),
-  ('Composant BoardView', 'Board Trello 4 colonnes statut', 'in_progress',
+  ('Composant BoardView', 'Board Trello 4 colonnes status', 'in_progress',
     (SELECT id FROM agents WHERE name = 'dev-front-vuejs'),
     (SELECT id FROM agents WHERE name = 'dev-front-vuejs'), 'front-vuejs'),
   ('Composant TaskCard', 'Carte tâche avec badges agent et périmètre', 'in_progress',
@@ -55,7 +55,7 @@ INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_
     (SELECT id FROM agents WHERE name = 'dev-front-vuejs'),
     (SELECT id FROM agents WHERE name = 'dev-front-vuejs'), 'front-vuejs');
 
-INSERT INTO locks (fichier, agent_id) VALUES
+INSERT INTO locks (file, agent_id) VALUES
   ('src/renderer/src/components/BoardView.vue',
     (SELECT id FROM agents WHERE name = 'dev-front-vuejs'));
 `)
