@@ -37,7 +37,7 @@ Scoped: `dev-front-vuejs` (Vue) · `dev-back-electron` (IPC/SQLite)
 Complex SQL → **heredoc required**:
 ```
 node scripts/dbw.js <<'SQL'
-INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (1, 2, 'text');
+INSERT INTO task_comments (task_id, agent_id, content) VALUES (1, 2, 'text');
 SQL
 ```
 Start session: `node scripts/dbstart.js <agent-name>`

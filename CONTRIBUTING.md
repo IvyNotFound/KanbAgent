@@ -44,24 +44,24 @@ todo → in_progress → done → archived
 
 ```sql
 -- View assigned tasks
-SELECT id, titre, statut FROM tasks
-WHERE agent_assigne_id = (SELECT id FROM agents WHERE name = 'dev-front-vuejs')
-AND statut IN ('todo', 'in_progress');
+SELECT id, title, status FROM tasks
+WHERE agent_assigned_id = (SELECT id FROM agents WHERE name = 'dev-front-vuejs')
+AND status IN ('todo', 'in_progress');
 
 -- Set a task in progress
-UPDATE tasks SET statut = 'in_progress', started_at = CURRENT_TIMESTAMP
+UPDATE tasks SET status = 'in_progress', started_at = CURRENT_TIMESTAMP
 WHERE id = 42;
 
 -- Lock a file
-INSERT OR REPLACE INTO locks (fichier, agent_id, session_id)
+INSERT OR REPLACE INTO locks (file, agent_id, session_id)
 VALUES ('src/renderer/src/App.vue', 1, 10);
 
 -- Complete a task
-UPDATE tasks SET statut = 'done', completed_at = CURRENT_TIMESTAMP
+UPDATE tasks SET status = 'done', completed_at = CURRENT_TIMESTAMP
 WHERE id = 42;
 
 -- Exit comment (mandatory)
-INSERT INTO task_comments (task_id, agent_id, contenu)
+INSERT INTO task_comments (task_id, agent_id, content)
 VALUES (42, 1, 'App.vue:L1-50 · Added new component · Next: add tests');
 ```
 
@@ -309,8 +309,8 @@ To create a task manually:
 
 ```sql
 INSERT INTO tasks (
-  titre, description,
-  statut, agent_createur_id, agent_assigne_id, agent_valideur_id, perimetre, effort, priority
+  title, description,
+  status, agent_creator_id, agent_assigned_id, agent_validator_id, scope, effort, priority
 ) VALUES (
   'Task title',
   'Full description with context and acceptance criteria',
@@ -324,7 +324,7 @@ INSERT INTO tasks (
 );
 
 -- Optional comment (notes for the developer)
-INSERT INTO task_comments (task_id, agent_id, contenu)
+INSERT INTO task_comments (task_id, agent_id, content)
 VALUES (last_insert_rowid(), (SELECT id FROM agents WHERE name = 'review'), 'Notes for the developer');
 ```
 

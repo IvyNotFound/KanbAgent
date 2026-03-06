@@ -1,7 +1,7 @@
 # ADRs — Architecture Decision Records
 
 > Validated architecture decisions. Any new ADR → `arch` agent, CLAUDE.md revision.
-> Split across multiple files due to size: ADR-004 to ADR-006 → `ADRS-004-006.md` · ADR-007 → `ADRS-007.md` · ADR-008 to ADR-009 → `ADRS-008-009.md`
+> Split across multiple files due to size: ADR-004 to ADR-006 → `ADRS-004-006.md` · ADR-007 → `ADRS-007.md` · ADR-008 to ADR-009 → `ADRS-008-009.md` · ADR-010 → `ADRS-010.md`
 
 ---
 

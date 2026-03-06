@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.26.0-blue)
+![Version](https://img.shields.io/badge/version-0.27.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches Claude sessions in external WSL terminals, and monitors activity in real time.
@@ -39,6 +39,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete/duplicate, max sessions limit (including `-1` for unlimited); review agents highlighted with amber accent in a dedicated sidebar section
 - **Agent Groups & Drag & Drop**: Sidebar agent groups with drag-and-drop reordering (`useSidebarGroups`, `useSidebarDragDrop`)
 - **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation
+- **Multi-CLI Support**: Select any supported coding agent CLI per session — Claude Code, OpenAI Codex, Google Gemini, OpenCode, Aider, Goose — detected automatically across WSL distros and native installs; each CLI has a dedicated adapter (`src/main/adapters/<cli>.ts`) following the `CliAdapter` contract (ADR-010)
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
 - **Setup Wizard**: First-run configuration assistant (`SetupWizard`) — guides through WSL detection, project creation and initial agents
 
@@ -135,15 +136,19 @@ Launches the application in development mode with hot-reload:
 - Preload scripts
 - Vue 3 renderer at http://localhost:5173
 
-### Desktop Build (Windows)
+### Desktop Build
 
 ```bash
-npm run build
+npm run build        # Windows (default)
+npm run build:mac    # macOS
+npm run build:linux  # Linux
 ```
 
-Outputs:
+Outputs (Windows):
 - `dist/win-unpacked/` — Unpacked application
 - `dist/*.exe` — Installer (NSIS, multi-language)
+
+The `download-sqlite3.js` pre-build script auto-detects `process.platform` and downloads the correct SQLite binary for the host OS (win32 → `sqlite3.exe`, darwin/linux → `sqlite3`).
 
 ### Available Commands
 
@@ -155,6 +160,7 @@ Outputs:
 | `npm run test` | Run tests (Vitest) |
 | `npm run test:watch` | Tests in watch mode |
 | `npm run test:coverage` | Coverage report |
+| `npm run telemetry` | Code metrics report (lines, files, coverage ratio by folder) |
 | `npm run release` | Patch release (SemVer) |
 | `npm run release:minor` | Minor release |
 | `npm run release:major` | Major release |
@@ -164,6 +170,8 @@ Outputs:
 ```
 agent-viewer/
 ├── src/
+│   ├── shared/                      # Types shared between main and renderer
+│   │   └── cli-types.ts             # CliType, CliInstance, CliAdapter, SpawnSpec, LaunchOpts (ADR-010)
 │   ├── main/                        # Electron main process
 │   │   ├── index.ts                 # Entry point, BrowserWindow, CSP
 │   │   ├── ipc.ts                   # Core IPC (SQL, window, locks, migrations, ZIP export)
@@ -181,13 +189,22 @@ agent-viewer/
 │   │   ├── ipc-fs.ts                # Filesystem IPC (listDir, readFile, writeFile)
 │   │   ├── ipc-settings.ts          # Settings IPC (config, GitHub, updates)
 │   │   ├── ipc-window.ts            # Window IPC (minimize, maximize, close)
-│   │   ├── ipc-wsl.ts               # WSL IPC (getClaudeInstances, openTerminal)
+│   │   ├── ipc-wsl.ts               # WSL IPC (getCliInstances, openTerminal; multi-CLI + local PATH enrichment)
 │   │   ├── updater.ts               # Auto-update (electron-updater, token loading, IPC handlers)
 │   │   ├── db.ts                    # SQLite utilities (queryLive, writeLive)
 │   │   ├── claude-md.ts             # CLAUDE.md manipulation (agent insertion)
 │   │   ├── migration.ts             # Numbered SQLite migrations (SAVEPOINT atomicity)
 │   │   ├── seed.ts                  # Demo data for project.db
 │   │   ├── default-agents.ts        # GENERIC_AGENTS (new projects) + DEFAULT_AGENTS (agent-viewer)
+│   │   ├── adapters/                # CliAdapter implementations (ADR-010)
+│   │   │   ├── claude.ts            # Claude Code adapter (stream-json, ADR-009)
+│   │   │   ├── codex.ts             # OpenAI Codex adapter (full-auto approval)
+│   │   │   ├── gemini.ts            # Google Gemini adapter (headless mode)
+│   │   │   ├── opencode.ts          # SST OpenCode adapter (terminal agent)
+│   │   │   ├── aider.ts             # Aider adapter (multi-LLM, headless)
+│   │   │   ├── goose.ts             # Block Goose adapter (ACP protocol)
+│   │   │   ├── fallback.ts          # Passthrough adapter for unknown CLIs
+│   │   │   └── index.ts             # Registry — getAdapter(cli: CliType): CliAdapter
 │   │   └── utils/
 │   │       └── wsl.ts               # WSL path conversion (toWslPath)
 │   ├── preload/
@@ -264,6 +281,25 @@ When creating a new project via the `create-project-db` IPC handler, `GENERIC_AG
 
 > ⚠️ **Sync rule**: `GENERIC_AGENTS_BY_LANG` contains parallel FR and EN versions of the same agents. Whenever a prompt changes in one language, the other language must be updated too.
 
+### Multi-CLI Support (`src/main/adapters/` + `src/shared/cli-types.ts`)
+
+agent-viewer can launch and stream any supported coding agent CLI, not just Claude Code. Each CLI has a dedicated `CliAdapter` in `src/main/adapters/<cli>.ts` (ADR-010).
+
+**Phase 1 CLIs:**
+
+| CLI | Binary | Headless mode |
+|-----|--------|---------------|
+| Claude Code | `claude` | `--output-format stream-json` |
+| OpenAI Codex | `codex` | `--approval-mode full-auto` |
+| Google Gemini | `gemini` | headless mode |
+| OpenCode | `opencode` | terminal agent |
+| Aider | `aider` | headless, multi-LLM |
+| Goose | `goose` | ACP stdio protocol |
+
+Detection runs automatically across WSL distros and native installs via `wsl:getCliInstances`. The `agent:create` IPC handler accepts an optional `cli` parameter (default: `'claude'`) — all existing sessions are unaffected.
+
+Shared types (`CliType`, `CliInstance`, `CliAdapter`, `SpawnSpec`, `LaunchOpts`, `StreamEvent`) live in `src/shared/cli-types.ts` and are imported by both main and renderer without coupling to each other's internals. `ClaudeInstance` remains as a backward-compatible alias for `CliInstance`.
+
 ### CLI Scripts
 
 The scripts in `scripts/` let agents interact with the database without opening the application:
@@ -272,20 +308,20 @@ The scripts in `scripts/` let agents interact with the database without opening 
 |--------|-------------|
 | `node scripts/dbq.js "<SQL>"` | In-memory read (sql.js, bypasses SQLite lock) |
 | `node scripts/dbw.js "<SQL>"` | Atomic write with advisory lock (`.wlock`) |
-| `node scripts/dbstart.js <agent>` | Starts an agent session, displays tasks and locks |
+| `node scripts/dbstart.js <agent>` | Starts an agent session, displays tasks and locks; runs `git worktree prune` (non-fatal) |
 | `bash scripts/release.sh [patch\|minor\|major]` | Build + version bump + Git tag + GitHub Release (draft) |
 
 **JSON mode (dbw.js)** — for values containing apostrophes or special characters, use JSON mode via stdin:
 
 ```sh
-echo '{"sql":"INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (?,?,?)","params":[42,3,"O'\''Brien"]}' | node scripts/dbw.js
+echo '{"sql":"INSERT INTO task_comments (task_id, agent_id, content) VALUES (?,?,?)","params":[42,3,"O'\''Brien"]}' | node scripts/dbw.js
 ```
 
 **Heredoc mode** — for multi-line SQL or SQL containing backticks / `$()` :
 
 ```sh
 node scripts/dbw.js <<'SQL'
-UPDATE tasks SET statut='done', updated_at=CURRENT_TIMESTAMP WHERE id=42;
+UPDATE tasks SET status='done', updated_at=CURRENT_TIMESTAMP WHERE id=42;
 SQL
 ```
 

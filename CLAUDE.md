@@ -57,7 +57,7 @@ Thinking mode (DB `thinking_mode`, NULL=auto): `test/doc/devops` → disabled ·
 SQL simple : argument direct. SQL complexe (quotes, `$()`, multiligne) → **heredoc obligatoire** :
 ```
 node scripts/dbw.js <<'SQL'
-INSERT INTO task_comments (task_id, agent_id, contenu) VALUES (1, 2, 'texte');
+INSERT INTO task_comments (task_id, agent_id, content) VALUES (1, 2, 'texte');
 SQL
 ```
 Démarrage session : `node scripts/dbstart.js <agent-name>` — crée session, affiche tâches, vérifie locks.
