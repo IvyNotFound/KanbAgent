@@ -24,6 +24,9 @@ import fi from '../locales/fi.json'
 import sv from '../locales/sv.json'
 import de from '../locales/de.json'
 import it from '../locales/it.json'
+import ko from '../locales/ko.json'
+import zhCN from '../locales/zh-CN.json'
+import tr from '../locales/tr.json'
 
 export type AppLocale =
   | 'fr'
@@ -67,6 +70,9 @@ const i18n = createI18n({
     sv,
     de,
     it,
+    ko,
+    'zh-CN': zhCN,
+    tr,
   },
 })
 
