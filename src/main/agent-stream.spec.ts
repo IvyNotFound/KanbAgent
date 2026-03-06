@@ -360,6 +360,28 @@ describe('agent-stream', () => {
     })
   })
 
+  it('includes non-JSON stdout in error:exit message when process exits non-zero (Windows PS1 path)', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, {})) as string
+
+    // Simulate PS1 script: Write-Output "ERROR: 'claude' not found..." then exit 1
+    mockProc.stdout.write("ERROR: 'claude' not found in PATH: C:\\Windows\\System32\n")
+    await new Promise(resolve => setImmediate(resolve))
+
+    mockProc.emit('close', 1)
+    await new Promise(resolve => setImmediate(resolve))
+
+    const call = vi.mocked(mockSender.send).mock.calls.find(
+      ([ch]) => ch === `agent:stream:${id}`
+    )
+    expect(call).toBeTruthy()
+    const payload = call![1] as { type: string; error: string }
+    expect(payload.type).toBe('error:exit')
+    expect(payload.error).toContain('Process exited with code 1')
+    expect(payload.error).toContain("ERROR: 'claude' not found in PATH")
+  })
+
   it('emits error:exit when process exits with code 0 without any stream event', async () => {
     const handler = handlers.get('agent:create')!
     const event = { sender: mockSender }

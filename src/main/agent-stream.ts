@@ -291,7 +291,9 @@ export function registerAgentStreamHandlers(): void {
           } else if (isAbnormalExit) {
             msg = `Process exited abnormally (code ${exitCode}).`
           } else if (exitCode !== 0) {
-            msg = `Process exited with code ${exitCode}`
+            msg = stdoutCtx
+              ? `Process exited with code ${exitCode}: ${stdoutCtx}`
+              : `Process exited with code ${exitCode}`
           } else {
             msg = `Process exited without producing any output (code ${exitCode})`
           }
