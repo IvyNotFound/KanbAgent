@@ -6,10 +6,29 @@
 // Whenever a prompt is updated in one language, the other language MUST be updated too.
 
 /**
- * Language for generic agent prompts ('fr' | 'en').
+ * Language for generic agent prompts.
  * Used by GENERIC_AGENTS_BY_LANG and the create-project-db IPC handler.
+ * New language entries fall back to 'en' until translation tickets are completed.
  */
-export type AgentLanguage = 'fr' | 'en'
+export type AgentLanguage =
+  | 'fr'
+  | 'en'
+  | 'es'
+  | 'pt'
+  | 'pt-BR'
+  | 'de'
+  | 'no'
+  | 'it'
+  | 'ar'
+  | 'ru'
+  | 'pl'
+  | 'sv'
+  | 'fi'
+  | 'da'
+  | 'tr'
+  | 'zh-CN'
+  | 'ko'
+  | 'ja'
 
 /**
  * Describes a Claude agent definition to be seeded into a project.db.
@@ -426,6 +445,23 @@ VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 export const GENERIC_AGENTS_BY_LANG: Record<AgentLanguage, DefaultAgent[]> = {
   fr: GENERIC_AGENTS,
   en: GENERIC_AGENTS_EN,
+  // New locales — translation tickets pending, fallback to English agents
+  es: GENERIC_AGENTS_EN,
+  pt: GENERIC_AGENTS_EN,
+  'pt-BR': GENERIC_AGENTS_EN,
+  de: GENERIC_AGENTS_EN,
+  no: GENERIC_AGENTS_EN,
+  it: GENERIC_AGENTS_EN,
+  ar: GENERIC_AGENTS_EN,
+  ru: GENERIC_AGENTS_EN,
+  pl: GENERIC_AGENTS_EN,
+  sv: GENERIC_AGENTS_EN,
+  fi: GENERIC_AGENTS_EN,
+  da: GENERIC_AGENTS_EN,
+  tr: GENERIC_AGENTS_EN,
+  'zh-CN': GENERIC_AGENTS_EN,
+  ko: GENERIC_AGENTS_EN,
+  ja: GENERIC_AGENTS_EN,
 }
 
 /**

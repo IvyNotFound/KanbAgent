@@ -39,6 +39,27 @@ const settingsStore = useSettingsStore()
 const store = useTasksStore()
 const { status: updaterStatus, check: checkUpdaterNow } = useUpdater()
 
+const availableLocales = [
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'pt', label: 'Português' },
+  { code: 'pt-BR', label: 'Português (Brasil)' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'no', label: 'Norsk' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'sv', label: 'Svenska' },
+  { code: 'fi', label: 'Suomi' },
+  { code: 'da', label: 'Dansk' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'zh-CN', label: '中文（简体）' },
+  { code: 'ko', label: '한국어' },
+  { code: 'ja', label: '日本語' },
+] as const
+
 // Claude instances for default selection (T857)
 const claudeInstances = ref<ClaudeInstance[]>([])
 
@@ -89,26 +110,15 @@ function handleKeydown(e: KeyboardEvent) {
           <!-- Language -->
           <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
             <p class="text-[11px] text-content-subtle mb-2 uppercase tracking-wider">{{ t('settings.language') }}</p>
-            <div class="flex gap-2">
-              <button
-                :class="[
-                  'flex-1 py-2 px-3 rounded text-sm font-medium transition-colors',
-                  settingsStore.language === 'fr'
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
-                ]"
-                @click="settingsStore.setLanguage('fr')"
-              >{{ t('settings.french') }}</button>
-              <button
-                :class="[
-                  'flex-1 py-2 px-3 rounded text-sm font-medium transition-colors',
-                  settingsStore.language === 'en'
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
-                ]"
-                @click="settingsStore.setLanguage('en')"
-              >{{ t('settings.english') }}</button>
-            </div>
+            <select
+              :value="settingsStore.language"
+              @change="settingsStore.setLanguage(($event.target as HTMLSelectElement).value as import('@renderer/stores/settings').Language)"
+              class="w-full bg-surface-secondary text-content-primary border border-edge-subtle rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+            >
+              <option v-for="locale in availableLocales" :key="locale.code" :value="locale.code">
+                {{ locale.label }}
+              </option>
+            </select>
           </div>
 
           <!-- Theme -->

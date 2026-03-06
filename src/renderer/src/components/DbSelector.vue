@@ -57,18 +57,31 @@ async function create() {
   <!-- Accueil -->
   <div v-if="step === 'home'" class="h-full flex items-center justify-center relative">
     <!-- Language selector -->
-    <div class="absolute top-4 right-4 flex items-center gap-1 text-xs">
-      <button
-        :class="locale === 'fr' ? 'text-violet-400 font-semibold' : 'text-zinc-500 hover:text-zinc-400'"
-        class="transition-colors"
-        @click="setLocale('fr')"
-      >FR</button>
-      <span class="text-zinc-600">/</span>
-      <button
-        :class="locale === 'en' ? 'text-violet-400 font-semibold' : 'text-zinc-500 hover:text-zinc-400'"
-        class="transition-colors"
-        @click="setLocale('en')"
-      >EN</button>
+    <div class="absolute top-4 right-4">
+      <select
+        :value="locale"
+        @change="setLocale(($event.target as HTMLSelectElement).value as Language)"
+        class="bg-zinc-800/80 text-zinc-300 border border-zinc-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+      >
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="pt">Português</option>
+        <option value="pt-BR">Português (Brasil)</option>
+        <option value="de">Deutsch</option>
+        <option value="no">Norsk</option>
+        <option value="it">Italiano</option>
+        <option value="ar">العربية</option>
+        <option value="ru">Русский</option>
+        <option value="pl">Polski</option>
+        <option value="sv">Svenska</option>
+        <option value="fi">Suomi</option>
+        <option value="da">Dansk</option>
+        <option value="tr">Türkçe</option>
+        <option value="zh-CN">中文（简体）</option>
+        <option value="ko">한국어</option>
+        <option value="ja">日本語</option>
+      </select>
     </div>
     <div class="text-center space-y-6 max-w-sm px-6">
       <!-- Logo -->

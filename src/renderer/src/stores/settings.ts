@@ -15,7 +15,25 @@ import i18n from '../plugins/i18n'
 import { setDarkMode } from '../utils/agentColor'
 
 export type Theme = 'dark' | 'light'
-export type Language = 'fr' | 'en'
+export type Language =
+  | 'fr'
+  | 'en'
+  | 'es'
+  | 'pt'
+  | 'pt-BR'
+  | 'de'
+  | 'no'
+  | 'it'
+  | 'ar'
+  | 'ru'
+  | 'pl'
+  | 'sv'
+  | 'fi'
+  | 'da'
+  | 'tr'
+  | 'zh-CN'
+  | 'ko'
+  | 'ja'
 
 interface AppInfo {
   version: string

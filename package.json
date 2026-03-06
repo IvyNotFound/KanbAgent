@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:mutation": "stryker run",
     "download-sqlite3": "node scripts/download-sqlite3.js",
     "release": "bash scripts/release.sh",
     "release:patch": "bash scripts/release.sh patch",
@@ -47,6 +48,8 @@
   },
   "devDependencies": {
     "@pinia/testing": "^0.1.7",
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/dompurify": "^3.0.5",
     "@types/node": "^22.13.5",

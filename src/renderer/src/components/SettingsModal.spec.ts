@@ -71,7 +71,7 @@ describe('SettingsModal', () => {
     expect(settingsStore.setTheme).toHaveBeenCalledWith('dark')
   })
 
-  it('calls setLanguage when language button is clicked', async () => {
+  it('calls setLanguage when language select changes', async () => {
     const pinia = createTestingPinia({
       initialState: { tasks: { dbPath: '/p/.claude/db' } },
     })
@@ -83,10 +83,10 @@ describe('SettingsModal', () => {
     const { useSettingsStore } = await import('@renderer/stores/settings')
     const settingsStore = useSettingsStore()
 
-    // Find the English button
-    const langBtn = wrapper.findAll('button').find(b => b.text().includes('English'))
-    expect(langBtn).toBeDefined()
-    await langBtn!.trigger('click')
+    // Find the language select and trigger a change
+    const langSelect = wrapper.find('select')
+    expect(langSelect.exists()).toBe(true)
+    await langSelect.setValue('en')
     expect(settingsStore.setLanguage).toHaveBeenCalledWith('en')
   })
 
