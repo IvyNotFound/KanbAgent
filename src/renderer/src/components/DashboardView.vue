@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineAsyncComponent, watch } from 'vue'
+import { ref, computed, defineAsyncComponent, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import TokenStatsView from './TokenStatsView.vue'
@@ -57,16 +57,16 @@ async function fetchGitCommits(): Promise<void> {
 if (activeSubTab.value === 'git') fetchGitCommits()
 
 // ── Sub-tab definitions ──────────────────────────────────────────────────────
-const subTabs: { id: SubTab; label: string }[] = [
-  { id: 'overview',  label: t('dashboard.overview') },
+const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
+  { id: 'overview',   label: t('dashboard.overview') },
   { id: 'tokenStats', label: t('tokenStats.title') },
-  { id: 'git',       label: 'Git' },
-  { id: 'hooks',     label: t('sidebar.hooks') },
-  { id: 'tools',     label: t('toolStats.title') },
-  { id: 'topology',  label: t('sidebar.topology') },
-  { id: 'orgchart',  label: t('orgchart.tabLabel') },
-  { id: 'logs',      label: t('tokenStats.logsTab') },
-]
+  { id: 'git',        label: 'Git' },
+  { id: 'hooks',      label: t('sidebar.hooks') },
+  { id: 'tools',      label: t('toolStats.title') },
+  { id: 'topology',   label: t('sidebar.topology') },
+  { id: 'orgchart',   label: t('orgchart.tabLabel') },
+  { id: 'logs',       label: t('tokenStats.logsTab') },
+])
 </script>
 
 <template>
