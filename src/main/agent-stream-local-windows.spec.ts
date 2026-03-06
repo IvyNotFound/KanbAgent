@@ -157,6 +157,21 @@ describe('buildWindowsPS1Script', () => {
     expect(pathIdx).toBeLessThan(invokeIdx)
   })
 
+  it('reads user PATH from registry before hardcoded fallback (T996)', () => {
+    const script = buildWindowsPS1Script({})
+    // Registry read must be present
+    expect(script).toContain("HKCU:\\Environment")
+    expect(script).toContain('Get-ItemProperty')
+    expect(script).toContain('ExpandEnvironmentVariables')
+    // Registry injection must appear before hardcoded PATH enrichment
+    const regIdx = script.indexOf('HKCU:\\Environment')
+    const hardcodedPathIdx = script.indexOf('.local\\bin')
+    expect(regIdx).toBeLessThan(hardcodedPathIdx)
+    // Registry injection must appear before Get-Command lookup
+    const getCommandIdx = script.indexOf('Get-Command')
+    expect(regIdx).toBeLessThan(getCommandIdx)
+  })
+
   it('uses Get-Command for dynamic claude discovery (T939)', () => {
     const script = buildWindowsPS1Script({})
     expect(script).toContain('Get-Command claude -ErrorAction SilentlyContinue')
@@ -164,11 +179,15 @@ describe('buildWindowsPS1Script', () => {
     expect(script).toContain('$claudeExe')
   })
 
-  it('emits error and exits when claude not found (T939)', () => {
+  it('emits readable error (not PATH dump) when claude not found (T939/T995)', () => {
     const script = buildWindowsPS1Script({})
     expect(script).toContain('if (-not $claudeExe)')
-    expect(script).toContain("Write-Output")
     expect(script).toContain('exit 1')
+    // Error message must be short and readable — no raw $env:PATH dump (T995)
+    const errorLine = script.split('\n').find(l => l.includes('Write-Output') && l.includes('not found'))
+    expect(errorLine).toBeDefined()
+    expect(errorLine).toContain('Install Claude CLI')
+    expect(errorLine).not.toContain('$env:PATH')
   })
 })
 

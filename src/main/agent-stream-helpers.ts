@@ -148,8 +148,11 @@ export function buildWindowsPS1Script(opts: {
 
   const lines: string[] = [
     '$ErrorActionPreference = \'Continue\'',
-    // Enrich PATH with all known Claude install locations (T933/T939):
-    // Electron launched from Start Menu may not inherit full user PATH (HKCU\Environment).
+    // Read user PATH from registry (not inherited when Electron launches from Start Menu) (T996):
+    // HKCU\Environment stores unexpanded values (e.g. %USERPROFILE%\...) — expand them first.
+    `$regPath = (Get-ItemProperty -Path 'HKCU:\\Environment' -Name 'Path' -ErrorAction SilentlyContinue).Path`,
+    `if ($regPath) { $env:PATH = [System.Environment]::ExpandEnvironmentVariables($regPath) + ';' + $env:PATH }`,
+    // Enrich PATH with all known Claude install locations (T933/T939) as fallback:
     // Covers: uv/Anthropic (.local\bin), npm global (APPDATA\npm + LOCALAPPDATA\npm),
     //         Electron installer (LOCALAPPDATA\Programs\claude), Winget (LOCALAPPDATA\Programs),
     //         AnthropicClaude direct installer (LOCALAPPDATA\AnthropicClaude\bin).
@@ -158,7 +161,7 @@ export function buildWindowsPS1Script(opts: {
     // Works with .cmd wrappers (npm) and direct .exe — Get-Command returns Source path.
     `$claudeExe = Get-Command ${cmd} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source`,
     `if (-not $claudeExe) {`,
-    `  Write-Output "ERROR: '${cmd}' not found in PATH: $env:PATH"`,
+    `  Write-Output "ERROR: '${cmd}' not found. Install Claude CLI or verify it is in PATH."`,
     `  exit 1`,
     `}`,
     '$a = [System.Collections.Generic.List[string]]::new()',
