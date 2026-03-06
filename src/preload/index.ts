@@ -241,6 +241,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     cols?: number
     rows?: number
     projectPath?: string
+    workDir?: string
     wslDistro?: string
     systemPrompt?: string
     thinkingMode?: string

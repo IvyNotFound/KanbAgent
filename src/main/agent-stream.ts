@@ -95,6 +95,7 @@ export function registerAgentStreamHandlers(): void {
     cols?: number
     rows?: number
     projectPath?: string
+    workDir?: string
     wslDistro?: string
     systemPrompt?: string
     thinkingMode?: string
@@ -175,13 +176,14 @@ export function registerAgentStreamHandlers(): void {
       ], {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: buildEnv(),
-        cwd: opts.projectPath || undefined,
+        cwd: opts.workDir ?? opts.projectPath ?? undefined,
       })
     } else {
       // WSL / Linux / macOS path (existing behavior)
       const wslArgs: string[] = []
       if (opts.wslDistro) wslArgs.push('-d', opts.wslDistro)
-      if (opts.projectPath) wslArgs.push('--cd', toWslPath(opts.projectPath))
+      const effectiveCwd = opts.workDir ?? opts.projectPath
+      if (effectiveCwd) wslArgs.push('--cd', toWslPath(effectiveCwd))
 
       const claudeCmd = buildClaudeCmd({
         claudeCommand: opts.claudeCommand,
