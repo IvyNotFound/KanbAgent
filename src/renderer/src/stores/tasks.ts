@@ -383,8 +383,8 @@ export const useTasksStore = defineStore('tasks', () => {
     await agentsStore.fetchAgentGroups()
   }
 
-  async function createAgentGroup(name: string) {
-    return agentsStore.createAgentGroup(name)
+  async function createAgentGroup(name: string, parentId?: number | null) {
+    return agentsStore.createAgentGroup(name, parentId)
   }
 
   async function renameAgentGroup(groupId: number, name: string): Promise<void> {
