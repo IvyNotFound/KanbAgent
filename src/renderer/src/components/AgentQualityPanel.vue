@@ -71,7 +71,7 @@ watch(() => store.dbPath, fetchQuality)
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary overflow-y-auto">
+  <div class="flex flex-col rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
     <!-- Header -->
     <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
       <div class="flex items-center gap-3">
@@ -93,17 +93,17 @@ watch(() => store.dbPath, fetchQuality)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center flex-1 py-12">
+    <div v-if="loading" class="flex items-center justify-center py-8">
       <p class="text-sm text-content-faint animate-pulse">{{ t('quality.loading') }}</p>
     </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="flex items-center justify-center flex-1 py-12">
+    <div v-else-if="error" class="flex items-center justify-center py-8">
       <p class="text-sm text-red-400 italic">{{ t('quality.error', { msg: error }) }}</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="filteredRows.length === 0" class="flex items-center justify-center flex-1 py-12">
+    <div v-else-if="filteredRows.length === 0" class="flex items-center justify-center py-8">
       <p class="text-sm text-content-faint italic">{{ t('quality.empty') }}</p>
     </div>
 

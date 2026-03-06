@@ -323,10 +323,17 @@ const PRIORITY_CLASSES: Record<string, string> = {
       </div>
 
       <!-- ── Quality (full width) ───────────────────────────────────────── -->
-      <AgentQualityPanel class="w-full" />
+      <AgentQualityPanel />
 
       <!-- ── Workload (full width, lazy) ───────────────────────────────── -->
-      <WorkloadView class="w-full" />
+      <Suspense>
+        <WorkloadView />
+        <template #fallback>
+          <div class="flex items-center justify-center py-8 rounded-lg bg-surface-secondary border border-edge-default">
+            <p class="text-sm text-content-faint animate-pulse">Loading…</p>
+          </div>
+        </template>
+      </Suspense>
 
     </template>
   </div>

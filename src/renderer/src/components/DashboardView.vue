@@ -91,7 +91,7 @@ const subTabs: { id: SubTab; label: string }[] = [
     <DashboardOverview v-if="activeSubTab === 'overview'" class="flex-1 min-h-0" />
 
     <!-- Token Stats -->
-    <TokenStatsView v-show="activeSubTab === 'tokenStats'" />
+    <TokenStatsView v-show="activeSubTab === 'tokenStats'" class="flex-1 min-h-0" />
 
     <!-- Git -->
     <template v-if="activeSubTab === 'git'">

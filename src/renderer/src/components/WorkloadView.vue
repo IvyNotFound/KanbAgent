@@ -53,7 +53,7 @@ watch(() => store.lastRefresh, fetchWorkload)
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary overflow-y-auto">
+  <div class="flex flex-col rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
     <!-- Header -->
     <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
       <h2 class="text-sm font-semibold text-content-secondary">{{ t('workload.title') }}</h2>
@@ -64,12 +64,12 @@ watch(() => store.lastRefresh, fetchWorkload)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center flex-1 py-12">
+    <div v-if="loading" class="flex items-center justify-center py-8">
       <p class="text-sm text-content-faint animate-pulse">{{ t('common.loading') }}</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="rows.length === 0" class="flex items-center justify-center flex-1 py-12">
+    <div v-else-if="rows.length === 0" class="flex items-center justify-center py-8">
       <p class="text-sm text-content-faint italic">{{ t('workload.noAgents') }}</p>
     </div>
 
