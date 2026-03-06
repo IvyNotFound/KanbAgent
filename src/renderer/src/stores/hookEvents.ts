@@ -66,10 +66,16 @@ export const useHookEventsStore = defineStore('hookEvents', () => {
     return _sessionComputeds.get(key)!
   }
 
+  /** Memoized computed views by sessionId — avoids orphaned computeds on repeated calls. */
+  const _activeToolComputeds = new Map<string, ComputedRef<string | null>>()
+
   /** Reactive computed active tool name for a given sessionId. null = idle. */
   function activeToolForSession(sessionId: string | null) {
     const key = sessionId ?? '__global__'
-    return computed(() => activeTools.value[key] ?? null)
+    if (!_activeToolComputeds.has(key)) {
+      _activeToolComputeds.set(key, computed(() => activeTools.value[key] ?? null))
+    }
+    return _activeToolComputeds.get(key)!
   }
 
   return { events, activeTools, push, eventsForSession, activeToolForSession }
