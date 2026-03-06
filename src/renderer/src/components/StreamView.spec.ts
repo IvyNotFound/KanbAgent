@@ -22,6 +22,7 @@ describe('StreamView', () => {
 
     // Provide pinia with a tab matching terminalId so StreamView can find it
     const pinia = createTestingPinia({
+      stubActions: false,
       initialState: {
         tabs: {
           tabs: [{
@@ -394,4 +395,5 @@ describe('StreamView', () => {
     expect(wrapper.find('[data-testid="block-result"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="block-error"]').exists()).toBe(false)
   })
+
 })
