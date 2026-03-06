@@ -172,6 +172,49 @@ describe('buildWindowsPS1Script', () => {
     expect(regIdx).toBeLessThan(getCommandIdx)
   })
 
+  it('reads system PATH from HKLM after HKCU and before hardcoded paths (T1029)', () => {
+    const script = buildWindowsPS1Script({})
+    expect(script).toContain('HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment')
+    // HKCU must appear before HKLM
+    const hkcuIdx = script.indexOf('HKCU:\\Environment')
+    const hklmIdx = script.indexOf('HKLM:\\SYSTEM')
+    expect(hkcuIdx).toBeLessThan(hklmIdx)
+    // HKLM must appear before hardcoded PATH enrichment
+    const hardcodedPathIdx = script.indexOf('.local\\bin')
+    expect(hklmIdx).toBeLessThan(hardcodedPathIdx)
+    // HKLM must appear before Get-Command lookup
+    const getCommandIdx = script.indexOf('Get-Command')
+    expect(hklmIdx).toBeLessThan(getCommandIdx)
+  })
+
+  it('uses claudeBinaryPath directly via Test-Path, bypasses Get-Command (T1029)', () => {
+    const script = buildWindowsPS1Script({ claudeBinaryPath: 'C:\\Users\\foo\\AppData\\Local\\AnthropicClaude\\bin\\claude.exe' })
+    expect(script).toContain("Test-Path 'C:\\Users\\foo\\AppData\\Local\\AnthropicClaude\\bin\\claude.exe'")
+    expect(script).toContain('$claudeExe = $null')
+    // Must NOT use Get-Command when a custom path is provided
+    expect(script).not.toContain('Get-Command')
+  })
+
+  it('escapes single quotes in claudeBinaryPath (T1029)', () => {
+    const script = buildWindowsPS1Script({ claudeBinaryPath: "C:\\it's a path\\claude.exe" })
+    expect(script).toContain("it''s a path")
+    expect(script).not.toContain("it's a path")
+  })
+
+  it('uses Get-Command when claudeBinaryPath is not provided (T1029)', () => {
+    const script = buildWindowsPS1Script({})
+    expect(script).toContain('Get-Command claude -ErrorAction SilentlyContinue')
+    expect(script).not.toContain('Test-Path')
+  })
+
+  it('error message mentions Settings > Claude Binary Path (T1029)', () => {
+    const script = buildWindowsPS1Script({})
+    const errorLine = script.split('\n').find(l => l.includes('Write-Output') && l.includes('not found'))
+    expect(errorLine).toBeDefined()
+    expect(errorLine).toContain('Settings')
+    expect(errorLine).toContain('Claude Binary Path')
+  })
+
   it('uses Get-Command for dynamic claude discovery (T939)', () => {
     const script = buildWindowsPS1Script({})
     expect(script).toContain('Get-Command claude -ErrorAction SilentlyContinue')

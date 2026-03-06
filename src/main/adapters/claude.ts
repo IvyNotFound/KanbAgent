@@ -87,11 +87,12 @@ export function buildClaudeCmd(opts: {
  * via `[System.IO.File]::ReadAllText()` and added as a separate list element —
  * PowerShell passes it verbatim to Claude regardless of special characters.
  *
- * @param opts.claudeCommand - Claude binary name (validated against CLAUDE_CMD_REGEX)
- * @param opts.convId        - Existing conversation UUID for `--resume`
- * @param opts.spTempFile    - Windows path to system prompt temp file (no WSL conversion)
- * @param opts.thinkingMode  - `'disabled'` to inject alwaysThinkingEnabled:false
- * @param opts.permissionMode - `'auto'` to add `--dangerously-skip-permissions`
+ * @param opts.claudeCommand    - Claude binary name (validated against CLAUDE_CMD_REGEX)
+ * @param opts.convId           - Existing conversation UUID for `--resume`
+ * @param opts.spTempFile       - Windows path to system prompt temp file (no WSL conversion)
+ * @param opts.thinkingMode     - `'disabled'` to inject alwaysThinkingEnabled:false
+ * @param opts.permissionMode   - `'auto'` to add `--dangerously-skip-permissions`
+ * @param opts.claudeBinaryPath - Absolute Windows path to claude.exe (bypasses Get-Command)
  * @returns PowerShell script content (.ps1)
  */
 export function buildWindowsPS1Script(opts: {
@@ -100,6 +101,7 @@ export function buildWindowsPS1Script(opts: {
   spTempFile?: string
   thinkingMode?: string
   permissionMode?: string
+  claudeBinaryPath?: string
 }): string {
   const cmd = (opts.claudeCommand && CLAUDE_CMD_REGEX.test(opts.claudeCommand))
     ? opts.claudeCommand
@@ -110,22 +112,33 @@ export function buildWindowsPS1Script(opts: {
     // Read user PATH from registry (not inherited when Electron launches from Start Menu) (T996):
     `$regPath = (Get-ItemProperty -Path 'HKCU:\\Environment' -Name 'Path' -ErrorAction SilentlyContinue).Path`,
     `if ($regPath) { $env:PATH = [System.Environment]::ExpandEnvironmentVariables($regPath) + ';' + $env:PATH }`,
+    // Read system PATH — covers admin installs (winget, choco, Claude Code Desktop) (T1029):
+    `$sysPath = (Get-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name 'Path' -ErrorAction SilentlyContinue).Path`,
+    `if ($sysPath) { $env:PATH = [System.Environment]::ExpandEnvironmentVariables($sysPath) + ';' + $env:PATH }`,
     // Enrich PATH with all known Claude install locations (T933/T939):
     '$env:PATH = "$env:USERPROFILE\\.local\\bin;$env:APPDATA\\npm;$env:LOCALAPPDATA\\Programs\\claude;$env:LOCALAPPDATA\\AnthropicClaude\\bin;$env:LOCALAPPDATA\\npm;$env:LOCALAPPDATA\\Programs;" + $env:PATH',
-    // Resolve exe path via Get-Command — works with .cmd wrappers (npm) and direct .exe:
-    `$claudeExe = Get-Command ${cmd} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source`,
-    `if (-not $claudeExe) {`,
-    `  Write-Output "ERROR: '${cmd}' not found. Install Claude CLI or verify it is in PATH."`,
-    `  exit 1`,
-    `}`,
-    '$a = [System.Collections.Generic.List[string]]::new()',
-    '$a.Add(\'-p\')',
-    '$a.Add(\'--verbose\')',
-    '$a.Add(\'--input-format\')',
-    '$a.Add(\'stream-json\')',
-    '$a.Add(\'--output-format\')',
-    '$a.Add(\'stream-json\')',
   ]
+
+  // Resolve claude binary — custom path takes priority over Get-Command discovery (T1029):
+  if (opts.claudeBinaryPath) {
+    const safeBinaryPath = opts.claudeBinaryPath.replace(/'/g, "''")
+    lines.push(`$claudeExe = $null`)
+    lines.push(`if (Test-Path '${safeBinaryPath}') { $claudeExe = '${safeBinaryPath}' }`)
+  } else {
+    // Resolve exe path via Get-Command — works with .cmd wrappers (npm) and direct .exe:
+    lines.push(`$claudeExe = Get-Command ${cmd} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source`)
+  }
+  lines.push(`if (-not $claudeExe) {`)
+  lines.push(`  Write-Output "ERROR: '${cmd}' not found. Install Claude CLI or use Settings > Claude Binary Path to specify the location."`)
+  lines.push(`  exit 1`)
+  lines.push(`}`)
+  lines.push('$a = [System.Collections.Generic.List[string]]::new()')
+  lines.push('$a.Add(\'-p\')')
+  lines.push('$a.Add(\'--verbose\')')
+  lines.push('$a.Add(\'--input-format\')')
+  lines.push('$a.Add(\'stream-json\')')
+  lines.push('$a.Add(\'--output-format\')')
+  lines.push('$a.Add(\'stream-json\')')
 
   if (opts.convId) {
     lines.push('$a.Add(\'--resume\')')

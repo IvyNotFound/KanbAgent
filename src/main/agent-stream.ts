@@ -106,6 +106,7 @@ export function registerAgentStreamHandlers(): void {
     permissionMode?: string
     dbPath?: string
     sessionId?: number
+    claudeBinaryPath?: string
   } = {}) => {
     // Resolve adapter — defaults to Claude for backward compat
     const adapter = getAdapter(opts.cli ?? 'claude')
@@ -176,6 +177,7 @@ export function registerAgentStreamHandlers(): void {
           spTempFile,  // Windows path — no toWslPath conversion
           thinkingMode: opts.thinkingMode,
           permissionMode: opts.permissionMode,
+          claudeBinaryPath: opts.claudeBinaryPath,
         })
         scriptTempFile = join(tmpdir(), `claude-start-${id}.ps1`)
         writeFileSync(scriptTempFile, ps1Content, 'utf-8')
