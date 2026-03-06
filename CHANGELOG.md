@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.27.0] - 2026-03-07
+
+### Features
+- feat(back-electron): multi-CLI support — ipc-cli-detect detects Claude Code, Codex, Gemini, OpenCode locally + WSL (T1011) (5f0ccb4)
+- feat(back-electron): cli-adapters + multi-CLI dispatch in agent:create IPC (T1012) (f5fc3b1)
+- feat(front-vuejs): LaunchSessionModal — CLI selector + multi-CLI instance picker (T1014) (adec0ae)
+- feat(front-vuejs): multi-instance toggle + worktree creation in LaunchSessionModal (T1007) (c4e24b2)
+- feat(back-electron): add optional workDir parameter to agent:create IPC (T1006) (3cd9b11)
+- feat(back-electron): git worktree prune on session startup in dbstart.js (T1008) (5debb5f)
+- feat(arch): ADR-010 multi-CLI CliAdapter architecture + shared cli-types.ts (T1010) (56b790c)
+
+### Fixes
+- fix(back-electron): enrich PATH in detectLocalInstance() for Start Menu launch (T1024) (805884f)
+- fix(back-electron): make download-sqlite3.js cross-platform (win/mac/linux) (T1021) (3da4bb4)
+- fix(back-electron): fix SQL column names in 12 locale agent files post-migration (T1016) (de0b126)
+- fix(back-electron): update agent prompts + v25 migration REPLACE for French→English columns (T1016) (a5c6bb6)
+- fix(front-vuejs): rename Perimeters label to Scope across all locales (T1017) (05a9955)
+- fix(front-vuejs): make dashboard sub-tabs reactive to locale changes (T1027) (cc35dfd)
+- fix(i18n): replace hardcoded strings with t() calls in Vue components (T1022) (1188471)
+- fix(i18n): translate missing/untranslated keys across all locale files (T1023) (44d8afb)
+
+### Refactor
+- refactor(back-electron): normalize DB column/table names to English — migration v25 (T1016) (64c1b6e)
+
+### Chore
+- chore(release): block on any pending CI workflow + warn on mutation failure (a7fe84e)
+- chore(devops): migrate code-telemetry.ps1 to cross-platform Node.js (T1019) (d46bf75)
+- chore(devops): remove stale temporary scripts (T1020) (b542f6d)
+- chore(devops): ignore DB backup/dbb files in .gitignore (957be93)
+- chore(docs): update schema refs to English columns + multi-CLI docs (T1009,T1016,T1025) (4c37d09)
+
 ## [0.26.0] - 2026-03-06
 
 ### Changes
