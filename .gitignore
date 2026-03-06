@@ -65,3 +65,6 @@ test-results/
 
 # Stryker background run logs and status
 logs/
+
+# Test coverage (generated)
+coverage/
