@@ -26,6 +26,8 @@ export default defineConfig({
       '**/node_modules/**',
       // Exclude pre-existing failing test (T962 StreamView eviction — unrelated to mutation)
       'src/renderer/src/components/StreamView.spec.ts',
+      // Exclude snapshot tests — platform-sensitive HTML diffs fail in Linux CI vs Windows dev
+      'src/renderer/src/components/snapshots.spec.ts',
     ],
     css: false,
   },

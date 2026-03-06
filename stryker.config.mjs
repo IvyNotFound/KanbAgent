@@ -1,7 +1,7 @@
 /** @type {import('@stryker-mutator/core').PartialStrykerOptions} */
 export default {
   testRunner: 'vitest',
-  reporters: ['html', 'clear-text', 'progress'],
+  reporters: ['html', 'json', 'clear-text', 'progress'],
   coverageAnalysis: 'perTest',
 
   // Mutate only .ts source files — Vue SFCs with <script setup> are incompatible

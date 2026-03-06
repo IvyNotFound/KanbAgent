@@ -1,11 +1,9 @@
 name: Mutation Testing
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * 1'  # Weekly on Monday at 03:00 UTC
+    - cron: '0 4 * * *'  # Daily at 04:00 UTC
 
 jobs:
   mutation-renderer:
@@ -28,7 +26,9 @@ jobs:
         if: always()
         with:
           name: mutation-report-renderer
-          path: reports/mutation/renderer/
+          path: |
+            reports/mutation/renderer/index.html
+            reports/mutation/renderer/mutation.json
 
   mutation-main:
     runs-on: ubuntu-latest
@@ -50,4 +50,6 @@ jobs:
         if: always()
         with:
           name: mutation-report-main
-          path: reports/mutation/main/
+          path: |
+            reports/mutation/main/index.html
+            reports/mutation/main/mutation.json
