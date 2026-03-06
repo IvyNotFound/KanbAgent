@@ -17,6 +17,52 @@ const WSL_TIMEOUT = 10_000
 const LOCAL_TIMEOUT = 5_000
 const CONCURRENCY = 2
 
+// Guard: enrich PATH only once per process (T1024)
+let pathEnriched = false
+
+/**
+ * Enrich process.env.PATH with user registry PATH and known CLI install
+ * locations. Windows only. Ensures CLI tools are findable when Electron is
+ * launched from Start Menu / taskbar with a truncated inherited PATH.
+ *
+ * Reads HKCU\Environment\Path via PowerShell (same approach as
+ * buildWindowsPS1Script in agent-stream-helpers.ts) then prepends known
+ * install locations as a fallback.
+ */
+async function enrichWindowsPath(): Promise<void> {
+  if (pathEnriched) return
+  pathEnriched = true
+
+  try {
+    const result = await execPromise(
+      'powershell.exe',
+      [
+        '-NoProfile', '-Command',
+        '[System.Environment]::ExpandEnvironmentVariables((Get-ItemProperty HKCU:\\Environment -ErrorAction SilentlyContinue).Path)',
+      ],
+      { timeout: LOCAL_TIMEOUT }
+    )
+    const regPath = result.stdout.trim()
+    if (regPath) {
+      process.env.PATH = regPath + ';' + (process.env.PATH ?? '')
+    }
+  } catch { /* registry not accessible — skip */ }
+
+  // Prepend known install locations (same set as buildWindowsPS1Script)
+  const u = process.env.USERPROFILE ?? ''
+  const ap = process.env.APPDATA ?? ''
+  const la = process.env.LOCALAPPDATA ?? ''
+  const known = [
+    `${u}\\.local\\bin`,
+    `${ap}\\npm`,
+    `${la}\\Programs\\claude`,
+    `${la}\\AnthropicClaude\\bin`,
+    `${la}\\npm`,
+    `${la}\\Programs`,
+  ].join(';')
+  process.env.PATH = known + ';' + (process.env.PATH ?? '')
+}
+
 /**
  * Represents a WSL distro or local installation with Claude Code installed.
  *
@@ -47,6 +93,10 @@ export interface ClaudeInstance {
 export async function detectLocalInstance(): Promise<ClaudeInstance | null> {
   const platform = process.platform
   const whichCmd = platform === 'win32' ? 'where' : 'which'
+
+  if (platform === 'win32') {
+    await enrichWindowsPath()
+  }
 
   try {
     await execPromise(whichCmd, ['claude'], { timeout: LOCAL_TIMEOUT })
