@@ -32,6 +32,7 @@ import {
   buildWindowsPS1Script,
   getActiveTasksLine,
 } from './agent-stream-helpers'
+import { getAdapter } from './adapters/index'
 
 // ── Process registry ──────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ export function registerAgentStreamHandlers(): void {
   app.on('before-quit', killAllAgents)
 
   ipcMain.handle('agent:create', async (event, opts: {
+    cli?: string
     cols?: number
     rows?: number
     projectPath?: string
@@ -105,9 +107,18 @@ export function registerAgentStreamHandlers(): void {
     dbPath?: string
     sessionId?: number
   } = {}) => {
-    // Validate inputs
-    if (opts.claudeCommand && !CLAUDE_CMD_REGEX.test(opts.claudeCommand)) {
-      throw new Error('Invalid claudeCommand: ' + opts.claudeCommand)
+    // Resolve adapter — defaults to Claude for backward compat
+    const adapter = getAdapter(opts.cli ?? 'claude')
+
+    // Validate custom binary name against adapter's binary pattern
+    if (opts.claudeCommand) {
+      const baseCmd = adapter.binaries[0] ?? 'claude'
+      const cmdRegex = adapter.cli === 'claude'
+        ? CLAUDE_CMD_REGEX
+        : new RegExp(`^${baseCmd}(-[a-z0-9-]+)?$`)
+      if (!cmdRegex.test(opts.claudeCommand)) {
+        throw new Error('Invalid claudeCommand: ' + opts.claudeCommand)
+      }
     }
     const validConvId = opts.convId && UUID_REGEX.test(opts.convId) ? opts.convId : undefined
 
@@ -152,64 +163,100 @@ export function registerAgentStreamHandlers(): void {
 
     // ── Spawn: local Windows vs WSL / Linux / macOS ────────────────────────────
     const isLocalWindows = process.platform === 'win32' && opts.wslDistro === 'local'
-    let scriptTempFile: string
+    let scriptTempFile: string | undefined
     let proc: ChildProcess
 
     if (isLocalWindows) {
-      // T916: Local Windows — spawn PowerShell with a .ps1 script that runs claude directly.
-      // Avoids wsl.exe entirely; PowerShell handles system prompt quoting via List[string] args.
-      const ps1Content = buildWindowsPS1Script({
-        claudeCommand: opts.claudeCommand,
-        convId: validConvId,
-        spTempFile,  // Windows path — no toWslPath conversion
-        thinkingMode: opts.thinkingMode,
-        permissionMode: opts.permissionMode,
-      })
-      scriptTempFile = join(tmpdir(), `claude-start-${id}.ps1`)
-      writeFileSync(scriptTempFile, ps1Content, 'utf-8')
+      if (adapter.cli === 'claude') {
+        // T916: Local Windows — spawn PowerShell with a .ps1 script that runs claude directly.
+        // Avoids wsl.exe entirely; PowerShell handles system prompt quoting via List[string] args.
+        const ps1Content = buildWindowsPS1Script({
+          claudeCommand: opts.claudeCommand,
+          convId: validConvId,
+          spTempFile,  // Windows path — no toWslPath conversion
+          thinkingMode: opts.thinkingMode,
+          permissionMode: opts.permissionMode,
+        })
+        scriptTempFile = join(tmpdir(), `claude-start-${id}.ps1`)
+        writeFileSync(scriptTempFile, ps1Content, 'utf-8')
 
-      logDebug(`spawn attempt (local Windows): powershell.exe -File ${scriptTempFile}`)
-      console.log('[agent-stream] spawn local Windows', scriptTempFile)
+        logDebug(`spawn attempt (local Windows): powershell.exe -File ${scriptTempFile}`)
+        console.log('[agent-stream] spawn local Windows', scriptTempFile)
 
-      proc = spawn('powershell.exe', [
-        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptTempFile,
-      ], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: buildEnv(),
-        cwd: opts.workDir ?? opts.projectPath ?? undefined,
-      })
+        proc = spawn('powershell.exe', [
+          '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptTempFile,
+        ], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: buildEnv(),
+          cwd: opts.workDir ?? opts.projectPath ?? undefined,
+        })
+      } else {
+        // Non-Claude local Windows: spawn the CLI binary directly.
+        const spec = adapter.buildCommand({
+          convId: validConvId,
+          thinkingMode: opts.thinkingMode,
+          permissionMode: opts.permissionMode,
+          systemPromptFile: spTempFile,  // Windows path, no WSL conversion
+          binaryName: opts.claudeCommand,
+        })
+        logDebug(`spawn attempt (local Windows, ${adapter.cli}): ${spec.command} ${spec.args.join(' ')}`)
+        proc = spawn(spec.command, spec.args, {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: { ...buildEnv(), ...spec.env },
+          cwd: opts.workDir ?? opts.projectPath ?? undefined,
+        })
+      }
     } else {
-      // WSL / Linux / macOS path (existing behavior)
+      // WSL / Linux / macOS path
       const wslArgs: string[] = []
-      if (opts.wslDistro) wslArgs.push('-d', opts.wslDistro)
+      if (opts.wslDistro && opts.wslDistro !== 'local') wslArgs.push('-d', opts.wslDistro)
       const effectiveCwd = opts.workDir ?? opts.projectPath
       if (effectiveCwd) wslArgs.push('--cd', toWslPath(effectiveCwd))
-
-      const claudeCmd = buildClaudeCmd({
-        claudeCommand: opts.claudeCommand,
-        convId: validConvId,
-        systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
-        thinkingMode: opts.thinkingMode,
-        permissionMode: opts.permissionMode,
-      })
-
-      // Write bash launch script to avoid wsl.exe outer-shell expansion of $(cat ...) (T706).
-      scriptTempFile = join(tmpdir(), `claude-start-${id}.sh`)
-      writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${claudeCmd}\n`, 'utf-8')
-      const scriptWslPath = toWslPath(scriptTempFile)
 
       // Resolve wsl.exe via absolute path to avoid ENOENT in packaged app (Fix T692).
       const wslExe = process.env.SystemRoot
         ? join(process.env.SystemRoot, 'System32', 'wsl.exe')
         : 'C:\\Windows\\System32\\wsl.exe'
 
-      logDebug(`spawn attempt: exe=${wslExe} script=${scriptWslPath} args=${JSON.stringify([...wslArgs, '--', 'bash', '-l', scriptWslPath])}`)
-      console.log('[agent-stream] spawn', wslExe, wslArgs)
-
-      proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-l', scriptWslPath], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: buildEnv(),
-      })
+      if (adapter.cli === 'claude') {
+        const claudeCmd = buildClaudeCmd({
+          claudeCommand: opts.claudeCommand,
+          convId: validConvId,
+          systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
+          thinkingMode: opts.thinkingMode,
+          permissionMode: opts.permissionMode,
+        })
+        // Write bash launch script to avoid wsl.exe outer-shell expansion of $(cat ...) (T706).
+        scriptTempFile = join(tmpdir(), `claude-start-${id}.sh`)
+        writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${claudeCmd}\n`, 'utf-8')
+        const scriptWslPath = toWslPath(scriptTempFile)
+        logDebug(`spawn attempt: exe=${wslExe} script=${scriptWslPath} args=${JSON.stringify([...wslArgs, '--', 'bash', '-l', scriptWslPath])}`)
+        console.log('[agent-stream] spawn', wslExe, wslArgs)
+        proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-l', scriptWslPath], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: buildEnv(),
+        })
+      } else {
+        // Non-Claude WSL/native: build command via adapter, wrap in bash script (T706).
+        const spec = adapter.buildCommand({
+          convId: validConvId,
+          thinkingMode: opts.thinkingMode,
+          permissionMode: opts.permissionMode,
+          systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
+          binaryName: opts.claudeCommand,
+        })
+        const bashLine = [spec.command, ...spec.args].map(a =>
+          /[\s'"\\$`!]/.test(a) ? `'${a.replace(/'/g, "'\\''")}'` : a
+        ).join(' ')
+        scriptTempFile = join(tmpdir(), `${adapter.cli}-start-${id}.sh`)
+        writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${bashLine}\n`, 'utf-8')
+        const scriptWslPath = toWslPath(scriptTempFile)
+        logDebug(`spawn attempt (${adapter.cli}): exe=${wslExe} script=${scriptWslPath}`)
+        proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-l', scriptWslPath], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: { ...buildEnv(), ...spec.env },
+        })
+      }
     }
 
     agents.set(id, proc)
@@ -224,41 +271,40 @@ export function registerAgentStreamHandlers(): void {
       stderrBuffer = (stderrBuffer + chunk.toString()).slice(-MAX_STDERR_BUFFER_SIZE)
     })
 
-    // readline on stdout → clean JSONL lines, 0 ANSI corruption
+    // readline on stdout → parsed events via adapter, 0 ANSI corruption
     const rl = createInterface({ input: proc.stdout! })
     rl.on('line', (line) => {
       const clean = line.trim()
       if (!clean) return
       if (eventsReceived === 0) logDebug(`first stdout line (raw): ${line.slice(0, 200)}`)
-      try {
-        const parsed: Record<string, unknown> = JSON.parse(clean)
-        eventsReceived++
 
-        // Extract convId from system:init event — no banner scanning needed
-        if (
-          parsed.type === 'system' &&
-          parsed.subtype === 'init' &&
-          typeof parsed.session_id === 'string'
-        ) {
-          const wc = webContents.fromId(wcId)
-          if (wc && !wc.isDestroyed()) {
-            wc.send(`agent:convId:${id}`, parsed.session_id)
-          }
-        }
-
-        const wc = webContents.fromId(wcId)
-        if (!wc || wc.isDestroyed()) {
-          killAgent(id)
-          return
-        }
-        wc.send(`agent:stream:${id}`, parsed)
-      } catch {
-        // Non-JSON line — buffer for diagnostics.
+      const event = adapter.parseLine(clean)
+      if (event === null) {
+        // Non-parseable line — buffer for diagnostics.
         const readable = clean.replace(/\x00/g, '').replace(/  +/g, ' ').trim()
         if (readable) {
           stdoutErrorBuffer = (stdoutErrorBuffer + '\n' + readable).slice(-1000)
         }
+        return
       }
+
+      eventsReceived++
+
+      // Extract convId if adapter supports it (Claude: system:init event)
+      const convId = adapter.extractConvId?.(event) ?? null
+      if (convId) {
+        const wc = webContents.fromId(wcId)
+        if (wc && !wc.isDestroyed()) {
+          wc.send(`agent:convId:${id}`, convId)
+        }
+      }
+
+      const wc = webContents.fromId(wcId)
+      if (!wc || wc.isDestroyed()) {
+        killAgent(id)
+        return
+      }
+      wc.send(`agent:stream:${id}`, event)
     })
 
     proc.on('error', (err) => {
@@ -278,7 +324,7 @@ export function registerAgentStreamHandlers(): void {
       agents.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
       if (spTempFile) try { unlinkSync(spTempFile) } catch { /* cleanup best-effort */ }
-      try { unlinkSync(scriptTempFile) } catch { /* cleanup best-effort */ }
+      if (scriptTempFile) try { unlinkSync(scriptTempFile) } catch { /* cleanup best-effort */ }
 
       logDebug(`close id=${id}: exitCode=${exitCode} eventsReceived=${eventsReceived} stderr=${stderrBuffer.slice(0, 200)} stdout_error=${stdoutErrorBuffer.slice(0, 200)}`)
 

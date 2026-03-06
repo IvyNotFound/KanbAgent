@@ -1,6 +1,9 @@
 /**
- * Build helpers for agent-stream — env, command builders, PS1 script, active tasks.
+ * Build helpers for agent-stream — env, active tasks injection.
  * Extracted from agent-stream.ts (T916) to keep file size under 400 lines.
+ *
+ * buildClaudeCmd, buildWindowsPS1Script, CLAUDE_CMD_REGEX moved to adapters/claude.ts (T1012).
+ * Re-exported here for backward compatibility with existing imports and spec files.
  *
  * @module agent-stream-helpers
  */
@@ -9,9 +12,11 @@ import { join } from 'path'
 import { app } from 'electron'
 import { queryLive } from './db'
 
+// Re-exports from adapters/claude — backward compat (T1012)
+export { CLAUDE_CMD_REGEX, buildClaudeCmd, buildWindowsPS1Script } from './adapters/claude'
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-export const CLAUDE_CMD_REGEX = /^claude(-[a-z0-9-]+)?$/
 export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export const MAX_STDERR_BUFFER_SIZE = 10_000
 
@@ -64,143 +69,6 @@ export function buildEnv(): Record<string, string> {
   return env
 }
 
-// ── buildClaudeCmd ────────────────────────────────────────────────────────────
-
-/**
- * Build the bash -lc command string for launching Claude in stream-json mode.
- * System prompt is passed via `"$(cat 'WSL_PATH')"` — the content is read from a temp
- * file inside bash, bypassing Node.js Windows command-line serialization entirely.
- * This avoids the Windows CreateProcess quoting issue where $'...' ANSI-C sequences
- * were corrupted in the Node.js spawn → wsl.exe → bash pipeline (T705).
- *
- * @param opts.claudeCommand   - Claude binary name (validated; defaults to `'claude'`).
- * @param opts.convId          - Existing conversation UUID to resume via `--resume`.
- * @param opts.systemPromptFile - WSL path to temp file with raw system prompt.
- * @param opts.thinkingMode    - `'disabled'` to inject alwaysThinkingEnabled:false.
- * @param opts.permissionMode  - `'auto'` to add `--dangerously-skip-permissions`.
- * @returns Full bash command string for embedding in a launch script (T706).
- */
-export function buildClaudeCmd(opts: {
-  claudeCommand?: string
-  convId?: string
-  systemPromptFile?: string
-  thinkingMode?: string
-  permissionMode?: string
-}): string {
-  const cmd = (opts.claudeCommand && CLAUDE_CMD_REGEX.test(opts.claudeCommand))
-    ? opts.claudeCommand
-    : 'claude'
-
-  const parts: string[] = [
-    cmd,
-    '-p',
-    '--verbose',
-    '--input-format', 'stream-json',
-    '--output-format', 'stream-json',
-  ]
-
-  if (opts.convId) {
-    parts.push('--resume', opts.convId)
-  }
-
-  if (opts.systemPromptFile) {
-    parts.push(`--append-system-prompt "$(cat '${opts.systemPromptFile}')"`)
-  }
-
-  if (opts.thinkingMode === 'disabled') {
-    parts.push(`--settings '{"alwaysThinkingEnabled":false}'`)
-  }
-
-  if (opts.permissionMode === 'auto') {
-    parts.push('--dangerously-skip-permissions')
-  }
-
-  return parts.join(' ')
-}
-
-// ── buildWindowsPS1Script ─────────────────────────────────────────────────────
-
-/**
- * Build a PowerShell script for spawning Claude directly on Windows native (T916).
- *
- * Uses a `List[string]` args array so PowerShell handles quoting/escaping properly,
- * completely bypassing cmd.exe. The system prompt is read from a Windows temp file
- * via `[System.IO.File]::ReadAllText()` and added as a separate list element —
- * PowerShell passes it verbatim to Claude regardless of special characters.
- *
- * @param opts.claudeCommand - Claude binary name (validated against CLAUDE_CMD_REGEX)
- * @param opts.convId        - Existing conversation UUID for `--resume`
- * @param opts.spTempFile    - Windows path to system prompt temp file (no WSL conversion)
- * @param opts.thinkingMode  - `'disabled'` to inject alwaysThinkingEnabled:false
- * @param opts.permissionMode - `'auto'` to add `--dangerously-skip-permissions`
- * @returns PowerShell script content (.ps1)
- */
-export function buildWindowsPS1Script(opts: {
-  claudeCommand?: string
-  convId?: string
-  spTempFile?: string
-  thinkingMode?: string
-  permissionMode?: string
-}): string {
-  const cmd = (opts.claudeCommand && CLAUDE_CMD_REGEX.test(opts.claudeCommand))
-    ? opts.claudeCommand
-    : 'claude'
-
-  const lines: string[] = [
-    '$ErrorActionPreference = \'Continue\'',
-    // Read user PATH from registry (not inherited when Electron launches from Start Menu) (T996):
-    // HKCU\Environment stores unexpanded values (e.g. %USERPROFILE%\...) — expand them first.
-    `$regPath = (Get-ItemProperty -Path 'HKCU:\\Environment' -Name 'Path' -ErrorAction SilentlyContinue).Path`,
-    `if ($regPath) { $env:PATH = [System.Environment]::ExpandEnvironmentVariables($regPath) + ';' + $env:PATH }`,
-    // Enrich PATH with all known Claude install locations (T933/T939) as fallback:
-    // Covers: uv/Anthropic (.local\bin), npm global (APPDATA\npm + LOCALAPPDATA\npm),
-    //         Electron installer (LOCALAPPDATA\Programs\claude), Winget (LOCALAPPDATA\Programs),
-    //         AnthropicClaude direct installer (LOCALAPPDATA\AnthropicClaude\bin).
-    '$env:PATH = "$env:USERPROFILE\\.local\\bin;$env:APPDATA\\npm;$env:LOCALAPPDATA\\Programs\\claude;$env:LOCALAPPDATA\\AnthropicClaude\\bin;$env:LOCALAPPDATA\\npm;$env:LOCALAPPDATA\\Programs;" + $env:PATH',
-    // Dynamic discovery: resolve the actual exe path via Get-Command (PS 5.1+).
-    // Works with .cmd wrappers (npm) and direct .exe — Get-Command returns Source path.
-    `$claudeExe = Get-Command ${cmd} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source`,
-    `if (-not $claudeExe) {`,
-    `  Write-Output "ERROR: '${cmd}' not found. Install Claude CLI or verify it is in PATH."`,
-    `  exit 1`,
-    `}`,
-    '$a = [System.Collections.Generic.List[string]]::new()',
-    '$a.Add(\'-p\')',
-    '$a.Add(\'--verbose\')',
-    '$a.Add(\'--input-format\')',
-    '$a.Add(\'stream-json\')',
-    '$a.Add(\'--output-format\')',
-    '$a.Add(\'stream-json\')',
-  ]
-
-  if (opts.convId) {
-    // convId is a UUID — safe to embed as a PS literal
-    lines.push('$a.Add(\'--resume\')')
-    lines.push(`$a.Add('${opts.convId}')`)
-  }
-
-  if (opts.spTempFile) {
-    // Escape single quotes in path (Windows paths use backslash, apostrophe is rare)
-    const safePath = opts.spTempFile.replace(/'/g, "''")
-    lines.push(`$sp = [System.IO.File]::ReadAllText('${safePath}', [System.Text.Encoding]::UTF8)`)
-    lines.push('$a.Add(\'--append-system-prompt\')')
-    lines.push('$a.Add($sp)')
-  }
-
-  if (opts.thinkingMode === 'disabled') {
-    lines.push('$a.Add(\'--settings\')')
-    lines.push('$a.Add(\'{"alwaysThinkingEnabled":false}\')')
-  }
-
-  if (opts.permissionMode === 'auto') {
-    lines.push('$a.Add(\'--dangerously-skip-permissions\')')
-  }
-
-  lines.push(`& $claudeExe @a`)
-
-  return lines.join('\n')
-}
-
 // ── getActiveTasksLine ────────────────────────────────────────────────────────
 
 /**
@@ -216,7 +84,7 @@ export async function getActiveTasksLine(dbPath: string, currentSessionId: numbe
       SELECT t.id
       FROM sessions s
       JOIN tasks t ON t.session_id = s.id
-      WHERE s.statut = 'started' AND s.id != ?
+      WHERE s.status = 'started' AND s.id != ?
       ORDER BY t.id
     `, [currentSessionId]) as Array<{ id: number }>
     if (!rows.length) return ''
