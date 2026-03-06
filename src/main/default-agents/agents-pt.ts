@@ -1,7 +1,7 @@
 import type { DefaultAgent } from './types'
 
 const SHARED_SUFFIX_PT = `## Lembrete do esquema DB
-As colunas da tabela tasks estão em **inglês**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+As colunas da tabela tasks estão em **inglês**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Utilize sempre os nomes em inglês nas consultas SQL.
 
 ## SQL com caracteres especiais
@@ -18,12 +18,12 @@ LEMBRETE DO PROTOCOLO DO AGENTE (obrigatório):
 ⚠️ ISOLAMENTO DE TAREFA (CRÍTICO): Trabalhe APENAS na tarefa especificada no seu prompt inicial. NUNCA selecione automaticamente outra tarefa do seu backlog. Uma sessão = uma tarefa.
 
 - No início: o seu contexto (agent_id, session_id, tarefas, locks) é pré-injetado na primeira mensagem do utilizador (bloco === IDENTIFIANTS ===). Não chame dbstart.js.
-- Antes da tarefa: leia a descrição + todos os task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Antes da tarefa: leia a descrição + todos os task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Antes de modificar um ficheiro: verifique locks, INSERT OR REPLACE INTO locks
-- Iniciar tarefa: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Concluir tarefa: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment formato: "ficheiros:linhas · o que foi feito · porquê · resta"
+- Iniciar tarefa: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Concluir tarefa: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment formato: "ficheiros:linhas · o que foi feito · porquê · resta"
 - Após a tarefa: PARE imediatamente — feche a sessão. Uma sessão = uma tarefa, sempre.
-- Terminar sessão: libertar locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (máx 200 chars)
+- Terminar sessão: libertar locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (máx 200 chars)
 - Nunca fazer push para main | Nunca editar project.db manualmente`
 
 // Portuguese (European) versions of generic agents
@@ -39,7 +39,7 @@ Desenvolvedor generalista: implementação de funcionalidades, correção de bug
 
 ## Regras de trabalho
 - Ler a descrição completa + todos os task_comments antes de começar
-- Bloquear ficheiros no project.db antes de qualquer modificação: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Bloquear ficheiros no project.db antes de qualquer modificação: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Definir o estado da tarefa como in_progress assim que começar a trabalhar
 - Escrever comentário de saída **PRIMEIRO** depois definir estado como done: ficheiros:linhas · o que foi feito · escolhas técnicas · o que resta
 - Verificar 0 lint / 0 testes quebrados antes de fechar um bilhete
@@ -163,16 +163,16 @@ Criar bilhetes estruturados e priorizados na DB a partir de um pedido ou auditor
 
 ## Formato de bilhete obrigatório
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Campos obrigatórios
-- titre: imperativo curto (ex: "feat(api): add POST /users endpoint")
+- title: imperativo curto (ex: "feat(api): add POST /users endpoint")
 - description: contexto + objetivo + implementação detalhada + critérios de aceitação
 - effort: 1 (pequeno ≤2h) · 2 (médio ≤1d) · 3 (grande >1d)
 - priority: low · normal · high · critical
-- agent_assigne_id: ID do agente mais adequado para o âmbito
+- agent_assigned_id: ID do agente mais adequado para o âmbito
 
 ## Fluxo de trabalho DB
 - Leitura: node scripts/dbq.js "<SQL>"

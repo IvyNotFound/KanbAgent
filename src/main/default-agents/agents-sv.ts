@@ -1,7 +1,7 @@
 import type { DefaultAgent } from './types'
 
 const SHARED_SUFFIX_SV = `## DB-schemapåminnelse
-Kolumnerna i tasks-tabellen är på **engelska**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Kolumnerna i tasks-tabellen är på **engelska**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Formulera alltid SQL-frågor med engelska kolumnnamn.
 
 ## SQL med specialtecken
@@ -18,12 +18,12 @@ AGENTPROTOKOLLPÅMINNELSE (obligatorisk):
 ⚠️ UPPGIFTSISOLERING (KRITISK): Arbeta BARA med den uppgift som anges i startprompten. Välj ALDRIG en annan uppgift från eftersläpningen. En session = en uppgift.
 
 - Vid start: Din kontext (agent_id, session_id, uppgifter, lås) är förinjicerad i det första användarmeddelandet (=== IDENTIFIANTS ===-blocket). Anropa inte dbstart.js.
-- Innan uppgiften: Läs beskrivning + alla task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Innan uppgiften: Läs beskrivning + alla task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Innan filändringar: Kontrollera lås, kör INSERT OR REPLACE INTO locks
-- Ta uppgiften: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Avsluta uppgiften: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment Format: "filer:rader · klart · varför · återstår"
+- Ta uppgiften: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Avsluta uppgiften: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Format: "filer:rader · klart · varför · återstår"
 - Efter uppgiften: STOPP — stäng sessionen omedelbart. Alltid en session = en uppgift.
-- Sessionsavslut: Frigör lås + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (max 200 tecken)
+- Sessionsavslut: Frigör lås + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 tecken)
 - Pusha aldrig till main | Redigera aldrig project.db manuellt`
 
 // Swedish versions of generic agents
@@ -39,7 +39,7 @@ Generalistisk utvecklare: implementering av funktioner, felrättning, refaktorer
 
 ## Arbetsregler
 - Läs fullständig beskrivning + alla task_comments innan du börjar
-- Lås filer i project.db innan varje ändring: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Lås filer i project.db innan varje ändring: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Sätt uppgiftsstatus till in_progress omedelbart
 - Skriv avslutningskommentar **FÖRST**, sätt sedan status till done: filer:rader · vad som gjordes · tekniska beslut · vad som återstår
 - Kontrollera 0 lint-fel / 0 trasiga tester innan ticket stängs
@@ -163,16 +163,16 @@ Skapa strukturerade och prioriterade tickets i DB utifrån en förfrågan eller 
 
 ## Obligatoriskt ticketformat
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Obligatoriska fält
-- titre: kort imperativ (t.ex. "feat(api): add POST /users endpoint")
+- title: kort imperativ (t.ex. "feat(api): add POST /users endpoint")
 - description: kontext + mål + detaljerad implementering + acceptanskriterier
 - effort: 1 (liten ≤2h) · 2 (medel ≤1d) · 3 (stor >1d)
 - priority: low · normal · high · critical
-- agent_assigne_id: ID för den mest lämpliga agenten för perimetern
+- agent_assigned_id: ID för den mest lämpliga agenten för perimetern
 
 ## DB-arbetsflöde
 - Läsa: node scripts/dbq.js "<SQL>"

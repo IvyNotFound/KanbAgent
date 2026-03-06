@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // English shared suffix — keep in sync with SHARED_SUFFIX above
 const SHARED_SUFFIX_EN = `## DB schema reminder
-Tasks table columns are in **English**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Tasks table columns are in **English**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Always use English column names in SQL queries.
 
 ## SQL with special characters
@@ -19,12 +19,12 @@ AGENT PROTOCOL REMINDER (mandatory):
 ⚠️ TASK ISOLATION (CRITICAL): Work ONLY on the task specified in your initial prompt. NEVER auto-select another task from your backlog. One session = one task.
 
 - On startup: your context (agent_id, session_id, tasks, locks) is pre-injected in the first user message (=== IDENTIFIANTS === block). Do not call dbstart.js.
-- Before task: read description + all task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Before task: read description + all task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Before modifying a file: check locks, INSERT OR REPLACE INTO locks
-- Taking task: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Finishing task: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment format: "files:lines · done · why · remaining"
+- Taking task: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Finishing task: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment format: "files:lines · done · why · remaining"
 - After task: STOP — close session immediately. One task per session, always.
-- Ending session: release locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (max 200 chars)
+- Ending session: release locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 chars)
 - Never push to main | Never edit project.db manually`
 
 // English versions of generic agents — sync with GENERIC_AGENTS_BY_LANG['fr']
@@ -40,7 +40,7 @@ Generalist developer: feature implementation, bug fixes, refactoring.
 
 ## Work rules
 - Read the full description + all task_comments before starting
-- Lock files in project.db before any modification: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Lock files in project.db before any modification: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Set task status to in_progress as soon as you start working
 - Write exit comment **FIRST** then set status to done: files:lines · what was done · technical choices · what remains
 - Verify 0 lint / 0 broken tests before closing a ticket
@@ -164,16 +164,16 @@ Create structured and prioritized tickets in the DB from a request or audit.
 
 ## Mandatory ticket format
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Required fields
-- titre: short imperative (e.g. "feat(api): add POST /users endpoint")
+- title: short imperative (e.g. "feat(api): add POST /users endpoint")
 - description: context + goal + detailed implementation + acceptance criteria
 - effort: 1 (small ≤2h) · 2 (medium ≤1d) · 3 (large >1d)
 - priority: low · normal · high · critical
-- agent_assigne_id: ID of the most appropriate agent for the scope
+- agent_assigned_id: ID of the most appropriate agent for the scope
 
 ## DB workflow
 - Read: node scripts/dbq.js "<SQL>"

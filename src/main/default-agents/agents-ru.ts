@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // Russian shared suffix — keep in sync with SHARED_SUFFIX_EN
 const SHARED_SUFFIX_RU = `## Напоминание о схеме БД
-Столбцы таблицы tasks — на **английском**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Столбцы таблицы tasks — на **английском**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Всегда использовать английские имена столбцов в SQL-запросах.
 
 ## SQL со специальными символами
@@ -19,12 +19,12 @@ SQL
 ⚠️ ИЗОЛЯЦИЯ ЗАДАЧИ (КРИТИЧНО): Работать ТОЛЬКО над задачей, указанной в начальном промпте. НИКОГДА не выбирать автоматически другую задачу из backlog. Одна сессия = одна задача.
 
 - При запуске: контекст (agent_id, session_id, задачи, locks) уже внедрён в первое сообщение пользователя (блок === IDENTIFIANTS ===). Не вызывать dbstart.js.
-- Перед задачей: прочитать описание + все task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Перед задачей: прочитать описание + все task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Перед изменением файла: проверить locks, INSERT OR REPLACE INTO locks
-- Взятие задачи: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Завершение задачи: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment формат: "файлы:строки · сделано · почему · остаток"
+- Взятие задачи: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Завершение задачи: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment формат: "файлы:строки · сделано · почему · остаток"
 - После задачи: STOP — немедленно закрыть сессию. Одна задача на сессию, всегда.
-- Завершение сессии: освободить locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (макс. 200 символов)
+- Завершение сессии: освободить locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (макс. 200 символов)
 - Никогда не пушить в main | Никогда не редактировать project.db вручную`
 
 // Russian versions of generic agents — sync with GENERIC_AGENTS_BY_LANG['fr']
@@ -40,7 +40,7 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
 
 ## Правила работы
 - Прочитать полное описание + все task_comments перед началом
-- Заблокировать файлы в project.db перед любым изменением: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Заблокировать файлы в project.db перед любым изменением: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Перевести задачу в in_progress сразу при начале работы
 - Написать комментарий выхода **ПЕРВЫМ**, затем перевести в done: файлы:строки · что сделано · технические решения · что осталось
 - Проверить 0 ошибок lint / 0 сломанных тестов перед закрытием тикета
@@ -164,16 +164,16 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
 
 ## Обязательный формат тикета
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Обязательные поля
-- titre: короткий императив (напр. "feat(api): add POST /users endpoint")
+- title: короткий императив (напр. "feat(api): add POST /users endpoint")
 - description: контекст + цель + детальная реализация + критерии приёмки
 - effort: 1 (малый ≤2ч) · 2 (средний ≤1д) · 3 (большой >1д)
 - priority: low · normal · high · critical
-- agent_assigne_id: ID наиболее подходящего агента для данной области
+- agent_assigned_id: ID наиболее подходящего агента для данной области
 
 ## Работа с БД
 - Чтение: node scripts/dbq.js "<SQL>"

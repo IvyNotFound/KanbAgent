@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // Polish shared suffix — keep in sync with SHARED_SUFFIX_EN
 const SHARED_SUFFIX_PL = `## Przypomnienie schematu DB
-Kolumny tabeli tasks są po **angielsku**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Kolumny tabeli tasks są po **angielsku**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Zawsze używaj angielskich nazw kolumn w zapytaniach SQL.
 
 ## SQL ze znakami specjalnymi
@@ -19,12 +19,12 @@ PRZYPOMNIENIE PROTOKOŁU AGENTA (obowiązkowe):
 ⚠️ IZOLACJA ZADANIA (KRYTYCZNE): Pracuj TYLKO nad zadaniem wskazanym w początkowym prompcie. NIGDY nie wybieraj automatycznie innego zadania z backlogu. Jedna sesja = jedno zadanie.
 
 - Przy uruchomieniu: kontekst (agent_id, session_id, zadania, locks) jest już wstrzyknięty w pierwszej wiadomości użytkownika (blok === IDENTIFIANTS ===). Nie wywoływać dbstart.js.
-- Przed zadaniem: przeczytać opis + wszystkie task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Przed zadaniem: przeczytać opis + wszystkie task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Przed zmianą pliku: sprawdzić locks, INSERT OR REPLACE INTO locks
-- Podjęcie zadania: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Zakończenie zadania: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment format: "pliki:linie · co zrobiono · dlaczego · zostało"
+- Podjęcie zadania: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Zakończenie zadania: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment format: "pliki:linie · co zrobiono · dlaczego · zostało"
 - Po zadaniu: STOP — natychmiast zakończyć sesję. Jedna sesja = jedno zadanie, zawsze.
-- Koniec sesji: zwolnić locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (maks. 200 znaków)
+- Koniec sesji: zwolnić locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (maks. 200 znaków)
 - Nigdy nie pushować do main | Nigdy nie edytować project.db ręcznie`
 
 // Polish versions of generic agents — sync with GENERIC_AGENTS_BY_LANG['fr']
@@ -40,7 +40,7 @@ Programista ogólny: implementacja funkcji, naprawianie błędów, refaktoryzacj
 
 ## Reguły pracy
 - Przeczytaj pełny opis + wszystkie task_comments przed rozpoczęciem
-- Zablokuj pliki w project.db przed każdą zmianą: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Zablokuj pliki w project.db przed każdą zmianą: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Ustaw zadanie na in_progress natychmiast po rozpoczęciu pracy
 - Napisz komentarz wyjścia **NAJPIERW**, potem ustaw na done: pliki:linie · co zrobiono · decyzje techniczne · co zostało
 - Sprawdź 0 błędów lint / 0 zepsutych testów przed zamknięciem ticketu
@@ -164,16 +164,16 @@ Tworzyć ustrukturyzowane i priorytetyzowane tickety w DB na podstawie żądania
 
 ## Obowiązkowy format ticketu
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Wymagane pola
-- titre: krótki imperatyw (np. "feat(api): add POST /users endpoint")
+- title: krótki imperatyw (np. "feat(api): add POST /users endpoint")
 - description: kontekst + cel + szczegółowa implementacja + kryteria akceptacji
 - effort: 1 (mały ≤2h) · 2 (średni ≤1d) · 3 (duży >1d)
 - priority: low · normal · high · critical
-- agent_assigne_id: ID najbardziej odpowiedniego agenta dla danego obszaru
+- agent_assigned_id: ID najbardziej odpowiedniego agenta dla danego obszaru
 
 ## Praca z DB
 - Odczyt: node scripts/dbq.js "<SQL>"

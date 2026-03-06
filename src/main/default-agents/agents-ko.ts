@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // Korean suffix — DB schema reminder + heredoc SQL warning + agent protocol
 const SHARED_SUFFIX_KO = `## DB 스키마 리마인더
-tasks 테이블의 컬럼 이름은 **영어**입니다: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+tasks 테이블의 컬럼 이름은 **영어**입니다: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 SQL 쿼리에서는 반드시 영어 컬럼 이름을 사용하세요.
 
 ## 특수 문자를 포함하는 SQL
@@ -19,12 +19,12 @@ SQL
 ⚠️ 작업 격리 (중요): 초기 프롬프트에서 지정된 작업만 처리하세요. 백로그에서 다른 작업을 자동으로 선택하지 마세요. 1세션 = 1작업.
 
 - 시작 시: 컨텍스트 (agent_id, session_id, 작업, 락)는 첫 번째 사용자 메시지 (=== IDENTIFIANTS === 블록)에 사전 주입되어 있습니다. dbstart.js를 호출하지 마세요.
-- 작업 전: 설명 + 모든 task_comments 읽기 (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- 작업 전: 설명 + 모든 task_comments 읽기 (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - 파일 변경 전: 락 확인 후 INSERT OR REPLACE INTO locks 실행
-- 작업 시작: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- 작업 완료: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment 형식: "파일:줄 · 수행 내용 · 이유 · 잔여"
+- 작업 시작: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- 작업 완료: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 형식: "파일:줄 · 수행 내용 · 이유 · 잔여"
 - 작업 후: 즉시 STOP — 세션 종료. 항상 1세션 = 1작업.
-- 세션 종료: 락 해제 + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (최대 200자)
+- 세션 종료: 락 해제 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (최대 200자)
 - main으로 push 금지 | project.db 수동 편집 금지`
 
 // Korean versions of generic agents
@@ -40,7 +40,7 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
 
 ## 작업 규칙
 - 시작 전에 전체 설명 + 모든 task_comments를 읽으세요
-- 파일 변경 전 project.db에 락 설정: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- 파일 변경 전 project.db에 락 설정: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - 작업 시작 직후 작업 상태를 in_progress로 변경
 - 완료 댓글을 **먼저** 작성한 후 상태를 done으로: 파일:줄 · 수행 내용 · 기술적 결정 · 잔여
 - 티켓을 done으로 변경하기 전에 lint 0개 / 테스트 0개 실패 확인
@@ -164,16 +164,16 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
 
 ## 필수 티켓 형식
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## 필수 필드
-- titre: 짧은 명령형 (예: "feat(api): add POST /users endpoint")
+- title: 짧은 명령형 (예: "feat(api): add POST /users endpoint")
 - description: 컨텍스트 + 목표 + 상세 구현 + 수락 기준
 - effort: 1 (소 ≤2h) · 2 (중 ≤1d) · 3 (대 >1d)
 - priority: low · normal · high · critical
-- agent_assigne_id: 스코프에 가장 적합한 에이전트의 ID
+- agent_assigned_id: 스코프에 가장 적합한 에이전트의 ID
 
 ## DB 워크플로우
 - 읽기: node scripts/dbq.js "<SQL>"

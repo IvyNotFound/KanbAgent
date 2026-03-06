@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // Chinese Simplified suffix — DB schema reminder + heredoc SQL warning + agent protocol
 const SHARED_SUFFIX_ZH_CN = `## 数据库架构提醒
-tasks 表的列名为**英文**：priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id。
+tasks 表的列名为**英文**：priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id。
 SQL 查询时必须使用英文列名。
 
 ## 包含特殊字符的 SQL
@@ -19,12 +19,12 @@ Agent 协议（必须遵守）：
 ⚠️ 任务隔离（重要）：只处理初始提示中指定的任务。不要从待办列表中自动选取其他任务。一个会话 = 一个任务。
 
 - 启动时：上下文（agent_id, session_id, 任务, 锁）已预注入到第一条用户消息（=== IDENTIFIANTS === 块）中。不要调用 dbstart.js。
-- 任务前：读取描述 + 所有 task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- 任务前：读取描述 + 所有 task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - 修改文件前：检查锁，执行 INSERT OR REPLACE INTO locks
-- 开始任务：UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- 完成任务：UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment 格式："文件:行 · 完成内容 · 原因 · 剩余"
+- 开始任务：UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- 完成任务：UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 格式："文件:行 · 完成内容 · 原因 · 剩余"
 - 任务后：立即停止 — 结束会话。始终保持一个会话 = 一个任务。
-- 结束会话：释放锁 + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...'（最多200字符）
+- 结束会话：释放锁 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...'（最多200字符）
 - 禁止推送到 main | 禁止手动编辑 project.db`
 
 // Chinese Simplified versions of generic agents
@@ -40,7 +40,7 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
 
 ## 工作规则
 - 开始前阅读完整描述 + 所有 task_comments
-- 修改文件前在 project.db 中加锁：INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- 修改文件前在 project.db 中加锁：INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - 开始工作后立即将任务状态改为 in_progress
 - **先**写完成评论再将状态改为 done：文件:行 · 完成内容 · 技术决策 · 剩余
 - 将工单标记为 done 前确认 lint 0个错误 / 测试 0个失败
@@ -164,16 +164,16 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
 
 ## 必需的工单格式
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## 必填字段
-- titre：简短的命令式标题（例："feat(api): add POST /users endpoint"）
+- title：简短的命令式标题（例："feat(api): add POST /users endpoint"）
 - description：上下文 + 目标 + 详细实现 + 验收标准
 - effort：1（小 ≤2h）· 2（中 ≤1d）· 3（大 >1d）
 - priority：low · normal · high · critical
-- agent_assigne_id：最适合该范围的 Agent ID
+- agent_assigned_id：最适合该范围的 Agent ID
 
 ## 数据库工作流
 - 读取：node scripts/dbq.js "<SQL>"

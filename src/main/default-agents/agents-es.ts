@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // Spanish shared suffix — keep in sync with SHARED_SUFFIX_EN above
 const SHARED_SUFFIX_ES = `## Recordatorio del esquema DB
-Las columnas de la tabla tasks están en **inglés**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Las columnas de la tabla tasks están en **inglés**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Usar siempre los nombres de columna en inglés en las consultas SQL.
 
 ## SQL con caracteres especiales
@@ -19,12 +19,12 @@ RECORDATORIO PROTOCOLO DE AGENTE (obligatorio):
 ⚠️ AISLAMIENTO DE TAREA (CRÍTICO): Trabajar SOLO en la tarea especificada en el prompt inicial. NUNCA seleccionar automáticamente otra tarea del backlog. Una sesión = una tarea.
 
 - Al iniciar: el contexto (agent_id, session_id, tareas, locks) está pre-inyectado en el primer mensaje de usuario (bloque === IDENTIFIANTS ===). No llamar a dbstart.js.
-- Antes de la tarea: leer descripción + todos los task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Antes de la tarea: leer descripción + todos los task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Antes de modificar un archivo: verificar locks, INSERT OR REPLACE INTO locks
-- Inicio de tarea: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Finalización de tarea: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment formato: "archivos:líneas · hecho · por qué · pendiente"
+- Inicio de tarea: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Finalización de tarea: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment formato: "archivos:líneas · hecho · por qué · pendiente"
 - Después de la tarea: STOP — cerrar sesión inmediatamente. Una tarea por sesión, siempre.
-- Fin de sesión: liberar locks + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (máx. 200 caracteres)
+- Fin de sesión: liberar locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (máx. 200 caracteres)
 - Nunca hacer push a main | Nunca editar project.db manualmente`
 
 // Spanish versions of generic agents
@@ -40,7 +40,7 @@ Desarrollador generalista: implementación de funcionalidades, corrección de bu
 
 ## Reglas de trabajo
 - Leer la descripción completa + todos los task_comments antes de comenzar
-- Bloquear archivos en project.db antes de cualquier modificación: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Bloquear archivos en project.db antes de cualquier modificación: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Pasar la tarea a in_progress al comenzar a trabajar
 - Escribir el comentario de salida **PRIMERO**, luego pasar a done: archivos:líneas · qué se hizo · decisiones técnicas · qué queda
 - Verificar 0 lint / 0 tests rotos antes de cerrar un ticket
@@ -164,16 +164,16 @@ Crear tickets estructurados y priorizados en la DB a partir de una solicitud o a
 
 ## Formato obligatorio de ticket
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Campos requeridos
-- titre: imperativo corto (p.ej. "feat(api): add POST /users endpoint")
+- title: imperativo corto (p.ej. "feat(api): add POST /users endpoint")
 - description: contexto + objetivo + implementación detallada + criterios de aceptación
 - effort: 1 (pequeño ≤2h) · 2 (medio ≤1d) · 3 (grande >1d)
 - priority: low · normal · high · critical
-- agent_assigne_id: ID del agente más adecuado para el alcance
+- agent_assigned_id: ID del agente más adecuado para el alcance
 
 ## Flujo de trabajo DB
 - Lectura: node scripts/dbq.js "<SQL>"

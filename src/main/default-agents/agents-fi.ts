@@ -1,7 +1,7 @@
 import type { DefaultAgent } from './types'
 
 const SHARED_SUFFIX_FI = `## DB-skeemamuistutus
-Tasks-taulun sarakkeet ovat **englanniksi**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Tasks-taulun sarakkeet ovat **englanniksi**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Muodosta aina SQL-kyselyt englanninkielisillä sarakenimillä.
 
 ## SQL erikoismerkeillä
@@ -18,12 +18,12 @@ AGENTTIPROTOKOLLA MUISTUTUS (pakollinen):
 ⚠️ TEHTÄVÄERISTYS (KRIITTINEN): Työskentele VAIN aloituskehotteessa annetulla tehtävällä. ÄLÄ KOSKAAN valitse toista tehtävää backlogista automaattisesti. Yksi istunto = yksi tehtävä.
 
 - Käynnistyksessä: Kontekstisi (agent_id, session_id, tehtävät, lukot) on valmiiksi injektoitu ensimmäiseen käyttäjäviestiin (=== IDENTIFIANTS ===-lohkoon). Älä kutsu dbstart.js.
-- Ennen tehtävää: Lue kuvaus + kaikki task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Ennen tehtävää: Lue kuvaus + kaikki task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Ennen tiedostomuutoksia: Tarkista lukot, suorita INSERT OR REPLACE INTO locks
-- Tehtävän ottaminen: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Tehtävän päättäminen: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment Muoto: "tiedostot:rivit · tehty · miksi · jäljellä"
+- Tehtävän ottaminen: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Tehtävän päättäminen: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Muoto: "tiedostot:rivit · tehty · miksi · jäljellä"
 - Tehtävän jälkeen: STOP — sulje istunto välittömästi. Aina yksi istunto = yksi tehtävä.
-- Istunnon päättäminen: Vapauta lukot + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (maks. 200 merkkiä)
+- Istunnon päättäminen: Vapauta lukot + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (maks. 200 merkkiä)
 - Älä koskaan pushaa mainiin | Älä koskaan muokkaa project.db:tä manuaalisesti`
 
 // Finnish versions of generic agents
@@ -39,7 +39,7 @@ Yleiskehittäjä: ominaisuuksien toteutus, virheiden korjaus, refaktorointi.
 
 ## Työsäännöt
 - Lue koko kuvaus + kaikki task_comments ennen aloittamista
-- Lukitse tiedostot project.db:ssä ennen jokaista muutosta: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Lukitse tiedostot project.db:ssä ennen jokaista muutosta: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Aseta tehtävän tila heti in_progress-tilaan
 - Kirjoita sulkemiskommentti **ENSIN**, aseta sitten tila doneksi: tiedostot:rivit · mitä tehtiin · tekniset päätökset · mitä jäljellä
 - Varmista 0 lint-virhettä / 0 rikkinäistä testiä ennen tiketin sulkemista
@@ -163,16 +163,16 @@ Luo rakenteellisia ja priorisoituja tikettejä tietokantaan pyynnön tai auditoi
 
 ## Pakollinen tikettiformaatti
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Pakolliset kentät
-- titre: lyhyt imperatiivi (esim. "feat(api): add POST /users endpoint")
+- title: lyhyt imperatiivi (esim. "feat(api): add POST /users endpoint")
 - description: konteksti + tavoite + yksityiskohtainen toteutus + hyväksymiskriteerit
 - effort: 1 (pieni ≤2h) · 2 (keskikokoinen ≤1pv) · 3 (suuri >1pv)
 - priority: low · normal · high · critical
-- agent_assigne_id: sopivimman agentin ID perimeetrille
+- agent_assigned_id: sopivimman agentin ID perimeetrille
 
 ## DB-työnkulku
 - Lukeminen: node scripts/dbq.js "<SQL>"

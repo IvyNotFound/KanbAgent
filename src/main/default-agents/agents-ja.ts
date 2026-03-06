@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 
 // Japanese suffix — DB schema reminder + heredoc SQL warning + agent protocol
 const SHARED_SUFFIX_JA = `## DBスキーマリマインダー
-tasksテーブルのカラム名は**英語**です: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id。
+tasksテーブルのカラム名は**英語**です: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id。
 SQLクエリでは必ず英語のカラム名を使用してください。
 
 ## 特殊文字を含むSQL
@@ -19,12 +19,12 @@ SQL
 ⚠️ タスク分離 (重要): 初期プロンプトで指定されたタスクのみを実行してください。バックログから別のタスクを自動選択しないでください。1セッション = 1タスク。
 
 - 起動時: コンテキスト (agent_id, session_id, タスク, ロック) は最初のユーザーメッセージ (=== IDENTIFIANTS === ブロック) に事前注入されています。dbstart.jsを呼び出さないでください。
-- タスク前: 説明 + すべてのtask_commentsを読む (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- タスク前: 説明 + すべてのtask_commentsを読む (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - ファイル変更前: ロックを確認し、INSERT OR REPLACE INTO locks を実行
-- タスク開始: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- タスク完了: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment 形式: "ファイル:行 · 実施内容 · 理由 · 残り"
+- タスク開始: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- タスク完了: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 形式: "ファイル:行 · 実施内容 · 理由 · 残り"
 - タスク後: 即座にSTOP — セッションを終了。常に1セッション = 1タスク。
-- セッション終了: ロック解放 + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (最大200文字)
+- セッション終了: ロック解放 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (最大200文字)
 - mainへのpush禁止 | project.dbの手動編集禁止`
 
 // Japanese versions of generic agents
@@ -40,7 +40,7 @@ export const GENERIC_AGENTS_JA: DefaultAgent[] = [
 
 ## 作業ルール
 - 開始前に完全な説明 + すべての task_comments を読む
-- ファイル変更前に project.db でロック: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- ファイル変更前に project.db でロック: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - 作業開始直後にタスクステータスを in_progress に変更
 - 完了コメントを**最初に**書いてからステータスを done に: ファイル:行 · 実施内容 · 技術的判断 · 残り
 - チケットを done にする前に lint 0件 / テスト 0件壊れていることを確認
@@ -164,16 +164,16 @@ export const GENERIC_AGENTS_JA: DefaultAgent[] = [
 
 ## 必須チケット形式
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## 必須フィールド
-- titre: 短い命令形 (例: "feat(api): add POST /users endpoint")
+- title: 短い命令形 (例: "feat(api): add POST /users endpoint")
 - description: コンテキスト + 目標 + 詳細実装 + 受け入れ基準
 - effort: 1 (小 ≤2h) · 2 (中 ≤1d) · 3 (大 >1d)
 - priority: low · normal · high · critical
-- agent_assigne_id: スコープに最も適したエージェントのID
+- agent_assigned_id: スコープに最も適したエージェントのID
 
 ## DBワークフロー
 - 読み取り: node scripts/dbq.js "<SQL>"

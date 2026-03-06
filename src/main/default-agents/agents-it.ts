@@ -1,7 +1,7 @@
 import type { DefaultAgent } from './types'
 
 const SHARED_SUFFIX_IT = `## Promemoria schema DB
-Le colonne della tabella tasks sono in **inglese**: priority, statut, effort, perimetre, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_createur_id, agent_assigne_id, agent_valideur_id, session_id.
+Le colonne della tabella tasks sono in **inglese**: priority, status, effort, scope, created_at, updated_at, started_at, completed_at, validated_at, parent_task_id, agent_creator_id, agent_assigned_id, agent_validator_id, session_id.
 Usare sempre i nomi delle colonne in inglese nelle query SQL.
 
 ## SQL con caratteri speciali
@@ -18,12 +18,12 @@ PROMEMORIA PROTOCOLLO AGENTE (obbligatorio):
 ⚠️ ISOLAMENTO ATTIVITÀ (CRITICO): Lavorare SOLO sull'attività specificata nel prompt iniziale. NON selezionare automaticamente un'altra attività dal backlog. Una sessione = un'attività.
 
 - All'avvio: il contesto (agent_id, session_id, attività, lock) è pre-iniettato nel primo messaggio utente (blocco === IDENTIFIANTS ===). Non chiamare dbstart.js.
-- Prima dell'attività: leggere descrizione + tutti i task_comments (SELECT id, task_id, agent_id, contenu, created_at FROM task_comments WHERE task_id=?)
+- Prima dell'attività: leggere descrizione + tutti i task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Prima di modificare un file: verificare i lock, INSERT OR REPLACE INTO locks
-- Prendere in carico: UPDATE tasks SET statut='in_progress', started_at=datetime('now')
-- Chiudere l'attività: UPDATE tasks SET statut='done', completed_at=datetime('now') + INSERT task_comment formato: "file:righe · fatto · perché · rimanente"
+- Prendere in carico: UPDATE tasks SET status='in_progress', started_at=datetime('now')
+- Chiudere l'attività: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment formato: "file:righe · fatto · perché · rimanente"
 - Dopo l'attività: STOP — chiudere immediatamente la sessione. Una sessione = un'attività, sempre.
-- Fine sessione: rilasciare i lock + UPDATE sessions SET statut='completed', summary='Done:... Pending:... Next:...' (max 200 caratteri)
+- Fine sessione: rilasciare i lock + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 caratteri)
 - Non fare push su main | Non modificare manualmente project.db`
 
 // Italian versions of generic agents
@@ -39,7 +39,7 @@ Sviluppatore generalista: implementazione di funzionalità, correzione di bug, r
 
 ## Regole di lavoro
 - Leggere la descrizione completa + tutti i task_comments prima di iniziare
-- Bloccare i file in project.db prima di qualsiasi modifica: INSERT OR REPLACE INTO locks (fichier, agent_id, session_id) VALUES (?, ?, ?)
+- Bloccare i file in project.db prima di qualsiasi modifica: INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES (?, ?, ?)
 - Impostare lo stato dell'attività su in_progress non appena si inizia a lavorare
 - Scrivere il commento di uscita **PRIMA** poi impostare lo stato su done: file:righe · cosa è stato fatto · scelte tecniche · cosa rimane
 - Verificare 0 errori lint / 0 test rotti prima di chiudere un ticket
@@ -163,16 +163,16 @@ Creare ticket strutturati e prioritizzati nel DB da una richiesta o un audit.
 
 ## Formato obbligatorio del ticket
 \`\`\`sql
-INSERT INTO tasks (titre, description, statut, agent_createur_id, agent_assigne_id, perimetre, effort, priority)
+INSERT INTO tasks (title, description, status, agent_creator_id, agent_assigned_id, scope, effort, priority)
 VALUES (?, ?, 'todo', ?, ?, ?, ?, ?);
 \`\`\`
 
 ## Campi obbligatori
-- titre: imperativo breve (es. "feat(api): add POST /users endpoint")
+- title: imperativo breve (es. "feat(api): add POST /users endpoint")
 - description: contesto + obiettivo + implementazione dettagliata + criteri di accettazione
 - effort: 1 (piccolo ≤2h) · 2 (medio ≤1g) · 3 (grande >1g)
 - priority: low · normal · high · critical
-- agent_assigne_id: ID dell'agente più appropriato per il perimetro
+- agent_assigned_id: ID dell'agente più appropriato per il perimetro
 
 ## Workflow DB
 - Lettura: node scripts/dbq.js "<SQL>"
