@@ -100,12 +100,19 @@ export const useSettingsStore = defineStore('settings', () => {
    * @param l - The language code to set ('fr' | 'en')
    * @returns {void}
    */
+  const RTL_LOCALES: Language[] = ['ar']
+
   function setLanguage(l: Language) {
     language.value = l
     localStorage.setItem('language', l)
     // Sync to vue-i18n global locale for hot-switching
     i18n.global.locale.value = l
+    // Apply RTL direction for Arabic and other RTL locales
+    document.documentElement.dir = RTL_LOCALES.includes(l) ? 'rtl' : 'ltr'
   }
+
+  // Apply direction on load
+  document.documentElement.dir = RTL_LOCALES.includes(language.value) ? 'rtl' : 'ltr'
 
   // App info
   const appInfo = ref<AppInfo>({
