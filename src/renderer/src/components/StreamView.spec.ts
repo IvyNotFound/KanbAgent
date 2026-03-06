@@ -396,4 +396,61 @@ describe('StreamView', () => {
     expect(wrapper.find('[data-testid="block-error"]').exists()).toBe(false)
   })
 
+  it('evicts events to MAX_EVENTS_HIDDEN (50) when tab becomes inactive (T962)', async () => {
+    let streamCallback: ((e: Record<string, unknown>) => void) | null = null
+    vi.mocked(mockElectronAPI.agentCreate).mockResolvedValue('agent-stream-1')
+    vi.mocked(mockElectronAPI.onAgentStream).mockReset()
+    vi.mocked(mockElectronAPI.onAgentStream).mockImplementation((_id, cb) => {
+      streamCallback = cb as (e: Record<string, unknown>) => void
+      return () => {}
+    })
+    vi.mocked(mockElectronAPI.onAgentConvId).mockReturnValue(() => {})
+    vi.mocked(mockElectronAPI.onAgentExit).mockReturnValue(() => {})
+
+    const pinia = createTestingPinia({
+      stubActions: false,
+      initialState: {
+        tabs: {
+          tabs: [{
+            id: 'test-terminal-1',
+            type: 'terminal',
+            title: 'test',
+            ptyId: null,
+            agentName: 'test-agent',
+            wslDistro: null,
+            autoSend: null,
+            systemPrompt: null,
+            thinkingMode: null,
+            convId: null,
+            viewMode: 'stream' as const,
+          }],
+        },
+      },
+    })
+
+    const wrapper = mount(StreamView, {
+      props: { terminalId: 'test-terminal-1' },
+      global: { plugins: [pinia, i18n] },
+    })
+    await flushPromises()
+
+    // Inject 100 result events
+    for (let i = 0; i < 100; i++) {
+      streamCallback?.({ type: 'result', num_turns: i })
+    }
+    await flushPromises()
+    expect(wrapper.findAll('[data-testid="block-result"]').length).toBe(100)
+
+    // Activate then deactivate the tab via real store action (updates ref.value, triggers watcher)
+    const store = pinia._s.get('tabs') as { setActive: (id: string) => void; activeTabId: string }
+    store.setActive('test-terminal-1')
+    await flushPromises()
+    expect(store.activeTabId).toBe('test-terminal-1')
+    store.setActive('other-tab')
+    await flushPromises()
+    expect(store.activeTabId).toBe('other-tab')
+
+    expect(wrapper.findAll('[data-testid="block-result"]').length).toBeLessThanOrEqual(50)
+    wrapper.unmount()
+  })
 })

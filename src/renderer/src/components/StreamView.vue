@@ -165,6 +165,7 @@ function handleStop(): void {
 // 1 re-render per JSONL line at high-frequency streaming.
 
 const MAX_EVENTS = 500
+const MAX_EVENTS_HIDDEN = 50
 let pendingEvents: StreamEvent[] = []
 let flushPending = false
 
@@ -211,6 +212,18 @@ function scrollToBottom(force = false): void {
   if (!force && !isNearBottom()) return
   nextTick(() => { if (scrollContainer.value) scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight })
 }
+
+// ── Hidden-tab eviction (T962) ────────────────────────────────────────────────
+// When a tab becomes inactive, trim events to MAX_EVENTS_HIDDEN to free _html RAM.
+watch(() => tabsStore.activeTabId === props.terminalId, (isActive) => {
+  if (!isActive && events.value.length > MAX_EVENTS_HIDDEN) {
+    const evicted = events.value.splice(0, events.value.length - MAX_EVENTS_HIDDEN)
+    const evictedIds = new Set(evicted.map(e => e._id))
+    for (const key of Object.keys(collapsed.value)) {
+      if (evictedIds.has(parseInt(key.split('-')[0], 10))) delete collapsed.value[key]
+    }
+  }
+})
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
