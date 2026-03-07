@@ -52,7 +52,7 @@ Thinking mode (DB `thinking_mode`, NULL=auto): `test/doc/devops` → disabled ·
 
 ## Accès DB
 
-⚠️ **NE JAMAIS lancer `dbw.js` ou `dbstart.js` pendant que l'app Electron est ouverte.** L'app tient un lock Windows sur `project.db` — tout write concurrent crée un `.tmp` orphelin et bloque tous les agents. Lecture seule (`dbq.js`) autorisée.
+⚠️ **NE JAMAIS modifier le schéma de la DB directement** (`ALTER TABLE`, `CREATE TABLE`, `DROP TABLE`) — uniquement via les migrations versionnées dans `migration-runner.ts`. Les writes data (`INSERT`, `UPDATE`) via `dbw.js` sont gérés par le mécanisme tmp+rename.
 
 `node scripts/dbq.js "<SQL>"` (lecture) · `node scripts/dbw.js "<SQL>"` (écriture)
 

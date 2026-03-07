@@ -56,14 +56,6 @@ function renameWithRetry(src, dest, maxRetries = 3, delayMs = 200) {
   }
 }
 
-// Guard: fail fast if project.db is inaccessible from WSL (Electron app holds a Windows lock)
-try {
-  fs.accessSync(dbPath, fs.constants.R_OK | fs.constants.W_OK)
-} catch {
-  console.error('ERREUR dbstart: project.db inaccessible depuis WSL — app Electron probablement ouverte. Ferme l\'app avant de démarrer une session.')
-  process.exit(1)
-}
-
 initSqlJs().then((SQL) => {
   cleanupOrphanTmp(dbPath)
   const lockPath = acquireLock(dbPath)
