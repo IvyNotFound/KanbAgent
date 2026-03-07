@@ -194,7 +194,7 @@ export function registerAgentStreamHandlers(): void {
     }
 
     // ── Spawn: local Windows vs WSL / Linux / macOS ────────────────────────────
-    const isLocalWindows = process.platform === 'win32' && (!opts.wslDistro || opts.wslDistro === 'local')
+    const isLocalWindows = process.platform === 'win32' && opts.wslDistro === 'local'
     let scriptTempFile: string | undefined
     let proc: ChildProcess
 

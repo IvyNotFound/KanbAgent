@@ -175,6 +175,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCliInstances: (clis?: string[]): Promise<unknown[]> =>
     ipcRenderer.invoke('wsl:get-cli-instances', { clis }),
 
+  // Platform identifier for UI labels (e.g. 'win32', 'darwin', 'linux')
+  platform: process.platform as string,
+
   // Search tasks
   searchTasks: (
     dbPath: string,

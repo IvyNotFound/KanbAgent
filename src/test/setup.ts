@@ -78,6 +78,8 @@ const mockElectronAPI = {
   telemetryScan: vi.fn().mockResolvedValue({ languages: [], totalFiles: 0, totalLines: 0, scannedAt: new Date().toISOString() }),
   // Quality stats IPC (T842)
   tasksQualityStats: vi.fn().mockResolvedValue({ success: true, rows: [] }),
+  // Platform identifier (exposed directly, not via IPC)
+  platform: 'linux',
 }
 
 // Make it available globally (jsdom only — node environment has no window)

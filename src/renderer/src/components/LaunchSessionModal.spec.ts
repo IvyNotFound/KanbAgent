@@ -147,7 +147,7 @@ describe('LaunchSessionModal', () => {
     expect(tabsStore.addTerminal).toHaveBeenCalled()
   })
 
-  it('shows "Local" label for local-type instances (T775)', async () => {
+  it('shows OS label for local-type instances (T775)', async () => {
     const wrapper = shallowMount(LaunchSessionModal, {
       props: { agent: mockAgent as never },
       global: {
@@ -164,7 +164,9 @@ describe('LaunchSessionModal', () => {
       },
     })
     await flushPromises()
-    expect(wrapper.text()).toContain('Local')
+    // platform mock is 'linux', so label is 'Linux' (on win32 it would be 'Windows', etc.)
+    expect(wrapper.text()).toContain('Linux')
+    expect(wrapper.text()).toContain('Claude')
   })
 
   it('shows distro name for wsl-type instances (T775)', async () => {
@@ -396,7 +398,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     api.buildAgentPrompt.mockResolvedValue('test prompt')
   })
 
-  it('shows instance selector for Claude (profileSelection=true)', async () => {
+  it('shows unified instance list with system + CLI label', async () => {
     const wrapper = shallowMount(LaunchSessionModal, {
       props: { agent: mockAgent as never },
       global: {
@@ -413,10 +415,12 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
       },
     })
     await flushPromises()
+    // Both the distro and the CLI name appear in the unified list
     expect(wrapper.text()).toContain('Ubuntu-24.04')
+    expect(wrapper.text()).toContain('Claude')
   })
 
-  it('hides instance selector for Codex (profileSelection=false)', async () => {
+  it('shows instance radio for Codex (all CLIs use unified list now)', async () => {
     const wrapper = shallowMount(LaunchSessionModal, {
       props: { agent: mockAgent as never },
       global: {
@@ -433,9 +437,35 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
       },
     })
     await flushPromises()
-    // The instance radio buttons should NOT appear (profileSelection=false for codex)
+    // Codex instance now appears in the unified list with a radio
     const radios = wrapper.findAll('input[type="radio"]')
-    expect(radios.length).toBe(0)
+    expect(radios.length).toBe(1)
+  })
+
+  it('shows multiple CLIs in unified list when mixed instances available', async () => {
+    const wrapper = shallowMount(LaunchSessionModal, {
+      props: { agent: mockAgent as never },
+      global: {
+        plugins: [createTestingPinia({
+          initialState: {
+            tasks: { dbPath: '/p/.claude/db' },
+            settings: {
+              enabledClis: ['claude', 'gemini'],
+              allCliInstances: [
+                { cli: 'claude', distro: 'local', version: '2.1.0', isDefault: true, type: 'local' },
+                { cli: 'gemini', distro: 'Ubuntu-24.04', version: '0.2.0', isDefault: true, type: 'wsl' },
+              ],
+            },
+          },
+        }), i18n],
+        stubs: teleportStub,
+      },
+    })
+    await flushPromises()
+    const radios = wrapper.findAll('input[type="radio"]')
+    expect(radios.length).toBe(2)
+    expect(wrapper.text()).toContain('Claude')
+    expect(wrapper.text()).toContain('Gemini')
   })
 
   it('hides thinking mode section for Codex (thinkingMode=false)', async () => {

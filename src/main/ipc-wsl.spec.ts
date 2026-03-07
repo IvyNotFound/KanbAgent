@@ -51,11 +51,12 @@ function callHandler(): Promise<unknown> {
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 /** Simulate wsl.exe -l --verbose output */
-function wslListOutput(distros: Array<{ name: string; isDefault: boolean }>): string {
+function wslListOutput(distros: Array<{ name: string; isDefault: boolean; state?: string }>): string {
   const lines = ['NAME            STATE           VERSION']
   for (const d of distros) {
     const prefix = d.isDefault ? '* ' : '  '
-    lines.push(`${prefix}${d.name}         Running         2`)
+    const state = d.state ?? 'Running'
+    lines.push(`${prefix}${d.name}         ${state}         2`)
   }
   return lines.join('\n') + '\n'
 }
@@ -109,6 +110,23 @@ describe('wsl:getClaudeInstances — Windows/WSL', () => {
       })
     const result = await callHandler()
     expect(result).toEqual([])
+  })
+
+  it('skips Stopped distros (avoids timeout on cold-start)', async () => {
+    execFileMock
+      .mockRejectedValueOnce(new Error('not found')) // where claude (local)
+      .mockResolvedValueOnce({
+        stdout: wslListOutput([
+          { name: 'Ubuntu', isDefault: true, state: 'Stopped' },
+        ]),
+        stderr: ''
+      })
+    const result = await callHandler()
+    expect(result).toEqual([])
+    // bash -lc should NOT have been called for the Stopped distro
+    const calls = execFileMock.mock.calls as Array<[string, string[]]>
+    const bashCalls = calls.filter(c => c[1]?.includes('-lc'))
+    expect(bashCalls).toHaveLength(0)
   })
 
   it('returns empty array when distro has no claude', async () => {

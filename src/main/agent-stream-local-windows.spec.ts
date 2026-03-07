@@ -359,6 +359,16 @@ describe('agent:create — local Windows spawn (T916)', () => {
     expect(cmd.toLowerCase()).toMatch(/wsl\.exe$/)
   })
 
+  it('uses wsl.exe (default distro) when wslDistro is undefined on win32', async () => {
+    const handler = handlers.get('agent:create')!
+    await handler({ sender: mockSender }, {})
+
+    const [cmd, args] = mockSpawn.mock.calls[0] as [string, string[]]
+    expect(cmd.toLowerCase()).toMatch(/wsl\.exe$/)
+    // No -d flag — uses WSL default distro
+    expect(args).not.toContain('-d')
+  })
+
   it('returns a string agent id', async () => {
     const handler = handlers.get('agent:create')!
     const id = await handler({ sender: mockSender }, { wslDistro: 'local' })

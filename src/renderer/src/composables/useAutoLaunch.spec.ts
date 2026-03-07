@@ -12,6 +12,9 @@ const api = {
   getClaudeInstances: vi.fn().mockResolvedValue([
     { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true }
   ]),
+  getCliInstances: vi.fn().mockResolvedValue([
+    { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
+  ]),
   getAgentSystemPrompt: vi.fn().mockResolvedValue({
     success: true, systemPrompt: 'You are dev-front', systemPromptSuffix: null, thinkingMode: 'auto'
   }),

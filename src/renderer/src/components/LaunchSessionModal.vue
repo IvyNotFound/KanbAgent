@@ -30,7 +30,6 @@ const tabsStore = useTabsStore()
 const tasksStore = useTasksStore()
 const settingsStore = useSettingsStore()
 
-const selectedCli = ref<CliType>('claude')
 const selectedInstance = ref<CliInstance | null>(null)
 const loading = ref(true)
 const customPrompt = ref('')
@@ -53,19 +52,21 @@ const fullSystemPrompt = computed(() => {
   return parts.join('\n\n')
 })
 
+/** CLI derived from selected instance, falling back to first enabled CLI */
+const selectedCli = computed<CliType>(() =>
+  selectedInstance.value?.cli ?? (settingsStore.enabledClis[0] as CliType) ?? 'claude'
+)
+
 /** Capabilities of the currently selected CLI — drives conditional sections (T1036) */
 const caps = computed<CliCapabilities>(() => CLI_CAPABILITIES[selectedCli.value])
 
-/** Instances detected for the currently selected CLI */
-const instancesForCli = computed(() =>
-  settingsStore.allCliInstances.filter(i => i.cli === selectedCli.value)
+/** All instances across every enabled CLI — the unified list shown to the user */
+const allAvailableInstances = computed(() =>
+  settingsStore.allCliInstances.filter(i => settingsStore.enabledClis.includes(i.cli as CliType))
 )
 
-/** Show CLI selector only when multiple CLIs are enabled */
-const multiCli = computed(() => settingsStore.enabledClis.length > 1)
-
 const CLI_LABELS: Record<CliType, string> = {
-  claude:   'Claude Code',
+  claude:   'Claude',
   codex:    'Codex',
   gemini:   'Gemini',
   opencode: 'OpenCode',
@@ -82,25 +83,21 @@ const CLI_BADGE: Record<CliType, string> = {
   goose:    'G',
 }
 
-// When CLI changes, pick first detected instance for that CLI
-watch(selectedCli, () => {
-  selectedInstance.value = instancesForCli.value[0] ?? null
-})
-
-function instanceLabel(inst: CliInstance): string {
-  if (inst.type === 'local') return 'Local'
-  return inst.distro
+/** Human-readable OS/environment label for an instance */
+function systemLabel(inst: CliInstance): string {
+  if (inst.type === 'wsl') return `WSL ${inst.distro}`
+  const plat = window.electronAPI.platform
+  if (plat === 'win32') return 'Windows'
+  if (plat === 'darwin') return 'macOS'
+  return 'Linux'
 }
 
 onMounted(async () => {
-  // Refresh CLI detection (tags all instances with their CLI type)
+  // Refresh CLI detection (fills allCliInstances with local + WSL instances)
   await settingsStore.refreshCliDetection()
 
-  // Default CLI = first enabled one (usually 'claude')
-  selectedCli.value = settingsStore.enabledClis[0] ?? 'claude'
-
-  // Auto-select instance: prefer stored preference, fall back to isDefault/first
-  const instances = instancesForCli.value
+  // Auto-select: prefer stored preference (distro), fall back to default distro, then first
+  const instances = allAvailableInstances.value
   if (instances.length > 0) {
     const stored = settingsStore.defaultCliInstance
     selectedInstance.value =
@@ -108,7 +105,6 @@ onMounted(async () => {
       ?? instances.find(i => i.isDefault)
       ?? instances[0]
       ?? null
-
   }
 
   if (tasksStore.dbPath) {
@@ -164,6 +160,7 @@ async function launch() {
     }
 
     const distro = selectedInstance.value?.distro
+    const cli = selectedCli.value
     const convId = caps.value.convResume && useResume.value && lastConvId.value ? lastConvId.value : undefined
     const activeThinking = caps.value.thinkingMode ? thinkingMode.value : undefined
     const activeSystemPrompt = caps.value.systemPrompt ? fullSystemPrompt.value : undefined
@@ -171,20 +168,20 @@ async function launch() {
     if (convId) {
       tabsStore.addTerminal(
         props.agent.name, distro, undefined, undefined,
-        activeThinking, undefined,convId,
-        true, undefined, 'stream', selectedCli.value, workDir
+        activeThinking, undefined, convId,
+        true, undefined, 'stream', cli, workDir
       )
     } else if (activeSystemPrompt) {
       tabsStore.addTerminal(
         props.agent.name, distro, finalPrompt, activeSystemPrompt,
-        activeThinking, undefined,undefined,
-        true, undefined, 'stream', selectedCli.value, workDir
+        activeThinking, undefined, undefined,
+        true, undefined, 'stream', cli, workDir
       )
     } else {
       tabsStore.addTerminal(
         props.agent.name, distro, finalPrompt, undefined,
-        activeThinking, undefined,undefined,
-        true, undefined, 'stream', selectedCli.value, workDir
+        activeThinking, undefined, undefined,
+        true, undefined, 'stream', cli, workDir
       )
     }
     emit('close')
@@ -223,75 +220,54 @@ async function launch() {
         <!-- Body -->
         <div class="px-5 py-4 space-y-4">
 
-          <!-- CLI selector — only when multiple CLIs are enabled -->
-          <div v-if="multiCli">
-            <p class="text-sm font-medium text-content-secondary mb-2">{{ t('launch.selectCli') }}</p>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="cli in settingsStore.enabledClis"
-                :key="cli"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all"
-                :class="selectedCli !== cli
-                  ? 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                  : ''"
-                :style="selectedCli === cli ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name) } : {}"
-                :title="settingsStore.allCliInstances.filter(i => i.cli === cli).length === 0 ? t('launch.cliUnavailable') : undefined"
-                @click="selectedCli = cli"
+          <!-- Unified instance list: all CLIs × all environments (Windows, WSL distros, local) -->
+          <div>
+            <p class="text-sm font-medium text-content-secondary mb-2">{{ t('launch.instance') }}</p>
+
+            <div v-if="loading" class="text-sm text-content-subtle animate-pulse">{{ t('common.loading') }}</div>
+
+            <div v-else-if="allAvailableInstances.length === 0" class="text-sm text-content-subtle italic">
+              {{ t('launch.noInstance') }}
+            </div>
+
+            <div v-else class="space-y-1.5">
+              <label
+                v-for="inst in allAvailableInstances"
+                :key="`${inst.cli}-${inst.distro}`"
+                class="flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all"
+                :class="selectedInstance?.cli === inst.cli && selectedInstance?.distro === inst.distro
+                  ? ''
+                  : 'border-edge-default hover:border-content-faint bg-surface-secondary/40'"
+                :style="selectedInstance?.cli === inst.cli && selectedInstance?.distro === inst.distro
+                  ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '15' }
+                  : {}"
               >
+                <input
+                  v-model="selectedInstance"
+                  type="radio"
+                  :value="inst"
+                  :style="{ accentColor: agentFg(agent.name) }"
+                />
+                <!-- CLI badge -->
                 <span class="w-4 h-4 flex items-center justify-center rounded text-[9px] font-bold bg-surface-tertiary text-content-muted shrink-0">
-                  {{ CLI_BADGE[cli] }}
+                  {{ CLI_BADGE[inst.cli] }}
                 </span>
-                {{ CLI_LABELS[cli] }}
-              </button>
+                <!-- System label + CLI name -->
+                <span class="flex-1 text-sm font-mono text-content-secondary">
+                  <span class="text-content-muted">{{ systemLabel(inst) }}</span>
+                  <span class="mx-1 text-content-faint">—</span>
+                  <span>{{ CLI_LABELS[inst.cli] }}</span>
+                </span>
+                <!-- Version -->
+                <span class="text-[10px] text-content-subtle font-mono shrink-0">v{{ inst.version }}</span>
+                <!-- Default badge (WSL only) -->
+                <span
+                  v-if="inst.isDefault && inst.type === 'wsl'"
+                  class="text-[9px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-surface-tertiary text-content-muted shrink-0"
+                >{{ t('launch.defaultBadge') }}</span>
+              </label>
             </div>
           </div>
-
-          <!-- Instance selection — profileSelection CLIs only (Claude) (T1036) -->
-          <Transition
-            enter-active-class="transition-all duration-200 overflow-hidden"
-            enter-from-class="opacity-0 max-h-0"
-            enter-to-class="opacity-100 max-h-64"
-            leave-active-class="transition-all duration-150 overflow-hidden"
-            leave-from-class="opacity-100 max-h-64"
-            leave-to-class="opacity-0 max-h-0"
-          >
-            <div v-if="caps.profileSelection || instancesForCli.length > 1">
-              <p class="text-sm font-medium text-content-secondary mb-2">
-                {{ multiCli ? CLI_LABELS[selectedCli] + ' — ' + t('launch.instance') : t('launch.claudeInstance') }}
-              </p>
-
-              <div v-if="loading" class="text-sm text-content-subtle animate-pulse">{{ t('common.loading') }}</div>
-
-              <div v-else-if="instancesForCli.length === 0" class="text-sm text-content-subtle italic">
-                {{ t('launch.noInstance') }}
-              </div>
-
-              <div v-else class="space-y-1.5">
-                <label
-                  v-for="inst in instancesForCli"
-                  :key="inst.distro"
-                  class="flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all"
-                  :class="selectedInstance?.distro === inst.distro
-                    ? ''
-                    : 'border-edge-default hover:border-content-faint bg-surface-secondary/40'"
-                  :style="selectedInstance?.distro === inst.distro ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '15' } : {}"
-                >
-                  <input
-                    v-model="selectedInstance"
-                    type="radio"
-                    :value="inst"
-                    :style="{ accentColor: agentFg(agent.name) }"
-                  />
-                  <span class="flex-1 text-sm font-mono text-content-secondary">{{ instanceLabel(inst) }}</span>
-                  <span class="text-[10px] text-content-subtle font-mono shrink-0">{{ t('launch.instanceVersion', { version: inst.version }) }}</span>
-                  <span
-                    v-if="inst.isDefault"
-                    class="text-[9px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-surface-tertiary text-content-muted shrink-0"
-                  >{{ t('launch.defaultBadge') }}</span>
-                </label>
-              </div>
-            </div>
-          </Transition>
 
           <!-- Resume session — convResume CLIs only (Claude) (T1036) -->
           <Transition

@@ -166,7 +166,7 @@ export async function detectWslClis(
   const scriptContent = [
     '#!/bin/bash',
     `for c in ${binaries}; do`,
-    '  v=$($c --version 2>/dev/null | head -1)',
+    '  v=$(timeout 3 $c --version 2>/dev/null | head -1)',
     '  [ -n "$v" ] && echo "$c:$v"',
     'done',
     'exit 0',

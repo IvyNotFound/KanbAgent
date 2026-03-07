@@ -60,6 +60,8 @@ declare global {
       getClaudeInstances(): Promise<Array<{ distro: string; version: string; isDefault: boolean; type?: 'wsl' | 'local' }>>
       // Detect all CLI instances across supported coding agents (T1011)
       getCliInstances(clis?: string[]): Promise<Array<{ cli: string; distro: string; version: string; isDefault: boolean; type: 'wsl' | 'local' }>>
+      // Host platform identifier, e.g. 'win32', 'darwin', 'linux'
+      platform: string
       // Agent stream (ADR-009: child_process.spawn + stdio:pipe — T647/T648)
       agentCreate(opts?: { projectPath?: string; workDir?: string; wslDistro?: string; systemPrompt?: string; thinkingMode?: string; claudeCommand?: string; convId?: string; permissionMode?: string; cli?: string }): Promise<string>
       agentSend(id: string, text: string): Promise<void>
