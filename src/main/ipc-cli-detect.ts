@@ -21,7 +21,7 @@ import { writeFileSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import type { CliType, CliInstance } from '../../shared/cli-types'
-import { enrichWindowsPath, getWslDistros } from './ipc-wsl'
+import { enrichWindowsPath, getWslDistros, getWslExe } from './ipc-wsl'
 import { toWslPath } from './utils/wsl'
 
 const execPromise = promisify(execFile)
@@ -178,7 +178,7 @@ export async function detectWslClis(
     const scriptWslPath = toWslPath(scriptFile)
 
     const { stdout } = await execPromise(
-      'wsl.exe',
+      getWslExe(),
       ['-d', distro, '--', 'bash', '-l', scriptWslPath],
       { timeout: WSL_TIMEOUT },
     )

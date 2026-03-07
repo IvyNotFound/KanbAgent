@@ -49,6 +49,7 @@ vi.mock('electron', () => ({
 vi.mock('./ipc-wsl', () => ({
   enrichWindowsPath: enrichWindowsPathMock,
   getWslDistros: getWslDistrosMock,
+  getWslExe: () => 'wsl.exe',
 }))
 
 vi.mock('./utils/wsl', () => ({

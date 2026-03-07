@@ -10,8 +10,20 @@
 import { ipcMain, shell } from 'electron'
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
+import { join } from 'path'
 
 const execPromise = promisify(execFile)
+
+/**
+ * Resolve the absolute path to wsl.exe via %SystemRoot% to avoid ENOENT
+ * in packaged Electron apps where PATH may not include C:\Windows\System32
+ * (same fix as T692 applied to detection code).
+ */
+export function getWslExe(): string {
+  return process.env.SystemRoot
+    ? join(process.env.SystemRoot, 'System32', 'wsl.exe')
+    : 'C:\\Windows\\System32\\wsl.exe'
+}
 
 const WSL_TIMEOUT = 10_000
 const LOCAL_TIMEOUT = 5_000
@@ -119,7 +131,7 @@ export async function detectLocalInstance(): Promise<ClaudeInstance | null> {
  * @returns Array of { distro, isDefault } entries, or [] if wsl.exe fails
  */
 export async function getWslDistros(): Promise<{ distro: string; isDefault: boolean }[]> {
-  const listResult = await execPromise('wsl.exe', ['-l', '--verbose'])
+  const listResult = await execPromise(getWslExe(), ['-l', '--verbose'])
   const listOutput = listResult.stdout.replace(/\0/g, '')
   const lines = listOutput.split('\n').map(l => l.trim().replace(/\r/g, ''))
   const entries: { distro: string; isDefault: boolean }[] = []
@@ -159,7 +171,7 @@ async function detectWslInstances(): Promise<ClaudeInstance[]> {
     const batchResults = await Promise.all(batch.map(async ({ distro, isDefault }) => {
       try {
         const versionResult = await execPromise(
-          'wsl.exe',
+          getWslExe(),
           ['-d', distro, '--', 'bash', '-lc', 'claude --version 2>/dev/null'],
           { timeout: WSL_TIMEOUT }
         )
@@ -203,7 +215,7 @@ async function openWslTerminalWindow(): Promise<{ success: boolean; error?: stri
 
   // 3. Last resort: spawn wsl.exe directly (opens default distro in conhost)
   try {
-    const child = spawn('wsl.exe', [], { detached: true, stdio: 'ignore', windowsHide: false })
+    const child = spawn(getWslExe(), [], { detached: true, stdio: 'ignore', windowsHide: false })
     child.unref()
     return { success: true }
   } catch (err) {

@@ -235,7 +235,6 @@ async function launch() {
                   ? 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
                   : ''"
                 :style="selectedCli === cli ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name) } : {}"
-                :disabled="settingsStore.allCliInstances.filter(i => i.cli === cli).length === 0"
                 :title="settingsStore.allCliInstances.filter(i => i.cli === cli).length === 0 ? t('launch.cliUnavailable') : undefined"
                 @click="selectedCli = cli"
               >

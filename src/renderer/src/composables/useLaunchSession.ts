@@ -61,10 +61,18 @@ export function useLaunchSession() {
       const allInstances = await getCachedCliInstances()
 
       const settingsStore = useSettingsStore()
-      const defaultCli = settingsStore.enabledClis[0] ?? 'claude'
-      const cliInstances = allInstances.filter(i => i.cli === defaultCli)
-
       const storedDistro = settingsStore.defaultCliInstance
+
+      // Find first enabled CLI that has detected instances, fall back to enabledClis[0]
+      let defaultCli = settingsStore.enabledClis[0] ?? 'claude'
+      let cliInstances = allInstances.filter(i => i.cli === defaultCli)
+      if (cliInstances.length === 0) {
+        for (const cli of settingsStore.enabledClis.slice(1)) {
+          const candidates = allInstances.filter(i => i.cli === cli)
+          if (candidates.length > 0) { defaultCli = cli; cliInstances = candidates; break }
+        }
+      }
+
       const instance = cliInstances.length > 0
         ? ((storedDistro ? cliInstances.find(i => i.distro === storedDistro) : undefined)
             ?? cliInstances.find(i => i.isDefault)
@@ -126,10 +134,18 @@ export function useLaunchSession() {
       const allInstances = await getCachedCliInstances()
 
       const settingsStore = useSettingsStore()
-      const defaultCli = settingsStore.enabledClis[0] ?? 'claude'
-      const cliInstances = allInstances.filter(i => i.cli === defaultCli)
-
       const storedDistro = settingsStore.defaultCliInstance
+
+      // Find first enabled CLI that has detected instances, fall back to enabledClis[0]
+      let defaultCli = settingsStore.enabledClis[0] ?? 'claude'
+      let cliInstances = allInstances.filter(i => i.cli === defaultCli)
+      if (cliInstances.length === 0) {
+        for (const cli of settingsStore.enabledClis.slice(1)) {
+          const candidates = allInstances.filter(i => i.cli === cli)
+          if (candidates.length > 0) { defaultCli = cli; cliInstances = candidates; break }
+        }
+      }
+
       const instance = cliInstances.length > 0
         ? ((storedDistro ? cliInstances.find(i => i.distro === storedDistro) : undefined)
             ?? cliInstances.find(i => i.isDefault)
