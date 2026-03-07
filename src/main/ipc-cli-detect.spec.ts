@@ -61,7 +61,7 @@ vi.mock('./utils/wsl', () => ({
 }))
 
 // ── Import after mocks ────────────────────────────────────────────────────────
-import { registerCliDetectHandlers, detectLocalClis, detectWslClis } from './ipc-cli-detect'
+import { registerCliDetectHandlers, detectLocalClis, detectWslClis, _resetDetectionCacheForTest } from './ipc-cli-detect'
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 function callHandler(args?: { clis?: string[] }): Promise<unknown> {
@@ -264,6 +264,7 @@ describe('wsl:get-cli-instances — Windows', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
+    _resetDetectionCacheForTest()
     enrichWindowsPathMock.mockResolvedValue(undefined)
     for (const key of Object.keys(handlers)) delete handlers[key]
     platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
@@ -324,6 +325,7 @@ describe('wsl:get-cli-instances — Linux', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
+    _resetDetectionCacheForTest()
     for (const key of Object.keys(handlers)) delete handlers[key]
     platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
     registerCliDetectHandlers()

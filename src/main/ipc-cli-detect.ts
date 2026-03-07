@@ -30,6 +30,12 @@ const WSL_TIMEOUT = 10_000
 const LOCAL_TIMEOUT = 5_000
 const CONCURRENCY = 2
 
+// ── Detection cache ───────────────────────────────────────────────────────────
+// Module-level cache: stores a single Promise<CliInstance[]> for the full
+// (unfiltered) detection. Fire-and-forget at startup; IPC handler awaits it.
+
+let detectionCache: Promise<CliInstance[]> | null = null
+
 // ── Single source of truth ────────────────────────────────────────────────────
 // To add a CLI: one line here, nothing else.
 
@@ -190,6 +196,68 @@ export async function detectWslClis(
   }
 }
 
+// ── Warmup helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Run full (unfiltered) CLI detection — local CLIs + WSL distros on Windows.
+ */
+async function runFullDetection(): Promise<CliInstance[]> {
+  const platform = process.platform
+
+  if (platform === 'linux' || platform === 'darwin') {
+    try {
+      return await detectLocalClis()
+    } catch {
+      return []
+    }
+  }
+
+  // Windows: local + WSL
+  const results: CliInstance[] = []
+
+  try {
+    const local = await detectLocalClis()
+    results.push(...local)
+  } catch { /* local detection failed — continue with WSL */ }
+
+  try {
+    const distros = await getWslDistros()
+    for (let i = 0; i < distros.length; i += CONCURRENCY) {
+      const batch = distros.slice(i, i + CONCURRENCY)
+      const batchResults = await Promise.all(
+        batch.map(({ distro, isDefault }) => detectWslClis(distro, isDefault)),
+      )
+      results.push(...batchResults.flat())
+    }
+  } catch { /* WSL not available */ }
+
+  return results
+}
+
+/**
+ * Return the cached detection Promise, or start a new one.
+ * The Promise always resolves (errors resolve to []).
+ */
+function getOrRunDetection(): Promise<CliInstance[]> {
+  if (!detectionCache) {
+    detectionCache = runFullDetection().catch(() => [])
+  }
+  return detectionCache
+}
+
+/**
+ * Fire CLI detection in the background so the cache is warm by the time
+ * the user opens their first agent session. Called once at app startup.
+ */
+export function warmupCliDetection(): void {
+  getOrRunDetection() // fire & forget — result is cached
+}
+
+/** Reset the detection cache. FOR TESTS ONLY. @internal */
+export function _resetDetectionCacheForTest(): void {
+  detectionCache = null
+}
+
 // ── IPC handler ───────────────────────────────────────────────────────────────
 
 /**
@@ -198,45 +266,17 @@ export async function detectWslClis(
  * Params: `{ clis?: CliType[] }` — optional filter (default: all CLIs)
  * Returns: `CliInstance[]` — local first, then WSL distros
  *
- * Platform behavior:
- * - Linux/macOS : local only
- * - Windows     : local + WSL distros (CONCURRENCY=2)
+ * Uses the module-level detection cache populated by `warmupCliDetection()`.
+ * If the warmup Promise is still in-flight, this awaits the same Promise
+ * (no duplicate spawns). If called before warmup, starts detection on demand.
  */
 export function registerCliDetectHandlers(): void {
   ipcMain.handle(
     'wsl:get-cli-instances',
     async (_event, args?: { clis?: CliType[] }): Promise<CliInstance[]> => {
       const filterClis = Array.isArray(args?.clis) ? args.clis : undefined
-      const platform = process.platform
-
-      if (platform === 'linux' || platform === 'darwin') {
-        try {
-          return await detectLocalClis(filterClis)
-        } catch {
-          return []
-        }
-      }
-
-      // Windows: local + WSL
-      const results: CliInstance[] = []
-
-      try {
-        const local = await detectLocalClis(filterClis)
-        results.push(...local)
-      } catch { /* local detection failed — continue with WSL */ }
-
-      try {
-        const distros = await getWslDistros()
-        for (let i = 0; i < distros.length; i += CONCURRENCY) {
-          const batch = distros.slice(i, i + CONCURRENCY)
-          const batchResults = await Promise.all(
-            batch.map(({ distro, isDefault }) => detectWslClis(distro, isDefault, filterClis)),
-          )
-          results.push(...batchResults.flat())
-        }
-      } catch { /* WSL not available */ }
-
-      return results
+      const all = await getOrRunDetection()
+      return filterClis ? all.filter(inst => filterClis.includes(inst.cli)) : all
     },
   )
 }
