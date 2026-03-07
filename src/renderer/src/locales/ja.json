@@ -221,7 +221,7 @@
     "exporting": "エクスポート中...",
     "exportSuccess": "エクスポート完了: {path}",
     "exportError": "エクスポートエラー: {error}",
-    "defaultClaudeInstance": "デフォルト Claude Code インスタンス",
+    "defaultCliInstance": "デフォルト Claude Code インスタンス",
     "defaultClaudeProfile": "デフォルト Claude プロファイル",
     "aiCodingAssistants": "AI コーディングアシスタント",
     "aiCodingAssistantsDesc": "エージェントセッションで利用可能な検出済み CLI ツール。ランチャーで表示するには切り替えてください。",

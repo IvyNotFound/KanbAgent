@@ -309,7 +309,7 @@ describe('stores/settings — appInfo', () => {
   })
 })
 
-describe('stores/settings — defaultClaudeInstance (T857)', () => {
+describe('stores/settings — defaultCliInstance (T857, T1032)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
@@ -319,20 +319,26 @@ describe('stores/settings — defaultClaudeInstance (T857)', () => {
 
   it('should default to empty string', () => {
     const store = useSettingsStore()
-    expect(store.defaultClaudeInstance).toBe('')
+    expect(store.defaultCliInstance).toBe('')
   })
 
   it('should persist distro to localStorage', () => {
     const store = useSettingsStore()
-    store.setDefaultClaudeInstance('Ubuntu-24.04')
-    expect(store.defaultClaudeInstance).toBe('Ubuntu-24.04')
-    expect(localStorage.getItem('defaultClaudeInstance')).toBe('Ubuntu-24.04')
+    store.setDefaultCliInstance('Ubuntu-24.04')
+    expect(store.defaultCliInstance).toBe('Ubuntu-24.04')
+    expect(localStorage.getItem('defaultCliInstance')).toBe('Ubuntu-24.04')
   })
 
   it('should read stored value on init', () => {
-    localStorage.setItem('defaultClaudeInstance', 'Debian')
+    localStorage.setItem('defaultCliInstance', 'Debian')
     const store = useSettingsStore()
-    expect(store.defaultClaudeInstance).toBe('Debian')
+    expect(store.defaultCliInstance).toBe('Debian')
+  })
+
+  it('should fallback to legacy defaultClaudeInstance key', () => {
+    localStorage.setItem('defaultClaudeInstance', 'Arch')
+    const store = useSettingsStore()
+    expect(store.defaultCliInstance).toBe('Arch')
   })
 })
 

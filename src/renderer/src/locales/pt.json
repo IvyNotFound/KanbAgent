@@ -221,7 +221,7 @@
     "exporting": "A exportar...",
     "exportSuccess": "Exportação concluída: {path}",
     "exportError": "Erro de exportação: {error}",
-    "defaultClaudeInstance": "Instância Claude Code padrão",
+    "defaultCliInstance": "Instância Claude Code padrão",
     "defaultClaudeProfile": "Perfil Claude padrão",
     "aiCodingAssistants": "Assistentes IA",
     "aiCodingAssistantsDesc": "Ferramentas CLI detetadas disponíveis para sessões de agentes. Ative/desative para exibir no launcher.",

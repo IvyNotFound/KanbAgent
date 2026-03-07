@@ -221,7 +221,7 @@
     "exporting": "Eksporterer...",
     "exportSuccess": "Eksport lastet ned: {path}",
     "exportError": "Eksportfeil: {error}",
-    "defaultClaudeInstance": "Standard Claude Code-instans",
+    "defaultCliInstance": "Standard Claude Code-instans",
     "defaultClaudeProfile": "Standard Claude-profil",
     "aiCodingAssistants": "AI-kodingsassistenter",
     "aiCodingAssistantsDesc": "Oppdagede CLI-verktøy tilgjengelige for agentøkter. Aktiver/deaktiver for å vise i starteren.",

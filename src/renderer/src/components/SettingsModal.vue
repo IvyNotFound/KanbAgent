@@ -242,19 +242,19 @@ function handleKeydown(e: KeyboardEvent) {
 
           <!-- Default Claude instance (T857) -->
           <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-            <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.defaultClaudeInstance') }}</p>
+            <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.defaultCliInstance') }}</p>
             <div v-if="claudeInstances.length === 0" class="text-sm text-content-subtle">—</div>
             <div v-else class="flex flex-col gap-2">
               <select
                 class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary outline-none focus:ring-1 focus:ring-violet-500"
-                :value="settingsStore.defaultClaudeInstance || claudeInstances[0]?.distro"
-                @change="settingsStore.setDefaultClaudeInstance(($event.target as HTMLSelectElement).value)"
+                :value="settingsStore.defaultCliInstance || claudeInstances[0]?.distro"
+                @change="settingsStore.setDefaultCliInstance(($event.target as HTMLSelectElement).value)"
               >
                 <option v-for="inst in claudeInstances" :key="inst.distro" :value="inst.distro">
                   {{ instanceLabel(inst) }}
                 </option>
               </select>
-              <div v-if="(claudeInstances.find(i => i.distro === (settingsStore.defaultClaudeInstance || claudeInstances[0]?.distro))?.profiles?.length ?? 0) > 1">
+              <div v-if="(claudeInstances.find(i => i.distro === (settingsStore.defaultCliInstance || claudeInstances[0]?.distro))?.profiles?.length ?? 0) > 1">
                 <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.defaultClaudeProfile') }}</p>
                 <select
                   class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary outline-none focus:ring-1 focus:ring-violet-500"
@@ -262,7 +262,7 @@ function handleKeydown(e: KeyboardEvent) {
                   @change="settingsStore.setDefaultClaudeProfile(($event.target as HTMLSelectElement).value)"
                 >
                   <option
-                    v-for="profile in claudeInstances.find(i => i.distro === (settingsStore.defaultClaudeInstance || claudeInstances[0]?.distro))?.profiles"
+                    v-for="profile in claudeInstances.find(i => i.distro === (settingsStore.defaultCliInstance || claudeInstances[0]?.distro))?.profiles"
                     :key="profile"
                     :value="profile"
                   >

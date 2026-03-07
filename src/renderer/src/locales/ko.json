@@ -221,7 +221,7 @@
     "exporting": "내보내는 중...",
     "exportSuccess": "내보내기 완료: {path}",
     "exportError": "내보내기 오류: {error}",
-    "defaultClaudeInstance": "기본 Claude Code 인스턴스",
+    "defaultCliInstance": "기본 Claude Code 인스턴스",
     "defaultClaudeProfile": "기본 Claude 프로필",
     "aiCodingAssistants": "AI 코딩 어시스턴트",
     "aiCodingAssistantsDesc": "에이전트 세션에 사용 가능한 감지된 CLI 도구입니다. 런처에 표시하려면 토글하세요.",

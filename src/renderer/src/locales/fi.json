@@ -221,7 +221,7 @@
     "exporting": "Viedään...",
     "exportSuccess": "Vienti ladattu: {path}",
     "exportError": "Vientivirhe: {error}",
-    "defaultClaudeInstance": "Oletusarvoinen Claude Code -instanssi",
+    "defaultCliInstance": "Oletusarvoinen Claude Code -instanssi",
     "defaultClaudeProfile": "Oletusarvoinen Claude-profiili",
     "aiCodingAssistants": "Tekoälykoodausapurit",
     "aiCodingAssistantsDesc": "Havaitut CLI-työkalut agenttiistuntoihin. Ota käyttöön/poista käytöstä näyttääksesi käynnistysohjelmassa.",

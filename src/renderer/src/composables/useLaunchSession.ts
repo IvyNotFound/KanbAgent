@@ -67,7 +67,7 @@ export function useLaunchSession() {
       if (instances.length === 0) return 'error'
 
       const settingsStore = useSettingsStore()
-      const storedDistro = settingsStore.defaultClaudeInstance
+      const storedDistro = settingsStore.defaultCliInstance
       const instance = (storedDistro ? instances.find(i => i.distro === storedDistro) : undefined)
         ?? instances.find(i => i.isDefault)
         ?? instances[0]
@@ -131,7 +131,7 @@ export function useLaunchSession() {
       if (instances.length === 0) return false
 
       const settingsStore = useSettingsStore()
-      const storedDistro = settingsStore.defaultClaudeInstance
+      const storedDistro = settingsStore.defaultCliInstance
       const instance = (storedDistro ? instances.find(i => i.distro === storedDistro) : undefined)
         ?? instances.find(i => i.isDefault)
         ?? instances[0]

@@ -221,7 +221,7 @@
     "exporting": "Dışa aktarılıyor...",
     "exportSuccess": "Dışa aktarma tamamlandı: {path}",
     "exportError": "Dışa aktarma hatası: {error}",
-    "defaultClaudeInstance": "Varsayılan Claude Code örneği",
+    "defaultCliInstance": "Varsayılan Claude Code örneği",
     "defaultClaudeProfile": "Varsayılan Claude profili",
     "aiCodingAssistants": "AI Kodlama Asistanları",
     "aiCodingAssistantsDesc": "Ajan oturumları için mevcut tespit edilen CLI araçları. Başlatıcıda göstermek için geçiş yapın.",

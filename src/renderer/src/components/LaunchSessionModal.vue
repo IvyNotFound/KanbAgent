@@ -96,7 +96,7 @@ onMounted(async () => {
   // Auto-select instance: prefer stored preference, fall back to isDefault/first
   const instances = instancesForCli.value
   if (instances.length > 0) {
-    const stored = settingsStore.defaultClaudeInstance
+    const stored = settingsStore.defaultCliInstance
     selectedInstance.value =
       (stored ? instances.find(i => i.distro === stored) : undefined)
       ?? instances.find(i => i.isDefault)

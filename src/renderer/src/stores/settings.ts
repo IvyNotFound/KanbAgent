@@ -147,11 +147,13 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.setItem('autoReviewThreshold', String(clamped))
   }
 
-  // Default Claude instance (T857)
-  const defaultClaudeInstance = ref<string>(localStorage.getItem('defaultClaudeInstance') || '')
-  function setDefaultClaudeInstance(distro: string) {
-    defaultClaudeInstance.value = distro
-    localStorage.setItem('defaultClaudeInstance', distro)
+  // Default CLI instance (T857, renamed T1032)
+  const defaultCliInstance = ref<string>(
+    localStorage.getItem('defaultCliInstance') || localStorage.getItem('defaultClaudeInstance') || ''
+  )
+  function setDefaultCliInstance(distro: string) {
+    defaultCliInstance.value = distro
+    localStorage.setItem('defaultCliInstance', distro)
   }
 
   const defaultClaudeProfile = ref<string>(localStorage.getItem('defaultClaudeProfile') || 'claude')
@@ -258,9 +260,9 @@ export const useSettingsStore = defineStore('settings', () => {
     // Desktop notifications (T755)
     notificationsEnabled,
     setNotificationsEnabled,
-    // Default Claude instance (T857)
-    defaultClaudeInstance,
-    setDefaultClaudeInstance,
+    // Default CLI instance (T857, renamed T1032)
+    defaultCliInstance,
+    setDefaultCliInstance,
     defaultClaudeProfile,
     setDefaultClaudeProfile,
   }

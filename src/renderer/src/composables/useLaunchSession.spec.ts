@@ -161,13 +161,13 @@ describe('composables/useLaunchSession', () => {
       expect(result).toBe('session-limit')
     })
 
-    it('should use stored defaultClaudeInstance from settings (T879)', async () => {
+    it('should use stored defaultCliInstance from settings (T879)', async () => {
       api.getClaudeInstances.mockResolvedValueOnce([
         { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, profiles: ['claude'] },
         { distro: 'Debian', version: '2.1.58', isDefault: false, profiles: ['claude'] },
       ])
       const settingsStore = useSettingsStore()
-      settingsStore.setDefaultClaudeInstance('Debian')
+      settingsStore.setDefaultCliInstance('Debian')
 
       const { launchAgentTerminal } = useLaunchSession()
       await launchAgentTerminal(makeAgent(), makeTask())
@@ -182,7 +182,7 @@ describe('composables/useLaunchSession', () => {
         { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, profiles: ['claude'] },
       ])
       const settingsStore = useSettingsStore()
-      settingsStore.setDefaultClaudeInstance('NonExistent')
+      settingsStore.setDefaultCliInstance('NonExistent')
 
       const { launchAgentTerminal } = useLaunchSession()
       await launchAgentTerminal(makeAgent(), makeTask())

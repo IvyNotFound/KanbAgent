@@ -221,7 +221,7 @@
     "exporting": "جار التصدير...",
     "exportSuccess": "تم تنزيل التصدير: {path}",
     "exportError": "خطأ في التصدير: {error}",
-    "defaultClaudeInstance": "نسخة Claude Code الافتراضية",
+    "defaultCliInstance": "نسخة Claude Code الافتراضية",
     "defaultClaudeProfile": "ملف تعريف Claude الافتراضي",
     "aiCodingAssistants": "مساعدو البرمجة بالذكاء الاصطناعي",
     "aiCodingAssistantsDesc": "أدوات CLI المكتشفة المتاحة لجلسات الوكلاء. بدّل لإظهار/إخفاء في المشغل.",

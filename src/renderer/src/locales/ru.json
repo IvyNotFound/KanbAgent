@@ -221,7 +221,7 @@
     "exporting": "Экспорт...",
     "exportSuccess": "Экспорт загружен: {path}",
     "exportError": "Ошибка экспорта: {error}",
-    "defaultClaudeInstance": "Экземпляр Claude Code по умолчанию",
+    "defaultCliInstance": "Экземпляр Claude Code по умолчанию",
     "defaultClaudeProfile": "Профиль Claude по умолчанию",
     "aiCodingAssistants": "ИИ-помощники по коду",
     "aiCodingAssistantsDesc": "Обнаруженные CLI-инструменты для сессий агентов. Включите/выключите для отображения в лаунчере.",

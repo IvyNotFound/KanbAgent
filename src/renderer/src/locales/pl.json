@@ -221,7 +221,7 @@
     "exporting": "Eksportowanie...",
     "exportSuccess": "Eksport pobrany: {path}",
     "exportError": "Błąd eksportu: {error}",
-    "defaultClaudeInstance": "Domyślna instancja Claude Code",
+    "defaultCliInstance": "Domyślna instancja Claude Code",
     "defaultClaudeProfile": "Domyślny profil Claude",
     "aiCodingAssistants": "Asystenci AI",
     "aiCodingAssistantsDesc": "Wykryte narzędzia CLI dostępne dla sesji agentów. Włącz/wyłącz aby pokazać w programie uruchamiającym.",

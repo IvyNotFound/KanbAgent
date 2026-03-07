@@ -221,7 +221,7 @@
     "exporting": "Exporting...",
     "exportSuccess": "Export downloaded: {path}",
     "exportError": "Export error: {error}",
-    "defaultClaudeInstance": "Default Claude Code instance",
+    "defaultCliInstance": "Default Claude Code instance",
     "defaultClaudeProfile": "Default Claude profile",
     "aiCodingAssistants": "AI Coding Assistants",
     "aiCodingAssistantsDesc": "Detected CLI tools available for agent sessions. Toggle to show/hide in the launcher.",
