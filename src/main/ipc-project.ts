@@ -256,12 +256,6 @@ export function registerProjectHandlers(): void {
           agent_id INTEGER REFERENCES agents(id),
           content TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
-        CREATE TABLE IF NOT EXISTS locks (
-          id INTEGER PRIMARY KEY AUTOINCREMENT, file TEXT NOT NULL UNIQUE,
-          agent_id INTEGER NOT NULL REFERENCES agents(id),
-          session_id INTEGER REFERENCES sessions(id),
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP, released_at DATETIME
-        );
         CREATE TABLE IF NOT EXISTS config (
           key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -279,7 +273,6 @@ export function registerProjectHandlers(): void {
         CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at DESC);
         CREATE INDEX IF NOT EXISTS idx_agent_logs_agent_id ON agent_logs(agent_id);
         CREATE INDEX IF NOT EXISTS idx_agent_logs_created_at ON agent_logs(created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_locks_released_at ON locks(released_at);
         CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON tasks(updated_at DESC);
         CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigned ON tasks(agent_assigned_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_agent_started ON sessions(agent_id, started_at DESC);

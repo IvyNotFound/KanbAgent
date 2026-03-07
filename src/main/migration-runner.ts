@@ -294,6 +294,12 @@ const migrations: Migration[] = [
     db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '- agent_assigne_id :', '- agent_assigned_id :') WHERE system_prompt IS NOT NULL")
     db.run("UPDATE agents SET system_prompt = REPLACE(system_prompt, '- agent_assigne_id:', '- agent_assigned_id:') WHERE system_prompt IS NOT NULL")
   } },
+
+  // v26: drop locks table — file-lock mechanism obsolete with git worktrees (T1046)
+  { version: 26, up: (db) => {
+    db.run('DROP INDEX IF EXISTS idx_locks_released_at')
+    db.run('DROP TABLE IF EXISTS locks')
+  } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */

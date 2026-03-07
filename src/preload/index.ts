@@ -6,7 +6,7 @@
  * access to Node.js modules from the renderer.
  *
  * Channels are grouped by domain:
- * - **DB**: queryDb, watchDb, unwatchDb, onDbChanged, migrateDb, getLocks
+ * - **DB**: queryDb, watchDb, unwatchDb, onDbChanged, migrateDb
  * - **Project**: selectProjectDir, createProjectDb, findProjectDb, initNewProject
  * - **File system**: fsListDir, fsReadFile, fsWriteFile
  * - **Window**: windowMinimize, windowMaximize, windowClose, windowIsMaximized
@@ -74,9 +74,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /** @param dbPath - Run all pending migrations on the DB. */
   migrateDb: (dbPath: string): Promise<{ success: boolean; error?: string; migrated?: number }> =>
     ipcRenderer.invoke('migrate-db', dbPath),
-
-  getLocks: (dbPath: string): Promise<unknown[]> =>
-    ipcRenderer.invoke('get-locks', dbPath),
 
   // ── File system (with allowedDir for security - restricts access to project directory) ──
 

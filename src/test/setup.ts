@@ -14,7 +14,6 @@ const mockElectronAPI = {
   initNewProject: vi.fn(),
   findProjectDb: vi.fn(),
   migrateDb: vi.fn(),
-  getLocks: vi.fn(),
   fsListDir: vi.fn(),
   fsReadFile: vi.fn(),
   fsWriteFile: vi.fn(),

@@ -42,7 +42,6 @@ describe('preload/index', () => {
       'initNewProject',
       'findProjectDb',
       'migrateDb',
-      'getLocks',
     ]
 
     for (const method of requiredProjectMethods) {

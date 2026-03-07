@@ -275,19 +275,6 @@ describe('IPC DB handlers', () => {
     })
   })
 
-  // ── get-locks ─────────────────────────────────────────────────────────────
-
-  describe('get-locks handler', () => {
-    it('should throw when dbPath is registered but DB buffer is invalid (queryLive)', async () => {
-      await expect(callHandler('get-locks', '/fake/project.db')).rejects.toThrow()
-    })
-
-    it('should reject unregistered dbPath with DB_PATH_NOT_ALLOWED (T355)', async () => {
-      await expect(callHandler('get-locks', '/unregistered/evil.db'))
-        .rejects.toThrow('DB_PATH_NOT_ALLOWED')
-    })
-  })
-
   // ── watch-db / unwatch-db ─────────────────────────────────────────────────
 
   describe('watch-db handler', () => {

@@ -9,7 +9,6 @@
  *   2. Creates new session (INSERT) → prints session_id + agent_id
  *   3. Shows last terminated session summary
  *   4. Lists open tasks assigned to this agent (todo / in_progress)
- *   5. Shows active locks (conflict check)
  *
  * Replaces 3-5 separate dbq/dbw calls at session startup.
  */
@@ -87,32 +86,6 @@ initSqlJs().then((SQL) => {
   const agentRow = db.exec(`SELECT id FROM agents WHERE name = '${agent}'`)
   const agentId = agentRow[0].values[0][0]
 
-  // 2b. Auto-release locks from zombie sessions (started, inactive >60 min)
-  const zombieLocks = db.exec(`
-    SELECT COUNT(*) FROM locks
-    WHERE released_at IS NULL
-      AND session_id IN (
-        SELECT id FROM sessions
-        WHERE status = 'started'
-          AND ended_at IS NULL
-          AND started_at < datetime('now', '-60 minutes')
-      )
-  `)
-  const zombieLockCount = zombieLocks[0].values[0][0]
-  if (zombieLockCount > 0) {
-    db.run(`
-      UPDATE locks SET released_at = datetime('now')
-      WHERE released_at IS NULL
-        AND session_id IN (
-          SELECT id FROM sessions
-          WHERE status = 'started'
-            AND ended_at IS NULL
-            AND started_at < datetime('now', '-60 minutes')
-        )
-    `)
-    console.log(`\n[auto-release] ${zombieLockCount} zombie lock(s) released from inactive started sessions (>60 min)`)
-  }
-
   // 2c. Mark zombie sessions as terminated
   const zombieSessions = db.exec(`
     SELECT COUNT(*) FROM sessions
@@ -161,22 +134,6 @@ initSqlJs().then((SQL) => {
   const sessionRow = db.exec(`SELECT last_insert_rowid()`)
   const sessionId = sessionRow[0].values[0][0]
 
-  // 4b. Auto-release orphan locks from terminated sessions
-  const released = db.exec(`
-    SELECT COUNT(*) FROM locks
-    WHERE released_at IS NULL
-      AND session_id IN (SELECT id FROM sessions WHERE status = 'completed')
-  `)
-  const orphanCount = released[0].values[0][0]
-  if (orphanCount > 0) {
-    db.run(`
-      UPDATE locks SET released_at = datetime('now')
-      WHERE released_at IS NULL
-        AND session_id IN (SELECT id FROM sessions WHERE status = 'completed')
-    `)
-    console.log(`\n[auto-release] ${orphanCount} orphan lock(s) released from terminated sessions`)
-  }
-
   // Persist writes (atomic: unique tmp + rename, serialized by .wlock)
   const tmpPath = `${dbPath}.tmp.${process.pid}.${Date.now()}`
   fs.writeFileSync(tmpPath, Buffer.from(db.export()))
@@ -222,22 +179,6 @@ initSqlJs().then((SQL) => {
       console.log(`
 [T${id}] ${status} | ${peri ?? '-'} | prio:${priority} | ${title}`)
       if (description) console.log(description)
-    }
-  }
-
-  // 6. Active locks (conflict check)
-  const locks = db.exec(`
-    SELECT l.file, a.name FROM locks l
-    JOIN agents a ON a.id = l.agent_id
-    WHERE l.released_at IS NULL
-  `)
-
-  console.log('\n=== LOCKS ACTIFS ===')
-  if (!locks.length || !locks[0].values.length) {
-    console.log('(aucun)')
-  } else {
-    for (const [file, owner] of locks[0].values) {
-      console.log(`${file} → ${owner}`)
     }
   }
 

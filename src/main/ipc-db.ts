@@ -1,7 +1,7 @@
 /**
  * IPC Handlers — Database query, watch, migration, and locks
  *
- * Covers: query-db, watch-db, unwatch-db, migrate-db, get-locks
+ * Covers: query-db, watch-db, unwatch-db, migrate-db
  * Note: watch/unwatch share watcher state — kept in the same module.
  *
  * @module ipc-db
@@ -31,7 +31,7 @@ function notifyRenderer(): void {
 
 // ── Handler registration ──────────────────────────────────────────────────────
 
-/** Register DB query, watch, migration, and lock IPC handlers. */
+/** Register DB query, watch, and migration IPC handlers. */
 export function registerDbHandlers(): void {
   /**
    * Execute a read-only SQL query on the project DB.
@@ -83,25 +83,6 @@ export function registerDbHandlers(): void {
       clearDbCacheEntry(dbPath)
       console.log('[IPC unwatch-db] Cache cleared for:', dbPath)
     }
-  })
-
-  /**
-   * Get all active (unreleased) file locks with agent names.
-   * @param dbPath - Registered DB path
-   * @returns {Array} Lock rows with agent_name joined
-   */
-  ipcMain.handle('get-locks', async (_event, dbPath: string) => {
-    assertDbPathAllowed(dbPath)
-    return queryLive(
-      dbPath,
-      `SELECT l.id, l.file, l.agent_id, a.name as agent_name,
-              l.session_id, l.created_at, l.released_at
-       FROM locks l
-       JOIN agents a ON a.id = l.agent_id
-       WHERE l.released_at IS NULL
-       ORDER BY l.created_at DESC`,
-      []
-    )
   })
 
   /**
