@@ -156,12 +156,6 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.setItem('defaultCliInstance', distro)
   }
 
-  const defaultClaudeProfile = ref<string>(localStorage.getItem('defaultClaudeProfile') || 'claude')
-  function setDefaultClaudeProfile(profile: string) {
-    defaultClaudeProfile.value = profile
-    localStorage.setItem('defaultClaudeProfile', profile)
-  }
-
   // Max file lines instruction (T899)
   const maxFileLinesEnabled = ref<boolean>(localStorage.getItem('maxFileLinesEnabled') === 'true')
   const maxFileLinesCount = ref<number>(parseInt(localStorage.getItem('maxFileLinesCount') ?? '400', 10) || 400)
@@ -197,17 +191,8 @@ export const useSettingsStore = defineStore('settings', () => {
   async function refreshCliDetection(): Promise<void> {
     detectingClis.value = true
     try {
-      // T1011: when getCliInstances is available, prefer it
-      // Fallback: getClaudeInstances — Claude only, others show as not detected
-      const raw = await window.electronAPI.getClaudeInstances()
-      allCliInstances.value = raw.map(inst => ({
-        cli: 'claude' as CliType,
-        distro: inst.distro,
-        version: inst.version,
-        isDefault: inst.isDefault,
-        profiles: inst.profiles,
-        type: (inst.type ?? 'local') as 'wsl' | 'local',
-      }))
+      const raw = await window.electronAPI.getCliInstances() as CliInstance[]
+      allCliInstances.value = raw
     } catch {
       allCliInstances.value = []
     } finally {
@@ -263,7 +248,5 @@ export const useSettingsStore = defineStore('settings', () => {
     // Default CLI instance (T857, renamed T1032)
     defaultCliInstance,
     setDefaultCliInstance,
-    defaultClaudeProfile,
-    setDefaultClaudeProfile,
   }
 })

@@ -26,6 +26,7 @@ const mockElectronAPI = {
   getWslUsers: vi.fn(),
   getClaudeProfiles: vi.fn(),
   getClaudeInstances: vi.fn(),
+  getCliInstances: vi.fn().mockResolvedValue([]),
   terminalCreate: vi.fn(),
   terminalWrite: vi.fn(),
   terminalResize: vi.fn(),

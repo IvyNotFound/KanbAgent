@@ -116,17 +116,19 @@ onMounted(async () => {
   // Auto-select instance: prefer stored preference, fall back to isDefault/first
   const instances = instancesForCli.value
   if (instances.length > 0) {
-    const stored = settingsStore.defaultClaudeInstance
+    const stored = settingsStore.defaultCliInstance
     selectedInstance.value =
       (stored ? instances.find(i => i.distro === stored) : undefined)
       ?? instances.find(i => i.isDefault)
       ?? instances[0]
       ?? null
 
-    const storedProfile = settingsStore.defaultClaudeProfile
-    const instProfiles = (selectedInstance.value as Record<string, unknown> | null)?.profiles as string[] | undefined
-    if (storedProfile && instProfiles?.includes(storedProfile)) {
-      selectedProfile.value = storedProfile
+    // Profile preference — only for profileSelection CLIs (Claude)
+    if (caps.value.profileSelection) {
+      const instProfiles = (selectedInstance.value as Record<string, unknown> | null)?.profiles as string[] | undefined
+      if (instProfiles && instProfiles.length > 0) {
+        selectedProfile.value = instProfiles[0]
+      }
     }
   }
 
