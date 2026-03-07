@@ -4,42 +4,24 @@ import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useAgentsStore } from '@renderer/stores/agents'
 import { agentFg } from '@renderer/utils/agentColor'
+import {
+  type AgentRow,
+  type LayoutGroup,
+  CARD_W,
+  CARD_H,
+  NESTING_PAD,
+  GROUP_HEADER_H,
+  GROUP_GAP,
+  CANVAS_PAD,
+  DOT_COLORS,
+  buildGroupLayout,
+  buildFlatGroup,
+  flattenGroups,
+} from '@renderer/utils/orgChartLayout'
 
 const { t } = useI18n()
 const store = useTasksStore()
 const agentStore = useAgentsStore()
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface AgentRow {
-  id: number
-  name: string
-  type: string
-  scope: string | null
-  session_status: string | null
-  tasks_in_progress: number
-  tasks_todo: number
-}
-
-type DotStatus = 'cyan' | 'green' | 'yellow' | 'red' | 'gray'
-
-interface LayoutNode {
-  id: number
-  name: string
-  type: string
-  status: DotStatus
-  x: number
-  y: number
-}
-
-interface LayoutGroup {
-  key: string
-  label: string
-  x: number
-  y: number
-  w: number
-  agents: LayoutNode[]
-}
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -75,86 +57,41 @@ async function fetchData(): Promise<void> {
   }
 }
 
-// ── Status ────────────────────────────────────────────────────────────────────
-
-function dotStatus(agent: AgentRow): DotStatus {
-  if (agent.session_status === 'blocked') return 'red'
-  if (agent.session_status === 'started') return 'cyan'
-  if (agent.tasks_todo > 0) return 'green'
-  if (agent.tasks_in_progress > 0) return 'cyan'
-  if (!agent.session_status) return 'gray'
-  return 'yellow'
-}
-
-const DOT_COLORS: Record<DotStatus, string> = {
-  cyan: '#06b6d4',
-  green: '#22c55e',
-  yellow: '#eab308',
-  red: '#ef4444',
-  gray: '#52525b',
-}
-
 // ── Layout ────────────────────────────────────────────────────────────────────
 
-const CARD_W = 148
-const CARD_H = 68
-const H_GAP = 14
-const V_GAP = 72
-const GROUP_H = 38
-const GROUP_H_GAP = 22
-const PADDING = 32
-
-function buildGroupColumn(
-  key: string,
-  label: string,
-  groupAgents: AgentRow[],
-  curX: number,
-): LayoutGroup {
-  const n = groupAgents.length
-  const groupW = Math.max(CARD_W, n * CARD_W + (n - 1) * H_GAP)
-  const nodes: LayoutNode[] = groupAgents.map((a, i) => ({
-    id: a.id,
-    name: a.name,
-    type: a.type,
-    status: dotStatus(a),
-    x: curX + i * (CARD_W + H_GAP),
-    y: PADDING + GROUP_H + V_GAP,
-  }))
-  return { key, label, x: curX, y: PADDING, w: groupW, agents: nodes }
-}
-
 const layout = computed<{ groups: LayoutGroup[]; totalW: number; totalH: number }>(() => {
-  const groups: LayoutGroup[] = []
-  let curX = PADDING
+  const rootGroups: LayoutGroup[] = []
+  let curX = CANVAS_PAD
 
-  if (agentStore.agentGroups.length > 0) {
-    // Group agents by agent_groups membership
-    const agentGroupMap = new Map<number, number>() // agentId → groupId
+  if (agentStore.agentGroupsTree.length > 0) {
+    // Hierarchical layout from agentGroupsTree
+    const agentMap = new Map(agents.value.map(a => [a.id, a]))
+    const agentsByGroup = new Map<number, AgentRow[]>()
+    const groupedIds = new Set<number>()
+
     for (const group of agentStore.agentGroups) {
-      for (const member of group.members) {
-        agentGroupMap.set(member.agent_id, group.id)
-      }
+      const ga = group.members
+        .map(m => agentMap.get(m.agent_id))
+        .filter((a): a is AgentRow => a !== undefined)
+      agentsByGroup.set(group.id, ga)
+      ga.forEach(a => groupedIds.add(a.id))
     }
 
-    const sortedGroups = [...agentStore.agentGroups].sort((a, b) => a.sort_order - b.sort_order)
-
-    for (const group of sortedGroups) {
-      const groupAgents = agents.value.filter(a => agentGroupMap.get(a.id) === group.id)
-      if (groupAgents.length === 0) continue
-      const col = buildGroupColumn(String(group.id), group.name, groupAgents, curX)
-      groups.push(col)
-      curX += col.w + GROUP_H_GAP
+    for (const root of agentStore.agentGroupsTree) {
+      const g = buildGroupLayout(root, curX, CANVAS_PAD, agentsByGroup, 0)
+      rootGroups.push(g)
+      curX += g.w + GROUP_GAP
     }
 
-    // Ungrouped agents
-    const ungrouped = agents.value.filter(a => !agentGroupMap.has(a.id))
+    // Ungrouped agents section
+    const ungrouped = agents.value.filter(a => !groupedIds.has(a.id))
     if (ungrouped.length > 0) {
-      const col = buildGroupColumn('__ungrouped__', t('orgchart.ungrouped'), ungrouped, curX)
-      groups.push(col)
-      curX += col.w + GROUP_H_GAP
+      const g = buildFlatGroup('__ungrouped__', t('orgchart.ungrouped'), ungrouped, curX, CANVAS_PAD)
+      rootGroups.push(g)
+      curX += g.w + GROUP_GAP
     }
   } else {
-    // Fallback: group by scope
+    // Fallback: scope-based grouping
     const grouped = new Map<string, AgentRow[]>()
     for (const a of agents.value) {
       const key = a.scope ?? '__global__'
@@ -170,17 +107,23 @@ const layout = computed<{ groups: LayoutGroup[]; totalW: number; totalH: number 
 
     for (const key of sortedKeys) {
       const label = key === '__global__' ? t('topology.global') : key
-      const col = buildGroupColumn(key, label, grouped.get(key)!, curX)
-      groups.push(col)
-      curX += col.w + GROUP_H_GAP
+      const g = buildFlatGroup(key, label, grouped.get(key)!, curX, CANVAS_PAD)
+      rootGroups.push(g)
+      curX += g.w + GROUP_GAP
     }
   }
 
-  const totalW = groups.length > 0 ? curX - GROUP_H_GAP + PADDING : PADDING * 2
-  const totalH = PADDING + GROUP_H + V_GAP + CARD_H + PADDING
+  const totalW = rootGroups.length > 0 ? curX - GROUP_GAP + CANVAS_PAD : CANVAS_PAD * 2
+  const totalH =
+    rootGroups.length > 0
+      ? CANVAS_PAD + Math.max(...rootGroups.map(g => g.h)) + CANVAS_PAD
+      : CANVAS_PAD * 2
 
-  return { groups, totalW, totalH }
+  return { groups: rootGroups, totalW, totalH }
 })
+
+const allGroupsFlat = computed(() => flattenGroups(layout.value.groups))
+const allAgentsFlat = computed(() => allGroupsFlat.value.flatMap(g => g.agents))
 
 // ── Pan/zoom ──────────────────────────────────────────────────────────────────
 
@@ -243,19 +186,6 @@ onUnmounted(() => {
 })
 
 watch(() => store.dbPath, async () => { await fetchData(); fitView() })
-
-// ── Connector path helpers ────────────────────────────────────────────────────
-
-function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: number): string {
-  const px = gx + gw / 2
-  const py = gy + GROUP_H
-  const cx = nx + CARD_W / 2
-  const cy = ny
-  const midY = py + (cy - py) / 2
-  return `M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`
-}
-
-
 </script>
 
 <template>
@@ -281,7 +211,7 @@ function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: numbe
         <button
           class="px-2.5 py-1 text-xs text-content-subtle hover:text-content-secondary transition-colors"
           @click="fetchData"
-        >↻</button>
+        >&#8635;</button>
       </div>
     </div>
 
@@ -300,33 +230,21 @@ function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: numbe
       @mousedown="onMouseDown"
     >
       <g :transform="`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`">
-        <!-- Connector lines -->
-        <template v-for="group in layout.groups" :key="`conn-${group.key}`">
-          <path
-            v-for="node in group.agents"
-            :key="`path-${node.id}`"
-            :d="connectorPath(group.x, group.w, group.y, node.x, node.y)"
-            fill="none"
-            stroke="#3f3f46"
-            stroke-width="1.5"
-          />
-        </template>
-
-        <!-- Group headers -->
-        <g v-for="group in layout.groups" :key="`grp-${group.key}`">
+        <!-- Group rectangles (parent before children = correct SVG layering) -->
+        <g v-for="group in allGroupsFlat" :key="`grp-${group.key}`">
           <rect
             :x="group.x"
             :y="group.y"
             :width="group.w"
-            :height="GROUP_H"
-            rx="7"
-            fill="#27272a"
-            stroke="#3f3f46"
+            :height="group.h"
+            rx="8"
+            :fill="group.depth === 0 ? '#18181b' : '#27272a'"
+            :stroke="group.depth === 0 ? '#3f3f46' : '#52525b'"
             stroke-width="1"
           />
           <text
             :x="group.x + group.w / 2"
-            :y="group.y + GROUP_H / 2 + 4"
+            :y="group.y + NESTING_PAD + GROUP_HEADER_H / 2 + 4"
             text-anchor="middle"
             font-size="11"
             font-family="ui-monospace, monospace"
@@ -335,12 +253,8 @@ function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: numbe
           >{{ group.label }}</text>
         </g>
 
-        <!-- Agent cards -->
-        <g
-          v-for="node in layout.groups.flatMap(g => g.agents)"
-          :key="`card-${node.id}`"
-        >
-          <!-- Card background -->
+        <!-- Agent cards (rendered last = on top of all group rects) -->
+        <g v-for="node in allAgentsFlat" :key="`card-${node.id}`">
           <rect
             :x="node.x"
             :y="node.y"
@@ -351,7 +265,6 @@ function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: numbe
             stroke="#3f3f46"
             stroke-width="1"
           />
-          <!-- Status dot -->
           <circle
             :cx="node.x + CARD_W - 12"
             :cy="node.y + 12"
@@ -366,7 +279,6 @@ function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: numbe
               repeatCount="indefinite"
             />
           </circle>
-          <!-- Agent name -->
           <text
             :x="node.x + 10"
             :y="node.y + 22"
@@ -374,8 +286,7 @@ function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: numbe
             font-family="ui-monospace, monospace"
             font-weight="700"
             :fill="agentFg(node.name)"
-          >{{ node.name.length > 16 ? node.name.slice(0, 15) + '…' : node.name }}</text>
-          <!-- Type label -->
+          >{{ node.name.length > 16 ? node.name.slice(0, 15) + '\u2026' : node.name }}</text>
           <text
             :x="node.x + 10"
             :y="node.y + 38"
@@ -383,7 +294,6 @@ function connectorPath(gx: number, gw: number, gy: number, nx: number, ny: numbe
             font-family="ui-monospace, monospace"
             fill="#71717a"
           >{{ node.type }}</text>
-          <!-- Status label -->
           <text
             :x="node.x + 10"
             :y="node.y + 56"
