@@ -235,6 +235,7 @@ export function registerAgentStreamHandlers(): void {
         logDebug(`spawn attempt (local Windows, ${adapter.cli}): ${spec.command} ${spec.args.join(' ')}`)
         proc = spawn(spec.command, spec.args, {
           stdio: ['pipe', 'pipe', 'pipe'],
+          shell: true,
           env: { ...buildEnv(), ...spec.env },
           cwd: worktreeInfo?.path ?? opts.workDir ?? opts.projectPath ?? undefined,
         })
@@ -282,7 +283,7 @@ export function registerAgentStreamHandlers(): void {
           /[\s'"\\$`!]/.test(a) ? `'${a.replace(/'/g, "'\\''")}'` : a
         ).join(' ')
         scriptTempFile = join(tmpdir(), `${adapter.cli}-start-${id}.sh`)
-        writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${bashLine}\n`, 'utf-8')
+        writeFileSync(scriptTempFile, `#!/bin/bash\n[ -f ~/.bashrc ] && source ~/.bashrc\nexec ${bashLine}\n`, 'utf-8')
         const scriptWslPath = toWslPath(scriptTempFile)
         logDebug(`spawn attempt (${adapter.cli}): exe=${wslExe} script=${scriptWslPath}`)
         proc = spawn(wslExe, [...wslArgs, '--', 'bash', '-l', scriptWslPath], {
