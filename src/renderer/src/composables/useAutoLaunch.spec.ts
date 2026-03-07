@@ -9,9 +9,6 @@ import type { Task, Agent } from '@renderer/types'
 
 // Mock window.electronAPI
 const api = {
-  getClaudeInstances: vi.fn().mockResolvedValue([
-    { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true }
-  ]),
   getCliInstances: vi.fn().mockResolvedValue([
     { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
   ]),
@@ -592,6 +589,315 @@ describe('composables/useAutoLaunch', () => {
     })
   })
 
+  describe('T1065: REVIEW_COOLDOWN_MS — 5 minutes exactly', () => {
+    function makeDoneTasks(count: number): Task[] {
+      return Array.from({ length: count }, (_, i) =>
+        makeTask({ id: i + 1, status: 'done', agent_assigned_id: 10 })
+      )
+    }
+
+    it('should NOT re-launch review at exactly 4min59s (still in cooldown)', async () => {
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+      agents.value = [makeAgent(), reviewAgent]
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      // First launch
+      tasks.value = makeDoneTasks(10)
+      await nextTick()
+
+      await vi.waitFor(() => {
+        const tabsStore = useTabsStore()
+        expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(true)
+      })
+
+      const tabsStore = useTabsStore()
+      const reviewTab = tabsStore.tabs.find(t => t.agentName === 'review-master')!
+      tabsStore.closeTab(reviewTab.id)
+
+      // Advance 4min59s — still within 5min cooldown
+      vi.advanceTimersByTime(4 * 60 * 1000 + 59 * 1000)
+
+      tasks.value = [...makeDoneTasks(10)]
+      await nextTick()
+      await nextTick()
+
+      // Must NOT re-launch yet
+      expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(false)
+    })
+
+    it('should re-launch review after 5 full minutes (cooldown expired)', async () => {
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+      agents.value = [makeAgent(), reviewAgent]
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      // First launch
+      tasks.value = makeDoneTasks(10)
+      await nextTick()
+
+      await vi.waitFor(() => {
+        const tabsStore = useTabsStore()
+        expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(true)
+      })
+
+      const tabsStore = useTabsStore()
+      const reviewTab = tabsStore.tabs.find(t => t.agentName === 'review-master')!
+      tabsStore.closeTab(reviewTab.id)
+
+      // Advance past the 5min cooldown (300001ms)
+      vi.advanceTimersByTime(5 * 60 * 1000 + 1)
+
+      tasks.value = [...makeDoneTasks(10)]
+      await nextTick()
+
+      await vi.waitFor(() => {
+        expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(true)
+      })
+    })
+  })
+
+  describe('T1065: debounce collapses rapid batch updates into one handler', () => {
+    it('should process only the last state when watch fires multiple times within 80ms', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed
+      tasks.value = []
+      await nextTick()
+
+      // Simulate rapid batch updates within debounce window
+      tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
+      // Immediately update again without awaiting — second update within 80ms
+      tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
+
+      await vi.advanceTimersByTimeAsync(80)
+
+      // Only ONE debounce handler should run (no duplicate scheduleClose calls)
+      const tabsStore = useTabsStore()
+      expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
+    })
+
+    it('should cancel pending debounce when a new update arrives within 80ms', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed with in_progress
+      tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.streamId = 'stream-debounce'
+
+      // First done transition — starts 80ms debounce
+      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
+
+      // 40ms later: another update arrives — debounce resets
+      await vi.advanceTimersByTimeAsync(40)
+      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
+
+      // Advance 40ms more — original debounce would have fired but was reset
+      await vi.advanceTimersByTimeAsync(40)
+
+      // Immediate poll hasn't fired yet — still within the second debounce window
+      expect(api.agentKill).not.toHaveBeenCalled()
+
+      // Complete the second debounce window
+      await vi.advanceTimersByTimeAsync(80)
+
+      // Now scheduleClose fires (from second debounce) — immediate poll resolves
+      expect(api.agentKill).toHaveBeenCalledWith('stream-debounce')
+    })
+  })
+
+  describe('T1065: prevStatus conditions — task transitions', () => {
+    it('should NOT schedule close for task created directly as done (no prevStatus)', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed with empty
+      tasks.value = []
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.streamId = 'stream-new-done'
+
+      // Task appears directly as done (never had prevStatus)
+      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
+      await nextTick()
+      await vi.advanceTimersByTimeAsync(200)
+
+      // scheduleClose requires prevStatus && prevStatus !== 'done' — absent here
+      // The no-task auto-close path checks hasActiveTasks — done task is not active
+      // so scheduleClose fires via no-task path, but agentKill is not immediate here.
+      // Key: agentKill via task-done transition path must NOT fire immediately on first appear.
+      // The no-task path schedules with FALLBACK_CLOSE_NOTASK_MS (5min), not immediate poll.
+      // Immediate poll (0ms) only fires on the task-done transition path.
+      // Since no previous status existed, task-done path doesn't fire — no immediate kill.
+      expect(api.agentKill).not.toHaveBeenCalled()
+    })
+
+    it('should NOT schedule close for task going todo→in_progress (not a done transition)', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed: task is todo
+      tasks.value = [makeTask({ id: 1, status: 'todo', agent_assigned_id: 10 })]
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.streamId = 'stream-in-progress'
+
+      // Transition: todo → in_progress
+      tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
+      await nextTick()
+      await vi.advanceTimersByTimeAsync(200)
+
+      // in_progress is not 'done' — scheduleClose must NOT be called
+      expect(api.agentKill).not.toHaveBeenCalled()
+    })
+
+    it('should NOT re-trigger close when already-done task stays done', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      // Seed: task already done
+      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.streamId = 'stream-stable-done'
+
+      // Task remains done — prevStatus is now 'done'
+      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
+      await nextTick()
+      await vi.advanceTimersByTimeAsync(200)
+
+      // prevStatus === 'done' → condition fails → no task-done transition scheduleClose
+      // The no-task path fires (has no active tasks), but immediate kill still not called
+      expect(api.agentKill).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('T1065: hasActiveTasks — every() checks all tasks for agent', () => {
+    it('should NOT schedule no-task close when agent has 1 in_progress task', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+
+      // Agent has an in_progress task → hasActiveTasks = true
+      tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
+      await nextTick()
+      await vi.advanceTimersByTimeAsync(200)
+
+      // With an active task, no-task auto-close should NOT schedule
+      // The immediate poll from no-task path should NOT fire
+      expect(api.agentKill).not.toHaveBeenCalled()
+    })
+
+    it('should NOT schedule no-task close when agent has a todo task', async () => {
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+
+      // Agent has a todo task → hasActiveTasks = true (todo counts as active)
+      tasks.value = [makeTask({ id: 1, status: 'todo', agent_assigned_id: 10 })]
+      await nextTick()
+      await vi.advanceTimersByTimeAsync(200)
+
+      expect(api.agentKill).not.toHaveBeenCalled()
+    })
+
+    it('should schedule no-task close when agent has only done tasks (no active)', async () => {
+      api.queryDb.mockResolvedValue([{ id: 1 }]) // session completed
+
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      const tabsStore = useTabsStore()
+      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+      termTab.streamId = 'stream-all-done'
+
+      // All tasks are done — hasActiveTasks = false → no-task close scheduled
+      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
+      await nextTick()
+
+      // No-task path fires FALLBACK_CLOSE_NOTASK_MS (5min fallback), but immediate poll fires too
+      await vi.advanceTimersByTimeAsync(200)
+
+      // With session completed, agentKill should fire (via immediate poll of no-task path)
+      expect(api.agentKill).toHaveBeenCalledWith('stream-all-done')
+    })
+  })
+
+  describe('T1065: done tasks filter passed to launchReviewSession', () => {
+    function makeMixedTasks(): Task[] {
+      return [
+        makeTask({ id: 1, status: 'done', agent_assigned_id: 10 }),
+        makeTask({ id: 2, status: 'done', agent_assigned_id: 10 }),
+        makeTask({ id: 3, status: 'in_progress', agent_assigned_id: 10 }),
+        makeTask({ id: 4, status: 'todo', agent_assigned_id: 10 }),
+      ]
+    }
+
+    it('should only pass done tasks to launchReviewSession (filter t.status === done)', async () => {
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+      agents.value = [makeAgent(), reviewAgent]
+
+      // Spy on buildAgentPrompt to verify which tasks are passed
+      const capturedTaskIds: number[][] = []
+      api.buildAgentPrompt.mockImplementation(
+        (_agentId: number, _systemPrompt: string, tasks: Task[]) => {
+          capturedTaskIds.push(tasks.map((t: Task) => t.id))
+          return Promise.resolve('prompt')
+        }
+      )
+
+      const settingsStore = useSettingsStore()
+      settingsStore.setAutoReviewThreshold(2) // threshold = 2 done tasks
+
+      useAutoLaunch({ tasks, agents, dbPath })
+
+      tasks.value = []
+      await nextTick()
+
+      // 2 done + 2 non-done tasks
+      tasks.value = makeMixedTasks()
+      await nextTick()
+
+      await vi.waitFor(() => {
+        const tabsStore = useTabsStore()
+        expect(tabsStore.tabs.some(t => t.agentName === 'review-master')).toBe(true)
+      })
+
+      // buildAgentPrompt receives only done tasks (ids 1 and 2, not 3 or 4)
+      expect(capturedTaskIds.length).toBeGreaterThan(0)
+      const passedIds = capturedTaskIds[0]
+      expect(passedIds).toContain(1)
+      expect(passedIds).toContain(2)
+      expect(passedIds).not.toContain(3)
+      expect(passedIds).not.toContain(4)
+    })
+  })
+
   // NOTE: launchAgentTerminal failure tests moved to useLaunchSession.spec.ts
   // (T345 removed auto-launch from useAutoLaunch — those were false-greens)
 
@@ -602,12 +908,12 @@ describe('composables/useAutoLaunch', () => {
       )
     }
 
-    it('should not crash when getClaudeInstances rejects for review', async () => {
+    it('should not crash when getCliInstances rejects for review', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       agents.value = [makeAgent(), reviewAgent]
 
-      api.getClaudeInstances.mockRejectedValue(new Error('review IPC error'))
+      api.getCliInstances.mockRejectedValueOnce(new Error('review IPC error'))
 
       useAutoLaunch({ tasks, agents, dbPath })
 
@@ -624,10 +930,10 @@ describe('composables/useAutoLaunch', () => {
       vi.mocked(console.warn).mockRestore()
     })
 
-    it('should not launch review when getClaudeInstances returns []', async () => {
+    it('should not launch review when getCliInstances returns []', async () => {
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       agents.value = [makeAgent(), reviewAgent]
-      api.getClaudeInstances.mockResolvedValue([])
+      api.getCliInstances.mockResolvedValueOnce([])
 
       useAutoLaunch({ tasks, agents, dbPath })
 

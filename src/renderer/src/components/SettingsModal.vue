@@ -5,7 +5,7 @@ import { useSettingsStore } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
 import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
 import CliDetectionList from '@renderer/components/CliDetectionList.vue'
-import type { ClaudeInstance } from '@renderer/types'
+import type { CliInstance } from '@shared/cli-types'
 import { useUpdater } from '@renderer/composables/useUpdater'
 
 const emit = defineEmits<{
@@ -81,16 +81,14 @@ const availableLocales = [
   { code: 'ja', label: '日本語' },
 ] as const
 
-const claudeInstances = ref<ClaudeInstance[]>([])
-
-function instanceLabel(inst: ClaudeInstance): string {
-  if (inst.distro === 'local') return `Local (v${inst.version})`
-  return `${inst.distro}${inst.isDefault ? ' ★' : ''} (v${inst.version})`
-}
+const availableDistros = ref<{ distro: string; type: 'local' | 'wsl' }[]>([])
 
 onMounted(async () => {
-  const rawInstances = await window.electronAPI.getClaudeInstances()
-  claudeInstances.value = Array.isArray(rawInstances) ? (rawInstances as ClaudeInstance[]) : []
+  const rawInstances = await window.electronAPI.getCliInstances() as CliInstance[]
+  const seen = new Set<string>()
+  availableDistros.value = (Array.isArray(rawInstances) ? rawInstances : [])
+    .filter(inst => { if (seen.has(inst.distro)) return false; seen.add(inst.distro); return true })
+    .map(inst => ({ distro: inst.distro, type: inst.type }))
   await settingsStore.refreshCliDetection()
 })
 
@@ -238,14 +236,14 @@ function handleKeydown(e: KeyboardEvent) {
               </div>
               <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
                 <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.defaultCliInstance') }}</p>
-                <div v-if="claudeInstances.length === 0" class="text-sm text-content-subtle">—</div>
+                <div v-if="availableDistros.length === 0" class="text-sm text-content-subtle">—</div>
                 <div v-else>
                   <select
                     class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary outline-none focus:ring-1 focus:ring-violet-500"
-                    :value="settingsStore.defaultCliInstance || claudeInstances[0]?.distro"
+                    :value="settingsStore.defaultCliInstance || availableDistros[0]?.distro"
                     @change="settingsStore.setDefaultCliInstance(($event.target as HTMLSelectElement).value)"
                   >
-                    <option v-for="inst in claudeInstances" :key="inst.distro" :value="inst.distro">{{ instanceLabel(inst) }}</option>
+                    <option v-for="inst in availableDistros" :key="inst.distro" :value="inst.distro">{{ inst.distro === 'local' ? 'Local' : inst.distro + ' (WSL)' }}</option>
                   </select>
                 </div>
               </div>

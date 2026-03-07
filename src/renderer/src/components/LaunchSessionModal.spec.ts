@@ -27,7 +27,7 @@ describe('LaunchSessionModal', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getClaudeInstances.mockResolvedValue([])
+    api.getCliInstances.mockResolvedValue([])
     api.getAgentSystemPrompt.mockResolvedValue({ success: true, systemPrompt: null, systemPromptSuffix: null, thinkingMode: 'auto' })
     api.queryDb.mockResolvedValue([])
     api.buildAgentPrompt.mockResolvedValue('test prompt')
@@ -120,8 +120,8 @@ describe('LaunchSessionModal', () => {
 
   it('calls addTerminal on launch', async () => {
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getClaudeInstances.mockResolvedValue([
-      { distro: 'Ubuntu', version: '2.1', isDefault: true },
+    api.getCliInstances.mockResolvedValue([
+      { cli: 'claude', distro: 'Ubuntu', version: '2.1', isDefault: true, type: 'wsl' },
     ])
 
     const pinia = createTestingPinia({
@@ -215,8 +215,8 @@ describe('LaunchSessionModal — advanced features (T353)', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getClaudeInstances.mockResolvedValue([
-      { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true },
+    api.getCliInstances.mockResolvedValue([
+      { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' },
     ])
     api.getAgentSystemPrompt.mockResolvedValue({
       success: true,
@@ -392,7 +392,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getClaudeInstances.mockResolvedValue([])
+    api.getCliInstances.mockResolvedValue([])
     api.getAgentSystemPrompt.mockResolvedValue({ success: true, systemPrompt: null, systemPromptSuffix: null, thinkingMode: 'auto' })
     api.queryDb.mockResolvedValue([])
     api.buildAgentPrompt.mockResolvedValue('test prompt')

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useLaunchSession } from './useLaunchSession'
+import { useLaunchSession, MAX_AGENT_SESSIONS } from './useLaunchSession'
 import { useTabsStore, type Tab } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
@@ -8,9 +8,6 @@ import type { Task, Agent } from '@renderer/types'
 
 // Mock window.electronAPI
 const api = {
-  getClaudeInstances: vi.fn().mockResolvedValue([
-    { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
-  ]),
   getCliInstances: vi.fn().mockResolvedValue([
     { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
   ]),
@@ -34,10 +31,10 @@ Object.defineProperty(window, 'electronAPI', { value: api, writable: true })
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
-    id: 1, titre: 'Test task', description: null, statut: 'todo',
-    agent_assigne_id: 10, agent_createur_id: null, agent_valideur_id: null,
-    agent_name: 'dev-front-vuejs', agent_createur_name: null, agent_perimetre: null,
-    parent_task_id: null, session_id: null, perimetre: 'front-vuejs',
+    id: 1, title: 'Test task', description: null, status: 'todo',
+    agent_assigned_id: 10, agent_creator_id: 1, agent_validator_id: null,
+    agent_name: 'dev-front-vuejs', agent_creator_name: null, agent_scope: null,
+    parent_task_id: null, session_id: null, scope: 'front-vuejs',
     effort: 2, priority: 'normal', created_at: '', updated_at: '',
     started_at: null, completed_at: null, validated_at: null,
     ...overrides
@@ -46,7 +43,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
 
 function makeAgent(overrides: Partial<Agent> = {}): Agent {
   return {
-    id: 10, name: 'dev-front-vuejs', type: 'dev', perimetre: 'front-vuejs',
+    id: 10, name: 'dev-front-vuejs', type: 'dev', scope: 'front-vuejs',
     system_prompt: null, system_prompt_suffix: null, thinking_mode: 'auto',
     allowed_tools: null, created_at: '', auto_launch: 1, permission_mode: null, max_sessions: 3,
     ...overrides
@@ -63,9 +60,6 @@ describe('composables/useLaunchSession', () => {
     localStorage.clear()
 
     // Reset mock implementations
-    api.getClaudeInstances.mockResolvedValue([
-      { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
-    ])
     api.getCliInstances.mockResolvedValue([
       { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
     ])
@@ -257,7 +251,7 @@ describe('composables/useLaunchSession', () => {
   describe('launchReviewSession', () => {
     it('should return true and add terminal on success', async () => {
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
-      const doneTasks = [makeTask({ id: 1, statut: 'done' })]
+      const doneTasks = [makeTask({ id: 1, status: 'done' })]
 
       const { launchReviewSession } = useLaunchSession()
       const result = await launchReviewSession(reviewAgent, doneTasks)
@@ -273,7 +267,7 @@ describe('composables/useLaunchSession', () => {
 
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       const { launchReviewSession } = useLaunchSession()
-      const result = await launchReviewSession(reviewAgent, [makeTask({ statut: 'done' })])
+      const result = await launchReviewSession(reviewAgent, [makeTask({ status: 'done' })])
 
       expect(result).toBe(false)
     })
@@ -284,7 +278,7 @@ describe('composables/useLaunchSession', () => {
 
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       const { launchReviewSession } = useLaunchSession()
-      const result = await launchReviewSession(reviewAgent, [makeTask({ statut: 'done' })])
+      const result = await launchReviewSession(reviewAgent, [makeTask({ status: 'done' })])
 
       expect(result).toBe(false)
       const tabsStore = useTabsStore()
@@ -297,7 +291,7 @@ describe('composables/useLaunchSession', () => {
 
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       const { launchReviewSession } = useLaunchSession()
-      const result = await launchReviewSession(reviewAgent, [makeTask({ statut: 'done' })])
+      const result = await launchReviewSession(reviewAgent, [makeTask({ status: 'done' })])
 
       expect(result).toBe(true)
     })
@@ -308,9 +302,235 @@ describe('composables/useLaunchSession', () => {
 
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       const { launchReviewSession } = useLaunchSession()
-      const result = await launchReviewSession(reviewAgent, [makeTask({ statut: 'done' })])
+      const result = await launchReviewSession(reviewAgent, [makeTask({ status: 'done' })])
 
       expect(result).toBe(false)
+    })
+  })
+
+  describe('getCachedCliInstances — TTL cache', () => {
+    it('should use cache on second call within TTL (no second IPC call)', async () => {
+      const { launchAgentTerminal } = useLaunchSession()
+      // First call: cache miss → IPC called
+      await launchAgentTerminal(makeAgent(), makeTask())
+      // Advance time by 4 minutes (still within 5min TTL)
+      vi.advanceTimersByTime(4 * 60 * 1000)
+      // Second call: cache hit → IPC should NOT be called again
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      expect(api.getCliInstances).toHaveBeenCalledTimes(1)
+    })
+
+    it('should call IPC again after TTL expires (> 5 minutes)', async () => {
+      const { launchAgentTerminal } = useLaunchSession()
+      // First call: populates cache
+      await launchAgentTerminal(makeAgent(), makeTask())
+      // Advance time past TTL (5min + 1ms)
+      vi.advanceTimersByTime(5 * 60 * 1000 + 1)
+      // Second call: cache expired → IPC called again
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      expect(api.getCliInstances).toHaveBeenCalledTimes(2)
+    })
+
+    it('should not cache when getCliInstances returns empty array', async () => {
+      api.getCliInstances.mockResolvedValue([])
+      const { launchAgentTerminal } = useLaunchSession()
+
+      // First call with empty result: should NOT populate cache
+      await launchAgentTerminal(makeAgent(), makeTask())
+      // Advance by 1 min (well within TTL)
+      vi.advanceTimersByTime(60 * 1000)
+      // Second call: since empty was not cached, IPC called again
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      expect(api.getCliInstances).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('prompt construction', () => {
+    it('should include systemPromptSuffix in fullSystemPrompt when present', async () => {
+      api.getAgentSystemPrompt.mockResolvedValueOnce({
+        success: true,
+        systemPrompt: 'Base prompt',
+        systemPromptSuffix: 'Suffix prompt',
+        thinkingMode: 'auto'
+      })
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.systemPrompt).toBe('Base prompt\n\nSuffix prompt')
+    })
+
+    it('should add maxFileLines line to prompt when maxFileLinesEnabled', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.setMaxFileLinesEnabled(true)
+      settingsStore.setMaxFileLinesCount(300)
+
+      api.getAgentSystemPrompt.mockResolvedValueOnce({
+        success: true,
+        systemPrompt: 'Base prompt',
+        systemPromptSuffix: null,
+        thinkingMode: 'auto'
+      })
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.systemPrompt).toContain('maximum 300 lines')
+    })
+
+    it('should produce undefined fullSystemPrompt when no parts', async () => {
+      api.getAgentSystemPrompt.mockResolvedValueOnce({
+        success: true,
+        systemPrompt: null,
+        systemPromptSuffix: null,
+        thinkingMode: 'auto'
+      })
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.systemPrompt).toBeUndefined()
+    })
+
+    it('should join parts with double newline separator', async () => {
+      api.getAgentSystemPrompt.mockResolvedValueOnce({
+        success: true,
+        systemPrompt: 'Part one',
+        systemPromptSuffix: 'Part two',
+        thinkingMode: 'auto'
+      })
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.systemPrompt).toBe('Part one\n\nPart two')
+    })
+  })
+
+  describe('session limit — MAX_AGENT_SESSIONS fallback', () => {
+    it('should use MAX_AGENT_SESSIONS when agent.max_sessions is null', async () => {
+      const tabsStore = useTabsStore()
+      // Fill up MAX_AGENT_SESSIONS terminals
+      for (let i = 0; i < MAX_AGENT_SESSIONS; i++) {
+        tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      }
+
+      const { launchAgentTerminal } = useLaunchSession()
+      const result = await launchAgentTerminal(
+        makeAgent({ max_sessions: null as unknown as number }),
+        makeTask()
+      )
+
+      expect(result).toBe('session-limit')
+    })
+
+    it('should allow launch when count is below MAX_AGENT_SESSIONS with null max_sessions', async () => {
+      const tabsStore = useTabsStore()
+      // Add one less than MAX
+      for (let i = 0; i < MAX_AGENT_SESSIONS - 1; i++) {
+        tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
+      }
+
+      const { launchAgentTerminal } = useLaunchSession()
+      const result = await launchAgentTerminal(
+        makeAgent({ max_sessions: null as unknown as number }),
+        makeTask()
+      )
+
+      expect(result).toBe('ok')
+    })
+  })
+
+  describe('WSL instance selection', () => {
+    it('should use first instance when storedDistro not set and no isDefault', async () => {
+      api.getCliInstances.mockResolvedValueOnce([
+        { cli: 'claude', distro: 'Arch', version: '2.1.58', isDefault: false, type: 'wsl' },
+        { cli: 'claude', distro: 'Debian', version: '2.1.58', isDefault: false, type: 'wsl' },
+      ])
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.wslDistro).toBe('Arch')
+    })
+
+    it('should prefer storedDistro over isDefault when storedDistro is present', async () => {
+      api.getCliInstances.mockResolvedValueOnce([
+        { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' },
+        { cli: 'claude', distro: 'Debian', version: '2.1.58', isDefault: false, type: 'wsl' },
+      ])
+      const settingsStore = useSettingsStore()
+      settingsStore.setDefaultCliInstance('Debian')
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.wslDistro).toBe('Debian')
+    })
+
+    it('should fallback to isDefault when storedDistro is unknown', async () => {
+      api.getCliInstances.mockResolvedValueOnce([
+        { cli: 'claude', distro: 'Arch', version: '2.1.58', isDefault: false, type: 'wsl' },
+        { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' },
+      ])
+      const settingsStore = useSettingsStore()
+      settingsStore.setDefaultCliInstance('NonExistentDistro')
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.wslDistro).toBe('Ubuntu-24.04')
+    })
+
+    it('should use null distro when no CLI instances available', async () => {
+      api.getCliInstances.mockResolvedValueOnce([])
+
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.wslDistro).toBeNull()
+    })
+  })
+
+  describe('autoSend behavior', () => {
+    it('should launch terminal with autoSend=false (no auto-execution)', async () => {
+      const { launchAgentTerminal } = useLaunchSession()
+      await launchAgentTerminal(makeAgent(), makeTask())
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      // autoSend=false means terminal waits for user interaction
+      expect(terminal?.autoSend).toBe(false)
+    })
+
+    it('review session should launch with autoSend=false', async () => {
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+
+      const { launchReviewSession } = useLaunchSession()
+      await launchReviewSession(reviewAgent, [makeTask({ status: 'done' })])
+
+      const tabsStore = useTabsStore()
+      const terminal = tabsStore.tabs.find(t => t.agentName === 'review-master')
+      expect(terminal?.autoSend).toBe(false)
     })
   })
 })
