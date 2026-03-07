@@ -80,7 +80,7 @@ describe('session-closer', () => {
       await expect(closeZombieSessions('/evil/db')).rejects.toThrow('DB_PATH_NOT_ALLOWED')
     })
 
-    it('should pass a callback that runs the UPDATE query', async () => {
+    it('should pass a callback that runs the UPDATE query with agent_id logic', async () => {
       const mockDb = { run: vi.fn() }
       vi.mocked(writeDb).mockImplementationOnce(async (_path, fn) => {
         fn(mockDb)
@@ -94,10 +94,19 @@ describe('session-closer', () => {
         expect.stringContaining("status = 'completed'")
       )
       expect(mockDb.run).toHaveBeenCalledWith(
-        expect.stringContaining("status = 'done'")
+        expect.stringContaining('agent_id IS NOT NULL')
       )
       expect(mockDb.run).toHaveBeenCalledWith(
-        expect.stringContaining("summary LIKE '%T' || CAST(t.id AS TEXT) || '[%'")
+        expect.stringContaining('NOT EXISTS')
+      )
+      expect(mockDb.run).toHaveBeenCalledWith(
+        expect.stringContaining("t.status IN ('todo', 'in_progress')")
+      )
+      expect(mockDb.run).toHaveBeenCalledWith(
+        expect.stringContaining('t.agent_assigned_id = sessions.agent_id')
+      )
+      expect(mockDb.run).toHaveBeenCalledWith(
+        expect.stringContaining("t.status = 'done'")
       )
     })
   })

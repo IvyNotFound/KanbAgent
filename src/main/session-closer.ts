@@ -3,8 +3,9 @@
  *
  * Poll interval: 30s. Started from ipc-db.ts on watch-db / stopped on unwatch-db.
  *
- * Logic: every 30s, find sessions in 'started' whose summary mentions a task that
- * has been in 'done' for more than 1 minute, and mark them 'completed'.
+ * Logic: every 30s, find sessions in 'started' whose agent has at least one task
+ * in 'done' for more than 1 minute AND no task in 'todo' or 'in_progress'.
+ * Uses agent_id FK instead of summary LIKE (which matched nothing on active sessions).
  *
  * @module session-closer
  */
@@ -37,10 +38,11 @@ export function stopSessionCloser(): void {
 }
 
 /**
- * Close all started sessions whose summary mentions a task in 'done' for > 1 minute.
+ * Close all started sessions whose agent has completed all tasks (none in todo/in_progress)
+ * and has at least one task in 'done' for > 1 minute.
  *
- * Summary format: "Done:T<id>[...] Pending:... Next:..."
- * Pattern: `%T<id>[%` matches this format specifically (avoids false positives like T9 vs T90).
+ * Uses agent_id FK match instead of summary LIKE — active sessions have NULL summary,
+ * so the old LIKE pattern never matched.
  *
  * Exported for testing.
  */
@@ -51,11 +53,17 @@ export async function closeZombieSessions(dbPath: string): Promise<void> {
       UPDATE sessions
       SET status = 'completed', ended_at = datetime('now')
       WHERE status = 'started'
+        AND agent_id IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM tasks t
+          WHERE t.agent_assigned_id = sessions.agent_id
+            AND t.status IN ('todo', 'in_progress')
+        )
         AND EXISTS (
           SELECT 1 FROM tasks t
-          WHERE t.status = 'done'
+          WHERE t.agent_assigned_id = sessions.agent_id
+            AND t.status = 'done'
             AND t.updated_at < datetime('now', '-1 minute')
-            AND sessions.summary LIKE '%T' || CAST(t.id AS TEXT) || '[%'
         )
     `)
   })
