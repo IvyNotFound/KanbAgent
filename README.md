@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.27.0-blue)
+![Version](https://img.shields.io/badge/version-0.28.0-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches Claude sessions in external WSL terminals, and monitors activity in real time.
@@ -38,7 +38,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 ### Agent Management
 - **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete/duplicate, max sessions limit (including `-1` for unlimited); review agents highlighted with amber accent in a dedicated sidebar section
 - **Agent Groups & Drag & Drop**: Sidebar agent groups with drag-and-drop reordering (`useSidebarGroups`, `useSidebarDragDrop`)
-- **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation
+- **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation — enabled by default for all CLI adapters (branch `agent/<sessionId>`, path `../agent-worktrees/<sessionId>`); falls back gracefully if git is unavailable
 - **Multi-CLI Support**: Select any supported coding agent CLI per session — Claude Code, OpenAI Codex, Google Gemini, OpenCode, Aider, Goose — detected automatically across WSL distros and native installs; each CLI has a dedicated adapter (`src/main/adapters/<cli>.ts`) following the `CliAdapter` contract (ADR-010)
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
 - **Setup Wizard**: First-run configuration assistant (`SetupWizard`) — guides through WSL detection, project creation and initial agents
@@ -68,7 +68,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Thinking Live Preview**: Status bar shows last 120 chars of live thinking text in real time
 - **Guaranteed Agent Kill on Tab Close**: `agentKill` called explicitly before tab unmount — eliminates orphan processes
 - **Session Resume**: Claude Code sessions resumed via `--resume <conv_id>` to save tokens
-- **Windows Native Claude**: Launch Claude sessions directly on Windows (no WSL) via PowerShell spawn with a `.ps1` script — system prompt passed verbatim via `List[string]`, bypassing cmd.exe quoting issues
+- **Windows Native Claude**: Launch Claude sessions directly on Windows (no WSL) via PowerShell spawn with a `.ps1` script — system prompt passed verbatim via `List[string]`, bypassing cmd.exe quoting issues; PATH enriched from both HKCU and HKLM registry at startup (covers user, winget, choco, and Claude Code Desktop installs); custom binary path configurable via `Settings > Claude Binary Path` for non-standard installs
 - **External WSL Terminal**: Launch Claude sessions in external WSL terminal windows (Windows Terminal → `wsl://` URI → `wsl.exe` fallback chain)
 - **Auto-launch Terminals**: Automatic agent session launch on task creation with assignment
 - **Auto-close Session on Stop Hook**: When Claude Code sends a `Stop` hook, the session is automatically marked as `completed` in the database — no manual cleanup needed
@@ -398,7 +398,7 @@ The application uses `localStorage` for:
 - `github_token` — GitHub token (if configured, encrypted via `safeStorage` on main side)
 - `github_repo_url` — GitHub repository URL
 - `github_last_check` — Timestamp of the last GitHub connection check
-- `defaultClaudeProfile` — Default Claude Code instance/profile name (defaults to `claude`)
+- `defaultCliInstance` — Default CLI instance/distro name used when launching sessions
 - `dashboard.activeSubTab` — Last active Dashboard sub-tab
 
 ## Contributing

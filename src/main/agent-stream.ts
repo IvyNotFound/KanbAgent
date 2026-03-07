@@ -93,6 +93,23 @@ function killAllAgents(): void {
 export function registerAgentStreamHandlers(): void {
   app.on('before-quit', killAllAgents)
 
+  /**
+   * Spawn a CLI agent session and stream its output to the renderer.
+   *
+   * @param opts.cli              - CLI type key (default: `'claude'`)
+   * @param opts.projectPath      - Absolute path to the project root (used for worktree creation and cwd)
+   * @param opts.workDir          - Override cwd (falls back to projectPath)
+   * @param opts.wslDistro        - WSL distro name or `'local'` for native Windows
+   * @param opts.systemPrompt     - System prompt injected via temp file
+   * @param opts.thinkingMode     - `'disabled'` to suppress thinking in Claude
+   * @param opts.claudeCommand    - Custom binary name override (validated against regex)
+   * @param opts.convId           - Resume an existing conversation by UUID
+   * @param opts.permissionMode   - `'auto'` to add `--dangerously-skip-permissions`
+   * @param opts.dbPath           - Path to the SQLite database passed to the agent context
+   * @param opts.sessionId        - DB session id used for worktree branch naming
+   * @param opts.claudeBinaryPath - Absolute Windows path to `claude.exe`; bypasses Get-Command discovery (T1029)
+   * @param opts.worktree         - Create an isolated git worktree before spawning (default: `true`; set `false` to disable)
+   */
   ipcMain.handle('agent:create', async (event, opts: {
     cli?: string
     cols?: number
