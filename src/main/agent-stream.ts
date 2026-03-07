@@ -5,9 +5,11 @@
  * Replaces the node-pty approach for stream-json sessions — avoids ANSI injection,
  * line wrapping, and enables true multi-turn via stdin JSONL without respawning.
  *
- * Architecture:
- * - WSL path:   spawn('wsl.exe', [..., 'bash', '-l', scriptPath], { stdio: 'pipe' })
- * - Local Win:  spawn('powershell.exe', ['-File', scriptPath.ps1], { stdio: 'pipe' }) (T916)
+ * Architecture — spawn routing by CLI×environment:
+ * - Claude / WSL:         wsl.exe [...] -- bash -l <script.sh>  (script: exec claude ...)
+ * - Claude / Local Win:   powershell.exe -File <script.ps1>      (T916)
+ * - Non-Claude / WSL:     wsl.exe [...] -- bash -l <script.sh>  (script: source ~/.bashrc; exec <cli> ...)
+ * - Non-Claude / Local Win: spawn(binary, args, { shell: true }) (handles .cmd/.bat wrappers)
  * - readline on stdout → JSONL events, 0 ANSI corruption
  * - proc.stdin.write() for multi-turn messages (no respawn)
  * - convId extracted from system:init event (no banner scanning needed)

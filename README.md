@@ -1,6 +1,6 @@
 # agent-viewer
 
-![Version](https://img.shields.io/badge/version-0.28.0-blue)
+![Version](https://img.shields.io/badge/version-0.28.4-blue)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 
 Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches Claude sessions in external WSL terminals, and monitors activity in real time.
@@ -39,7 +39,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete/duplicate, max sessions limit (including `-1` for unlimited); review agents highlighted with amber accent in a dedicated sidebar section
 - **Agent Groups & Drag & Drop**: Sidebar agent groups with drag-and-drop reordering (`useSidebarGroups`, `useSidebarDragDrop`)
 - **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation — enabled by default for all CLI adapters (branch `agent/<sessionId>`, path `../agent-worktrees/<sessionId>`); falls back gracefully if git is unavailable
-- **Multi-CLI Support**: Select any supported coding agent CLI per session — Claude Code, OpenAI Codex, Google Gemini, OpenCode, Aider, Goose — detected automatically across WSL distros and native installs; each CLI has a dedicated adapter (`src/main/adapters/<cli>.ts`) following the `CliAdapter` contract (ADR-010)
+- **Multi-CLI Support**: Select any supported coding agent CLI per session — Claude Code, OpenAI Codex, Google Gemini, OpenCode, Aider, Goose — detected automatically across WSL distros and native installs; each CLI has a dedicated adapter (`src/main/adapters/<cli>.ts`) following the `CliAdapter` contract (ADR-010); `LaunchSessionModal` shows a unified list of all detected CLI×environment combinations (local Windows/macOS/Linux + every WSL distro), filtered by the CLIs enabled in Settings
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
 - **Setup Wizard**: First-run configuration assistant (`SetupWizard`) — guides through WSL detection, project creation and initial agents
 
@@ -190,6 +190,7 @@ agent-viewer/
 │   │   ├── ipc-settings.ts          # Settings IPC (config, GitHub, updates)
 │   │   ├── ipc-window.ts            # Window IPC (minimize, maximize, close)
 │   │   ├── ipc-wsl.ts               # WSL IPC (getCliInstances, openTerminal; multi-CLI + local PATH enrichment)
+│   │   ├── ipc-cli-detect.ts        # CLI detection — local + WSL distros; Promise cache warmed at startup
 │   │   ├── updater.ts               # Auto-update (electron-updater, token loading, IPC handlers)
 │   │   ├── db.ts                    # SQLite utilities (queryLive, writeLive)
 │   │   ├── claude-md.ts             # CLAUDE.md manipulation (agent insertion)
@@ -241,6 +242,7 @@ agent-viewer/
 │           │   ├── StreamToolBlock.vue    # Tool call block renderer
 │           │   ├── UpdateNotification.vue # Auto-update banner (download progress + install)
 │           │   ├── CommandPalette.vue     # Cmd+K fuzzy search
+│           │   ├── LaunchSessionModal.vue # Session launch modal — unified CLI×environment list, capabilities-gated sections
 │           │   ├── TaskDetailModal.vue    # Task drill-down modal
 │           │   ├── SetupWizard.vue        # First-run setup assistant
 │           │   └── …                      # + 25 more UI components
@@ -297,6 +299,12 @@ agent-viewer can launch and stream any supported coding agent CLI, not just Clau
 | Goose | `goose` | ACP stdio protocol |
 
 Detection runs automatically across WSL distros and native installs via `wsl:getCliInstances`. The `agent:create` IPC handler accepts an optional `cli` parameter (default: `'claude'`) — all existing sessions are unaffected.
+
+**CLI detection warmup (`ipc-cli-detect.ts`)**: `warmupCliDetection()` is called once at app startup (inside `registerIpcHandlers()`), firing detection in the background so the cache is ready before the first `LaunchSessionModal` opens. If the IPC handler is called while warmup is still in-flight, it awaits the same Promise — no duplicate spawns. Detection strategy: Windows local → `where` + `--version` per CLI (`execFile`, `shell: true` for `.cmd`/`.bat`); Linux/macOS → single bash one-liner; WSL distros → bash login-shell script file (`bash -l <file>`) with CONCURRENCY=2.
+
+**Spawn routing for non-Claude CLIs (`agent-stream.ts`)**:
+- **Local Windows**: binary spawned with `{ shell: true }` — required for `.cmd`/`.bat` wrappers (e.g. `codex.cmd` installed via npm)
+- **WSL / Linux**: adapter command wrapped in a bash script that begins with `[ -f ~/.bashrc ] && source ~/.bashrc` — ensures nvm/npm paths are available in non-login environments before `exec`
 
 Shared types (`CliType`, `CliInstance`, `CliAdapter`, `SpawnSpec`, `LaunchOpts`, `StreamEvent`) live in `src/shared/cli-types.ts` and are imported by both main and renderer without coupling to each other's internals. `ClaudeInstance` remains as a backward-compatible alias for `CliInstance`.
 
