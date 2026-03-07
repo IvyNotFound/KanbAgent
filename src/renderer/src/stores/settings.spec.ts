@@ -1,8 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { nextTick } from 'vue'
-import { useTasksStore } from '@renderer/stores/tasks'
-import { useTabsStore } from '@renderer/stores/tabs'
 import { useSettingsStore } from '@renderer/stores/settings'
 
 // Mock window.electronAPI
@@ -37,16 +34,13 @@ describe('stores/settings', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     localStorage.clear()
-    // Reset document class
     document.documentElement.className = ''
   })
 
   describe('setTheme', () => {
     it('should set theme to dark', () => {
       const store = useSettingsStore()
-
       store.setTheme('dark')
-
       expect(store.theme).toBe('dark')
       expect(localStorage.getItem('theme')).toBe('dark')
       expect(document.documentElement.classList.contains('dark')).toBe(true)
@@ -54,9 +48,7 @@ describe('stores/settings', () => {
 
     it('should set theme to light', () => {
       const store = useSettingsStore()
-
       store.setTheme('light')
-
       expect(store.theme).toBe('light')
       expect(localStorage.getItem('theme')).toBe('light')
       expect(document.documentElement.classList.contains('dark')).toBe(false)
@@ -66,18 +58,14 @@ describe('stores/settings', () => {
   describe('applyTheme', () => {
     it('should add dark class for dark theme', () => {
       const store = useSettingsStore()
-
       store.applyTheme('dark')
-
       expect(document.documentElement.classList.contains('dark')).toBe(true)
     })
 
     it('should remove dark class for light theme', () => {
       document.documentElement.classList.add('dark')
       const store = useSettingsStore()
-
       store.applyTheme('light')
-
       expect(document.documentElement.classList.contains('dark')).toBe(false)
     })
   })
@@ -85,23 +73,18 @@ describe('stores/settings', () => {
   describe('setLanguage', () => {
     it('should set language to fr', () => {
       const store = useSettingsStore()
-
       store.setLanguage('fr')
-
       expect(store.language).toBe('fr')
       expect(localStorage.getItem('language')).toBe('fr')
     })
 
     it('should set language to en', () => {
       const store = useSettingsStore()
-
       store.setLanguage('en')
-
       expect(store.language).toBe('en')
       expect(localStorage.getItem('language')).toBe('en')
     })
   })
-
 })
 
 
@@ -121,7 +104,6 @@ describe('stores/settings — autoLaunchAgentSessions', () => {
   it('should persist false to localStorage', () => {
     const store = useSettingsStore()
     store.setAutoLaunchAgentSessions(false)
-
     expect(store.autoLaunchAgentSessions).toBe(false)
     expect(localStorage.getItem('autoLaunchAgentSessions')).toBe('false')
   })
@@ -130,7 +112,6 @@ describe('stores/settings — autoLaunchAgentSessions', () => {
     const store = useSettingsStore()
     store.setAutoLaunchAgentSessions(false)
     store.setAutoLaunchAgentSessions(true)
-
     expect(store.autoLaunchAgentSessions).toBe(true)
     expect(localStorage.getItem('autoLaunchAgentSessions')).toBe('true')
   })
@@ -138,7 +119,6 @@ describe('stores/settings — autoLaunchAgentSessions', () => {
   it('should read false from localStorage on init', () => {
     localStorage.setItem('autoLaunchAgentSessions', 'false')
     const store = useSettingsStore()
-
     expect(store.autoLaunchAgentSessions).toBe(false)
   })
 })
@@ -160,7 +140,6 @@ describe('stores/settings — autoReviewEnabled', () => {
   it('should persist enabled state', () => {
     const store = useSettingsStore()
     store.setAutoReviewEnabled(false)
-
     expect(store.autoReviewEnabled).toBe(false)
     expect(localStorage.getItem('autoReviewEnabled')).toBe('false')
   })
@@ -183,7 +162,6 @@ describe('stores/settings — autoReviewThreshold', () => {
   it('should clamp minimum to 3', () => {
     const store = useSettingsStore()
     store.setAutoReviewThreshold(1)
-
     expect(store.autoReviewThreshold).toBe(3)
     expect(localStorage.getItem('autoReviewThreshold')).toBe('3')
   })
@@ -191,21 +169,18 @@ describe('stores/settings — autoReviewThreshold', () => {
   it('should accept values >= 3', () => {
     const store = useSettingsStore()
     store.setAutoReviewThreshold(5)
-
     expect(store.autoReviewThreshold).toBe(5)
   })
 
   it('should read from localStorage on init', () => {
     localStorage.setItem('autoReviewThreshold', '15')
     const store = useSettingsStore()
-
     expect(store.autoReviewThreshold).toBe(15)
   })
 
   it('should clamp invalid localStorage value to minimum', () => {
     localStorage.setItem('autoReviewThreshold', '1')
     const store = useSettingsStore()
-
     expect(store.autoReviewThreshold).toBe(3)
   })
 })
@@ -351,3 +326,207 @@ describe('stores/settings — defaultCliInstance (T857, T1032)', () => {
 })
 
 
+describe('stores/settings — theme init from localStorage', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('should init theme to "light" when localStorage has "light"', () => {
+    localStorage.setItem('theme', 'light')
+    const store = useSettingsStore()
+    expect(store.theme).toBe('light')
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+  })
+
+  it('should init theme to "dark" when localStorage has "dark"', () => {
+    localStorage.setItem('theme', 'dark')
+    const store = useSettingsStore()
+    expect(store.theme).toBe('dark')
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it('should default to "dark" when localStorage is empty', () => {
+    const store = useSettingsStore()
+    expect(store.theme).toBe('dark')
+  })
+
+  it('should apply "dark" class on dark theme init', () => {
+    localStorage.setItem('theme', 'dark')
+    useSettingsStore()
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it('should NOT apply "dark" class on light theme init', () => {
+    localStorage.setItem('theme', 'light')
+    useSettingsStore()
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+  })
+})
+
+
+describe('stores/settings — language init from localStorage', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('should default to "fr" when localStorage is empty', () => {
+    const store = useSettingsStore()
+    expect(store.language).toBe('fr')
+  })
+
+  it('should init language to "en" when localStorage has "en"', () => {
+    localStorage.setItem('language', 'en')
+    const store = useSettingsStore()
+    expect(store.language).toBe('en')
+  })
+
+  it('should init language to "fr" when localStorage has "fr"', () => {
+    localStorage.setItem('language', 'fr')
+    const store = useSettingsStore()
+    expect(store.language).toBe('fr')
+  })
+
+  it('should init language to "de" when localStorage has "de"', () => {
+    localStorage.setItem('language', 'de')
+    const store = useSettingsStore()
+    expect(store.language).toBe('de')
+  })
+
+  it('setLanguage persists and updates store', () => {
+    const store = useSettingsStore()
+    store.setLanguage('en')
+    expect(store.language).toBe('en')
+    expect(localStorage.getItem('language')).toBe('en')
+  })
+
+  it('setLanguage("ar") sets document dir to rtl', () => {
+    const store = useSettingsStore()
+    store.setLanguage('ar')
+    expect(document.documentElement.dir).toBe('rtl')
+  })
+
+  it('setLanguage("fr") sets document dir to ltr', () => {
+    const store = useSettingsStore()
+    store.setLanguage('fr')
+    expect(document.documentElement.dir).toBe('ltr')
+  })
+})
+
+
+describe('stores/settings — notificationsEnabled (T755)', () => {
+  const mockRequestPermission = vi.fn().mockResolvedValue('granted')
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+    if (typeof (global as Record<string, unknown>)['Notification'] === 'undefined') {
+      ;(global as Record<string, unknown>)['Notification'] = {
+        permission: 'granted',
+        requestPermission: mockRequestPermission,
+      }
+    }
+    mockRequestPermission.mockResolvedValue('granted')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should default to false when localStorage is empty', () => {
+    const store = useSettingsStore()
+    expect(store.notificationsEnabled).toBe(false)
+  })
+
+  it('should NOT default to true (guard against BooleanLiteral mutation)', () => {
+    const store = useSettingsStore()
+    expect(store.notificationsEnabled).toBe(false)
+  })
+
+  it('should read true from localStorage when set to "true"', () => {
+    localStorage.setItem('notificationsEnabled', 'true')
+    const store = useSettingsStore()
+    expect(store.notificationsEnabled).toBe(true)
+  })
+
+  it('should remain false when localStorage has "false"', () => {
+    localStorage.setItem('notificationsEnabled', 'false')
+    const store = useSettingsStore()
+    expect(store.notificationsEnabled).toBe(false)
+  })
+
+  it('setNotificationsEnabled(true) with granted permission enables notifications', async () => {
+    ;(global as Record<string, unknown>)['Notification'] = {
+      permission: 'granted',
+      requestPermission: mockRequestPermission,
+    }
+    const store = useSettingsStore()
+    await store.setNotificationsEnabled(true)
+    expect(store.notificationsEnabled).toBe(true)
+    expect(localStorage.getItem('notificationsEnabled')).toBe('true')
+  })
+
+  it('setNotificationsEnabled(false) disables without permission check', async () => {
+    ;(global as Record<string, unknown>)['Notification'] = {
+      permission: 'granted',
+      requestPermission: mockRequestPermission,
+    }
+    const store = useSettingsStore()
+    await store.setNotificationsEnabled(true)
+    await store.setNotificationsEnabled(false)
+    expect(store.notificationsEnabled).toBe(false)
+    expect(localStorage.getItem('notificationsEnabled')).toBe('false')
+  })
+
+  it('setNotificationsEnabled(true) does NOT enable when permission denied', async () => {
+    mockRequestPermission.mockResolvedValue('denied')
+    ;(global as Record<string, unknown>)['Notification'] = {
+      permission: 'default',
+      requestPermission: mockRequestPermission,
+    }
+    const store = useSettingsStore()
+    await store.setNotificationsEnabled(true)
+    expect(store.notificationsEnabled).toBe(false)
+  })
+})
+
+
+describe('stores/settings — enabledClis (T1013)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('should default to ["claude"] when localStorage is empty', () => {
+    const store = useSettingsStore()
+    expect(store.enabledClis).toEqual(['claude'])
+  })
+
+  it('toggleCli adds a cli if not present', () => {
+    const store = useSettingsStore()
+    store.toggleCli('gemini' as 'claude')
+    expect(store.enabledClis).toContain('gemini')
+  })
+
+  it('toggleCli removes a cli if already present', () => {
+    const store = useSettingsStore()
+    store.toggleCli('claude')
+    expect(store.enabledClis).not.toContain('claude')
+  })
+
+  it('toggleCli persists to localStorage', () => {
+    const store = useSettingsStore()
+    store.toggleCli('codex' as 'claude')
+    const stored = JSON.parse(localStorage.getItem('enabledClis') || '[]') as string[]
+    expect(stored).toContain('codex')
+  })
+})
