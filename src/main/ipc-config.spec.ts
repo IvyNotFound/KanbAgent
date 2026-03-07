@@ -551,35 +551,35 @@ describe('IPC config/misc handlers', () => {
       ).rejects.toThrow('DB_PATH_NOT_ALLOWED')
     })
 
-    it('should return { success: false, error } for unknown statut', async () => {
+    it('should return { success: false, error } for unknown status', async () => {
       const result = await callHandler('tasks:updateStatus', '/fake/project.db', 1, 'invalid-status') as {
         success: boolean; error?: string
       }
-      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid statut: invalid-status') })
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid status: invalid-status') })
     })
 
-    it('should return { success: false, error } for empty string statut', async () => {
+    it('should return { success: false, error } for empty string status', async () => {
       const result = await callHandler('tasks:updateStatus', '/fake/project.db', 1, '') as {
         success: boolean; error?: string
       }
-      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid statut:') })
+      expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid status:') })
     })
 
-    it('should return { success: false } for null statut (not in ALLOWED list)', async () => {
+    it('should return { success: false } for null status (not in ALLOWED list)', async () => {
       const result = await callHandler('tasks:updateStatus', '/fake/project.db', 1, null) as {
         success: boolean
       }
       expect(result.success).toBe(false)
     })
 
-    it('should accept all four valid statuts without validation error', async () => {
-      const validStatuts = ['todo', 'in_progress', 'done', 'archived'] as const
-      for (const statut of validStatuts) {
-        const result = await callHandler('tasks:updateStatus', '/fake/project.db', 1, statut) as {
+    it('should accept all four valid statuses without validation error', async () => {
+      const validStatuses = ['todo', 'in_progress', 'done', 'archived'] as const
+      for (const status of validStatuses) {
+        const result = await callHandler('tasks:updateStatus', '/fake/project.db', 1, status) as {
           success: boolean; error?: string
         }
         if (!result.success && result.error) {
-          expect(result.error).not.toContain('Invalid statut')
+          expect(result.error).not.toContain('Invalid status')
         }
       }
     })
@@ -618,7 +618,7 @@ describe('IPC config/misc handlers', () => {
       expect(result.blockers).toHaveLength(2)
     })
 
-    it('T552: should not check blockers for statut other than in_progress', async () => {
+    it('T552: should not check blockers for status other than in_progress', async () => {
       const qSpy = vi.mocked(mockedQueryLive)
       await callHandler('tasks:updateStatus', '/fake/project.db', 10, 'done')
       expect(qSpy).not.toHaveBeenCalled()

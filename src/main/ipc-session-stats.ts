@@ -191,16 +191,16 @@ export function registerSessionStatsHandlers(): void {
    * Update a task's status in the DB (used by drag & drop, etc.)
    * @param dbPath - Registered DB path
    * @param taskId - Task ID to update
-   * @param statut - New status: 'todo' | 'in_progress' | 'done' | 'archived'
+   * @param status - New status: 'todo' | 'in_progress' | 'done' | 'archived'
    */
   const ALLOWED_TASK_STATUTS = ['todo', 'in_progress', 'done', 'archived'] as const
-  ipcMain.handle('tasks:updateStatus', async (_event, dbPath: string, taskId: number, statut: string) => {
+  ipcMain.handle('tasks:updateStatus', async (_event, dbPath: string, taskId: number, status: string) => {
     assertDbPathAllowed(dbPath)
-    if (!ALLOWED_TASK_STATUTS.includes(statut as typeof ALLOWED_TASK_STATUTS[number])) {
-      return { success: false, error: `Invalid statut: ${statut}` }
+    if (!ALLOWED_TASK_STATUTS.includes(status as typeof ALLOWED_TASK_STATUTS[number])) {
+      return { success: false, error: `Invalid status: ${status}` }
     }
     try {
-      if (statut === 'in_progress') {
+      if (status === 'in_progress') {
         const blockers = await queryLive(
           dbPath,
           `SELECT t.id, t.title, t.status
@@ -219,7 +219,7 @@ export function registerSessionStatsHandlers(): void {
       await writeDb(dbPath, (db) => {
         db.run(
           `UPDATE tasks SET status=?, updated_at=datetime('now') WHERE id=?`,
-          [statut, taskId]
+          [status, taskId]
         )
       })
       return { success: true }

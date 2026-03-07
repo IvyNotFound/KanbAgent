@@ -211,7 +211,7 @@ describe('sessions:statsCost (T985)', () => {
 
   it('returns { success: true, rows: [] } when no sessions have cost_usd', async () => {
     const agentId = await insertAgent('agent-stats')
-    await insertSession(agentId, { statut: 'completed' })
+    await insertSession(agentId, { status: 'completed' })
 
     const result = await handlers['sessions:statsCost'](
       null, TEST_DB_PATH, { period: 'day' }
@@ -223,8 +223,8 @@ describe('sessions:statsCost (T985)', () => {
 
   it('aggregates cost per agent per day', async () => {
     const agentId = await insertAgent('agent-agg')
-    await insertSession(agentId, { statut: 'completed', costUsd: 0.01, startedAt: '2026-03-01 10:00:00' })
-    await insertSession(agentId, { statut: 'completed', costUsd: 0.02, startedAt: '2026-03-01 11:00:00' })
+    await insertSession(agentId, { status: 'completed', costUsd: 0.01, startedAt: '2026-03-01 10:00:00' })
+    await insertSession(agentId, { status: 'completed', costUsd: 0.02, startedAt: '2026-03-01 11:00:00' })
 
     const result = await handlers['sessions:statsCost'](
       null, TEST_DB_PATH, { period: 'day', limit: 10 }
@@ -240,8 +240,8 @@ describe('sessions:statsCost (T985)', () => {
   it('filters by agentId when provided', async () => {
     const agentA = await insertAgent('agent-stats-a')
     const agentB = await insertAgent('agent-stats-b')
-    await insertSession(agentA, { statut: 'completed', costUsd: 0.05, startedAt: '2026-03-01 10:00:00' })
-    await insertSession(agentB, { statut: 'completed', costUsd: 0.10, startedAt: '2026-03-01 10:00:00' })
+    await insertSession(agentA, { status: 'completed', costUsd: 0.05, startedAt: '2026-03-01 10:00:00' })
+    await insertSession(agentB, { status: 'completed', costUsd: 0.10, startedAt: '2026-03-01 10:00:00' })
 
     const result = await handlers['sessions:statsCost'](
       null, TEST_DB_PATH, { period: 'day', agentId: agentA, limit: 10 }
@@ -264,8 +264,8 @@ describe('sessions:statsCost (T985)', () => {
 describe('close-agent-sessions (T985)', () => {
   it('marks all started sessions as completed for an agent', async () => {
     const agentId = await insertAgent('agent-close-sessions')
-    await insertSession(agentId, { statut: 'started' })
-    await insertSession(agentId, { statut: 'started' })
+    await insertSession(agentId, { status: 'started' })
+    await insertSession(agentId, { status: 'started' })
 
     const result = await handlers['close-agent-sessions'](
       null, TEST_DB_PATH, 'agent-close-sessions'
@@ -284,8 +284,8 @@ describe('close-agent-sessions (T985)', () => {
   it('does not affect other agents sessions', async () => {
     const agentA = await insertAgent('agent-close-a')
     const agentB = await insertAgent('agent-close-b')
-    await insertSession(agentA, { statut: 'started' })
-    await insertSession(agentB, { statut: 'started' })
+    await insertSession(agentA, { status: 'started' })
+    await insertSession(agentB, { status: 'started' })
 
     await handlers['close-agent-sessions'](null, TEST_DB_PATH, 'agent-close-a')
 
@@ -323,7 +323,7 @@ describe('session:setConvId (T985)', () => {
 
   it('sets claude_conv_id on the latest started session for an agent', async () => {
     const agentId = await insertAgent('agent-conv')
-    const sessionId = await insertSession(agentId, { statut: 'started' })
+    const sessionId = await insertSession(agentId, { status: 'started' })
 
     const result = await handlers['session:setConvId'](
       null, TEST_DB_PATH, agentId, VALID_UUID
@@ -353,7 +353,7 @@ describe('session:setConvId (T985)', () => {
 
   it('does not overwrite existing claude_conv_id (already set)', async () => {
     const agentId = await insertAgent('agent-conv-existing')
-    await insertSession(agentId, { statut: 'started', convId: 'existing-uuid' })
+    await insertSession(agentId, { status: 'started', convId: 'existing-uuid' })
 
     const result = await handlers['session:setConvId'](
       null, TEST_DB_PATH, agentId, VALID_UUID

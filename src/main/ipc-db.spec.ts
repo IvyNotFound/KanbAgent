@@ -167,7 +167,7 @@ describe('IPC DB handlers', () => {
     })
 
     it('should block UPDATE queries', async () => {
-      const result = await callHandler('query-db', dbPath, "UPDATE tasks SET statut='done' WHERE id=1")
+      const result = await callHandler('query-db', dbPath, "UPDATE tasks SET status='done' WHERE id=1")
       expect(result).toMatchObject({ success: false, error: expect.stringContaining('Write operations') })
     })
 

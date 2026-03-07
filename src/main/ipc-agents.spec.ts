@@ -1049,7 +1049,7 @@ describe('agent:duplicate handler', () => {
     expect(result.name).toBe('triple-agent-copy-3')
   })
 
-  it('copies all fields: name, type, perimetre, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools', async () => {
+  it('copies all fields: name, type, scope, thinking_mode, system_prompt, system_prompt_suffix, allowed_tools', async () => {
     // Insert agent with all fields populated
     await writeDb<void>(TEST_DB_PATH, (db) => {
       db.run(

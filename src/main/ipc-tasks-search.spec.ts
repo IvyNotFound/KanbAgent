@@ -160,24 +160,24 @@ describe('search-tasks (T985)', () => {
     expect(result.results.map(r => r.title)).toContain('task-desc-search')
   })
 
-  it('filters by statut when provided', async () => {
-    await insertTask('task-todo', { statut: 'todo' })
-    await insertTask('task-done', { statut: 'done' })
+  it('filters by status when provided', async () => {
+    await insertTask('task-todo', { status: 'todo' })
+    await insertTask('task-done', { status: 'done' })
 
     const result = await handlers['search-tasks'](
-      null, TEST_DB_PATH, '', { statut: 'todo' }
+      null, TEST_DB_PATH, '', { status: 'todo' }
     ) as { success: boolean; results: Array<{ status: string }> }
 
     expect(result.success).toBe(true)
     expect(result.results.every(r => r.status === 'todo')).toBe(true)
   })
 
-  it('filters by perimetre when provided', async () => {
-    await insertTask('task-front', { perimetre: 'front-vuejs' })
-    await insertTask('task-back', { perimetre: 'back-electron' })
+  it('filters by scope when provided', async () => {
+    await insertTask('task-front', { scope: 'front-vuejs' })
+    await insertTask('task-back', { scope: 'back-electron' })
 
     const result = await handlers['search-tasks'](
-      null, TEST_DB_PATH, '', { perimetre: 'front-vuejs' }
+      null, TEST_DB_PATH, '', { scope: 'front-vuejs' }
     ) as { success: boolean; results: Array<{ scope: string }> }
 
     expect(result.success).toBe(true)
@@ -198,15 +198,15 @@ describe('search-tasks (T985)', () => {
 
 describe('update-perimetre (T985)', () => {
   it('updates perimeter name and description', async () => {
-    let perimetreId!: number
+    let scopeId!: number
     await writeDb<void>(TEST_DB_PATH, (db) => {
       db.run("INSERT INTO scopes (name, description) VALUES ('front-old', 'Old desc')")
       const rows = db.exec('SELECT last_insert_rowid() as id')
-      perimetreId = rows[0].values[0][0] as number
+      scopeId = rows[0].values[0][0] as number
     })
 
     const result = await handlers['update-perimetre'](
-      null, TEST_DB_PATH, perimetreId, 'front-old', 'front-new', 'New desc'
+      null, TEST_DB_PATH, scopeId, 'front-old', 'front-new', 'New desc'
     ) as { success: boolean }
 
     expect(result.success).toBe(true)
@@ -214,23 +214,23 @@ describe('update-perimetre (T985)', () => {
     const rows = await queryLive(
       TEST_DB_PATH,
       'SELECT name, description FROM scopes WHERE id = ?',
-      [perimetreId]
+      [scopeId]
     ) as Array<{ name: string; description: string }>
     expect(rows[0].name).toBe('front-new')
     expect(rows[0].description).toBe('New desc')
   })
 
-  it('cascades rename to tasks.perimetre', async () => {
-    let perimetreId!: number
+  it('cascades rename to tasks.scope', async () => {
+    let scopeId!: number
     await writeDb<void>(TEST_DB_PATH, (db) => {
       db.run("INSERT INTO scopes (name) VALUES ('cascade-peri')")
       const rows = db.exec('SELECT last_insert_rowid() as id')
-      perimetreId = rows[0].values[0][0] as number
+      scopeId = rows[0].values[0][0] as number
     })
-    await insertTask('task-in-peri', { perimetre: 'cascade-peri' })
+    await insertTask('task-in-peri', { scope: 'cascade-peri' })
 
     await handlers['update-perimetre'](
-      null, TEST_DB_PATH, perimetreId, 'cascade-peri', 'cascade-peri-new', ''
+      null, TEST_DB_PATH, scopeId, 'cascade-peri', 'cascade-peri-new', ''
     )
 
     const taskRows = await queryLive(
@@ -241,17 +241,17 @@ describe('update-perimetre (T985)', () => {
     expect(taskRows[0].scope).toBe('cascade-peri-new')
   })
 
-  it('cascades rename to agents.perimetre', async () => {
-    let perimetreId!: number
+  it('cascades rename to agents.scope', async () => {
+    let scopeId!: number
     await writeDb<void>(TEST_DB_PATH, (db) => {
       db.run("INSERT INTO scopes (name) VALUES ('agent-peri')")
       const rows = db.exec('SELECT last_insert_rowid() as id')
-      perimetreId = rows[0].values[0][0] as number
+      scopeId = rows[0].values[0][0] as number
     })
-    await insertAgent('agent-in-peri', { perimetre: 'agent-peri' })
+    await insertAgent('agent-in-peri', { scope: 'agent-peri' })
 
     await handlers['update-perimetre'](
-      null, TEST_DB_PATH, perimetreId, 'agent-peri', 'agent-peri-new', ''
+      null, TEST_DB_PATH, scopeId, 'agent-peri', 'agent-peri-new', ''
     )
 
     const agentRows = await queryLive(
@@ -263,16 +263,16 @@ describe('update-perimetre (T985)', () => {
   })
 
   it('does not cascade when name unchanged', async () => {
-    let perimetreId!: number
+    let scopeId!: number
     await writeDb<void>(TEST_DB_PATH, (db) => {
       db.run("INSERT INTO scopes (name) VALUES ('no-change')")
       const rows = db.exec('SELECT last_insert_rowid() as id')
-      perimetreId = rows[0].values[0][0] as number
+      scopeId = rows[0].values[0][0] as number
     })
-    await insertTask('task-no-cascade', { perimetre: 'no-change' })
+    await insertTask('task-no-cascade', { scope: 'no-change' })
 
     await handlers['update-perimetre'](
-      null, TEST_DB_PATH, perimetreId, 'no-change', 'no-change', 'Updated desc'
+      null, TEST_DB_PATH, scopeId, 'no-change', 'no-change', 'Updated desc'
     )
 
     const taskRows = await queryLive(

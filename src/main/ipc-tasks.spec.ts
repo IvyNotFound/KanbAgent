@@ -249,22 +249,22 @@ async function insertAgent(name: string): Promise<number> {
 
 async function insertTask(opts: {
   title: string
-  statut?: string
+  status?: string
   agentId?: number
-  perimetre?: string
+  scope?: string
   updatedAt?: string
 }): Promise<number> {
-  const { title, statut = 'todo', agentId = null, perimetre = null, updatedAt = null } = opts
+  const { title, status = 'todo', agentId = null, scope = null, updatedAt = null } = opts
   await writeDb<void>(TEST_DB_PATH, (db) => {
     if (updatedAt) {
       db.run(
         'INSERT INTO tasks (title, status, agent_assigned_id, scope, updated_at) VALUES (?, ?, ?, ?, ?)',
-        [title, statut, agentId, perimetre, updatedAt]
+        [title, status, agentId, scope, updatedAt]
       )
     } else {
       db.run(
         'INSERT INTO tasks (title, status, agent_assigned_id, scope) VALUES (?, ?, ?, ?)',
-        [title, statut, agentId, perimetre]
+        [title, status, agentId, scope]
       )
     }
   })
@@ -287,9 +287,9 @@ describe('tasks:getArchived — behavioural (T474)', () => {
   })
 
   it('returns only archived tasks', async () => {
-    await insertTask({ title: 'task-todo', statut: 'todo' })
-    await insertTask({ title: 'task-done', statut: 'done' })
-    await insertTask({ title: 'task-archived', statut: 'archived' })
+    await insertTask({ title: 'task-todo', status: 'todo' })
+    await insertTask({ title: 'task-done', status: 'done' })
+    await insertTask({ title: 'task-archived', status: 'archived' })
 
     const result = await handlers['tasks:getArchived'](
       null,
@@ -305,8 +305,8 @@ describe('tasks:getArchived — behavioural (T474)', () => {
   it('filters by agentId', async () => {
     const agentA = await insertAgent('agent-filter-a')
     const agentB = await insertAgent('agent-filter-b')
-    await insertTask({ title: 'task-agent-a', statut: 'archived', agentId: agentA })
-    await insertTask({ title: 'task-agent-b', statut: 'archived', agentId: agentB })
+    await insertTask({ title: 'task-agent-a', status: 'archived', agentId: agentA })
+    await insertTask({ title: 'task-agent-b', status: 'archived', agentId: agentB })
 
     const result = await handlers['tasks:getArchived'](
       null,
@@ -318,9 +318,9 @@ describe('tasks:getArchived — behavioural (T474)', () => {
     expect(result.rows[0].title).toBe('task-agent-a')
   })
 
-  it('filters by perimetre', async () => {
-    await insertTask({ title: 'task-front', statut: 'archived', perimetre: 'front-vuejs' })
-    await insertTask({ title: 'task-back', statut: 'archived', perimetre: 'back-electron' })
+  it('filters by scope', async () => {
+    await insertTask({ title: 'task-front', status: 'archived', scope: 'front-vuejs' })
+    await insertTask({ title: 'task-back', status: 'archived', scope: 'back-electron' })
 
     const result = await handlers['tasks:getArchived'](
       null,
@@ -332,11 +332,11 @@ describe('tasks:getArchived — behavioural (T474)', () => {
     expect(result.rows[0].title).toBe('task-front')
   })
 
-  it('filters by agentId + perimetre combined', async () => {
+  it('filters by agentId + scope combined', async () => {
     const agent = await insertAgent('agent-combo')
-    await insertTask({ title: 'task-combo-match', statut: 'archived', agentId: agent, perimetre: 'back-electron' })
-    await insertTask({ title: 'task-combo-wrong-agent', statut: 'archived', agentId: null, perimetre: 'back-electron' })
-    await insertTask({ title: 'task-combo-wrong-perim', statut: 'archived', agentId: agent, perimetre: 'front-vuejs' })
+    await insertTask({ title: 'task-combo-match', status: 'archived', agentId: agent, scope: 'back-electron' })
+    await insertTask({ title: 'task-combo-wrong-agent', status: 'archived', agentId: null, scope: 'back-electron' })
+    await insertTask({ title: 'task-combo-wrong-perim', status: 'archived', agentId: agent, scope: 'front-vuejs' })
 
     const result = await handlers['tasks:getArchived'](
       null,
@@ -350,7 +350,7 @@ describe('tasks:getArchived — behavioural (T474)', () => {
 
   it('paginates: page=0 returns first pageSize rows', async () => {
     for (let i = 1; i <= 5; i++) {
-      await insertTask({ title: `task-page-${i}`, statut: 'archived' })
+      await insertTask({ title: `task-page-${i}`, status: 'archived' })
     }
 
     const result = await handlers['tasks:getArchived'](
@@ -365,7 +365,7 @@ describe('tasks:getArchived — behavioural (T474)', () => {
 
   it('paginates: page=1 returns second batch', async () => {
     for (let i = 1; i <= 5; i++) {
-      await insertTask({ title: `task-batch-${i}`, statut: 'archived' })
+      await insertTask({ title: `task-batch-${i}`, status: 'archived' })
     }
 
     const result = await handlers['tasks:getArchived'](
@@ -379,8 +379,8 @@ describe('tasks:getArchived — behavioural (T474)', () => {
   })
 
   it('rows are sorted by updated_at DESC', async () => {
-    await insertTask({ title: 'task-old', statut: 'archived', updatedAt: '2026-01-01 10:00:00' })
-    await insertTask({ title: 'task-new', statut: 'archived', updatedAt: '2026-01-02 10:00:00' })
+    await insertTask({ title: 'task-old', status: 'archived', updatedAt: '2026-01-01 10:00:00' })
+    await insertTask({ title: 'task-new', status: 'archived', updatedAt: '2026-01-02 10:00:00' })
 
     const result = await handlers['tasks:getArchived'](
       null,
@@ -402,8 +402,8 @@ describe('tasks:getArchived — behavioural (T474)', () => {
 // ── Tests: tasks:updateStatus ─────────────────────────────────────────────────
 
 describe('tasks:updateStatus — behavioural (T474)', () => {
-  it('updates statut to done → { success: true }', async () => {
-    const taskId = await insertTask({ title: 'task-to-done', statut: 'todo' })
+  it('updates status to done → { success: true }', async () => {
+    const taskId = await insertTask({ title: 'task-to-done', status: 'todo' })
 
     const result = await handlers['tasks:updateStatus'](
       null,
@@ -418,8 +418,8 @@ describe('tasks:updateStatus — behavioural (T474)', () => {
     expect(rows[0].status).toBe('done')
   })
 
-  it('updates statut to archived → { success: true }', async () => {
-    const taskId = await insertTask({ title: 'task-to-archive', statut: 'done' })
+  it('updates status to archived → { success: true }', async () => {
+    const taskId = await insertTask({ title: 'task-to-archive', status: 'done' })
 
     const result = await handlers['tasks:updateStatus'](
       null,
@@ -434,21 +434,21 @@ describe('tasks:updateStatus — behavioural (T474)', () => {
     expect(rows[0].status).toBe('archived')
   })
 
-  it('accepts all allowed statuts: todo, in_progress, done, archived', async () => {
-    for (const statut of ['todo', 'in_progress', 'done', 'archived'] as const) {
-      const taskId = await insertTask({ title: `task-statut-${statut}`, statut: 'todo' })
+  it('accepts all allowed statuses: todo, in_progress, done, archived', async () => {
+    for (const status of ['todo', 'in_progress', 'done', 'archived'] as const) {
+      const taskId = await insertTask({ title: `task-status-${status}`, status: 'todo' })
       const result = await handlers['tasks:updateStatus'](
         null,
         TEST_DB_PATH,
         taskId,
-        statut
+        status
       ) as { success: boolean }
       expect(result.success).toBe(true)
     }
   })
 
-  it('invalid statut → { success: false, error }', async () => {
-    const taskId = await insertTask({ title: 'task-invalid-statut' })
+  it('invalid status → { success: false, error }', async () => {
+    const taskId = await insertTask({ title: 'task-invalid-status' })
 
     const result = await handlers['tasks:updateStatus'](
       null,
@@ -458,7 +458,7 @@ describe('tasks:updateStatus — behavioural (T474)', () => {
     ) as { success: boolean; error: string }
 
     expect(result.success).toBe(false)
-    expect(result.error).toContain('Invalid statut')
+    expect(result.error).toContain('Invalid status')
   })
 
   it('rejects unregistered dbPath with DB_PATH_NOT_ALLOWED', async () => {
@@ -499,8 +499,8 @@ describe('task:getLinks (T511)', () => {
   })
 
   it('returns links where task is from_task', async () => {
-    const t1 = await insertTask({ title: 'source', statut: 'in_progress' })
-    const t2 = await insertTask({ title: 'target', statut: 'todo' })
+    const t1 = await insertTask({ title: 'source', status: 'in_progress' })
+    const t2 = await insertTask({ title: 'target', status: 'todo' })
     await insertLink(t1, t2, 'blocks')
 
     const result = await handlers['task:getLinks'](null, TEST_DB_PATH, t1) as {
@@ -519,8 +519,8 @@ describe('task:getLinks (T511)', () => {
   })
 
   it('returns links where task is to_task', async () => {
-    const t1 = await insertTask({ title: 'blocker', statut: 'done' })
-    const t2 = await insertTask({ title: 'blocked', statut: 'todo' })
+    const t1 = await insertTask({ title: 'blocker', status: 'done' })
+    const t2 = await insertTask({ title: 'blocked', status: 'todo' })
     await insertLink(t1, t2, 'depends_on')
 
     const result = await handlers['task:getLinks'](null, TEST_DB_PATH, t2) as {
