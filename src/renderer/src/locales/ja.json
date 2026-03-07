@@ -530,7 +530,13 @@
     "tokensCacheWrite": "Cache write",
     "tokensSessions": "sessions",
     "last7days": "7 days",
-    "allTime": "All time"
+    "allTime": "All time",
+    "codeTelemetry": "Code telemetry",
+    "linesOfCode": "lines of code",
+    "testRatio": "tests",
+    "scan": "Scan",
+    "notScanned": "Not scanned yet — click to scan",
+    "others": "Others"
   },
   "status": {
     "todo": "todo",

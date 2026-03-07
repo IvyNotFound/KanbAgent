@@ -15,6 +15,7 @@ const CHILD_STUBS = {
   SuccessRateChart: { template: '<div class="stub-success-chart" />' },
   AgentQualityPanel: { template: '<div class="stub-quality" />' },
   WorkloadView: { template: '<div class="stub-workload" />' },
+  CodeTelemetryPanel: { template: '<div class="stub-code-telemetry" />' },
 }
 
 function mountWithState(state: Record<string, unknown>) {

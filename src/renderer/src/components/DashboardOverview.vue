@@ -17,6 +17,7 @@ import SuccessRateChart from './SuccessRateChart.vue'
 import AgentQualityPanel from './AgentQualityPanel.vue'
 import TokenTelemetryPanel from './TokenTelemetryPanel.vue'
 import type { TokenStats } from './TokenTelemetryPanel.vue'
+import CodeTelemetryPanel from './CodeTelemetryPanel.vue'
 
 const WorkloadView = defineAsyncComponent(() => import('./WorkloadView.vue'))
 
@@ -355,12 +356,15 @@ const PRIORITY_CLASSES: Record<string, string> = {
 
       </div>
 
-      <!-- ── Heatmap (full width) ──────────────────────────────────────── -->
-      <div class="rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
-        <div class="shrink-0 px-3 py-2 border-b border-edge-subtle">
-          <span class="text-xs font-semibold uppercase tracking-wider text-content-secondary">{{ t('dashboard.activity') }}</span>
+      <!-- ── Code telemetry + Heatmap (2 columns) ────────────────────── -->
+      <div class="grid grid-cols-2 gap-3">
+        <CodeTelemetryPanel :project-path="store.projectPath" />
+        <div class="rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
+          <div class="shrink-0 px-3 py-2 border-b border-edge-subtle">
+            <span class="text-xs font-semibold uppercase tracking-wider text-content-secondary">{{ t('dashboard.activity') }}</span>
+          </div>
+          <ActivityHeatmap v-if="store.dbPath" :db-path="store.dbPath" />
         </div>
-        <ActivityHeatmap v-if="store.dbPath" :db-path="store.dbPath" />
       </div>
 
       <!-- ── Charts 14d (2 columns) ────────────────────────────────────── -->

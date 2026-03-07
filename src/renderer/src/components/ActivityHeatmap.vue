@@ -93,7 +93,7 @@ function intensity(count: number): number {
 }
 
 const COLORS = [
-  'bg-surface-secondary',  // 0 — empty
+  'bg-zinc-700/40',   // 0 — empty (slightly visible against card bg)
   'bg-emerald-900',   // 1
   'bg-emerald-700',   // 2
   'bg-emerald-500',   // 3
