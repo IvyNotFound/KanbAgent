@@ -17,8 +17,12 @@
 import { ipcMain } from 'electron'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { writeFileSync, unlinkSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
 import type { CliType, CliInstance } from '../../shared/cli-types'
 import { enrichWindowsPath, getWslDistros } from './ipc-wsl'
+import { toWslPath } from './utils/wsl'
 
 const execPromise = promisify(execFile)
 
@@ -120,7 +124,37 @@ export async function detectLocalClis(filterClis?: CliType[]): Promise<CliInstan
 // ── WSL detection ─────────────────────────────────────────────────────────────
 
 /**
- * Detect CLIs installed in a single WSL distro via bash login-shell one-liner.
+ * Parse CLI detection output lines into CliInstance objects.
+ */
+function parseDetectionOutput(
+  raw: string,
+  distro: string,
+  isDefault: boolean,
+  filterClis?: CliType[],
+): CliInstance[] {
+  const results: CliInstance[] = []
+  const clean = raw.replace(/\0/g, '')
+  for (const line of clean.split('\n').map(l => l.trim()).filter(Boolean)) {
+    const colonIdx = line.indexOf(':')
+    if (colonIdx === -1) continue
+    const cli = line.slice(0, colonIdx) as CliType
+    if (!(cli in CLI_REGISTRY)) continue
+    if (filterClis && !filterClis.includes(cli)) continue
+    const version = parseVersion(line.slice(colonIdx + 1))
+    results.push({ cli, distro, version, isDefault, type: 'wsl' })
+  }
+  return results
+}
+
+/**
+ * Detect CLIs installed in a single WSL distro.
+ *
+ * Strategy: write a bash script to a temp file and run it via `bash -l <file>`.
+ * This avoids argument-passing issues with `bash -lc <script>` through wsl.exe
+ * on Windows (complex scripts with $(), for-do-done, && get mangled).
+ *
+ * The script ends with `exit 0` to prevent non-zero exit codes (from CLIs not
+ * found) from causing execFile to reject and discard valid stdout output.
  */
 export async function detectWslClis(
   distro: string,
@@ -129,33 +163,30 @@ export async function detectWslClis(
 ): Promise<CliInstance[]> {
   const entries = getEntries(filterClis)
   const binaries = entries.map(([, { binary }]) => binary).join(' ')
-  const script = `for c in ${binaries}; do v=$($c --version 2>/dev/null | head -1); [ -n "$v" ] && echo "$c:$v"; done`
+  const scriptContent = [
+    '#!/bin/bash',
+    `for c in ${binaries}; do`,
+    '  v=$($c --version 2>/dev/null | head -1)',
+    '  [ -n "$v" ] && echo "$c:$v"',
+    'done',
+    'exit 0',
+  ].join('\n')
+
+  const scriptFile = join(tmpdir(), `cli-detect-${distro}-${Date.now()}.sh`)
   try {
+    writeFileSync(scriptFile, scriptContent, 'utf-8')
+    const scriptWslPath = toWslPath(scriptFile)
+
     const { stdout } = await execPromise(
       'wsl.exe',
-      ['-d', distro, '--', 'bash', '-lc', script],
+      ['-d', distro, '--', 'bash', '-l', scriptWslPath],
       { timeout: WSL_TIMEOUT },
     )
-    const results: CliInstance[] = []
-    const clean = stdout.replace(/\0/g, '')
-    for (const line of clean.split('\n').map(l => l.trim()).filter(Boolean)) {
-      const colonIdx = line.indexOf(':')
-      if (colonIdx === -1) continue
-      const cli = line.slice(0, colonIdx) as CliType
-      if (!(cli in CLI_REGISTRY)) continue
-      if (filterClis && !filterClis.includes(cli)) continue
-      const version = parseVersion(line.slice(colonIdx + 1))
-      results.push({
-        cli,
-        distro,
-        version,
-        isDefault,
-        type: 'wsl',
-      })
-    }
-    return results
+    return parseDetectionOutput(stdout, distro, isDefault, filterClis)
   } catch {
     return []
+  } finally {
+    try { unlinkSync(scriptFile) } catch { /* best-effort cleanup */ }
   }
 }
 

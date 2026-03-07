@@ -9,7 +9,10 @@ import type { Task, Agent } from '@renderer/types'
 // Mock window.electronAPI
 const api = {
   getClaudeInstances: vi.fn().mockResolvedValue([
-    { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true }
+    { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
+  ]),
+  getCliInstances: vi.fn().mockResolvedValue([
+    { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
   ]),
   getAgentSystemPrompt: vi.fn().mockResolvedValue({
     success: true, systemPrompt: 'You are dev-front', systemPromptSuffix: null, thinkingMode: 'auto'
@@ -61,7 +64,10 @@ describe('composables/useLaunchSession', () => {
 
     // Reset mock implementations
     api.getClaudeInstances.mockResolvedValue([
-      { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true }
+      { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
+    ])
+    api.getCliInstances.mockResolvedValue([
+      { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' }
     ])
     api.getAgentSystemPrompt.mockResolvedValue({
       success: true, systemPrompt: 'You are dev-front', systemPromptSuffix: null, thinkingMode: 'auto'
@@ -69,7 +75,7 @@ describe('composables/useLaunchSession', () => {
     api.buildAgentPrompt.mockResolvedValue('final prompt')
 
     // Set system time far enough apart between tests to expire the module-level
-    // getCachedClaudeInstances cache (TTL = 5min)
+    // getCachedCliInstances cache (TTL = 5min)
     testIndex++
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 0, 1, 0, testIndex * 10, 0))
@@ -113,9 +119,9 @@ describe('composables/useLaunchSession', () => {
       expect(result).toBe('error')
     })
 
-    it('should return error when getClaudeInstances rejects', async () => {
+    it('should return error when getCliInstances rejects', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
-      api.getClaudeInstances.mockRejectedValueOnce(new Error('IPC error'))
+      api.getCliInstances.mockRejectedValueOnce(new Error('IPC error'))
 
       const { launchAgentTerminal } = useLaunchSession()
       const result = await launchAgentTerminal(makeAgent(), makeTask())
@@ -126,15 +132,16 @@ describe('composables/useLaunchSession', () => {
       vi.mocked(console.warn).mockRestore()
     })
 
-    it('should return error when getClaudeInstances returns empty array', async () => {
-      api.getClaudeInstances.mockResolvedValueOnce([])
+    it('should launch with no distro when getCliInstances returns empty array', async () => {
+      api.getCliInstances.mockResolvedValueOnce([])
 
       const { launchAgentTerminal } = useLaunchSession()
       const result = await launchAgentTerminal(makeAgent(), makeTask())
 
-      expect(result).toBe('error')
+      expect(result).toBe('ok')
       const tabsStore = useTabsStore()
-      expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
+      const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
+      expect(terminal?.wslDistro).toBeNull()
     })
 
     it('should return error when getAgentSystemPrompt fails', async () => {
@@ -162,9 +169,9 @@ describe('composables/useLaunchSession', () => {
     })
 
     it('should use stored defaultCliInstance from settings (T879)', async () => {
-      api.getClaudeInstances.mockResolvedValueOnce([
-        { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true },
-        { distro: 'Debian', version: '2.1.58', isDefault: false },
+      api.getCliInstances.mockResolvedValueOnce([
+        { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' },
+        { cli: 'claude', distro: 'Debian', version: '2.1.58', isDefault: false, type: 'wsl' },
       ])
       const settingsStore = useSettingsStore()
       settingsStore.setDefaultCliInstance('Debian')
@@ -178,8 +185,8 @@ describe('composables/useLaunchSession', () => {
     })
 
     it('should fallback to isDefault instance when stored distro not found (T879)', async () => {
-      api.getClaudeInstances.mockResolvedValueOnce([
-        { distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true },
+      api.getCliInstances.mockResolvedValueOnce([
+        { cli: 'claude', distro: 'Ubuntu-24.04', version: '2.1.58', isDefault: true, type: 'wsl' },
       ])
       const settingsStore = useSettingsStore()
       settingsStore.setDefaultCliInstance('NonExistent')
@@ -271,9 +278,9 @@ describe('composables/useLaunchSession', () => {
       expect(result).toBe(false)
     })
 
-    it('should return false when getClaudeInstances rejects', async () => {
+    it('should return false when getCliInstances rejects', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
-      api.getClaudeInstances.mockRejectedValueOnce(new Error('review IPC error'))
+      api.getCliInstances.mockRejectedValueOnce(new Error('review IPC error'))
 
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       const { launchReviewSession } = useLaunchSession()
@@ -285,14 +292,14 @@ describe('composables/useLaunchSession', () => {
       vi.mocked(console.warn).mockRestore()
     })
 
-    it('should return false when getClaudeInstances returns empty array', async () => {
-      api.getClaudeInstances.mockResolvedValueOnce([])
+    it('should launch with no distro when getCliInstances returns empty array', async () => {
+      api.getCliInstances.mockResolvedValueOnce([])
 
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
       const { launchReviewSession } = useLaunchSession()
       const result = await launchReviewSession(reviewAgent, [makeTask({ statut: 'done' })])
 
-      expect(result).toBe(false)
+      expect(result).toBe(true)
     })
 
     it('should return false when dbPath is null', async () => {

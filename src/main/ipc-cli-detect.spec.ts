@@ -10,10 +10,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ── Hoist mocks ───────────────────────────────────────────────────────────────
-const { execFileMock, enrichWindowsPathMock, getWslDistrosMock } = vi.hoisted(() => ({
+const { execFileMock, enrichWindowsPathMock, getWslDistrosMock, writeFileSyncMock, unlinkSyncMock } = vi.hoisted(() => ({
   execFileMock: vi.fn(),
   enrichWindowsPathMock: vi.fn().mockResolvedValue(undefined),
   getWslDistrosMock: vi.fn(),
+  writeFileSyncMock: vi.fn(),
+  unlinkSyncMock: vi.fn(),
 }))
 
 vi.mock('child_process', () => ({
@@ -24,6 +26,12 @@ vi.mock('child_process', () => ({
 vi.mock('util', () => ({
   default: { promisify: () => execFileMock },
   promisify: () => execFileMock,
+}))
+
+vi.mock('fs', () => ({
+  default: { writeFileSync: writeFileSyncMock, unlinkSync: unlinkSyncMock },
+  writeFileSync: writeFileSyncMock,
+  unlinkSync: unlinkSyncMock,
 }))
 
 // ── Mock electron ─────────────────────────────────────────────────────────────
@@ -41,6 +49,14 @@ vi.mock('electron', () => ({
 vi.mock('./ipc-wsl', () => ({
   enrichWindowsPath: enrichWindowsPathMock,
   getWslDistros: getWslDistrosMock,
+}))
+
+vi.mock('./utils/wsl', () => ({
+  toWslPath: (p: string) => {
+    const drive = p.charAt(0).toLowerCase()
+    const rest = p.slice(2).replace(/\\/g, '/')
+    return `/mnt/${drive}${rest}`
+  },
 }))
 
 // ── Import after mocks ────────────────────────────────────────────────────────
@@ -180,7 +196,7 @@ describe('detectWslClis', () => {
     vi.resetAllMocks()
   })
 
-  it('returns installed CLIs from bash one-liner output', async () => {
+  it('returns installed CLIs from script file output', async () => {
     execFileMock.mockResolvedValueOnce({
       stdout: 'claude:2.1.58\ngemini:0.2.0\n',
       stderr: '',
@@ -210,13 +226,23 @@ describe('detectWslClis', () => {
     expect(result).toEqual([])
   })
 
-  it('uses login shell (-lc) for WSL calls', async () => {
+  it('writes a temp script file and uses bash -l <file> for WSL calls', async () => {
     execFileMock.mockResolvedValueOnce({ stdout: '', stderr: '' })
     await detectWslClis('Ubuntu', true)
+    // Script file should be written
+    expect(writeFileSyncMock).toHaveBeenCalledOnce()
+    const scriptContent = writeFileSyncMock.mock.calls[0][1] as string
+    expect(scriptContent).toContain('#!/bin/bash')
+    expect(scriptContent).toContain('exit 0')
+    // wsl.exe should be called with bash -l <wslPath>
     const args = execFileMock.mock.calls[0][1] as string[]
-    expect(args).toContain('-lc')
     expect(args[0]).toBe('-d')
     expect(args[1]).toBe('Ubuntu')
+    expect(args).toContain('bash')
+    expect(args).toContain('-l')
+    expect(args).not.toContain('-lc')
+    // Cleanup: unlinkSync should be called
+    expect(unlinkSyncMock).toHaveBeenCalledOnce()
   })
 
   it('filters by clis when filterClis provided', async () => {
@@ -224,9 +250,10 @@ describe('detectWslClis', () => {
     const result = await detectWslClis('Ubuntu', false, ['aider'])
     expect(result).toHaveLength(1)
     expect(result[0].cli).toBe('aider')
-    const scriptArg = execFileMock.mock.calls[0][1].at(-1) as string
-    expect(scriptArg).toContain('aider')
-    expect(scriptArg).not.toContain('codex')
+    // Script content should only contain filtered CLIs
+    const scriptContent = writeFileSyncMock.mock.calls[0][1] as string
+    expect(scriptContent).toContain('aider')
+    expect(scriptContent).not.toContain('codex')
   })
 })
 

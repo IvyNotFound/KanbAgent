@@ -149,7 +149,7 @@ describe('agent-stream', () => {
   it('spawns wsl.exe with bash -l <script> and claude -p --input-format stream-json (T706)', async () => {
     const handler = handlers.get('agent:create')!
     const event = { sender: mockSender }
-    await handler(event, {})
+    await handler(event, { wslDistro: 'Ubuntu' })
 
     const [cmd, args] = mockSpawn.mock.calls[0] as [string, string[]]
     // cmd is now an absolute path (e.g. C:\Windows\System32\wsl.exe or fallback) — check suffix
@@ -186,7 +186,7 @@ describe('agent-stream', () => {
   it('includes --cd <wslPath> when projectPath is provided', async () => {
     const handler = handlers.get('agent:create')!
     const event = { sender: mockSender }
-    await handler(event, { projectPath: 'C:\\Users\\foo\\project' })
+    await handler(event, { wslDistro: 'Ubuntu', projectPath: 'C:\\Users\\foo\\project' })
 
     const [, args] = mockSpawn.mock.calls[0] as [string, string[]]
     const idx = args.indexOf('--cd')

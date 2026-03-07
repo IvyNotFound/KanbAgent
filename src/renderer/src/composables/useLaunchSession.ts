@@ -14,22 +14,18 @@ import type { Task, Agent } from '@renderer/types'
 
 export const MAX_AGENT_SESSIONS = 3
 
-interface ClaudeInstance {
-  distro: string
-  version: string
-  isDefault: boolean
-}
+import type { CliInstance } from '@shared/cli-types'
 
 const CACHE_TTL_MS = 5 * 60 * 1000
-let cachedInstances: ClaudeInstance[] | null = null
+let cachedInstances: CliInstance[] | null = null
 let cacheTimestamp = 0
 
-async function getCachedClaudeInstances(): Promise<ClaudeInstance[]> {
+async function getCachedCliInstances(): Promise<CliInstance[]> {
   const now = Date.now()
   if (cachedInstances && now - cacheTimestamp < CACHE_TTL_MS) {
     return cachedInstances
   }
-  const result = await window.electronAPI.getClaudeInstances() as ClaudeInstance[]
+  const result = await window.electronAPI.getCliInstances() as CliInstance[]
   if (result.length > 0) {
     cachedInstances = result
     cacheTimestamp = now
@@ -62,14 +58,18 @@ export function useLaunchSession() {
     }
 
     try {
-      const instances = await getCachedClaudeInstances()
-      if (instances.length === 0) return 'error'
+      const allInstances = await getCachedCliInstances()
 
       const settingsStore = useSettingsStore()
+      const defaultCli = settingsStore.enabledClis[0] ?? 'claude'
+      const cliInstances = allInstances.filter(i => i.cli === defaultCli)
+
       const storedDistro = settingsStore.defaultCliInstance
-      const instance = (storedDistro ? instances.find(i => i.distro === storedDistro) : undefined)
-        ?? instances.find(i => i.isDefault)
-        ?? instances[0]
+      const instance = cliInstances.length > 0
+        ? ((storedDistro ? cliInstances.find(i => i.distro === storedDistro) : undefined)
+            ?? cliInstances.find(i => i.isDefault)
+            ?? cliInstances[0])
+        : null
 
       const promptResult = await window.electronAPI.getAgentSystemPrompt(dbPath, agent.id)
       if (!promptResult.success) return 'error'
@@ -94,14 +94,16 @@ export function useLaunchSession() {
 
       tabsStore.addTerminal(
         agent.name,
-        instance.distro,
+        instance?.distro,
         finalPrompt,
         fullSystemPrompt,
         thinkingMode,
         undefined,
         undefined,
         false,
-        task.id
+        task.id,
+        'stream',
+        defaultCli
       )
 
       return 'ok'
@@ -121,14 +123,18 @@ export function useLaunchSession() {
     if (!dbPath) return false
 
     try {
-      const instances = await getCachedClaudeInstances()
-      if (instances.length === 0) return false
+      const allInstances = await getCachedCliInstances()
 
       const settingsStore = useSettingsStore()
+      const defaultCli = settingsStore.enabledClis[0] ?? 'claude'
+      const cliInstances = allInstances.filter(i => i.cli === defaultCli)
+
       const storedDistro = settingsStore.defaultCliInstance
-      const instance = (storedDistro ? instances.find(i => i.distro === storedDistro) : undefined)
-        ?? instances.find(i => i.isDefault)
-        ?? instances[0]
+      const instance = cliInstances.length > 0
+        ? ((storedDistro ? cliInstances.find(i => i.distro === storedDistro) : undefined)
+            ?? cliInstances.find(i => i.isDefault)
+            ?? cliInstances[0])
+        : null
 
       const promptResult = await window.electronAPI.getAgentSystemPrompt(dbPath, agent.id)
       if (!promptResult.success) return false
@@ -156,13 +162,16 @@ export function useLaunchSession() {
 
       tabsStore.addTerminal(
         agent.name,
-        instance.distro,
+        instance?.distro,
         finalPrompt,
         fullSystemPrompt,
         thinkingMode,
         undefined,
         undefined,
-        false
+        false,
+        undefined,
+        'stream',
+        defaultCli
       )
 
       return true

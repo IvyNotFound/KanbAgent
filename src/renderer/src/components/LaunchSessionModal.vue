@@ -256,7 +256,7 @@ async function launch() {
             leave-from-class="opacity-100 max-h-64"
             leave-to-class="opacity-0 max-h-0"
           >
-            <div v-if="caps.profileSelection">
+            <div v-if="caps.profileSelection || instancesForCli.length > 1">
               <p class="text-sm font-medium text-content-secondary mb-2">
                 {{ multiCli ? CLI_LABELS[selectedCli] + ' — ' + t('launch.instance') : t('launch.claudeInstance') }}
               </p>
