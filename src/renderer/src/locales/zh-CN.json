@@ -522,7 +522,15 @@
     "noTasks": "No tasks",
     "recentActivity": "Recent activity",
     "noActivity": "No activity",
-    "activity": "Activity"
+    "activity": "Activity",
+    "telemetry": "Token telemetry",
+    "tokensIn": "Input",
+    "tokensOut": "Output",
+    "tokensCacheRead": "Cache read",
+    "tokensCacheWrite": "Cache write",
+    "tokensSessions": "sessions",
+    "last7days": "7 days",
+    "allTime": "All time"
   },
   "status": {
     "todo": "todo",

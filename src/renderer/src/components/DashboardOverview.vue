@@ -15,6 +15,8 @@ import ActivityHeatmap from './ActivityHeatmap.vue'
 import SessionActivityChart from './SessionActivityChart.vue'
 import SuccessRateChart from './SuccessRateChart.vue'
 import AgentQualityPanel from './AgentQualityPanel.vue'
+import TokenTelemetryPanel from './TokenTelemetryPanel.vue'
+import type { TokenStats } from './TokenTelemetryPanel.vue'
 
 const WorkloadView = defineAsyncComponent(() => import('./WorkloadView.vue'))
 
@@ -28,6 +30,37 @@ interface ActivityRow {
   action: string
   detail: string | null
   agent_name: string | null
+}
+
+// ── Token telemetry ───────────────────────────────────────────────────────────
+
+const EMPTY_STATS: TokenStats = { tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, session_count: 0 }
+const statsToday = ref<TokenStats>({ ...EMPTY_STATS })
+const stats7d = ref<TokenStats>({ ...EMPTY_STATS })
+const statsAll = ref<TokenStats>({ ...EMPTY_STATS })
+
+/**
+ * Fetches aggregated token stats for today, last 7 days, and all-time.
+ * Handles sessions with no token data gracefully (falls back to zeros).
+ * @returns Promise that resolves when all three period stats are updated.
+ */
+async function fetchTokenStats(): Promise<void> {
+  if (!store.dbPath) return
+  const SQL = `SELECT
+    COALESCE(SUM(tokens_in), 0)          AS tokens_in,
+    COALESCE(SUM(tokens_out), 0)         AS tokens_out,
+    COALESCE(SUM(tokens_cache_read), 0)  AS tokens_cache_read,
+    COALESCE(SUM(tokens_cache_write), 0) AS tokens_cache_write,
+    COUNT(*)                             AS session_count
+  FROM sessions`
+  const [today, d7, all] = await Promise.all([
+    store.query<TokenStats>(`${SQL} WHERE date(started_at) = date('now') AND (tokens_in > 0 OR tokens_out > 0)`),
+    store.query<TokenStats>(`${SQL} WHERE started_at >= datetime('now', '-7 days') AND (tokens_in > 0 OR tokens_out > 0)`),
+    store.query<TokenStats>(`${SQL} WHERE tokens_in > 0 OR tokens_out > 0`),
+  ])
+  statsToday.value = (today ?? [])[0] ?? { ...EMPTY_STATS }
+  stats7d.value = (d7 ?? [])[0] ?? { ...EMPTY_STATS }
+  statsAll.value = (all ?? [])[0] ?? { ...EMPTY_STATS }
 }
 
 // ── Metric: active agents ────────────────────────────────────────────────────
@@ -86,7 +119,7 @@ async function fetchActivity(): Promise<void> {
  */
 async function load(): Promise<void> {
   if (!store.dbPath) return
-  await Promise.all([fetchSessionsToday(), fetchActivity()])
+  await Promise.all([fetchSessionsToday(), fetchActivity(), fetchTokenStats()])
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -225,6 +258,13 @@ const PRIORITY_CLASSES: Record<string, string> = {
         </div>
 
       </div>
+
+      <!-- ── Token telemetry (full width) ──────────────────────────────── -->
+      <TokenTelemetryPanel
+        :stats-today="statsToday"
+        :stats-7d="stats7d"
+        :stats-all="statsAll"
+      />
 
       <!-- ── 2 Sections ──────────────────────────────────────────────────── -->
       <div class="grid grid-cols-2 gap-3">
