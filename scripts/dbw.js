@@ -50,6 +50,14 @@ function renameWithRetry(src, dest, maxRetries = 3, delayMs = 200) {
  * @param {any[]} [params=[]] — Bound parameters for prepared statement (T620)
  */
 function run(sql, params = []) {
+  // Guard: fail fast if project.db is inaccessible from WSL (Electron app holds a Windows lock)
+  try {
+    fs.accessSync(dbPath, fs.constants.R_OK | fs.constants.W_OK)
+  } catch {
+    console.error('ERREUR dbw: project.db inaccessible depuis WSL — app Electron probablement ouverte. Ferme l\'app avant d\'écrire dans la DB.')
+    process.exit(1)
+  }
+
   // Normalize MySQL/PostgreSQL datetime functions to SQLite equivalents.
   // Note: regex may replace NOW() inside string literals — acceptable trade-off.
   sql = sql.replace(/\bNOW\s*\(\s*\)/gi, 'CURRENT_TIMESTAMP')

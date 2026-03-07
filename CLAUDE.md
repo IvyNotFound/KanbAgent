@@ -52,6 +52,8 @@ Thinking mode (DB `thinking_mode`, NULL=auto): `test/doc/devops` → disabled ·
 
 ## Accès DB
 
+⚠️ **NE JAMAIS lancer `dbw.js` ou `dbstart.js` pendant que l'app Electron est ouverte.** L'app tient un lock Windows sur `project.db` — tout write concurrent crée un `.tmp` orphelin et bloque tous les agents. Lecture seule (`dbq.js`) autorisée.
+
 `node scripts/dbq.js "<SQL>"` (lecture) · `node scripts/dbw.js "<SQL>"` (écriture)
 
 SQL simple : argument direct. SQL complexe (quotes, `$()`, multiligne) → **heredoc obligatoire** :
