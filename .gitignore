@@ -71,3 +71,6 @@ logs/
 
 # Test coverage (generated)
 coverage/
+
+# Mutation testing output (generated)
+mutation/
