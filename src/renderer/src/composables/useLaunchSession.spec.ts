@@ -334,6 +334,9 @@ describe('composables/useLaunchSession', () => {
     })
 
     it('should not cache when getCliInstances returns empty array', async () => {
+      // Advance far past TTL to ensure prior test's cache is expired
+      vi.advanceTimersByTime(10 * 60 * 1000)
+
       api.getCliInstances.mockResolvedValue([])
       const { launchAgentTerminal } = useLaunchSession()
 
@@ -385,7 +388,7 @@ describe('composables/useLaunchSession', () => {
       expect(terminal?.systemPrompt).toContain('maximum 300 lines')
     })
 
-    it('should produce undefined fullSystemPrompt when no parts', async () => {
+    it('should produce null systemPrompt when no parts (empty parts → undefined → null in tab)', async () => {
       api.getAgentSystemPrompt.mockResolvedValueOnce({
         success: true,
         systemPrompt: null,
@@ -398,7 +401,8 @@ describe('composables/useLaunchSession', () => {
 
       const tabsStore = useTabsStore()
       const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
-      expect(terminal?.systemPrompt).toBeUndefined()
+      // parts.join('\n\n') || undefined → undefined → addTerminal stores null
+      expect(terminal?.systemPrompt).toBeNull()
     })
 
     it('should join parts with double newline separator', async () => {
@@ -511,26 +515,52 @@ describe('composables/useLaunchSession', () => {
     })
   })
 
-  describe('autoSend behavior', () => {
-    it('should launch terminal with autoSend=false (no auto-execution)', async () => {
+  describe('autoSend / prompt content', () => {
+    it('should store final prompt as autoSend on the terminal tab', async () => {
+      api.buildAgentPrompt.mockResolvedValueOnce('T42 prompt content')
       const { launchAgentTerminal } = useLaunchSession()
-      await launchAgentTerminal(makeAgent(), makeTask())
+      await launchAgentTerminal(makeAgent(), makeTask({ id: 42 }))
 
       const tabsStore = useTabsStore()
       const terminal = tabsStore.tabs.find(t => t.type === 'terminal')
-      // autoSend=false means terminal waits for user interaction
-      expect(terminal?.autoSend).toBe(false)
+      // autoSend param receives the finalPrompt string (built from buildAgentPrompt)
+      expect(terminal?.autoSend).toBe('T42 prompt content')
     })
 
-    it('review session should launch with autoSend=false', async () => {
+    it('review session: autoSend contains task list prompt', async () => {
+      api.buildAgentPrompt.mockResolvedValueOnce('Audit prompt for review')
       const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
 
       const { launchReviewSession } = useLaunchSession()
-      await launchReviewSession(reviewAgent, [makeTask({ status: 'done' })])
+      await launchReviewSession(reviewAgent, [makeTask({ id: 5, status: 'done', title: 'My task' })])
 
       const tabsStore = useTabsStore()
       const terminal = tabsStore.tabs.find(t => t.agentName === 'review-master')
-      expect(terminal?.autoSend).toBe(false)
+      expect(terminal?.autoSend).toBe('Audit prompt for review')
+    })
+
+    it('review session: buildAgentPrompt receives task list string', async () => {
+      const reviewAgent = makeAgent({ id: 99, name: 'review-master', type: 'review' })
+      const tasks = [
+        makeTask({ id: 5, title: 'First task', status: 'done' }),
+        makeTask({ id: 6, title: 'Second task', status: 'done' }),
+      ]
+
+      const { launchReviewSession } = useLaunchSession()
+      await launchReviewSession(reviewAgent, tasks)
+
+      expect(api.buildAgentPrompt).toHaveBeenCalledWith(
+        'review-master',
+        expect.stringContaining('T5'),
+        '/test/db',
+        99
+      )
+      expect(api.buildAgentPrompt).toHaveBeenCalledWith(
+        'review-master',
+        expect.stringContaining('T6'),
+        '/test/db',
+        99
+      )
     })
   })
 })
