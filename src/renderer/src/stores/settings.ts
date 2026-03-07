@@ -154,6 +154,7 @@ export const useSettingsStore = defineStore('settings', () => {
   function setDefaultCliInstance(distro: string) {
     defaultCliInstance.value = distro
     localStorage.setItem('defaultCliInstance', distro)
+    localStorage.removeItem('defaultClaudeInstance') // cleanup legacy key (T1044)
   }
 
   // Max file lines instruction (T899)

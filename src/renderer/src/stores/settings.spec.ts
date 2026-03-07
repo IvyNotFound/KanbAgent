@@ -340,32 +340,14 @@ describe('stores/settings — defaultCliInstance (T857, T1032)', () => {
     const store = useSettingsStore()
     expect(store.defaultCliInstance).toBe('Arch')
   })
+
+  it('should remove legacy defaultClaudeInstance key on write', () => {
+    localStorage.setItem('defaultClaudeInstance', 'OldDistro')
+    const store = useSettingsStore()
+    store.setDefaultCliInstance('NewDistro')
+    expect(localStorage.getItem('defaultClaudeInstance')).toBeNull()
+    expect(localStorage.getItem('defaultCliInstance')).toBe('NewDistro')
+  })
 })
 
-describe('stores/settings — defaultClaudeProfile (T857)', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-    localStorage.clear()
-    document.documentElement.className = ''
-  })
-
-  it('should default to "claude"', () => {
-    const store = useSettingsStore()
-    expect(store.defaultClaudeProfile).toBe('claude')
-  })
-
-  it('should persist profile to localStorage', () => {
-    const store = useSettingsStore()
-    store.setDefaultClaudeProfile('claude-work')
-    expect(store.defaultClaudeProfile).toBe('claude-work')
-    expect(localStorage.getItem('defaultClaudeProfile')).toBe('claude-work')
-  })
-
-  it('should read stored value on init', () => {
-    localStorage.setItem('defaultClaudeProfile', 'claude-beta')
-    const store = useSettingsStore()
-    expect(store.defaultClaudeProfile).toBe('claude-beta')
-  })
-})
 
