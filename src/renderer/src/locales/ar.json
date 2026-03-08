@@ -221,7 +221,7 @@
     "exporting": "جار التصدير...",
     "exportSuccess": "تم تنزيل التصدير: {path}",
     "exportError": "خطأ في التصدير: {error}",
-    "defaultCliInstance": "نسخة Claude Code الافتراضية",
+    "defaultCliInstance": "نسخة CLI الافتراضية (حسب البيئة المستهدفة)",
     "aiCodingAssistants": "مساعدو البرمجة بالذكاء الاصطناعي",
     "aiCodingAssistantsDesc": "أدوات CLI المكتشفة المتاحة لجلسات الوكلاء. بدّل لإظهار/إخفاء في المشغل.",
     "cliRefresh": "تحديث",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "تشغيل الجلسة",
-    "claudeInstance": "نسخة Claude Code",
-    "noInstance": "لم يتم اكتشاف أي نسخة — تحقق من تثبيت Claude Code في WSL",
+    "claudeInstance": "نسخة CLI",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "الإصدار {version}",
     "defaultBadge": "افتراضي",
     "wslUser": "مستخدم WSL",
@@ -300,8 +302,7 @@
     "cliUnavailable": "غير مكتشف على هذا الجهاز",
     "multiInstance": "متعدد الحالات / worktree معزول",
     "multiInstanceNote": "ينشئ git worktree مخصصاً (ADR-006) — يسمح بتشغيل حالات متعددة بالتوازي دون تعارضات",
-    "multiInstanceError": "فشل إنشاء worktree: {error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "فشل إنشاء worktree: {error}"
   },
   "titleBar": {
     "searchTitle": "ابحث عن مهمة (Ctrl+K)",

@@ -175,10 +175,6 @@ async function launch() {
 
     const distro = selectedInstance.value?.distro
     const cli = selectedCli.value
-    // Persist selected instance as cli:distro for accurate auto-select next time (T1090)
-    if (selectedInstance.value) {
-      settingsStore.setDefaultCliInstance(selectedInstance.value.cli, selectedInstance.value.distro)
-    }
     const convId = caps.value.convResume && useResume.value && lastConvId.value ? lastConvId.value : undefined
     const activeThinking = caps.value.thinkingMode ? thinkingMode.value : undefined
     const activeSystemPrompt = caps.value.systemPrompt ? fullSystemPrompt.value : undefined

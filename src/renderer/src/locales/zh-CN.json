@@ -221,7 +221,7 @@
     "exporting": "导出中...",
     "exportSuccess": "导出完成：{path}",
     "exportError": "导出错误：{error}",
-    "defaultCliInstance": "默认 Claude Code 实例",
+    "defaultCliInstance": "默认 CLI 实例（按目标环境）",
     "aiCodingAssistants": "AI 编码助手",
     "aiCodingAssistantsDesc": "检测到的可用于代理会话的 CLI 工具。切换以在启动器中显示/隐藏。",
     "cliRefresh": "刷新",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "启动会话",
-    "claudeInstance": "Claude Code 实例",
-    "noInstance": "未检测到实例 — 请确认 WSL 中已安装 Claude Code",
+    "claudeInstance": "CLI 实例",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "默认",
     "wslUser": "WSL 用户",
@@ -300,8 +302,7 @@
     "cliUnavailable": "在本机上未检测到",
     "multiInstance": "多实例 / 隔离 worktree",
     "multiInstanceNote": "创建专用 git worktree（ADR-006）— 允许同一 Agent 的多个实例并行运行而不产生冲突",
-    "multiInstanceError": "创建 worktree 失败：{error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "创建 worktree 失败：{error}"
   },
   "titleBar": {
     "searchTitle": "搜索任务（Ctrl+K）",

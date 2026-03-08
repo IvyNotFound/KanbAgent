@@ -221,7 +221,7 @@
     "exporting": "エクスポート中...",
     "exportSuccess": "エクスポート完了: {path}",
     "exportError": "エクスポートエラー: {error}",
-    "defaultCliInstance": "デフォルト Claude Code インスタンス",
+    "defaultCliInstance": "デフォルト CLI インスタンス（対象環境ごと）",
     "aiCodingAssistants": "AI コーディングアシスタント",
     "aiCodingAssistantsDesc": "エージェントセッションで利用可能な検出済み CLI ツール。ランチャーで表示するには切り替えてください。",
     "cliRefresh": "更新",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "セッションを起動",
-    "claudeInstance": "Claude Code インスタンス",
-    "noInstance": "インスタンスが検出されません — WSL に Claude Code がインストールされているか確認してください",
+    "claudeInstance": "CLI インスタンス",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "デフォルト",
     "wslUser": "WSL ユーザー",
@@ -300,8 +302,7 @@
     "cliUnavailable": "このマシンでは検出されません",
     "multiInstance": "マルチインスタンス / 分離された worktree",
     "multiInstanceNote": "専用の git worktree を作成します (ADR-006) — 競合なしに同じエージェントの複数インスタンスを並行実行できます",
-    "multiInstanceError": "worktree の作成に失敗しました: {error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "worktree の作成に失敗しました: {error}"
   },
   "titleBar": {
     "searchTitle": "タスクを検索 (Ctrl+K)",

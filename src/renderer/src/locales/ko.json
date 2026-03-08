@@ -221,7 +221,7 @@
     "exporting": "내보내는 중...",
     "exportSuccess": "내보내기 완료: {path}",
     "exportError": "내보내기 오류: {error}",
-    "defaultCliInstance": "기본 Claude Code 인스턴스",
+    "defaultCliInstance": "기본 CLI 인스턴스 (대상 환경별)",
     "aiCodingAssistants": "AI 코딩 어시스턴트",
     "aiCodingAssistantsDesc": "에이전트 세션에 사용 가능한 감지된 CLI 도구입니다. 런처에 표시하려면 토글하세요.",
     "cliRefresh": "새로 고침",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "세션 시작",
-    "claudeInstance": "Claude Code 인스턴스",
-    "noInstance": "인스턴스가 감지되지 않음 — WSL에 Claude Code가 설치되어 있는지 확인하세요",
+    "claudeInstance": "CLI 인스턴스",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "기본",
     "wslUser": "WSL 사용자",
@@ -300,8 +302,7 @@
     "cliUnavailable": "이 시스템에서 감지되지 않음",
     "multiInstance": "멀티 인스턴스 / 격리된 worktree",
     "multiInstanceNote": "전용 git worktree를 생성합니다(ADR-006) — 충돌 없이 동일한 에이전트의 여러 인스턴스를 병렬로 실행 가능",
-    "multiInstanceError": "worktree 생성 실패: {error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "worktree 생성 실패: {error}"
   },
   "titleBar": {
     "searchTitle": "작업 검색 (Ctrl+K)",
