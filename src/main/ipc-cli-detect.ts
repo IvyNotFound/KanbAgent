@@ -264,17 +264,19 @@ export function _resetDetectionCacheForTest(): void {
 /**
  * Register the `wsl:get-cli-instances` IPC handler.
  *
- * Params: `{ clis?: CliType[] }` — optional filter (default: all CLIs)
+ * Params: `{ clis?: CliType[]; forceRefresh?: boolean }` — optional filter and cache invalidation
  * Returns: `CliInstance[]` — local first, then WSL distros
  *
  * Uses the module-level detection cache populated by `warmupCliDetection()`.
  * If the warmup Promise is still in-flight, this awaits the same Promise
  * (no duplicate spawns). If called before warmup, starts detection on demand.
+ * If `forceRefresh` is true, the cache is invalidated before detection runs.
  */
 export function registerCliDetectHandlers(): void {
   ipcMain.handle(
     'wsl:get-cli-instances',
-    async (_event, args?: { clis?: CliType[] }): Promise<CliInstance[]> => {
+    async (_event, args?: { clis?: CliType[]; forceRefresh?: boolean }): Promise<CliInstance[]> => {
+      if (args?.forceRefresh) detectionCache = null
       const filterClis = Array.isArray(args?.clis) ? args.clis : undefined
       const all = await getOrRunDetection()
       return filterClis ? all.filter(inst => filterClis.includes(inst.cli)) : all

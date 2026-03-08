@@ -64,7 +64,7 @@ vi.mock('./utils/wsl', () => ({
 import { registerCliDetectHandlers, detectLocalClis, detectWslClis, _resetDetectionCacheForTest } from './ipc-cli-detect'
 
 // ── Helper ────────────────────────────────────────────────────────────────────
-function callHandler(args?: { clis?: string[] }): Promise<unknown> {
+function callHandler(args?: { clis?: string[]; forceRefresh?: boolean }): Promise<unknown> {
   const handler = handlers['wsl:get-cli-instances']
   if (!handler) throw new Error('Handler not registered')
   return handler(null, args) as Promise<unknown>
@@ -460,6 +460,22 @@ describe('detection cache', () => {
     await callHandler()
     // Two separate detections → 2 bash spawns
     expect(execFileMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('forceRefresh: true invalidates cache and triggers re-detection', async () => {
+    execFileMock.mockResolvedValue({ stdout: 'claude:2.1.58\n', stderr: '' })
+    await callHandler()
+    // Second call with forceRefresh — should bypass cache
+    await callHandler({ forceRefresh: true })
+    expect(execFileMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('forceRefresh: false (or omitted) reuses cache', async () => {
+    execFileMock.mockResolvedValue({ stdout: 'claude:2.1.58\n', stderr: '' })
+    await callHandler()
+    await callHandler({ forceRefresh: false })
+    // Cache hit — still only 1 spawn
+    expect(execFileMock).toHaveBeenCalledTimes(1)
   })
 })
 

@@ -200,10 +200,22 @@ describe('getWslDistros', () => {
     expect(result[1].distro).toBe('Debian')
   })
 
-  it('skips distros not in Running state', async () => {
+  it('includes Stopped distros (WSL starts them automatically on demand)', async () => {
     execFileMock.mockResolvedValue({ stdout: makeWslListOutput([
       { name: 'Ubuntu', state: 'Running' },
       { name: 'Debian', state: 'Stopped' },
+    ]) })
+
+    const result = await getWslDistros()
+    expect(result).toHaveLength(2)
+    expect(result[0].distro).toBe('Ubuntu')
+    expect(result[1].distro).toBe('Debian')
+  })
+
+  it('skips distros in unknown/unsupported state', async () => {
+    execFileMock.mockResolvedValue({ stdout: makeWslListOutput([
+      { name: 'Ubuntu', state: 'Running' },
+      { name: 'Broken', state: 'Installing' },
     ]) })
 
     const result = await getWslDistros()

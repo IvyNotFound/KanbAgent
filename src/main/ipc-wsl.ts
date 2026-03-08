@@ -91,7 +91,7 @@ export async function getWslDistros(): Promise<{ distro: string; isDefault: bool
     const parts = cleaned.split(/\s+/)
     const distro = parts[0]
     const state = parts[1]?.toLowerCase()
-    if (distro && !distro.toLowerCase().includes('docker') && state === 'running') {
+    if (distro && !distro.toLowerCase().includes('docker') && (state === 'running' || state === 'stopped')) {
       entries.push({ distro, isDefault })
     }
   }

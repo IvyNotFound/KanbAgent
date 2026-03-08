@@ -192,7 +192,7 @@ export const useSettingsStore = defineStore('settings', () => {
   async function refreshCliDetection(): Promise<void> {
     detectingClis.value = true
     try {
-      const raw = await window.electronAPI.getCliInstances() as CliInstance[]
+      const raw = await window.electronAPI.getCliInstances(undefined, true) as CliInstance[]
       allCliInstances.value = raw
     } catch {
       allCliInstances.value = []

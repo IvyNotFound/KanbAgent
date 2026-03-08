@@ -168,8 +168,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('task:setAssignees', dbPath, taskId, assignees),
 
   // Multi-CLI detection — detect all supported CLIs local + WSL (T1011)
-  getCliInstances: (clis?: string[]): Promise<unknown[]> =>
-    ipcRenderer.invoke('wsl:get-cli-instances', { clis }),
+  getCliInstances: (clis?: string[], forceRefresh?: boolean): Promise<unknown[]> =>
+    ipcRenderer.invoke('wsl:get-cli-instances', { clis, forceRefresh }),
 
   // Platform identifier for UI labels (e.g. 'win32', 'darwin', 'linux')
   platform: process.platform as string,
