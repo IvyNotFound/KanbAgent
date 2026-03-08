@@ -66,9 +66,15 @@ function run(sql, params = []) {
     try {
       const buf = fs.readFileSync(dbPath)
       const db = new SQL.Database(buf)
-      const stmt = db.prepare(sql)
-      stmt.run(params)
-      stmt.free()
+      if (params.length > 0) {
+        // Parameterized query — single statement only (sql.js limitation)
+        const stmt = db.prepare(sql)
+        stmt.run(params)
+        stmt.free()
+      } else {
+        // Non-parameterized — support multi-statement via exec()
+        db.exec(sql)
+      }
       // T313: Atomic write — unique temp file + rename prevents partial reads
       const tmpPath = `${dbPath}.tmp.${process.pid}.${Date.now()}`
       fs.writeFileSync(tmpPath, Buffer.from(db.export()))
