@@ -52,7 +52,12 @@ jobs:
           cache: ''
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          echo "=== npm prefix: $(npm config get prefix) ==="
+          echo "=== npm production: $(npm config get production) ==="
+          echo "=== NODE_ENV: $NODE_ENV ==="
+          npm ci --ignore-scripts
+          echo "=== After npm ci: $(ls -la . && echo DIR_EXISTS || echo DIR_GONE) ==="
 
       - name: Run ESLint
         run: npm run lint
