@@ -382,4 +382,15 @@ describe('telemetry:scan', () => {
     expect(vue!.sourceFiles).toBe(1)
     expect(vue!.testFiles).toBe(0)
   })
+
+  // ── 17. Security: assertProjectPathAllowed rejects disallowed paths ─────
+
+  it('rejects when assertProjectPathAllowed throws', async () => {
+    const { assertProjectPathAllowed } = await import('./db')
+    vi.mocked(assertProjectPathAllowed).mockImplementationOnce(() => {
+      throw new Error('PROJECT_PATH_NOT_ALLOWED: /evil')
+    })
+
+    await expect(scan('/evil')).rejects.toThrow('PROJECT_PATH_NOT_ALLOWED')
+  })
 })
