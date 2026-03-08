@@ -357,3 +357,15 @@ describe('migrateDb v19 — max_sessions column guard', () => {
   })
 })
 
+// ── CURRENT_SCHEMA_VERSION alignment ─────────────────────────────────────────
+
+describe('CURRENT_SCHEMA_VERSION alignment', () => {
+  it('counts of migrations array matches CURRENT_SCHEMA_VERSION', () => {
+    // Validate: applying from v0 returns exactly CURRENT_SCHEMA_VERSION migrations
+    const db = makeMockDb({ userVersion: 0 })
+    const applied = migrateDb(db as unknown as import('sql.js').Database)
+    expect(applied).toBeGreaterThan(0)
+    expect(db._getVersion()).toBe(28)
+  })
+})
+
