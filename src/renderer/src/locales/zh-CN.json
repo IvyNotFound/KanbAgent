@@ -159,13 +159,13 @@
     "cost": "预估费用",
     "costNote": "Sonnet 4.6 估算",
     "evolution": "30天趋势",
-    "perAgent": "每 Agent",
+    "perAgent": "每个代理",
     "perSession": "每会话（最近50条）",
     "agent": "Agent",
     "date": "日期",
     "noData": "暂无数据",
     "period": {
-      "label": "时间段",
+      "label": "周期",
       "1h": "1小时",
       "24h": "24小时",
       "7d": "7天",
@@ -237,8 +237,8 @@
       "notifications": "通知",
       "application": "应用程序"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "默认 worktree 隔离",
+    "worktreeDefaultDesc": "为每个新代理会话创建独立的 git worktree"
   },
   "setup": {
     "missingDb": "未找到数据库",
@@ -269,7 +269,7 @@
     "resetFilters": "重置过滤器",
     "status": "状态",
     "agent": "Agent",
-    "perimeter": "Scope",
+    "perimeter": "范围",
     "noResults": "无结果",
     "noTasksLoaded": "未加载任务",
     "navigate": "导航",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "启动会话",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "未检测到 CLI。请确保 CLI 可执行文件在您的 PATH 中。",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "默认",
     "prevSession": "上次会话",
@@ -295,15 +295,15 @@
     "cancel": "取消",
     "launch": "启动",
     "launching": "启动中…",
-    "instance": "instance",
+    "instance": "实例",
     "multiInstance": "多实例 / 隔离 worktree",
     "multiInstanceNote": "创建专用 git worktree（ADR-006）— 允许同一 Agent 的多个实例并行运行而不产生冲突",
     "multiInstanceError": "创建 worktree 失败：{error}",
     "refreshDetection": "刷新",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "来源：{source}",
+    "worktreeSourceGlobal": "全局设置",
+    "worktreeSourceAgent": "代理设置",
+    "worktreeSourceManual": "手动更改"
   },
   "titleBar": {
     "searchTitle": "搜索任务（Ctrl+K）",
@@ -329,7 +329,7 @@
     "editTitle": "编辑 Agent",
     "newTitle": "新建 Agent",
     "type": "类型",
-    "perimeter": "Scope",
+    "perimeter": "范围",
     "allowedTools": "允许的工具",
     "allowedToolsNote": "逗号分隔 — 启动时作为 --allowedTools 注入",
     "systemPromptOptional": "（可选）",
@@ -378,12 +378,12 @@
       "devops": "提交、分支、CI/CD、发布",
       "doc": "README、CONTRIBUTING、JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "Worktree 隔离",
+    "worktreeInherit": "继承",
+    "worktreeOn": "已启用",
+    "worktreeOff": "已禁用",
+    "worktreeNote": "优先级：全局 < 代理 < 手动启动",
+    "worktreeCurrentGlobal": "（全局：{status}）"
   },
   "dbSelector": {
     "tagline": "实时查看您的 Claude Agent 任务。",
@@ -416,7 +416,7 @@
     "quality": "质量",
     "project": "项目",
     "agents": "Agent",
-    "perimeters": "Scope",
+    "perimeters": "范围",
     "tree": "文件树",
     "settings": "设置",
     "close": "关闭",
@@ -491,7 +491,7 @@
   },
   "timeline": {
     "title": "时间线",
-    "period": "时间段",
+    "period": "周期",
     "filterAgents": "Agent",
     "clearFilter": "清除",
     "noData": "此时间段内没有任务",

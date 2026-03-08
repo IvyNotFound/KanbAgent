@@ -237,8 +237,8 @@
       "notifications": "알림",
       "application": "애플리케이션"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "기본 worktree 격리",
+    "worktreeDefaultDesc": "새 에이전트 세션마다 격리된 git worktree 생성"
   },
   "setup": {
     "missingDb": "데이터베이스를 찾을 수 없습니다",
@@ -269,7 +269,7 @@
     "resetFilters": "필터 초기화",
     "status": "상태",
     "agent": "에이전트",
-    "perimeter": "스코프",
+    "perimeter": "범위",
     "noResults": "결과 없음",
     "noTasksLoaded": "로드된 작업 없음",
     "navigate": "이동",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "세션 시작",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "CLI가 감지되지 않습니다. CLI 바이너리가 PATH에 있는지 확인하세요.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "기본",
     "prevSession": "이전 세션",
@@ -295,15 +295,15 @@
     "cancel": "취소",
     "launch": "시작",
     "launching": "시작 중…",
-    "instance": "instance",
+    "instance": "인스턴스",
     "multiInstance": "멀티 인스턴스 / 격리된 worktree",
     "multiInstanceNote": "전용 git worktree를 생성합니다(ADR-006) — 충돌 없이 동일한 에이전트의 여러 인스턴스를 병렬로 실행 가능",
     "multiInstanceError": "worktree 생성 실패: {error}",
     "refreshDetection": "새로 고침",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "소스: {source}",
+    "worktreeSourceGlobal": "전역 설정",
+    "worktreeSourceAgent": "에이전트 설정",
+    "worktreeSourceManual": "수동으로 변경됨"
   },
   "titleBar": {
     "searchTitle": "작업 검색 (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "에이전트 편집",
     "newTitle": "새 에이전트",
     "type": "유형",
-    "perimeter": "스코프",
+    "perimeter": "범위",
     "allowedTools": "허용 도구",
     "allowedToolsNote": "쉼표로 구분 — 시작 시 --allowedTools로 주입",
     "systemPromptOptional": "（선택 사항）",
@@ -378,12 +378,12 @@
       "devops": "커밋, 브랜치, CI/CD, 릴리스",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "Worktree 격리",
+    "worktreeInherit": "상속",
+    "worktreeOn": "활성화됨",
+    "worktreeOff": "비활성화됨",
+    "worktreeNote": "우선순위: 전역 < 에이전트 < 수동 실행",
+    "worktreeCurrentGlobal": "(전역: {status})"
   },
   "dbSelector": {
     "tagline": "Claude 에이전트 작업을 실시간으로 확인하세요.",
@@ -416,7 +416,7 @@
     "quality": "품질",
     "project": "프로젝트",
     "agents": "에이전트",
-    "perimeters": "스코프",
+    "perimeters": "범위",
     "tree": "파일 트리",
     "settings": "설정",
     "close": "닫기",

@@ -159,7 +159,7 @@
     "cost": "推定コスト",
     "costNote": "Sonnet 4.6 見積もり",
     "evolution": "30日間トレンド",
-    "perAgent": "エージェント別",
+    "perAgent": "エージェントごと",
     "perSession": "セッション別 (直近50件)",
     "agent": "エージェント",
     "date": "日付",
@@ -237,8 +237,8 @@
       "notifications": "通知",
       "application": "アプリケーション"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "デフォルトのworktree分離",
+    "worktreeDefaultDesc": "新しいエージェントセッションごとに分離されたgit worktreeを作成します"
   },
   "setup": {
     "missingDb": "データベースが見つかりません",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "セッションを起動",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "CLIが検出されません。CLIバイナリがPATHに含まれているか確認してください。",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "デフォルト",
     "prevSession": "前回のセッション",
@@ -295,15 +295,15 @@
     "cancel": "キャンセル",
     "launch": "起動",
     "launching": "起動中…",
-    "instance": "instance",
+    "instance": "インスタンス",
     "multiInstance": "マルチインスタンス / 分離された worktree",
     "multiInstanceNote": "専用の git worktree を作成します (ADR-006) — 競合なしに同じエージェントの複数インスタンスを並行実行できます",
     "multiInstanceError": "worktree の作成に失敗しました: {error}",
     "refreshDetection": "更新",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "ソース: {source}",
+    "worktreeSourceGlobal": "グローバル設定",
+    "worktreeSourceAgent": "エージェント設定",
+    "worktreeSourceManual": "手動で変更"
   },
   "titleBar": {
     "searchTitle": "タスクを検索 (Ctrl+K)",
@@ -378,12 +378,12 @@
       "devops": "コミット・ブランチ・CI/CD・リリース",
       "doc": "README・CONTRIBUTING・JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "Worktree分離",
+    "worktreeInherit": "継承",
+    "worktreeOn": "有効",
+    "worktreeOff": "無効",
+    "worktreeNote": "優先度: グローバル < エージェント < 手動起動",
+    "worktreeCurrentGlobal": "(グローバル: {status})"
   },
   "dbSelector": {
     "tagline": "Claude エージェントのタスクをリアルタイムで確認。",

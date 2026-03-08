@@ -159,7 +159,7 @@
     "cost": "Tahmini maliyet",
     "costNote": "Sonnet 4.6 tahmini",
     "evolution": "30 günlük trend",
-    "perAgent": "Ajana göre",
+    "perAgent": "Ajan başına",
     "perSession": "Oturuma göre (son 50)",
     "agent": "Ajan",
     "date": "Tarih",
@@ -237,8 +237,8 @@
       "notifications": "Bildirimler",
       "application": "Uygulama"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "Varsayılan worktree yalıtımı",
+    "worktreeDefaultDesc": "Her yeni ajan oturumu için yalıtılmış bir git worktree oluştur"
   },
   "setup": {
     "missingDb": "Veritabanı bulunamadı",
@@ -269,7 +269,7 @@
     "resetFilters": "Filtreleri sıfırla",
     "status": "Durum",
     "agent": "Ajan",
-    "perimeter": "Scope",
+    "perimeter": "Kapsam",
     "noResults": "Sonuç yok",
     "noTasksLoaded": "Görev yüklenmedi",
     "navigate": "Gezin",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "Oturum başlat",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "CLI algılanamadı. CLI ikili dosyasının PATH'inizde olduğundan emin olun.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "Varsayılan",
     "prevSession": "Önceki oturum",
@@ -295,15 +295,15 @@
     "cancel": "İptal",
     "launch": "Başlat",
     "launching": "Başlatılıyor…",
-    "instance": "Instance",
+    "instance": "Örnek",
     "multiInstance": "Çoklu örnek / İzole worktree",
     "multiInstanceNote": "Özel bir git worktree oluşturur (ADR-006) — aynı ajanın birden fazla örneğinin çakışma olmadan paralel çalışmasına izin verir",
     "multiInstanceError": "Worktree oluşturulamadı: {error}",
     "refreshDetection": "Yenile",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "Kaynak: {source}",
+    "worktreeSourceGlobal": "genel ayar",
+    "worktreeSourceAgent": "ajan ayarı",
+    "worktreeSourceManual": "manuel olarak değiştirildi"
   },
   "titleBar": {
     "searchTitle": "Görev ara (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "Ajanı düzenle",
     "newTitle": "Yeni ajan",
     "type": "Tür",
-    "perimeter": "Scope",
+    "perimeter": "Kapsam",
     "allowedTools": "İzin verilen araçlar",
     "allowedToolsNote": "Virgülle ayrılmış — başlatmada --allowedTools olarak enjekte edilir",
     "systemPromptOptional": "(isteğe bağlı)",
@@ -378,12 +378,12 @@
       "devops": "Commit, dal, CI/CD, sürüm",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "Worktree yalıtımı",
+    "worktreeInherit": "Devral",
+    "worktreeOn": "Etkin",
+    "worktreeOff": "Devre dışı",
+    "worktreeNote": "Öncelik: genel < ajan < manuel başlatma",
+    "worktreeCurrentGlobal": "(genel: {status})"
   },
   "dbSelector": {
     "tagline": "Claude ajan görevlerini gerçek zamanlı izleyin.",
@@ -416,7 +416,7 @@
     "quality": "Kalite",
     "project": "Proje",
     "agents": "Ajanlar",
-    "perimeters": "Scopes",
+    "perimeters": "Kapsamlar",
     "tree": "Dosya ağacı",
     "settings": "Ayarlar",
     "close": "Kapat",

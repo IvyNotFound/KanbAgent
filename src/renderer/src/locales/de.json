@@ -237,8 +237,8 @@
       "notifications": "Benachrichtigungen",
       "application": "Anwendung"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "Standard-Worktree-Isolation",
+    "worktreeDefaultDesc": "Erstellt einen isolierten Git-Worktree für jede neue Agentensitzung"
   },
   "setup": {
     "missingDb": "Fehlende Datenbank",
@@ -269,7 +269,7 @@
     "resetFilters": "Filter zurücksetzen",
     "status": "Status",
     "agent": "Agent",
-    "perimeter": "Scope",
+    "perimeter": "Bereich",
     "noResults": "Keine Ergebnisse",
     "noTasksLoaded": "Keine Aufgaben geladen",
     "navigate": "navigieren",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "Sitzung starten",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "Kein CLI erkannt. Stelle sicher, dass die CLI-Datei in deinem PATH ist.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "Standard",
     "prevSession": "Vorherige Sitzung",
@@ -295,15 +295,15 @@
     "cancel": "Abbrechen",
     "launch": "Starten",
     "launching": "Startet…",
-    "instance": "Instance",
+    "instance": "Instanz",
     "multiInstance": "Multi-Instanz / Isolierter Worktree",
     "multiInstanceNote": "Erstellt einen dedizierten Git-Worktree (ADR-006) — ermöglicht mehrere Instanzen desselben Agenten parallel ohne Konflikte",
     "multiInstanceError": "Worktree konnte nicht erstellt werden: {error}",
     "refreshDetection": "Aktualisieren",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "Quelle: {source}",
+    "worktreeSourceGlobal": "globale Einstellung",
+    "worktreeSourceAgent": "Agenteneinstellung",
+    "worktreeSourceManual": "manuell geändert"
   },
   "titleBar": {
     "searchTitle": "Aufgabe suchen (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "Agenten bearbeiten",
     "newTitle": "Neuer Agent",
     "type": "Typ",
-    "perimeter": "Scope",
+    "perimeter": "Bereich",
     "allowedTools": "Erlaubte Werkzeuge",
     "allowedToolsNote": "Kommagetrennt — wird beim Start als --allowedTools injiziert",
     "systemPromptOptional": "(optional)",
@@ -378,11 +378,11 @@
       "devops": "Commits, Branches, CI/CD, Releases",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
+    "worktreeEnabled": "Worktree-Isolation",
+    "worktreeInherit": "Erben",
+    "worktreeOn": "Aktiviert",
+    "worktreeOff": "Deaktiviert",
+    "worktreeNote": "Priorität: global < Agent < manueller Start",
     "worktreeCurrentGlobal": "(global: {status})"
   },
   "dbSelector": {
@@ -416,7 +416,7 @@
     "quality": "Qualität",
     "project": "Projekt",
     "agents": "Agenten",
-    "perimeters": "Scope",
+    "perimeters": "Bereiche",
     "tree": "Dateibaum",
     "settings": "Einstellungen",
     "close": "Schließen",

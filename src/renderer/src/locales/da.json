@@ -237,8 +237,8 @@
       "notifications": "Notifikationer",
       "application": "Applikation"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "Standard worktree-isolation",
+    "worktreeDefaultDesc": "Opret et isoleret git worktree for hver ny agentsession"
   },
   "setup": {
     "missingDb": "Manglende database",
@@ -269,7 +269,7 @@
     "resetFilters": "nulstil filtre",
     "status": "Status",
     "agent": "Agent",
-    "perimeter": "Scope",
+    "perimeter": "Omfang",
     "noResults": "Ingen resultater",
     "noTasksLoaded": "Ingen opgaver indlæst",
     "navigate": "naviger",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "Start session",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "Ingen CLI registreret. Sørg for at CLI-filen er i din PATH.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "standard",
     "prevSession": "Forrige session",
@@ -295,15 +295,15 @@
     "cancel": "Annuller",
     "launch": "Start",
     "launching": "Starter…",
-    "instance": "Instance",
+    "instance": "Instans",
     "multiInstance": "Multi-instans / Isoleret worktree",
     "multiInstanceNote": "Opretter en dedikeret git worktree (ADR-006) — tillader kørsel af flere instanser parallelt uden konflikter",
     "multiInstanceError": "Oprettelse af worktree mislykkedes: {error}",
     "refreshDetection": "Opdater",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "Kilde: {source}",
+    "worktreeSourceGlobal": "global indstilling",
+    "worktreeSourceAgent": "agentindstilling",
+    "worktreeSourceManual": "ændret manuelt"
   },
   "titleBar": {
     "searchTitle": "Søg en opgave (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "Rediger agent",
     "newTitle": "Ny agent",
     "type": "Type",
-    "perimeter": "Scope",
+    "perimeter": "Omfang",
     "allowedTools": "Tilladte værktøjer",
     "allowedToolsNote": "Kommasepareret — injiceret som --allowedTools ved start",
     "systemPromptOptional": "(valgfrit)",
@@ -378,11 +378,11 @@
       "devops": "Commits, branches, CI/CD, releases",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
+    "worktreeEnabled": "Worktree-isolation",
+    "worktreeInherit": "Arv",
+    "worktreeOn": "Aktiveret",
+    "worktreeOff": "Deaktiveret",
+    "worktreeNote": "Prioritet: global < agent < manuelt start",
     "worktreeCurrentGlobal": "(global: {status})"
   },
   "dbSelector": {
@@ -416,7 +416,7 @@
     "quality": "Kvalitet",
     "project": "Projekt",
     "agents": "Agenter",
-    "perimeters": "Scope",
+    "perimeters": "Omfang",
     "tree": "Filtræ",
     "settings": "Indstillinger",
     "close": "Luk",

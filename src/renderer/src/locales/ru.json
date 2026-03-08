@@ -159,7 +159,7 @@
     "cost": "Оцен. стоимость",
     "costNote": "Оценка Sonnet 4.6",
     "evolution": "Тренд за 30 дней",
-    "perAgent": "По агентам",
+    "perAgent": "На агента",
     "perSession": "По сессиям (последние 50)",
     "agent": "Агент",
     "date": "Дата",
@@ -237,8 +237,8 @@
       "notifications": "Уведомления",
       "application": "Приложение"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "Изоляция worktree по умолчанию",
+    "worktreeDefaultDesc": "Создать изолированный git worktree для каждой новой сессии агента"
   },
   "setup": {
     "missingDb": "База данных отсутствует",
@@ -269,7 +269,7 @@
     "resetFilters": "сбросить фильтры",
     "status": "Статус",
     "agent": "Агент",
-    "perimeter": "Scope",
+    "perimeter": "Область",
     "noResults": "Нет результатов",
     "noTasksLoaded": "Задачи не загружены",
     "navigate": "навигация",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "Запустить сессию",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "CLI не обнаружен. Убедитесь, что бинарный файл CLI находится в вашем PATH.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "по умолчанию",
     "prevSession": "Предыдущая сессия",
@@ -295,15 +295,15 @@
     "cancel": "Отмена",
     "launch": "Запустить",
     "launching": "Запуск…",
-    "instance": "Instance",
+    "instance": "Экземпляр",
     "multiInstance": "Мульти-экземпляр / Изолированное рабочее дерево",
     "multiInstanceNote": "Создаёт выделенное рабочее дерево git (ADR-006) — позволяет запускать несколько экземпляров одного агента параллельно без конфликтов",
     "multiInstanceError": "Не удалось создать рабочее дерево: {error}",
     "refreshDetection": "Обновить",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "Источник: {source}",
+    "worktreeSourceGlobal": "глобальная настройка",
+    "worktreeSourceAgent": "настройка агента",
+    "worktreeSourceManual": "изменено вручную"
   },
   "titleBar": {
     "searchTitle": "Поиск задачи (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "Редактировать агента",
     "newTitle": "Новый агент",
     "type": "Тип",
-    "perimeter": "Scope",
+    "perimeter": "Область",
     "allowedTools": "Разрешённые инструменты",
     "allowedToolsNote": "Через запятую — передаётся как --allowedTools при запуске",
     "systemPromptOptional": "(необязательно)",
@@ -378,12 +378,12 @@
       "devops": "Коммиты, ветки, CI/CD, релизы",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "Изоляция worktree",
+    "worktreeInherit": "Наследовать",
+    "worktreeOn": "Включено",
+    "worktreeOff": "Отключено",
+    "worktreeNote": "Приоритет: глобальный < агент < ручной запуск",
+    "worktreeCurrentGlobal": "(глобальный: {status})"
   },
   "dbSelector": {
     "tagline": "Просматривайте задачи ваших агентов Claude в реальном времени.",
@@ -416,7 +416,7 @@
     "quality": "Качество",
     "project": "Проект",
     "agents": "Агенты",
-    "perimeters": "Scopes",
+    "perimeters": "Области",
     "tree": "Дерево файлов",
     "settings": "Настройки",
     "close": "Закрыть",
@@ -605,7 +605,7 @@
   },
   "update": {
     "available": "Доступно обновление {version}",
-    "download": "Загрузить",
+    "download": "Скачать",
     "downloading": "Загрузка…",
     "ready": "Обновление {version} готово к установке",
     "restart": "Перезапустить",

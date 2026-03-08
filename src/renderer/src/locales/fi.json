@@ -165,7 +165,7 @@
     "date": "Päiväys",
     "noData": "Ei dataa",
     "period": {
-      "label": "Jakso",
+      "label": "Ajanjakso",
       "1h": "1h",
       "24h": "24h",
       "7d": "7pv",
@@ -237,8 +237,8 @@
       "notifications": "Ilmoitukset",
       "application": "Sovellus"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "Oletusarvoinen worktree-eristys",
+    "worktreeDefaultDesc": "Luo eristetty git-worktree jokaiselle uudelle agentisessiolle"
   },
   "setup": {
     "missingDb": "Tietokanta puuttuu",
@@ -269,7 +269,7 @@
     "resetFilters": "nollaa suodattimet",
     "status": "Tila",
     "agent": "Agentti",
-    "perimeter": "Scope",
+    "perimeter": "Laajuus",
     "noResults": "Ei tuloksia",
     "noTasksLoaded": "Ei ladattuja tehtäviä",
     "navigate": "siirry",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "Käynnistä istunto",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "CLI:tä ei havaittu. Varmista, että CLI-binääri on PATH-muuttujassasi.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "oletus",
     "prevSession": "Edellinen istunto",
@@ -295,15 +295,15 @@
     "cancel": "Peruuta",
     "launch": "Käynnistä",
     "launching": "Käynnistetään…",
-    "instance": "Instance",
+    "instance": "Instanssi",
     "multiInstance": "Multi-instanssi / Eristetty worktree",
     "multiInstanceNote": "Luo dedikoidun git worktree -hakemiston (ADR-006) — mahdollistaa useiden rinnakkaisten instanssien ajamisen ilman konflikteja",
     "multiInstanceError": "Worktreen luominen epäonnistui: {error}",
     "refreshDetection": "Päivitä",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "Lähde: {source}",
+    "worktreeSourceGlobal": "yleinen asetus",
+    "worktreeSourceAgent": "agentin asetus",
+    "worktreeSourceManual": "muutettu manuaalisesti"
   },
   "titleBar": {
     "searchTitle": "Hae tehtävää (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "Muokkaa agenttia",
     "newTitle": "Uusi agentti",
     "type": "Tyyppi",
-    "perimeter": "Scope",
+    "perimeter": "Laajuus",
     "allowedTools": "Sallitut työkalut",
     "allowedToolsNote": "Pilkulla erotettu — lisätään käynnistettäessä --allowedTools-parametrina",
     "systemPromptOptional": "(valinnainen)",
@@ -378,12 +378,12 @@
       "devops": "Commitit, haarat, CI/CD, julkaisut",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "Worktree-eristys",
+    "worktreeInherit": "Peri",
+    "worktreeOn": "Käytössä",
+    "worktreeOff": "Pois käytöstä",
+    "worktreeNote": "Prioriteetti: yleinen < agentti < manuaalinen käynnistys",
+    "worktreeCurrentGlobal": "(yleinen: {status})"
   },
   "dbSelector": {
     "tagline": "Tarkastele Claude-agenttitehtäviäsi reaaliajassa.",
@@ -416,7 +416,7 @@
     "quality": "Laatu",
     "project": "Projekti",
     "agents": "Agentit",
-    "perimeters": "Scopes",
+    "perimeters": "Laajuudet",
     "tree": "Tiedostopuu",
     "settings": "Asetukset",
     "close": "Sulje",
@@ -491,14 +491,14 @@
   },
   "timeline": {
     "title": "Aikajana",
-    "period": "Jakso",
+    "period": "Ajanjakso",
     "filterAgents": "Agentit",
     "clearFilter": "Tyhjennä",
     "noData": "Ei tehtäviä tällä jaksolla",
     "unassigned": "Ei määritetty",
     "legend": "Selite",
     "tooltipStatus": "Tila",
-    "tooltipStart": "Alkaa",
+    "tooltipStart": "Aloitus",
     "tooltipEnd": "Päättyy",
     "tooltipDuration": "Kesto",
     "tooltipEffort": "Työmäärä"

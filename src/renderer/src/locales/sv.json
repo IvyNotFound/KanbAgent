@@ -237,8 +237,8 @@
       "notifications": "Aviseringar",
       "application": "Applikation"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "Standard worktree-isolering",
+    "worktreeDefaultDesc": "Skapa ett isolerat git worktree för varje ny agentsession"
   },
   "setup": {
     "missingDb": "Databas saknas",
@@ -269,7 +269,7 @@
     "resetFilters": "återställ filter",
     "status": "Status",
     "agent": "Agent",
-    "perimeter": "Scope",
+    "perimeter": "Omfång",
     "noResults": "Inga resultat",
     "noTasksLoaded": "Inga uppgifter inlästa",
     "navigate": "navigera",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "Starta session",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "Ingen CLI hittades. Se till att CLI-filen finns i din PATH.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "standard",
     "prevSession": "Föregående session",
@@ -295,15 +295,15 @@
     "cancel": "Avbryt",
     "launch": "Starta",
     "launching": "Startar…",
-    "instance": "Instance",
+    "instance": "Instans",
     "multiInstance": "Multi-instans / Isolerat worktree",
     "multiInstanceNote": "Skapar ett dedikerat git worktree (ADR-006) — möjliggör körning av flera instanser av samma agent parallellt utan konflikter",
     "multiInstanceError": "Det gick inte att skapa worktree: {error}",
     "refreshDetection": "Uppdatera",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "Källa: {source}",
+    "worktreeSourceGlobal": "global inställning",
+    "worktreeSourceAgent": "agentinställning",
+    "worktreeSourceManual": "ändrad manuellt"
   },
   "titleBar": {
     "searchTitle": "Sök en uppgift (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "Redigera agent",
     "newTitle": "Ny agent",
     "type": "Typ",
-    "perimeter": "Scope",
+    "perimeter": "Omfång",
     "allowedTools": "Tillåtna verktyg",
     "allowedToolsNote": "Kommaseparerade — injiceras som --allowedTools vid start",
     "systemPromptOptional": "(valfritt)",
@@ -378,11 +378,11 @@
       "devops": "Incheckningar, grenar, CI/CD, releaser",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
+    "worktreeEnabled": "Worktree-isolering",
+    "worktreeInherit": "Ärv",
+    "worktreeOn": "Aktiverad",
+    "worktreeOff": "Inaktiverad",
+    "worktreeNote": "Prioritet: global < agent < manuell start",
     "worktreeCurrentGlobal": "(global: {status})"
   },
   "dbSelector": {
@@ -416,7 +416,7 @@
     "quality": "Kvalitet",
     "project": "Projekt",
     "agents": "Agenter",
-    "perimeters": "Scopes",
+    "perimeters": "Omfång",
     "tree": "Filträd",
     "settings": "Inställningar",
     "close": "Stäng",
@@ -605,7 +605,7 @@
   },
   "update": {
     "available": "Uppdatering {version} tillgänglig",
-    "download": "Ladda ner",
+    "download": "Ladda ned",
     "downloading": "Laddar ner…",
     "ready": "Uppdatering {version} redo att installera",
     "restart": "Starta om nu",

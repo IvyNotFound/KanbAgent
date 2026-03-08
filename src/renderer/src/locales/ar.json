@@ -237,8 +237,8 @@
       "notifications": "الإشعارات",
       "application": "التطبيق"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "عزل worktree الافتراضي",
+    "worktreeDefaultDesc": "إنشاء worktree git معزول لكل جلسة وكيل جديدة"
   },
   "setup": {
     "missingDb": "قاعدة البيانات مفقودة",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "تشغيل الجلسة",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "لم يتم اكتشاف CLI. تأكد من أن ملف CLI الثنائي موجود في PATH.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "افتراضي",
     "prevSession": "الجلسة السابقة",
@@ -295,15 +295,15 @@
     "cancel": "إلغاء",
     "launch": "تشغيل",
     "launching": "جار التشغيل…",
-    "instance": "instance",
+    "instance": "مثيل",
     "multiInstance": "متعدد الحالات / worktree معزول",
     "multiInstanceNote": "ينشئ git worktree مخصصاً (ADR-006) — يسمح بتشغيل حالات متعددة بالتوازي دون تعارضات",
     "multiInstanceError": "فشل إنشاء worktree: {error}",
     "refreshDetection": "تحديث",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "المصدر: {source}",
+    "worktreeSourceGlobal": "الإعداد العام",
+    "worktreeSourceAgent": "إعداد الوكيل",
+    "worktreeSourceManual": "تم التغيير يدوياً"
   },
   "titleBar": {
     "searchTitle": "ابحث عن مهمة (Ctrl+K)",
@@ -378,12 +378,12 @@
       "devops": "الالتزامات، الفروع، CI/CD، الإصدارات",
       "doc": "README، CONTRIBUTING، JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "عزل worktree",
+    "worktreeInherit": "توريث",
+    "worktreeOn": "مفعّل",
+    "worktreeOff": "معطّل",
+    "worktreeNote": "الأولوية: عام < وكيل < إطلاق يدوي",
+    "worktreeCurrentGlobal": "(عام: {status})"
   },
   "dbSelector": {
     "tagline": "عرض مهام وكلاء Claude الخاصة بك في الوقت الفعلي.",
@@ -605,7 +605,7 @@
   },
   "update": {
     "available": "التحديث {version} متاح",
-    "download": "تنزيل",
+    "download": "تحميل",
     "downloading": "جار التنزيل…",
     "ready": "التحديث {version} جاهز للتثبيت",
     "restart": "إعادة التشغيل الآن",

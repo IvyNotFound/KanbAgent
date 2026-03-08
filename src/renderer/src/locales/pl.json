@@ -237,8 +237,8 @@
       "notifications": "Powiadomienia",
       "application": "Aplikacja"
     },
-    "worktreeDefault": "Default worktree isolation",
-    "worktreeDefaultDesc": "Create an isolated git worktree for each new agent session"
+    "worktreeDefault": "Domyślna izolacja worktree",
+    "worktreeDefaultDesc": "Utwórz izolowany git worktree dla każdej nowej sesji agenta"
   },
   "setup": {
     "missingDb": "Brakująca baza danych",
@@ -269,7 +269,7 @@
     "resetFilters": "resetuj filtry",
     "status": "Stan",
     "agent": "Agent",
-    "perimeter": "Scope",
+    "perimeter": "Zakres",
     "noResults": "Brak wyników",
     "noTasksLoaded": "Brak załadowanych zadań",
     "navigate": "nawiguj",
@@ -279,7 +279,7 @@
   "launch": {
     "title": "Uruchom sesję",
     "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
-    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceLinux": "Nie wykryto CLI. Upewnij się, że plik binarny CLI jest w twoim PATH.",
     "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "defaultBadge": "domyślny",
     "prevSession": "Poprzednia sesja",
@@ -295,15 +295,15 @@
     "cancel": "Anuluj",
     "launch": "Uruchom",
     "launching": "Uruchamianie…",
-    "instance": "Instance",
+    "instance": "Instancja",
     "multiInstance": "Wiele instancji / Izolowane drzewo robocze",
     "multiInstanceNote": "Tworzy dedykowane drzewo robocze git (ADR-006) — umożliwia równoległe uruchamianie wielu instancji tego samego agenta bez konfliktów",
     "multiInstanceError": "Nie udało się utworzyć drzewa roboczego: {error}",
     "refreshDetection": "Odśwież",
-    "worktreeSource": "Source: {source}",
-    "worktreeSourceGlobal": "global setting",
-    "worktreeSourceAgent": "agent setting",
-    "worktreeSourceManual": "manually changed"
+    "worktreeSource": "Źródło: {source}",
+    "worktreeSourceGlobal": "ustawienie globalne",
+    "worktreeSourceAgent": "ustawienie agenta",
+    "worktreeSourceManual": "zmienione ręcznie"
   },
   "titleBar": {
     "searchTitle": "Szukaj zadania (Ctrl+K)",
@@ -329,7 +329,7 @@
     "editTitle": "Edytuj agenta",
     "newTitle": "Nowy agent",
     "type": "Typ",
-    "perimeter": "Scope",
+    "perimeter": "Zakres",
     "allowedTools": "Dozwolone narzędzia",
     "allowedToolsNote": "Oddzielone przecinkami — wstrzykiwane jako --allowedTools przy uruchomieniu",
     "systemPromptOptional": "(opcjonalny)",
@@ -378,12 +378,12 @@
       "devops": "Commity, gałęzie, CI/CD, wydania",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "worktreeEnabled": "Worktree isolation",
-    "worktreeInherit": "Inherit",
-    "worktreeOn": "Enabled",
-    "worktreeOff": "Disabled",
-    "worktreeNote": "Priority: global < agent < manual launch",
-    "worktreeCurrentGlobal": "(global: {status})"
+    "worktreeEnabled": "Izolacja worktree",
+    "worktreeInherit": "Dziedzicz",
+    "worktreeOn": "Włączono",
+    "worktreeOff": "Wyłączono",
+    "worktreeNote": "Priorytet: globalny < agent < ręczne uruchomienie",
+    "worktreeCurrentGlobal": "(globalny: {status})"
   },
   "dbSelector": {
     "tagline": "Przeglądaj zadania agentów Claude w czasie rzeczywistym.",
@@ -416,7 +416,7 @@
     "quality": "Jakość",
     "project": "Projekt",
     "agents": "Agenci",
-    "perimeters": "Scopes",
+    "perimeters": "Zakresy",
     "tree": "Drzewo plików",
     "settings": "Ustawienia",
     "close": "Zamknij",
@@ -498,7 +498,7 @@
     "unassigned": "Nieprzypisane",
     "legend": "Legenda",
     "tooltipStatus": "Stan",
-    "tooltipStart": "Początek",
+    "tooltipStart": "Start",
     "tooltipEnd": "Koniec",
     "tooltipDuration": "Czas trwania",
     "tooltipEffort": "Wysiłek"
