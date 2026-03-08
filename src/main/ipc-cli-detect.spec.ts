@@ -234,6 +234,7 @@ describe('detectWslClis', () => {
     expect(writeFileSyncMock).toHaveBeenCalledOnce()
     const scriptContent = writeFileSyncMock.mock.calls[0][1] as string
     expect(scriptContent).toContain('#!/bin/bash')
+    expect(scriptContent).toContain('~/.bashrc')
     expect(scriptContent).toContain('exit 0')
     // wsl.exe should be called with bash -l <wslPath>
     const args = execFileMock.mock.calls[0][1] as string[]

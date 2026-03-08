@@ -171,6 +171,7 @@ export async function detectWslClis(
   const binaries = entries.map(([, { binary }]) => binary).join(' ')
   const scriptContent = [
     '#!/bin/bash',
+    '[ -f ~/.bashrc ] && source ~/.bashrc',
     `for c in ${binaries}; do`,
     '  v=$(timeout 3 $c --version 2>/dev/null | head -1)',
     '  [ -n "$v" ] && echo "$c:$v"',
