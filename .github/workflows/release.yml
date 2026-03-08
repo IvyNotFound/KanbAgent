@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   i18n-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +40,7 @@ jobs:
 
   lint:
     needs: [i18n-check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
 
   unit-tests:
     needs: [i18n-check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -92,7 +92,7 @@ jobs:
 
   e2e-linux:
     needs: [i18n-check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -261,7 +261,7 @@ jobs:
 
   build-linux:
     needs: [lint, unit-tests, e2e-linux, e2e-windows, e2e-mac]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -285,7 +285,7 @@ jobs:
 
   create-release:
     needs: [build-windows, build-mac, build-linux]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -318,7 +318,7 @@ jobs:
   notify-failure:
     if: ${{ always() && contains(needs.*.result, 'failure') }}
     needs: [i18n-check, lint, unit-tests, e2e-linux, e2e-windows, e2e-mac, build-windows, build-mac, build-linux, create-release]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Notify Slack on failure
         if: env.SLACK_WEBHOOK_URL != ''
