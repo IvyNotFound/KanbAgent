@@ -48,6 +48,9 @@ npm install --silent
 echo "Checking i18n completeness..."
 node scripts/check-i18n.js || { echo "ERROR: i18n check failed. Fix missing keys before releasing."; exit 1; }
 
+echo "Running ESLint..."
+npm run lint || { echo "ERROR: ESLint found errors. Fix lint issues before releasing."; exit 1; }
+
 echo "CI E2E and i18n checks will run automatically in the release pipeline after push."
 
 # Bump version
