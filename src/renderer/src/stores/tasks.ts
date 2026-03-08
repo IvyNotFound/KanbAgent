@@ -242,15 +242,23 @@ export const useTasksStore = defineStore('tasks', () => {
     taskAssignees.value = []
   }
 
+  let dbWatchInterval: ReturnType<typeof setInterval> | null = null
+
   function watchForDb(path: string): void {
+    if (dbWatchInterval !== null) {
+      clearInterval(dbWatchInterval)
+      dbWatchInterval = null
+    }
     const checkInterval = setInterval(async () => {
       if (document.visibilityState === 'hidden') return
       const db = await window.electronAPI.findProjectDb(path)
       if (db) {
         clearInterval(checkInterval)
+        dbWatchInterval = null
         await setProject(path, db)
       }
     }, 2000)
+    dbWatchInterval = checkInterval
   }
 
   // Reset filters whenever the project changes

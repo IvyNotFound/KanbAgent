@@ -220,7 +220,7 @@ describe('ipc-project T1077 — ZIP export, dialog guard, agentLang', () => {
       })
       await callHandler('project:exportZip', '/fake/project.db')
       expect(capturedPath).toBeDefined()
-      const filename = capturedPath!.split('/').pop()!
+      const filename = capturedPath!.split(/[/\\]/).pop()!
       expect(filename).toMatch(/^agent-viewer-export-[\dT-]+\.zip$/)
       expect(filename).not.toContain(':')
     })
@@ -235,7 +235,7 @@ describe('ipc-project T1077 — ZIP export, dialog guard, agentLang', () => {
       })
       await callHandler('project:exportZip', '/fake/project.db')
       expect(capturedPath).toBeDefined()
-      const filename = capturedPath!.split('/').pop()!
+      const filename = capturedPath!.split(/[/\\]/).pop()!
       // Remove .zip extension — the timestamp part should have no dots
       const withoutExt = filename.replace('.zip', '')
       expect(withoutExt).not.toContain('.')

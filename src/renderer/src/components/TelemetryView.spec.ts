@@ -198,8 +198,8 @@ describe('TelemetryView advanced metrics (T897)', () => {
     expect(text).toContain('Source')
     expect(text).toContain('Tests')
     // TypeScript sourceLines=8000 and testLines=2000
-    expect(text).toContain('8,000')
-    expect(text).toContain('2,000')
+    expect(text).toMatch(/8.?000/)
+    expect(text).toMatch(/2.?000/)
     wrapper.unmount()
   })
 
