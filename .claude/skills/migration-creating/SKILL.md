@@ -1,6 +1,6 @@
 ---
 name: migration-creating
-description: Create a versioned SQLite migration for agent-viewer. Activates when the DB schema needs to change, when user says "add a column", "create a table", "migration", "alter schema", "ajouter une colonne", "modifier le schéma". Follows the existing migration pattern with idempotency and sql.js compatibility.
+description: Create a versioned SQLite migration for agent-viewer. Activates when the DB schema needs to change, when user says "add a column", "create a table", "migration", "alter schema", "ajouter une colonne", "modifier le schéma". Follows the existing migration pattern with idempotency and better-sqlite3 compatibility.
 ---
 
 # Migration Creating Skill
@@ -32,7 +32,8 @@ ls src/main/migrations/
 ### File Structure (based on existing pattern)
 
 ```typescript
-import type { Database } from 'sql.js'
+import type { MigrationDb } from '../migration-db-adapter'
+type Database = MigrationDb
 
 /**
  * Migration: <one-line description> (T<ticket-id>).

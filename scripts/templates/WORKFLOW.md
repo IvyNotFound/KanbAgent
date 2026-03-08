@@ -28,7 +28,7 @@ config          (key PK, value, updated_at)
 ## Execution
 
 ```bash
-node scripts/dbq.js "<SQL>"   # read (sql.js + fs.readFile, bypass lock)
+node scripts/dbq.js "<SQL>"   # read (better-sqlite3, WAL mode)
 node scripts/dbw.js "<SQL>"   # write
 ```
 

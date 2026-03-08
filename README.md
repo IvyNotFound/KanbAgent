@@ -45,14 +45,14 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Setup Wizard**: First-run configuration assistant (`SetupWizard`) — guides through WSL detection, project creation and initial agents
 
 ### Dashboard & Analytics
-- **Dashboard Tab**: `DashboardView` — unified analytics hub with 9 sub-tabs (Token Stats, Git, Hooks, Tools, Heatmap, Quality, Workload, Topology, Logs); active sub-tab persisted in `localStorage`
+- **Dashboard Tab**: `DashboardView` — unified analytics hub with 9 sub-tabs (Overview, Token Stats, Git, Hooks, Tools, Topology, OrgChart, Logs, Telemetry); active sub-tab persisted in `localStorage`
 - **Token Stats**: `TokenStatsView` — period selector (1h / 24h / 7d / 30d / ∞), estimated cost (Sonnet 4.6 pricing), cache hit rate with colour indicator, 7-day activity sparkline, per-agent bars and per-session table
 - **Cost Stats**: `CostStatsSection` — grouped cost breakdowns with sparkline trend; accepts an optional `period` prop (`'day' | 'week' | 'month'`) — when provided the internal period selector is hidden and the period is driven by the parent (e.g. `TokenStatsView` maps its own period selector: 1h/24h→day, 7d→week, 30d/∞→month)
 - **Activity Heatmap**: `ActivityHeatmap` — GitHub-style contribution heatmap of agent activity over time
 - **Workload View**: `WorkloadView` — per-agent task load and effort distribution
 - **Agent Quality Panel**: `AgentQualityPanel` — quality metrics (done rate, rejection rate, avg effort) per agent
 - **Tool Stats Panel**: `ToolStatsPanel` — usage frequency and timing per Claude tool
-- **Telemetry View**: `TelemetryView` — system-level metrics (CPU, memory, timings) from Electron hooks
+- **Telemetry View**: `TelemetryView` — code metrics (languages, LOC, tests, quality scan) accessible from the Dashboard Telemetry sub-tab
 - **Timeline / Gantt**: `TimelineView` — inter-agent Gantt chart of sessions and tasks over time
 
 ### Topology & Exploration
@@ -111,7 +111,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 | Node.js | ≥ 20 |
 | npm | ≥ 10 |
 | WSL2 | For launching Claude sessions in external terminal windows |
-| sql.js | ≥ 1.14 (included via `npm install`) |
+| better-sqlite3 | Native SQLite binding (included via `npm install`) |
 
 ## Installation
 
@@ -193,9 +193,14 @@ agent-viewer/
 │   │   ├── ipc-wsl.ts               # WSL IPC (getCliInstances, openTerminal; multi-CLI + local PATH enrichment)
 │   │   ├── ipc-cli-detect.ts        # CLI detection — local + WSL distros; Promise cache warmed at startup
 │   │   ├── updater.ts               # Auto-update (electron-updater, token loading, IPC handlers)
+│   │   ├── agent-stream-registry.ts # Agent stream process registry and kill helpers
+│   │   ├── hookServer-inject.ts     # Hook URL injection into Claude Code settings
+│   │   ├── hookServer-tokens.ts     # JSONL transcript parsing and token counting
 │   │   ├── db.ts                    # SQLite utilities (queryLive, writeLive)
 │   │   ├── claude-md.ts             # CLAUDE.md manipulation (agent insertion)
 │   │   ├── migration.ts             # Numbered SQLite migrations (SAVEPOINT atomicity)
+│   │   ├── migrations/              # Versioned schema migrations
+│   │   │   └── v5-agent-worktree.ts # Add worktree_enabled column to agents
 │   │   ├── seed.ts                  # Demo data for project.db
 │   │   ├── default-agents.ts        # GENERIC_AGENTS (new projects) + DEFAULT_AGENTS (agent-viewer)
 │   │   ├── adapters/                # CliAdapter implementations (ADR-010)
@@ -255,6 +260,8 @@ agent-viewer/
 │           │   ├── useSidebarDragDrop.ts  # Sidebar drag-and-drop reorder
 │           │   ├── useToast.ts            # Toast notification system
 │           │   ├── useConfirmDialog.ts    # Confirm dialog (promise-based)
+│           │   ├── useTabBarGroups.ts      # TabBar agent grouping and dynamic styles
+│           │   ├── useTokenStats.ts       # Token stats fetching and computation
 │           │   ├── useToolStats.ts        # Tool usage stats aggregation
 │           │   ├── useUpdater.ts          # Auto-update state machine (singleton, IPC events)
 │           │   └── useHookEventDisplay.ts # Hook event formatting helpers
@@ -315,8 +322,8 @@ The scripts in `scripts/` let agents interact with the database without opening 
 
 | Script | Description |
 |--------|-------------|
-| `node scripts/dbq.js "<SQL>"` | In-memory read (sql.js, bypasses SQLite lock) |
-| `node scripts/dbw.js "<SQL>"` | Atomic write with advisory lock (`.wlock`) |
+| `node scripts/dbq.js "<SQL>"` | Direct WAL read (better-sqlite3) |
+| `node scripts/dbw.js "<SQL>"` | Direct WAL write (better-sqlite3, serialized) |
 | `node scripts/dbstart.js <agent>` | Starts an agent session, displays tasks and locks; runs `git worktree prune` (non-fatal) |
 | `bash scripts/release.sh [patch\|minor\|major]` | Build + version bump + Git tag + GitHub Release (draft) |
 
@@ -339,7 +346,7 @@ SQL
 ```
 ┌─────────────────┐     IPC (contextBridge)     ┌─────────────────┐
 │  Vue Renderer   │ ◄────────────────────────► │  Electron Main  │
-│   (Pinia)       │                             │  (sql.js + pty) │
+│   (Pinia)       │                             │  (better-sqlite3 + pty) │
 └─────────────────┘                             └────────┬────────┘
                                                           │
                                                           ▼
@@ -359,7 +366,7 @@ SQL
 | State management | Pinia 2 |
 | CSS | Tailwind CSS v4 (`@tailwindcss/postcss`) |
 | i18n | vue-i18n 9 (FR/EN) |
-| Database | sql.js 1.14 (SQLite WASM, bypasses file locks) |
+| Database | better-sqlite3 (native SQLite binding, WAL mode) |
 | Tests | Vitest 4 |
 | Code editor | CodeMirror 6 |
 | Markdown | marked + DOMPurify |

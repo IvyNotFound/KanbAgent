@@ -38,7 +38,7 @@ LANG_CODE   : english
 
 ## Base de données
 
-\`project.db\` est géré par **agent-viewer** via \`sql.js\` (SQLite WASM).
+\`project.db\` est géré par **agent-viewer** via \`better-sqlite3\` (SQLite natif, WAL mode).
 Aucune configuration MCP requise — l'accès est automatique via l'interface.
 
 Accès depuis les agents Claude Code :
