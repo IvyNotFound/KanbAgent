@@ -79,7 +79,21 @@ jobs:
           ls -d node_modules 2>/dev/null && echo "YES" || echo "NO"
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set +e
+          npm ci
+          NPM_EXIT=$?
+          set -e
+          if [ "$NPM_EXIT" -ne 0 ]; then
+            NPM_LOG=$(ls -t /home/runner/.npm/_logs/*.log 2>/dev/null | head -1)
+            if [ -n "$NPM_LOG" ]; then
+              echo "=== npm log lines mentioning remove/delete/rm/unlink ==="
+              grep -in "remove\|delete\|unlink\|reify\|rm\b" "$NPM_LOG" | head -40 || echo "none"
+              echo "=== Last 30 lines ==="
+              tail -30 "$NPM_LOG"
+            fi
+          fi
+          exit "$NPM_EXIT"
 
       - name: Post-install dir check
         if: always()
