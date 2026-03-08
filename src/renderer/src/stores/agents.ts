@@ -17,12 +17,16 @@ export const AGENT_CTE_SQL = `
   agent_history AS (
     SELECT a.id,
       CASE WHEN (
-        EXISTS (SELECT 1 FROM sessions WHERE agent_id = a.id) OR
-        EXISTS (SELECT 1 FROM tasks WHERE agent_assigned_id = a.id) OR
-        EXISTS (SELECT 1 FROM task_comments WHERE agent_id = a.id) OR
-        EXISTS (SELECT 1 FROM agent_logs WHERE agent_id = a.id)
+        s.agent_id IS NOT NULL OR
+        t.agent_assigned_id IS NOT NULL OR
+        tc.agent_id IS NOT NULL OR
+        al.agent_id IS NOT NULL
       ) THEN 1 ELSE 0 END as has_history
     FROM agents a
+    LEFT JOIN (SELECT DISTINCT agent_id FROM sessions) s ON s.agent_id = a.id
+    LEFT JOIN (SELECT DISTINCT agent_assigned_id FROM tasks WHERE agent_assigned_id IS NOT NULL) t ON t.agent_assigned_id = a.id
+    LEFT JOIN (SELECT DISTINCT agent_id FROM task_comments) tc ON tc.agent_id = a.id
+    LEFT JOIN (SELECT DISTINCT agent_id FROM agent_logs) al ON al.agent_id = a.id
   )
   SELECT a.*, ls.status as session_status, ls.started_at as session_started_at, ml.last_log_at, ah.has_history
   FROM agents a
