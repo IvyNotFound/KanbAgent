@@ -59,7 +59,7 @@ declare global {
       // Detect Claude Code instances (WSL distros and/or native installs) (T721/T775)
       getClaudeInstances(): Promise<Array<{ distro: string; version: string; isDefault: boolean; type?: 'wsl' | 'local' }>>
       // Detect all CLI instances across supported coding agents (T1011)
-      getCliInstances(clis?: string[]): Promise<Array<{ cli: string; distro: string; version: string; isDefault: boolean; type: 'wsl' | 'local' }>>
+      getCliInstances(clis?: string[], forceRefresh?: boolean): Promise<Array<{ cli: string; distro: string; version: string; isDefault: boolean; type: 'wsl' | 'local' }>>
       // Host platform identifier, e.g. 'win32', 'darwin', 'linux'
       platform: string
       // Agent stream (ADR-009: child_process.spawn + stdio:pipe — T647/T648)

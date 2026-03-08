@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
 import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
 import CliDetectionList from '@renderer/components/CliDetectionList.vue'
-import type { CliInstance } from '@shared/cli-types'
 import { useUpdater } from '@renderer/composables/useUpdater'
 
 const emit = defineEmits<{
@@ -81,14 +80,20 @@ const availableLocales = [
   { code: 'ja', label: '日本語' },
 ] as const
 
-const availableDistros = ref<{ distro: string; type: 'local' | 'wsl' }[]>([])
+// Deduplicate by cli:distro so each CLI×environment pair gets its own entry (T1090)
+const availableDistros = computed(() => {
+  const seen = new Set<string>()
+  return settingsStore.allCliInstances
+    .filter(inst => {
+      const key = `${inst.cli}:${inst.distro}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .map(inst => ({ cli: inst.cli, distro: inst.distro, type: inst.type }))
+})
 
 onMounted(async () => {
-  const rawInstances = await window.electronAPI.getCliInstances() as CliInstance[]
-  const seen = new Set<string>()
-  availableDistros.value = (Array.isArray(rawInstances) ? rawInstances : [])
-    .filter(inst => { if (seen.has(inst.distro)) return false; seen.add(inst.distro); return true })
-    .map(inst => ({ distro: inst.distro, type: inst.type }))
   await settingsStore.refreshCliDetection()
 })
 
@@ -240,10 +245,10 @@ function handleKeydown(e: KeyboardEvent) {
                 <div v-else>
                   <select
                     class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary outline-none focus:ring-1 focus:ring-violet-500"
-                    :value="settingsStore.defaultCliInstance || availableDistros[0]?.distro"
-                    @change="settingsStore.setDefaultCliInstance(($event.target as HTMLSelectElement).value)"
+                    :value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
+                    @change="(e) => { const v = (e.target as HTMLSelectElement).value; const sep = v.indexOf(':'); settingsStore.setDefaultCliInstance(sep === -1 ? '' : v.slice(0, sep), sep === -1 ? v : v.slice(sep + 1)) }"
                   >
-                    <option v-for="inst in availableDistros" :key="inst.distro" :value="inst.distro">{{ inst.distro === 'local' ? 'Local' : inst.distro + ' (WSL)' }}</option>
+                    <option v-for="inst in availableDistros" :key="`${inst.cli}:${inst.distro}`" :value="`${inst.cli}:${inst.distro}`">{{ inst.cli }} — {{ inst.distro === 'local' ? 'Local' : inst.distro + ' (WSL)' }}</option>
                   </select>
                 </div>
               </div>
