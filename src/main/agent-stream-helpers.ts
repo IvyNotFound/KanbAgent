@@ -69,6 +69,21 @@ export function buildEnv(): Record<string, string> {
   return env
 }
 
+/**
+ * Build env for Windows-native process spawning.
+ * Uses process.env as base (full Windows env) and overrides
+ * TERM/NO_COLOR to suppress ANSI. Unlike buildEnv() which is
+ * WSL-specific, this preserves all Windows env vars needed by
+ * native CLIs (COMSPEC, PROCESSOR_ARCHITECTURE, etc.).
+ */
+export function buildWindowsEnv(): Record<string, string> {
+  return {
+    ...(process.env as Record<string, string>),
+    TERM: 'dumb',
+    NO_COLOR: '1',
+  }
+}
+
 // ── getActiveTasksLine ────────────────────────────────────────────────────────
 
 /**

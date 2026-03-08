@@ -30,6 +30,7 @@ import {
   MAX_STDERR_BUFFER_SIZE,
   logDebug,
   buildEnv,
+  buildWindowsEnv,
   buildClaudeCmd,
   buildWindowsPS1Script,
   getActiveTasksLine,
@@ -222,7 +223,7 @@ export function registerAgentStreamHandlers(): void {
           '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptTempFile,
         ], {
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: buildEnv(),
+          env: buildWindowsEnv(),
           cwd: worktreeInfo?.path ?? opts.workDir ?? opts.projectPath ?? undefined,
         })
       } else {
@@ -238,7 +239,7 @@ export function registerAgentStreamHandlers(): void {
         proc = spawn(spec.command, spec.args, {
           stdio: ['pipe', 'pipe', 'pipe'],
           shell: true,
-          env: { ...buildEnv(), ...spec.env },
+          env: { ...buildWindowsEnv(), ...spec.env },
           cwd: worktreeInfo?.path ?? opts.workDir ?? opts.projectPath ?? undefined,
         })
       }
@@ -429,6 +430,7 @@ export const _testing = {
   buildClaudeCmd,
   buildWindowsPS1Script,
   buildEnv,
+  buildWindowsEnv,
   killAgent,
   agents,
   webContentsAgents,

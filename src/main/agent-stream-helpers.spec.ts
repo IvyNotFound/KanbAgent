@@ -31,7 +31,7 @@ vi.mock('electron', () => ({
 
 // ── Import after mocks ─────────────────────────────────────────────────────────
 
-import { UUID_REGEX, buildEnv, getActiveTasksLine } from './agent-stream-helpers'
+import { UUID_REGEX, buildEnv, buildWindowsEnv, getActiveTasksLine } from './agent-stream-helpers'
 
 // ── UUID_REGEX ─────────────────────────────────────────────────────────────────
 
@@ -141,6 +141,64 @@ describe('buildEnv', () => {
     // HOME is not in forwardVars explicitly and no USERPROFILE fallback
     // HOME is in forwardVars so if absent it won't be set unless USERPROFILE present
     expect(env.HOME).toBeUndefined()
+  })
+})
+
+// ── buildWindowsEnv ────────────────────────────────────────────────────────────
+
+describe('buildWindowsEnv', () => {
+  const originalEnv = process.env
+
+  beforeEach(() => {
+    process.env = { ...originalEnv }
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+  })
+
+  it('always sets TERM=dumb and NO_COLOR=1', () => {
+    const env = buildWindowsEnv()
+    expect(env.TERM).toBe('dumb')
+    expect(env.NO_COLOR).toBe('1')
+  })
+
+  it('inherits all process.env vars', () => {
+    process.env.MY_CUSTOM_VAR = 'my-value'
+    const env = buildWindowsEnv()
+    expect(env.MY_CUSTOM_VAR).toBe('my-value')
+  })
+
+  it('TERM=dumb overrides any process.env.TERM', () => {
+    process.env.TERM = 'xterm-256color'
+    const env = buildWindowsEnv()
+    expect(env.TERM).toBe('dumb')
+  })
+
+  it('NO_COLOR=1 overrides any process.env.NO_COLOR', () => {
+    process.env.NO_COLOR = '0'
+    const env = buildWindowsEnv()
+    expect(env.NO_COLOR).toBe('1')
+  })
+
+  it('forwards COMSPEC when present', () => {
+    process.env.COMSPEC = 'C:\\Windows\\System32\\cmd.exe'
+    const env = buildWindowsEnv()
+    expect(env.COMSPEC).toBe('C:\\Windows\\System32\\cmd.exe')
+  })
+
+  it('forwards PROCESSOR_ARCHITECTURE when present', () => {
+    process.env.PROCESSOR_ARCHITECTURE = 'AMD64'
+    const env = buildWindowsEnv()
+    expect(env.PROCESSOR_ARCHITECTURE).toBe('AMD64')
+  })
+
+  it('forwards HOMEDRIVE and HOMEPATH when present', () => {
+    process.env.HOMEDRIVE = 'C:'
+    process.env.HOMEPATH = '\\Users\\TestUser'
+    const env = buildWindowsEnv()
+    expect(env.HOMEDRIVE).toBe('C:')
+    expect(env.HOMEPATH).toBe('\\Users\\TestUser')
   })
 })
 
