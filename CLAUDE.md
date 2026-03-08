@@ -18,7 +18,7 @@ Périmètres: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind, clés: `App.vue
 
 Conventions: français (conv) · anglais (code) · tests obligatoires · Conventional Commits
 
-**Version: `0.22.0`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Bêta: MAJOR → validation `arch` + lead.
+**Version: `0.29.2`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Bêta: MAJOR → validation `arch` + lead.
 
 ---
 
@@ -52,7 +52,7 @@ Thinking mode (DB `thinking_mode`, NULL=auto): `test/doc/devops` → disabled ·
 
 ## Accès DB
 
-⚠️ **NE JAMAIS modifier le schéma de la DB directement** (`ALTER TABLE`, `CREATE TABLE`, `DROP TABLE`) — uniquement via les migrations versionnées dans `migration-runner.ts`. Les writes data (`INSERT`, `UPDATE`) via `dbw.js` sont gérés par le mécanisme tmp+rename.
+⚠️ **NE JAMAIS modifier le schéma de la DB directement** (`ALTER TABLE`, `CREATE TABLE`, `DROP TABLE`) — uniquement via les migrations versionnées dans `migration-runner.ts`. Les writes data (`INSERT`, `UPDATE`) via `dbw.js` sont sérialisés par advisory lock (`.wlock`).
 
 `node scripts/dbq.js "<SQL>"` (lecture) · `node scripts/dbw.js "<SQL>"` (écriture)
 

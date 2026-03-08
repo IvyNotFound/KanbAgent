@@ -101,29 +101,37 @@ export function createMigrationAdapter(db: Database.Database): MigrationDb {
     prepare(sql: string): MigrationStmt {
       const bsStmt = db.prepare(sql)
       let bound: unknown[] = []
-      let result: Record<string, unknown> | undefined
-      let stepped = false
+      let rows: Record<string, unknown>[] = []
+      let rowIndex = -1
+      let fetched = false
 
       return {
         bind(params: unknown[]): MigrationStmt {
           bound = params
-          stepped = false
-          result = undefined
+          rows = []
+          rowIndex = -1
+          fetched = false
           return this
         },
         step(): boolean {
-          if (!stepped) {
-            result = bsStmt.get(...bound) as Record<string, unknown> | undefined
-            stepped = true
-            return !!result
+          if (!fetched) {
+            rows = bsStmt.reader
+              ? (bsStmt.all(...bound) as Record<string, unknown>[])
+              : []
+            fetched = true
+            rowIndex = -1
           }
-          return false
+          rowIndex++
+          return rowIndex < rows.length
         },
         getAsObject(): Record<string, unknown> {
-          return result ?? {}
+          return rows[rowIndex] ?? {}
         },
         free(): void {
-          // No-op — GC handles cleanup in better-sqlite3
+          // Reset iteration state — GC handles better-sqlite3 cleanup
+          rows = []
+          rowIndex = -1
+          fetched = false
         },
         run(params?: unknown[]): void {
           const info = bsStmt.run(...(params ?? bound))
