@@ -34,11 +34,13 @@
     "postinstall": "node -e \"if(!process.env.CI)require('child_process').execSync('electron-builder install-app-deps',{stdio:'inherit'})\""
   },
   "dependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.59.0",
     "@rollup/wasm-node": "^4.59.0",
     "better-sqlite3": "^12.6.2",
     "electron-updater": "^6.8.3",
     "ignore": "^7.0.5"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.59.0"
   },
   "overrides": {
     "minimatch": "^10.0.0",
