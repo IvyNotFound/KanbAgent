@@ -30,6 +30,17 @@ const WSL_TIMEOUT = 10_000
 const LOCAL_TIMEOUT = 5_000
 const CONCURRENCY = 2
 
+/** Common CLI install paths in WSL/Linux — enriches PATH before .bashrc sourcing */
+const WSL_KNOWN_PATHS = [
+  '$HOME/go/bin',
+  '$HOME/.local/bin',
+  '$HOME/.cargo/bin',
+  '$HOME/.npm-global/bin',
+  '/snap/bin',
+  '/home/linuxbrew/.linuxbrew/bin',
+  '$HOME/.linuxbrew/bin',
+]
+
 // ── Detection cache ───────────────────────────────────────────────────────────
 // Module-level cache: stores a single Promise<CliInstance[]> for the full
 // (unfiltered) detection. Fire-and-forget at startup; IPC handler awaits it.
@@ -172,9 +183,15 @@ export async function detectWslClis(
 ): Promise<CliInstance[]> {
   const entries = getEntries(filterClis)
   const binaries = entries.map(([, { binary }]) => binary).join(' ')
+  const pathDirs = WSL_KNOWN_PATHS.map(d => `"${d}"`).join(' ')
   const scriptContent = [
     '#!/bin/bash',
-    '[ -f ~/.bashrc ] && source ~/.bashrc',
+    `for d in ${pathDirs}; do`,
+    '  [ -d "$d" ] && export PATH="$d:$PATH"',
+    'done',
+    '[ -f ~/.profile ] && . ~/.profile 2>/dev/null',
+    '[ -f ~/.bashrc ] && . ~/.bashrc 2>/dev/null',
+    '[ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" 2>/dev/null',
     `for c in ${binaries}; do`,
     '  v=$(timeout 3 $c --version 2>/dev/null | head -1)',
     '  [ -n "$v" ] && echo "$c:$v"',

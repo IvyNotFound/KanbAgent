@@ -269,6 +269,31 @@ describe('detectWslClis', () => {
     expect(scriptContent).toContain('aider')
     expect(scriptContent).not.toContain('codex')
   })
+
+  it('enriches PATH with known dirs before sourcing bashrc (bashrc guard bypass)', async () => {
+    execFileMock.mockResolvedValueOnce({ stdout: 'opencode:0.1.2\n', stderr: '' })
+    await detectWslClis('Ubuntu', true)
+    const scriptContent = writeFileSyncMock.mock.calls[0][1] as string
+    // PATH enrichment must appear BEFORE bashrc sourcing
+    const pathEnrichIdx = scriptContent.indexOf('export PATH="$d:$PATH"')
+    const bashrcIdx = scriptContent.indexOf('. ~/.bashrc')
+    expect(pathEnrichIdx).toBeGreaterThan(-1)
+    expect(bashrcIdx).toBeGreaterThan(-1)
+    expect(pathEnrichIdx).toBeLessThan(bashrcIdx)
+    // Known paths should be present
+    expect(scriptContent).toContain('$HOME/go/bin')
+    expect(scriptContent).toContain('$HOME/.cargo/bin')
+    expect(scriptContent).toContain('$HOME/.local/bin')
+    expect(scriptContent).toContain('/snap/bin')
+  })
+
+  it('sources ~/.profile and nvm before probing CLIs', async () => {
+    execFileMock.mockResolvedValueOnce({ stdout: '', stderr: '' })
+    await detectWslClis('Ubuntu', true)
+    const scriptContent = writeFileSyncMock.mock.calls[0][1] as string
+    expect(scriptContent).toContain('. ~/.profile 2>/dev/null')
+    expect(scriptContent).toContain('$HOME/.nvm/nvm.sh')
+  })
 })
 
 // ── registerCliDetectHandlers / wsl:get-cli-instances ────────────────────────
