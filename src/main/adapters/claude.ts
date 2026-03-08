@@ -93,6 +93,7 @@ export function buildClaudeCmd(opts: {
  * @param opts.thinkingMode     - `'disabled'` to inject alwaysThinkingEnabled:false
  * @param opts.permissionMode   - `'auto'` to add `--dangerously-skip-permissions`
  * @param opts.claudeBinaryPath - Absolute Windows path to claude.exe (bypasses Get-Command)
+ * @param opts.settingsTempFile - Windows path to temp file containing JSON for `--settings` (T1107)
  * @returns PowerShell script content (.ps1)
  */
 export function buildWindowsPS1Script(opts: {
@@ -102,6 +103,7 @@ export function buildWindowsPS1Script(opts: {
   thinkingMode?: string
   permissionMode?: string
   claudeBinaryPath?: string
+  settingsTempFile?: string
 }): string {
   const cmd = (opts.claudeCommand && CLAUDE_CMD_REGEX.test(opts.claudeCommand))
     ? opts.claudeCommand
@@ -153,8 +155,18 @@ export function buildWindowsPS1Script(opts: {
   }
 
   if (opts.thinkingMode === 'disabled') {
-    lines.push('$a.Add(\'--settings\')')
-    lines.push('$a.Add(\'{"alwaysThinkingEnabled":false}\')')
+    if (opts.settingsTempFile) {
+      // T1107: Read settings JSON from temp file to bypass cmd.exe corruption of { } chars
+      // when claude is a .cmd wrapper (npm install). Same pattern as system prompt (spTempFile).
+      const safePath = opts.settingsTempFile.replace(/'/g, "''")
+      lines.push(`$settingsJson = [System.IO.File]::ReadAllText('${safePath}', [System.Text.Encoding]::UTF8)`)
+      lines.push('$a.Add(\'--settings\')')
+      lines.push('$a.Add($settingsJson)')
+    } else {
+      // Fallback for non-Windows callers or tests without a temp file
+      lines.push('$a.Add(\'--settings\')')
+      lines.push('$a.Add(\'{"alwaysThinkingEnabled":false}\')')
+    }
   }
 
   if (opts.permissionMode === 'auto') {

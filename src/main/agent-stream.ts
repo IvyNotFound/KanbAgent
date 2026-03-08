@@ -201,6 +201,13 @@ export function registerAgentStreamHandlers(): void {
     let scriptTempFile: string | undefined
     let proc: ChildProcess
 
+    // T1107: Write settings JSON to a temp file for Windows native (.cmd wrapper bypass).
+    let settingsTempFile: string | undefined
+    if (isLocalWindows && opts.thinkingMode === 'disabled') {
+      settingsTempFile = join(tmpdir(), `claude-settings-${id}.json`)
+      writeFileSync(settingsTempFile, JSON.stringify({ alwaysThinkingEnabled: false }), 'utf-8')
+    }
+
     if (isLocalWindows) {
       if (adapter.cli === 'claude') {
         // T916: Local Windows — spawn PowerShell with a .ps1 script that runs claude directly.
@@ -212,6 +219,7 @@ export function registerAgentStreamHandlers(): void {
           thinkingMode: opts.thinkingMode,
           permissionMode: opts.permissionMode,
           claudeBinaryPath: opts.claudeBinaryPath,
+          settingsTempFile,  // T1107: temp file for --settings JSON
         })
         scriptTempFile = join(tmpdir(), `claude-start-${id}.ps1`)
         writeFileSync(scriptTempFile, ps1Content, 'utf-8')
@@ -361,6 +369,7 @@ export function registerAgentStreamHandlers(): void {
       agents.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
       if (spTempFile) try { unlinkSync(spTempFile) } catch { /* cleanup best-effort */ }
+      if (settingsTempFile) try { unlinkSync(settingsTempFile) } catch { /* cleanup best-effort */ }
       if (scriptTempFile) try { unlinkSync(scriptTempFile) } catch { /* cleanup best-effort */ }
       if (worktreeInfo && opts.projectPath) {
         removeWorktree(opts.projectPath, opts.sessionId!).catch(() => { /* best-effort */ })

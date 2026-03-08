@@ -126,11 +126,32 @@ describe('buildWindowsPS1Script', () => {
     expect(script).toContain("it''s a path")
   })
 
-  it('adds --settings alwaysThinkingEnabled:false when thinkingMode=disabled', () => {
+  it('adds --settings alwaysThinkingEnabled:false when thinkingMode=disabled (fallback, no temp file)', () => {
     const script = buildWindowsPS1Script({ thinkingMode: 'disabled' })
     expect(script).toContain("$a.Add('--settings')")
     expect(script).toContain('alwaysThinkingEnabled')
     expect(script).toContain('false')
+  })
+
+  it('reads settings JSON from temp file via ReadAllText when settingsTempFile provided (T1107)', () => {
+    const script = buildWindowsPS1Script({
+      thinkingMode: 'disabled',
+      settingsTempFile: 'C:\\Users\\foo\\AppData\\Local\\Temp\\claude-settings-1.json',
+    })
+    expect(script).toContain('ReadAllText')
+    expect(script).toContain('claude-settings-1.json')
+    expect(script).toContain("$a.Add('--settings')")
+    expect(script).toContain('$a.Add($settingsJson)')
+    // Must NOT contain the literal JSON string — it goes through the temp file
+    expect(script).not.toContain("$a.Add('{\"alwaysThinkingEnabled\":false}')")
+  })
+
+  it('escapes single quotes in settingsTempFile path (T1107)', () => {
+    const script = buildWindowsPS1Script({
+      thinkingMode: 'disabled',
+      settingsTempFile: "C:\\it's a path\\settings.json",
+    })
+    expect(script).toContain("it''s a path")
   })
 
   it('adds --dangerously-skip-permissions when permissionMode=auto', () => {
@@ -374,5 +395,59 @@ describe('agent:create — local Windows spawn (T916)', () => {
     const id = await handler({ sender: mockSender }, { wslDistro: 'local' })
     expect(typeof id).toBe('string')
     expect(id).toBeTruthy()
+  })
+
+  it('writes settings JSON to temp file and PS1 reads it via ReadAllText when thinkingMode=disabled (T1107)', async () => {
+    const handler = handlers.get('agent:create')!
+    await handler({ sender: mockSender }, { wslDistro: 'local', thinkingMode: 'disabled' })
+
+    // Settings temp file must be written
+    const settingsCall = mockWriteFileSync.mock.calls.find(
+      ([p]: [unknown]) => String(p).includes('claude-settings') && String(p).endsWith('.json')
+    )
+    expect(settingsCall).toBeTruthy()
+    expect(settingsCall![1]).toBe('{"alwaysThinkingEnabled":false}')
+
+    // PS1 script must reference the temp file via ReadAllText (not inline JSON)
+    const ps1Call = mockWriteFileSync.mock.calls.find(
+      ([p]: [unknown]) => String(p).includes('claude-start') && String(p).endsWith('.ps1')
+    )
+    const content = String(ps1Call![1])
+    expect(content).toContain('ReadAllText')
+    expect(content).toContain('$settingsJson')
+    expect(content).toContain('$a.Add($settingsJson)')
+    expect(content).not.toContain("$a.Add('{\"alwaysThinkingEnabled\":false}')")
+  })
+
+  it('cleans up settings temp file on process close (T1107)', async () => {
+    const handler = handlers.get('agent:create')!
+    await handler({ sender: mockSender }, { wslDistro: 'local', thinkingMode: 'disabled' })
+
+    // Find the settings temp file path
+    const settingsCall = mockWriteFileSync.mock.calls.find(
+      ([p]: [unknown]) => String(p).includes('claude-settings') && String(p).endsWith('.json')
+    )
+    const settingsPath = String(settingsCall![0])
+
+    // Emit a stream event so eventsReceived > 0 (avoids error:exit branch)
+    const payload = { type: 'assistant', message: { role: 'assistant', content: [] } }
+    mockProc.stdout.write(JSON.stringify(payload) + '\n')
+    await new Promise(resolve => setImmediate(resolve))
+
+    mockProc.emit('close', 0)
+    await new Promise(resolve => setImmediate(resolve))
+
+    // Settings temp file must be cleaned up
+    expect(mockUnlinkSync).toHaveBeenCalledWith(settingsPath)
+  })
+
+  it('does NOT create settings temp file when thinkingMode is not disabled (T1107)', async () => {
+    const handler = handlers.get('agent:create')!
+    await handler({ sender: mockSender }, { wslDistro: 'local' })
+
+    const settingsCall = mockWriteFileSync.mock.calls.find(
+      ([p]: [unknown]) => String(p).includes('claude-settings') && String(p).endsWith('.json')
+    )
+    expect(settingsCall).toBeUndefined()
   })
 })
