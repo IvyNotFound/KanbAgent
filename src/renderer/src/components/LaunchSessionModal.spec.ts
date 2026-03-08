@@ -235,7 +235,6 @@ describe('LaunchSessionModal — warmup cache (T1118)', () => {
       },
     })
     await flushPromises()
-    // Cache was pre-populated — should NOT call getCliInstances
     expect(api.getCliInstances).not.toHaveBeenCalled()
   })
 
@@ -255,7 +254,6 @@ describe('LaunchSessionModal — warmup cache (T1118)', () => {
       },
     })
     await flushPromises()
-    // Cache was empty — should call getCliInstances without forceRefresh
     expect(api.getCliInstances).toHaveBeenCalledWith(undefined, false)
   })
 })
