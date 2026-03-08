@@ -252,10 +252,10 @@ describe('migrateDb v26 — drop locks table', () => {
     expect(calls.some((s: string) => s === 'DROP TABLE IF EXISTS locks')).toBe(true)
   })
 
-  it('updates user_version to 28 (v26–v28 apply from v25)', () => {
+  it('updates user_version to 29 (v26–v29 apply from v25)', () => {
     const db = makeMockDb({ userVersion: 25 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(28)
+    expect(db._getVersion()).toBe(29)
   })
 })
 
@@ -328,10 +328,10 @@ describe('migrateDb v27 — missing indexes on critical columns', () => {
     expect(calls.some((s: string) => s.includes('idx_task_comments_agent_id') && s.includes('task_comments(agent_id)'))).toBe(true)
   })
 
-  it('updates user_version to 28 (v27 + v28 apply from v26)', () => {
+  it('updates user_version to 29 (v27–v29 apply from v26)', () => {
     const db = makeMockDb({ userVersion: 26 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(28)
+    expect(db._getVersion()).toBe(29)
   })
 
   it('uses CREATE INDEX IF NOT EXISTS for all indexes', () => {
@@ -381,12 +381,31 @@ describe('migrateDb v28 — agents.worktree_enabled + worktree_default config', 
     expect(calls.some((s: string) => s.includes('worktree_default') && s.includes("'1'"))).toBe(true)
   })
 
-  it('updates user_version to 28', () => {
+  it('updates user_version to 29 (v28 + v29 apply from v27)', () => {
     const db = makeMockDb({
       userVersion: 27,
       colMap: { agents: ['id', 'name'] },
     })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(28)
+    expect(db._getVersion()).toBe(29)
+  })
+})
+
+// ── v29 — fix tasks.session_id FK (sessions_backup_i18n → sessions) ──────────
+
+describe('migrateDb v29 — fix tasks.session_id FK reference', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('is a no-op when tasks table has no sessions_backup_i18n ref (idempotent)', () => {
+    const db = makeMockDb({ userVersion: 28 })
+    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    expect(calls.every((s: string) => !s.includes('sessions_backup_i18n'))).toBe(true)
+  })
+
+  it('updates user_version to 29', () => {
+    const db = makeMockDb({ userVersion: 28 })
+    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    expect(db._getVersion()).toBe(29)
   })
 })

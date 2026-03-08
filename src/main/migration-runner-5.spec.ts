@@ -252,10 +252,10 @@ describe('migrateDb v26 — drop locks table', () => {
     expect(calls.some((s: string) => s === 'DROP TABLE IF EXISTS locks')).toBe(true)
   })
 
-  it('updates user_version to 27 (v26 + v27 apply from v25)', () => {
+  it('updates user_version to 29 (v26–v29 apply from v25)', () => {
     const db = makeMockDb({ userVersion: 25 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(27)
+    expect(db._getVersion()).toBe(29)
   })
 })
 
@@ -328,10 +328,10 @@ describe('migrateDb v27 — missing indexes on critical columns', () => {
     expect(calls.some((s: string) => s.includes('idx_task_comments_agent_id') && s.includes('task_comments(agent_id)'))).toBe(true)
   })
 
-  it('updates user_version to 27', () => {
+  it('updates user_version to 29 (v27–v29 apply from v26)', () => {
     const db = makeMockDb({ userVersion: 26 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(27)
+    expect(db._getVersion()).toBe(29)
   })
 
   it('uses CREATE INDEX IF NOT EXISTS for all indexes', () => {
@@ -354,6 +354,6 @@ describe('CURRENT_SCHEMA_VERSION alignment', () => {
     const db = makeMockDb({ userVersion: 0 })
     const applied = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     expect(applied).toBeGreaterThan(0)
-    expect(db._getVersion()).toBe(27)
+    expect(db._getVersion()).toBe(29)
   })
 })

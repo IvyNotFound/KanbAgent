@@ -52,7 +52,7 @@ Thinking mode (DB `thinking_mode`, NULL=auto): `test/doc/devops` → disabled ·
 
 ## Accès DB
 
-⚠️ **NE JAMAIS modifier le schéma de la DB directement** (`ALTER TABLE`, `CREATE TABLE`, `DROP TABLE`) — uniquement via les migrations versionnées dans `migration-runner.ts`. Les writes data (`INSERT`, `UPDATE`) via `dbw.js` sont sérialisés par advisory lock (`.wlock`).
+⚠️ **NE JAMAIS modifier le schéma de la DB directement** (`ALTER TABLE`, `CREATE TABLE`, `DROP TABLE`) — uniquement via les migrations versionnées dans `migration-runner.ts`. Les writes data (`INSERT`, `UPDATE`) via `dbw.js` passent par better-sqlite3 (accès fichier direct, WAL mode).
 
 `node scripts/dbq.js "<SQL>"` (lecture) · `node scripts/dbw.js "<SQL>"` (écriture)
 

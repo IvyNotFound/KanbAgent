@@ -10,6 +10,7 @@
 import { ipcMain } from 'electron'
 import { readdir, readFile } from 'fs/promises'
 import path from 'path'
+import ignore from 'ignore'
 import { assertProjectPathAllowed } from './db'
 
 const LANGUAGE_MAP: Record<string, { name: string; color: string }> = {
@@ -28,7 +29,21 @@ const LANGUAGE_MAP: Record<string, { name: string; color: string }> = {
   '.sql': { name: 'SQL', color: '#e38c00' },
 }
 
-const IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'out', '.cache', 'coverage', '.nyc_output'])
+/** Fallback exclusions when no .gitignore is found in the project root. */
+const FALLBACK_IGNORE = ['node_modules', 'dist', 'out', '.cache', 'coverage']
+
+/** Load .gitignore rules from the project root. Always excludes .git. */
+async function loadGitignore(projectRoot: string): ReturnType<typeof ignore> {
+  const ig = ignore()
+  ig.add('.git')
+  try {
+    const content = await readFile(path.join(projectRoot, '.gitignore'), 'utf-8')
+    ig.add(content)
+  } catch {
+    ig.add(FALLBACK_IGNORE)
+  }
+  return ig
+}
 
 const TEST_NAME_RE = /\.(spec|test)\./
 
@@ -119,20 +134,27 @@ interface FileEntry {
 const BATCH_SIZE = 20
 
 /** Phase 1: DFS to collect all matching file paths (sequential, avoids EMFILE on deep trees). */
-async function collectFiles(dir: string): Promise<FileEntry[]> {
+async function collectFiles(
+  dir: string,
+  rootDir: string,
+  ig: ReturnType<typeof ignore>,
+): Promise<FileEntry[]> {
   const result: FileEntry[] = []
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
   for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name)
+    const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, '/')
     if (entry.isDirectory()) {
-      if (!IGNORE_DIRS.has(entry.name)) {
-        const sub = await collectFiles(path.join(dir, entry.name))
+      if (!ig.ignores(relativePath + '/')) {
+        const sub = await collectFiles(fullPath, rootDir, ig)
         result.push(...sub)
       }
     } else {
-      const ext = path.extname(entry.name).toLowerCase()
-      if (LANGUAGE_MAP[ext]) {
-        const filePath = path.join(dir, entry.name)
-        result.push({ filePath, ext, isTest: isTestFile(filePath) })
+      if (!ig.ignores(relativePath)) {
+        const ext = path.extname(entry.name).toLowerCase()
+        if (LANGUAGE_MAP[ext]) {
+          result.push({ filePath: fullPath, ext, isTest: isTestFile(fullPath) })
+        }
       }
     }
   }
@@ -141,7 +163,8 @@ async function collectFiles(dir: string): Promise<FileEntry[]> {
 
 /** Phase 2: Analyze files in parallel batches then accumulate stats. */
 async function scanDir(dir: string, stats: Map<string, ExtStats>): Promise<void> {
-  const files = await collectFiles(dir)
+  const ig = await loadGitignore(dir)
+  const files = await collectFiles(dir, dir, ig)
   for (let i = 0; i < files.length; i += BATCH_SIZE) {
     const batch = files.slice(i, i + BATCH_SIZE)
     const lineStats = await Promise.all(batch.map(({ filePath }) => analyzeFile(filePath)))

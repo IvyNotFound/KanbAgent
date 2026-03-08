@@ -49,8 +49,7 @@ vi.mock('fs', () => {
 })
 
 // ── Mock readline ─────────────────────────────────────────────────────────────
-vi.mock('readline', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('readline')>()
+vi.mock('readline', async () => {
   const { EventEmitter } = await import('events')
   const createInterface = vi.fn(({ input }: { input: NodeJS.ReadableStream }) => {
     input.on('error', () => {})
@@ -60,7 +59,7 @@ vi.mock('readline', async (importOriginal) => {
     setImmediate(() => { rl.emit('error', new Error('ENOENT: no such file')) })
     return rl
   })
-  return { ...actual, createInterface, default: { ...actual, createInterface } }
+  return { createInterface, default: { createInterface } }
 })
 
 // ── Mock electron ─────────────────────────────────────────────────────────────

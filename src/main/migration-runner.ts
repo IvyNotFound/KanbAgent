@@ -3,6 +3,8 @@ import { runDropCommentaireColumnMigration, runRemoveThinkingModeBudgetTokensMig
 import { runTaskStatutI18nMigration, runTaskStatusMigration, runSessionStatutI18nMigration } from './migrations/v2-statuts'
 import { runMakeAgentAssigneNotNullMigration, runMakeCommentAgentNotNullMigration, runAddAgentGroupsMigration } from './migrations/v3-relations'
 import { runAddParentIdToAgentGroupsMigration } from './migrations/v4-agent-groups-hierarchy'
+import { runAddWorktreeToAgentsMigration } from './migrations/v5-agent-worktree'
+import { runFixTasksSessionFkMigration } from './migrations/v6-tasks-session-fk'
 
 // ── Numbered migration system ────────────────────────────────────────────────
 
@@ -308,6 +310,15 @@ const migrations: Migration[] = [
     db.run('CREATE INDEX IF NOT EXISTS idx_sessions_agent_status ON sessions(agent_id, status, started_at DESC)')
     db.run('CREATE INDEX IF NOT EXISTS idx_task_comments_agent_id ON task_comments(agent_id)')
   } },
+
+  // v28: add agents.worktree_enabled + worktree_default config key (T1142)
+  { version: 28, up: (db) => {
+    runAddWorktreeToAgentsMigration(db)
+    db.run("INSERT OR IGNORE INTO config (key, value) VALUES ('worktree_default', '1')")
+  } },
+
+  // v29: fix tasks.session_id FK broken reference (sessions_backup_i18n → sessions) (T1161)
+  { version: 29, up: (db) => { runFixTasksSessionFkMigration(db) } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */

@@ -35,8 +35,7 @@ vi.mock('fs/promises', () => ({
   unlink: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('readline', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('readline')>()
+vi.mock('readline', async () => {
   const { EventEmitter } = await import('events')
   const createInterface = vi.fn(({ input }: { input: NodeJS.ReadableStream }) => {
     input.on('error', () => {})
@@ -61,9 +60,8 @@ vi.mock('readline', async (importOriginal) => {
     return rl
   })
   return {
-    ...actual,
     createInterface,
-    default: { ...actual, createInterface },
+    default: { createInterface },
   }
 })
 
