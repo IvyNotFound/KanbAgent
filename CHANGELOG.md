@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.29.1] - 2026-03-08
+
+### Changes
+- fix(front-vuejs): worktree default true + i18n Auto button (T1098) (2a776dc)
+- chore(front-vuejs): remove obsolete i18n keys from launch namespace (T1095-cleanup) (b92ad5c)
+- docs: mettre à jour README et JSDoc pour v0.29.1 (T1086) (42c5b99)
+- fix(front-vuejs): platform-aware noInstance messages — remove WSL bias on macOS/Linux (T1092) (5e61b85)
+- fix(front-vuejs): capitalize launch.instance label in 14 locales (T1096) (47d3ce8)
+- fix(front-vuejs): store cli:distro instead of distro-only for default CLI (T1090) (8ee459f)
+- fix(front-vuejs): SettingsModal availableDistros stale + electron.d.ts forceRefresh (T1091) (49cf7ab)
+- fix(back-electron): propagate forceRefresh to enrichWindowsPath (T1093) (b43bc1f)
+- fix(back-electron): use buildWindowsEnv() for Windows-native spawns (T1089) (ae40ff2)
+- fix(front-vuejs): disable Launch button when no CLI instance detected (T1088) (a6a6cfd)
+- fix(back-electron): opencode headless mode via run --format json (T1084) (b3017a6)
+- fix(back-electron): WSL CLI detection — include Stopped distros + forceRefresh cache (T1085) (2b44c72)
+- fix(back-electron): source ~/.bashrc in WSL CLI detection script (T1083) (85661c2)
+- fix(back-electron): correct Gemini CLI non-interactive flag (--headless → -p) (T1082) (98b1c6a)
 ## [0.29.0] - 2026-03-07
 
 ### Changes
