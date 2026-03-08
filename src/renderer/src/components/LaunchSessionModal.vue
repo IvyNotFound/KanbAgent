@@ -5,7 +5,8 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore, parseDefaultCliInstance } from '@renderer/stores/settings'
 import { agentFg, agentBorder } from '@renderer/utils/agentColor'
 import { useModalEscape } from '@renderer/composables/useModalEscape'
-import { useLaunchSession } from '@renderer/composables/useLaunchSession'
+import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
+import { useToast } from '@renderer/composables/useToast'
 import { CLI_CAPABILITIES, CLI_LABELS, CLI_BADGE, systemLabel as getSystemLabel } from '@renderer/utils/cliCapabilities'
 import type { Agent } from '@renderer/types'
 import type { CliType, CliInstance, CliCapabilities } from '@shared/cli-types'
@@ -19,6 +20,7 @@ const { t } = useI18n()
 const tasksStore = useTasksStore()
 const settingsStore = useSettingsStore()
 const { launchAgentTerminal } = useLaunchSession()
+const toast = useToast()
 
 const selectedInstance = ref<CliInstance | null>(null)
 const loading = ref(true)
@@ -41,6 +43,9 @@ const fullSystemPrompt = computed(() => {
   const parts: string[] = []
   if (systemPrompt.value) parts.push(systemPrompt.value)
   if (systemPromptSuffix.value) parts.push(systemPromptSuffix.value)
+  if (settingsStore.maxFileLinesEnabled) {
+    parts.push(`Always produce and maintain files of maximum ${settingsStore.maxFileLinesCount} lines. Split files that exceed this limit into logical modules.`)
+  }
   return parts.join('\n\n')
 })
 
@@ -156,7 +161,7 @@ async function launch() {
     const activeThinking = caps.value.thinkingMode ? thinkingMode.value : undefined
     const activeSystemPrompt = caps.value.systemPrompt ? fullSystemPrompt.value : undefined
 
-    await launchAgentTerminal(props.agent, undefined, {
+    const result = await launchAgentTerminal(props.agent, undefined, {
       customPrompt: customPrompt.value,
       instance: selectedInstance.value,
       cli: selectedCli.value,
@@ -166,6 +171,15 @@ async function launch() {
       systemPrompt: convId ? false : (activeSystemPrompt ?? ''),
       activate: true,
     })
+    if (result === 'session-limit') {
+      const max = props.agent.max_sessions ?? MAX_AGENT_SESSIONS
+      toast.push(t('board.sessionLimitReached', { agent: props.agent.name, max }), 'warn')
+      return
+    }
+    if (result === 'error') {
+      toast.push(t('board.launchFailed', { agent: props.agent.name }), 'error')
+      return
+    }
     emit('close')
   } finally {
     launching.value = false
