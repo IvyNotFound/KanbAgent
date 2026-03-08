@@ -71,9 +71,41 @@ fi
 {
     echo "## [$NEW_VERSION] - $(date +%Y-%m-%d)"
     echo ""
-    echo "### Changes"
-    git log --pretty=format:"- %s (%h)" "v$CURRENT_VERSION"..HEAD 2>/dev/null || echo "- Initial release"
-    echo ""
+
+    COMMITS=$(git log --pretty=format:"%s|||%h" "v$CURRENT_VERSION"..HEAD 2>/dev/null)
+
+    print_section() {
+        local title="$1"; local pattern="$2"
+        local lines
+        lines=$(echo "$COMMITS" | grep -E "^$pattern" | sed "s/|||/ (/;s/$/)/" | sed 's/^/- /')
+        if [ -n "$lines" ]; then
+            echo "### $title"
+            echo "$lines"
+            echo ""
+        fi
+    }
+
+    if [ -z "$COMMITS" ]; then
+        echo "### Changes"
+        echo "- Initial release"
+        echo ""
+    else
+        print_section "Features"       "feat"
+        print_section "Bug Fixes"      "fix"
+        print_section "Performance"    "perf"
+        print_section "Refactoring"    "refactor"
+        print_section "Tests"          "test"
+        print_section "CI"             "ci"
+        print_section "Documentation"  "docs"
+        print_section "Chores"         "chore"
+        # Catch-all for commits that don't follow conventional format
+        OTHER=$(echo "$COMMITS" | grep -vE "^(feat|fix|perf|refactor|test|ci|docs|chore)" | sed "s/|||/ (/;s/$/)/" | sed 's/^/- /')
+        if [ -n "$OTHER" ]; then
+            echo "### Other"
+            echo "$OTHER"
+            echo ""
+        fi
+    fi
 } > /tmp/changelog_entry.md
 
 if [ -f CHANGELOG.md ]; then

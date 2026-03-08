@@ -31,6 +31,23 @@ jobs:
       - name: Check i18n completeness
         run: node scripts/check-i18n.js
 
+  unit-tests:
+    needs: [i18n-check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
   e2e-linux:
     needs: [i18n-check]
     runs-on: ubuntu-latest
@@ -149,7 +166,7 @@ jobs:
           retention-days: 7
 
   build-windows:
-    needs: [e2e-linux, e2e-windows, e2e-mac]
+    needs: [unit-tests, e2e-linux, e2e-windows, e2e-mac]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -175,7 +192,7 @@ jobs:
             dist/latest.yml
 
   build-mac:
-    needs: [e2e-linux, e2e-windows, e2e-mac]
+    needs: [unit-tests, e2e-linux, e2e-windows, e2e-mac]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -198,7 +215,7 @@ jobs:
             dist/latest-mac.yml
 
   build-linux:
-    needs: [e2e-linux, e2e-windows, e2e-mac]
+    needs: [unit-tests, e2e-linux, e2e-windows, e2e-mac]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
