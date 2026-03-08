@@ -56,6 +56,15 @@ function makeDirent(name: string, isDirectory: boolean): Dirent {
 function dir(name: string) { return makeDirent(name, true) }
 function file(name: string) { return makeDirent(name, false) }
 
+/** Queue a .gitignore readFile result. No arg = ENOENT (fallback exclusions). */
+function mockGitignore(content?: string): void {
+  if (content !== undefined) {
+    vi.mocked(readFile).mockResolvedValueOnce(content)
+  } else {
+    vi.mocked(readFile).mockRejectedValueOnce(new Error('ENOENT'))
+  }
+}
+
 // Fake IPC event (unused by implementation but required by ipcMain.handle signature)
 const fakeEvent = {} as Electron.IpcMainInvokeEvent
 
@@ -81,6 +90,7 @@ describe('telemetry:scan', () => {
       file('App.vue'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile)
       .mockResolvedValueOnce('line1\nline2\nline3')   // main.ts  → 3 lines
       .mockResolvedValueOnce('a\nb')                   // App.vue  → 2 lines
@@ -100,12 +110,13 @@ describe('telemetry:scan', () => {
 
   // ── 2. node_modules ignored ────────────────────────────────────────────────
 
-  it('ignores node_modules directory', async () => {
+  it('ignores node_modules directory (via fallback)', async () => {
     vi.mocked(readdir).mockResolvedValueOnce([
       dir('node_modules'),
       file('index.ts'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile).mockResolvedValueOnce('only\nthis')  // index.ts
 
     const result = await scan('/project')
@@ -117,12 +128,13 @@ describe('telemetry:scan', () => {
 
   // ── 3. .git ignored ───────────────────────────────────────────────────────
 
-  it('ignores .git directory', async () => {
+  it('ignores .git directory (always hardcoded)', async () => {
     vi.mocked(readdir).mockResolvedValueOnce([
       dir('.git'),
       file('README.md'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile).mockResolvedValueOnce('# title')  // README.md
 
     const result = await scan('/project')
@@ -138,6 +150,7 @@ describe('telemetry:scan', () => {
       file('binary.ts'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile).mockRejectedValueOnce(new Error('EACCES: permission denied'))
 
     const result = await scan('/project')
@@ -155,6 +168,7 @@ describe('telemetry:scan', () => {
       file('app.ts'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile).mockResolvedValueOnce('a\nb\nc')  // only app.ts is read
 
     const result = await scan('/project')
@@ -168,6 +182,7 @@ describe('telemetry:scan', () => {
 
   it('returns zero stats for an empty directory', async () => {
     vi.mocked(readdir).mockResolvedValueOnce([] as unknown as Awaited<ReturnType<typeof readdir>>)
+    mockGitignore()
 
     const result = await scan('/empty')
 
@@ -188,6 +203,7 @@ describe('telemetry:scan', () => {
       file('b.vue'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile)
       .mockResolvedValueOnce('1\n2\n3\n4\n5\n6\n7')   // 7 lines → .ts
       .mockResolvedValueOnce('1\n2\n3')                 // 3 lines → .vue
@@ -229,6 +245,7 @@ describe('telemetry:scan', () => {
         file('app.ts'),
       ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile)
       .mockResolvedValueOnce('a\nb')        // index.ts  → 2 lines
       .mockResolvedValueOnce('x\ny\nz')     // src/app.ts → 3 lines
@@ -245,6 +262,7 @@ describe('telemetry:scan', () => {
 
   it('returns a valid ISO date string in scannedAt', async () => {
     vi.mocked(readdir).mockResolvedValueOnce([] as unknown as Awaited<ReturnType<typeof readdir>>)
+    mockGitignore()
 
     const result = await scan('/project')
 
@@ -259,6 +277,7 @@ describe('telemetry:scan', () => {
       file('app.spec.ts'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile)
       .mockResolvedValueOnce('a\nb\nc\nd\ne\nf\ng\nh\ni\nj')  // app.ts → 10 lines (source)
       .mockResolvedValueOnce('x\ny\nz')                         // app.spec.ts → 3 lines (test)
@@ -280,6 +299,7 @@ describe('telemetry:scan', () => {
       file('utils.test.js'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile).mockResolvedValueOnce('a\nb')
 
     const result = await scan('/project')
@@ -303,6 +323,7 @@ describe('telemetry:scan', () => {
       ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
     // __tests__ dir is iterated first → helper.ts read before main.ts
+    mockGitignore()
     vi.mocked(readFile)
       .mockResolvedValueOnce('x\ny')     // __tests__/helper.ts → test (2 lines)
       .mockResolvedValueOnce('a\nb\nc')  // main.ts → source (3 lines)
@@ -323,6 +344,7 @@ describe('telemetry:scan', () => {
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
     // 1 blank, 2 comment, 2 code lines
+    mockGitignore()
     vi.mocked(readFile).mockResolvedValueOnce(
       'const x = 1\n// comment\n\n/* block */\nconst y = 2',
     )
@@ -347,6 +369,7 @@ describe('telemetry:scan', () => {
       file('main.ts'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile).mockResolvedValueOnce('a\nb\nc')
 
     const result = await scan('/project')
@@ -365,6 +388,7 @@ describe('telemetry:scan', () => {
       file('b.vue'),
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
+    mockGitignore()
     vi.mocked(readFile)
       .mockResolvedValueOnce('a\nb\nc\nd\ne')  // a.ts → 5 source
       .mockResolvedValueOnce('x\ny')            // a.spec.ts → 2 test
@@ -392,5 +416,129 @@ describe('telemetry:scan', () => {
     })
 
     await expect(scan('/evil')).rejects.toThrow('PROJECT_PATH_NOT_ALLOWED')
+  })
+
+  // ── 18. .gitignore patterns are respected ─────────────────────────────────
+
+  it('ignores directories listed in .gitignore', async () => {
+    vi.mocked(readdir).mockResolvedValueOnce([
+      dir('.claude'),
+      dir('src'),
+      file('index.ts'),
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+    // src/ subdir
+    vi.mocked(readdir).mockResolvedValueOnce([
+      file('app.ts'),
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+
+    mockGitignore('.claude/worktrees/\nnode_modules\ndist\n')
+    vi.mocked(readFile)
+      .mockResolvedValueOnce('a\nb')     // index.ts
+      .mockResolvedValueOnce('x\ny\nz')  // src/app.ts
+
+    const result = await scan('/project')
+
+    // .claude/ is NOT fully ignored — only .claude/worktrees/ is
+    // But .claude itself has no matching files (readdir not mocked for it)
+    // src/ is not ignored → recurses
+    expect(result.totalFiles).toBe(2)
+    expect(result.totalLines).toBe(5)
+  })
+
+  // ── 19. .claude/worktrees/ ignored via .gitignore ─────────────────────────
+
+  it('ignores .claude/worktrees/ when listed in .gitignore', async () => {
+    vi.mocked(readdir)
+      .mockResolvedValueOnce([
+        dir('.claude'),
+        file('main.ts'),
+      ] as unknown as Awaited<ReturnType<typeof readdir>>)
+      .mockResolvedValueOnce([
+        dir('worktrees'),
+        file('config.yaml'),  // not in LANGUAGE_MAP → skipped
+      ] as unknown as Awaited<ReturnType<typeof readdir>>)
+      // worktrees/ should NOT be entered — no further readdir needed
+
+    mockGitignore('.claude/worktrees/\n')
+    vi.mocked(readFile)
+      .mockResolvedValueOnce('line1')   // main.ts
+
+    const result = await scan('/project')
+
+    // main.ts counted, config.yaml not in LANGUAGE_MAP → skipped, worktrees/ ignored
+    expect(result.totalFiles).toBe(1)
+    expect(result.totalLines).toBe(1)
+    // readdir: root + .claude/ = 2 (worktrees/ never entered)
+    expect(readdir).toHaveBeenCalledTimes(2)
+  })
+
+  // ── 20. Fallback exclusions when no .gitignore ────────────────────────────
+
+  it('falls back to default exclusions when .gitignore is missing', async () => {
+    vi.mocked(readdir).mockResolvedValueOnce([
+      dir('node_modules'),
+      dir('dist'),
+      dir('src'),
+      file('main.ts'),
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+    vi.mocked(readdir).mockResolvedValueOnce([
+      file('app.ts'),
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+
+    // No .gitignore → fallback
+    mockGitignore()
+    vi.mocked(readFile)
+      .mockResolvedValueOnce('a')     // main.ts
+      .mockResolvedValueOnce('b\nc')  // src/app.ts
+
+    const result = await scan('/project')
+
+    // node_modules and dist are in fallback exclusions → skipped
+    // src/ is not → recursed
+    expect(result.totalFiles).toBe(2)
+    expect(result.totalLines).toBe(3)
+  })
+
+  // ── 21. node_modules ignored via .gitignore ───────────────────────────────
+
+  it('ignores node_modules when listed in .gitignore', async () => {
+    vi.mocked(readdir).mockResolvedValueOnce([
+      dir('node_modules'),
+      file('app.ts'),
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+
+    mockGitignore('node_modules\n')
+    vi.mocked(readFile).mockResolvedValueOnce('code')  // app.ts
+
+    const result = await scan('/project')
+
+    expect(readdir).toHaveBeenCalledTimes(1)
+    expect(result.totalFiles).toBe(1)
+  })
+
+  // ── 22. Non-ignored file is counted (regression guard) ────────────────────
+
+  it('counts files not matching any ignore pattern', async () => {
+    vi.mocked(readdir).mockResolvedValueOnce([
+      dir('src'),
+      file('README.md'),
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+    vi.mocked(readdir).mockResolvedValueOnce([
+      file('index.ts'),
+      file('utils.py'),
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+
+    mockGitignore('node_modules\ndist\n')
+    vi.mocked(readFile)
+      .mockResolvedValueOnce('# readme')    // README.md
+      .mockResolvedValueOnce('const a = 1') // src/index.ts
+      .mockResolvedValueOnce('x = 1')       // src/utils.py
+
+    const result = await scan('/project')
+
+    expect(result.totalFiles).toBe(3)
+    expect(result.languages).toHaveLength(3)
+    expect(result.languages.map((l: { name: string }) => l.name).sort())
+      .toEqual(['Markdown', 'Python', 'TypeScript'])
   })
 })

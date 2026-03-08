@@ -36,6 +36,7 @@
   "dependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.59.0",
     "electron-updater": "^6.8.3",
+    "ignore": "^7.0.5",
     "sql.js": "^1.14.0"
   },
   "overrides": {
