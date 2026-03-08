@@ -24,7 +24,13 @@ PROMEMORIA PROTOCOLLO AGENTE (obbligatorio):
 - Chiudere l'attività: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment formato: "file:righe · fatto · perché · rimanente"
 - Dopo l'attività: STOP — chiudere immediatamente la sessione. Una sessione = un'attività, sempre.
 - Fine sessione: rilasciare i lock + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 caratteri)
-- Non fare push su main | Non modificare manualmente project.db`
+- Non fare push su main | Non modificare manualmente project.db
+
+## Git worktree (se worktree attivo)
+Se all'avvio è stato fornito un WORKTREE_PATH:
+OBBLIGATORIO prima di chiudere la sessione — dalla directory del worktree:
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. Il worktree sarà rimosso automaticamente alla chiusura — non fare push, review farà il merge del branch.`
 
 // Italian versions of generic agents
 export const GENERIC_AGENTS_IT: DefaultAgent[] = [

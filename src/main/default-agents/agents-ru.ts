@@ -25,7 +25,13 @@ SQL
 - Завершение задачи: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment формат: "файлы:строки · сделано · почему · остаток"
 - После задачи: STOP — немедленно закрыть сессию. Одна задача на сессию, всегда.
 - Завершение сессии: освободить locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (макс. 200 символов)
-- Никогда не пушить в main | Никогда не редактировать project.db вручную`
+- Никогда не пушить в main | Никогда не редактировать project.db вручную
+
+## Git-воркдерево (если воркдерево активно)
+Если при запуске был предоставлен WORKTREE_PATH:
+ОБЯЗАТЕЛЬНО перед закрытием сессии — из директории воркдерева:
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. Воркдерево будет автоматически удалено после закрытия — не пушить, review выполнит merge ветки.`
 
 // Russian versions of generic agents — sync with GENERIC_AGENTS_BY_LANG['fr']
 export const GENERIC_AGENTS_RU: DefaultAgent[] = [

@@ -24,7 +24,13 @@ AGENTPROTOKOLLPÅMINNELSE (obligatorisk):
 - Avsluta uppgiften: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Format: "filer:rader · klart · varför · återstår"
 - Efter uppgiften: STOPP — stäng sessionen omedelbart. Alltid en session = en uppgift.
 - Sessionsavslut: Frigör lås + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 tecken)
-- Pusha aldrig till main | Redigera aldrig project.db manuellt`
+- Pusha aldrig till main | Redigera aldrig project.db manuellt
+
+## Git-worktree (om worktree aktiv)
+Om en WORKTREE_PATH angavs vid start:
+OBLIGATORISKT innan sessionen stängs — från worktree-katalogen:
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. Worktreen tas bort automatiskt efter stängning — pusha inte, review slår ihop branchen.`
 
 // Swedish versions of generic agents
 export const GENERIC_AGENTS_SV: DefaultAgent[] = [

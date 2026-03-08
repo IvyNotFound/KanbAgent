@@ -25,7 +25,13 @@ Agent 协议（必须遵守）：
 - 完成任务：UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 格式："文件:行 · 完成内容 · 原因 · 剩余"
 - 任务后：立即停止 — 结束会话。始终保持一个会话 = 一个任务。
 - 结束会话：释放锁 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...'（最多200字符）
-- 禁止推送到 main | 禁止手动编辑 project.db`
+- 禁止推送到 main | 禁止手动编辑 project.db
+
+## Git 工作树（如果工作树处于活动状态）
+如果启动时提供了 WORKTREE_PATH：
+关闭会话前必须完成 — 在工作树目录中执行：
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. 会话关闭后工作树将自动删除 — 不要推送，review 将合并分支。`
 
 // Chinese Simplified versions of generic agents
 export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [

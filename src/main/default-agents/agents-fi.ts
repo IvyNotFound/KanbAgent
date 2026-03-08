@@ -24,7 +24,13 @@ AGENTTIPROTOKOLLA MUISTUTUS (pakollinen):
 - Tehtävän päättäminen: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Muoto: "tiedostot:rivit · tehty · miksi · jäljellä"
 - Tehtävän jälkeen: STOP — sulje istunto välittömästi. Aina yksi istunto = yksi tehtävä.
 - Istunnon päättäminen: Vapauta lukot + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (maks. 200 merkkiä)
-- Älä koskaan pushaa mainiin | Älä koskaan muokkaa project.db:tä manuaalisesti`
+- Älä koskaan pushaa mainiin | Älä koskaan muokkaa project.db:tä manuaalisesti
+
+## Git-työtree (jos työtree aktiivinen)
+Jos käynnistyksen yhteydessä annettiin WORKTREE_PATH:
+PAKOLLINEN ennen session sulkemista — työtree-hakemistossa:
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. Työtree poistetaan automaattisesti sulkemisen jälkeen — älä pusha, review yhdistää haaran.`
 
 // Finnish versions of generic agents
 export const GENERIC_AGENTS_FI: DefaultAgent[] = [

@@ -24,7 +24,13 @@ AGENT-PROTOKOLL-ERINNERUNG (obligatorisch):
 - Aufgabe abschließen: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Format: "Dateien:Zeilen · erledigt · warum · Verbleibendes"
 - Nach der Aufgabe: STOP — Sitzung sofort beenden. Immer eine Sitzung = eine Aufgabe.
 - Sitzungsende: Locks freigeben + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max. 200 Zeichen)
-- Kein Push auf main | project.db niemals manuell bearbeiten`
+- Kein Push auf main | project.db niemals manuell bearbeiten
+
+## Git-Worktree (falls Worktree aktiv)
+Falls beim Start ein WORKTREE_PATH angegeben wurde:
+OBLIGATORISCH vor dem Schließen der Sitzung — im Verzeichnis des Worktrees:
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. Der Worktree wird nach dem Schließen automatisch entfernt — kein Push, review fusioniert den Branch.`
 
 // German versions of generic agents
 export const GENERIC_AGENTS_DE: DefaultAgent[] = [

@@ -25,7 +25,13 @@ SQL
 - タスク完了: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 形式: "ファイル:行 · 実施内容 · 理由 · 残り"
 - タスク後: 即座にSTOP — セッションを終了。常に1セッション = 1タスク。
 - セッション終了: ロック解放 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (最大200文字)
-- mainへのpush禁止 | project.dbの手動編集禁止`
+- mainへのpush禁止 | project.dbの手動編集禁止
+
+## Gitワークツリー（ワークツリーがアクティブな場合）
+起動時にWORKTREE_PATHが提供された場合：
+セッション終了前に必須 — ワークツリーディレクトリ内で：
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. セッション終了後にワークツリーは自動的に削除されます — pushしないでください、reviewがブランチをマージします。`
 
 // Japanese versions of generic agents
 export const GENERIC_AGENTS_JA: DefaultAgent[] = [

@@ -25,7 +25,13 @@ SQL
 - 작업 완료: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 형식: "파일:줄 · 수행 내용 · 이유 · 잔여"
 - 작업 후: 즉시 STOP — 세션 종료. 항상 1세션 = 1작업.
 - 세션 종료: 락 해제 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (최대 200자)
-- main으로 push 금지 | project.db 수동 편집 금지`
+- main으로 push 금지 | project.db 수동 편집 금지
+
+## Git 워크트리 (워크트리 활성 시)
+시작 시 WORKTREE_PATH가 제공된 경우:
+세션 종료 전 필수 — 워크트리 디렉토리에서:
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. 세션 종료 후 워크트리가 자동으로 제거됩니다 — push 금지, review가 브랜치를 병합합니다.`
 
 // Korean versions of generic agents
 export const GENERIC_AGENTS_KO: DefaultAgent[] = [

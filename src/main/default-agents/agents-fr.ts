@@ -25,7 +25,13 @@ AGENT PROTOCOL REMINDER (mandatory):
 - Finishing task: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment format: "fichiers:lignes · fait · pourquoi · reste"
 - After task: STOP — close session immediately. One task per session, always.
 - Ending session: release locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 chars)
-- Never push to main | Never edit project.db manually`
+- Never push to main | Never edit project.db manually
+
+## Worktree git (si worktree actif)
+Si un WORKTREE_PATH t'a été fourni au démarrage :
+OBLIGATOIRE avant de fermer la session — depuis le répertoire du worktree :
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. Le worktree sera supprimé automatiquement après clôture — ne pas push, review fusionnera la branche.`
 
 /**
  * Generic agents for new projects — no project-specific references.

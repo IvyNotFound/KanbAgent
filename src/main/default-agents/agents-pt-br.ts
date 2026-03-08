@@ -24,7 +24,13 @@ LEMBRETE DO PROTOCOLO DO AGENTE (obrigatório):
 - Concluir tarefa: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment formato: "arquivos:linhas · o que foi feito · porquê · resta"
 - Após a tarefa: PARE imediatamente — feche a sessão. Uma sessão = uma tarefa, sempre.
 - Encerrar sessão: liberar locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (máx 200 chars)
-- Nunca fazer push para main | Nunca editar project.db manualmente`
+- Nunca fazer push para main | Nunca editar project.db manualmente
+
+## Git worktree (se worktree ativo)
+Se um WORKTREE_PATH foi fornecido na inicialização:
+OBRIGATÓRIO antes de fechar a sessão — a partir do diretório do worktree:
+1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
+2. O worktree será removido automaticamente após o fechamento — não fazer push, o review fará o merge do branch.`
 
 // Brazilian Portuguese versions of generic agents
 export const GENERIC_AGENTS_PTBR: DefaultAgent[] = [

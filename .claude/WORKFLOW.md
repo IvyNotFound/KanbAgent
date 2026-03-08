@@ -147,6 +147,17 @@ UPDATE sessions SET status = 'completed', ended_at = CURRENT_TIMESTAMP, updated_
   summary = 'Done:<accomplished>. Pending:<tickets>. Next:<action>.' WHERE id = :session_id;
 ```
 
+**Multi-instance only — worktree commit (before cleanup):**
+
+Before removing the worktree, commit all work:
+
+```bash
+cd .claude/worktrees/s<session_id>
+git add -A && git commit -m "chore: work done — T<task_id>"
+```
+
+> Branch is kept for merge by review — do not push directly to main.
+
 **Multi-instance only — worktree cleanup:**
 
 ```bash
