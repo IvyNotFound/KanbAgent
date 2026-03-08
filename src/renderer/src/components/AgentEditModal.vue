@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useSettingsStore } from '@renderer/stores/settings'
 import { agentFg, agentBorder } from '@renderer/utils/agentColor'
 import type { Agent } from '@renderer/types'
 
@@ -10,6 +11,7 @@ const props = defineProps<{ agent: Agent }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 
 const store = useTasksStore()
+const settingsStore = useSettingsStore()
 
 const name = ref(props.agent.name)
 const thinkingMode = ref<'auto' | 'disabled'>(
@@ -20,6 +22,7 @@ const permissionMode = ref<'default' | 'auto'>(
 )
 const allowedTools = ref(props.agent.allowed_tools ?? '')
 const autoLaunch = ref(props.agent.auto_launch !== 0)
+const worktreeEnabled = ref<number | null>(props.agent.worktree_enabled ?? null)
 // String to allow empty value (empty → -1 = unlimited in DB)
 const maxSessions = ref(props.agent.max_sessions === -1 ? '' : String(props.agent.max_sessions ?? 3))
 const maxSessionsInvalid = computed(() => maxSessions.value !== '' && (!/^\d+$/.test(maxSessions.value) || parseInt(maxSessions.value) < 1))
@@ -94,6 +97,7 @@ async function save() {
       autoLaunch: autoLaunch.value,
       permissionMode: permissionMode.value,
       maxSessions: maxSessionsDbValue.value,
+      worktreeEnabled: worktreeEnabled.value === null ? null : worktreeEnabled.value === 1,
     })
     if (!result.success) {
       error.value = result.error ?? 'Erreur inconnue'
@@ -250,6 +254,50 @@ async function save() {
               >{{ t('agent.permissionModeAuto') }}</button>
             </div>
             <p v-if="permissionMode === 'auto'" class="text-[10px] text-red-400 dark:text-red-400 mt-1.5 font-medium">⚠ {{ t('agent.permissionModeWarning') }}</p>
+          </div>
+
+          <!-- Worktree isolation (T1143) -->
+          <div>
+            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.worktreeEnabled') }}</label>
+            <div class="flex gap-2">
+              <button
+                :class="[
+                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
+                  worktreeEnabled === null
+                    ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300'
+                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
+                ]"
+                @click="worktreeEnabled = null"
+              >
+                {{ t('agent.worktreeInherit') }}
+              </button>
+              <button
+                :class="[
+                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
+                  worktreeEnabled === 1
+                    ? 'border-emerald-500/60 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
+                ]"
+                @click="worktreeEnabled = 1"
+              >
+                {{ t('agent.worktreeOn') }}
+              </button>
+              <button
+                :class="[
+                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
+                  worktreeEnabled === 0
+                    ? 'border-amber-500/60 bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300'
+                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
+                ]"
+                @click="worktreeEnabled = 0"
+              >
+                {{ t('agent.worktreeOff') }}
+              </button>
+            </div>
+            <p v-if="worktreeEnabled === null" class="text-[10px] text-content-faint mt-1.5">
+              {{ t('agent.worktreeCurrentGlobal', { status: settingsStore.worktreeDefault ? t('agent.worktreeOn') : t('agent.worktreeOff') }) }}
+            </p>
+            <p class="text-[10px] text-content-faint mt-1">{{ t('agent.worktreeNote') }}</p>
           </div>
 
           <!-- Périmètres -->

@@ -205,6 +205,15 @@ function handleKeydown(e: KeyboardEvent) {
                     @change="settingsStore.setAutoReviewThreshold(Number(($event.target as HTMLInputElement).value))" />
                 </div>
               </div>
+              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.worktreeDefault') }}</p>
+                    <p class="text-xs text-content-faint">{{ t('settings.worktreeDefaultDesc') }}</p>
+                  </div>
+                  <ToggleSwitch :model-value="settingsStore.worktreeDefault" @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, $event)" />
+                </div>
+              </div>
             </template>
 
             <!-- Editor: Max file lines -->
