@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   build-windows:
+    needs: [e2e]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +42,7 @@ jobs:
             dist/latest.yml
 
   build-mac:
+    needs: [e2e]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,6 +65,7 @@ jobs:
             dist/latest-mac.yml
 
   build-linux:
+    needs: [e2e]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +88,48 @@ jobs:
             dist/*.deb
             dist/latest-linux.yml
 
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright + Electron deps
+        run: |
+          npm install -D @playwright/test playwright
+          npx playwright install chromium --with-deps
+
+      - name: Install Linux display dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y xvfb libgtk-3-dev libnss3 libasound2t64 libgbm1
+
+      - name: Build renderer (electron-vite)
+        run: npx electron-vite build
+
+      - name: Run E2E tests (with Xvfb virtual display)
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npx playwright test --config playwright.config.ts
+        env:
+          CI: true
+          DISPLAY: ':99'
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-release
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   create-release:
     needs: [build-windows, build-mac, build-linux]
     runs-on: ubuntu-latest
@@ -102,11 +147,11 @@ jobs:
           awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md > /tmp/release_notes.md
           cat /tmp/release_notes.md
 
-      - name: Create draft GitHub Release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
-          draft: true
+          draft: false
           body_path: /tmp/release_notes.md
           files: |
             artifacts/installer-windows/*.exe
