@@ -57,6 +57,20 @@ interface PendingClose {
   fallbackId: ReturnType<typeof setTimeout>
 }
 
+/**
+ * Watch task transitions and manage auto-close / auto-review behaviours.
+ *
+ * - When a task moves to `done`, polls the DB until the agent session reaches
+ *   `completed`, then closes the terminal tab (with a fallback timeout).
+ * - When the number of `done` tasks reaches a configurable threshold, auto-launches
+ *   a review session (subject to cooldown).
+ *
+ * @param options - Reactive refs for tasks, agents and the current database path.
+ * @param options.tasks - Ref to the full task list (watched for status transitions).
+ * @param options.agents - Ref to the agent list (used to resolve review agent).
+ * @param options.dbPath - Ref to the active database path (guards all operations).
+ * @returns void — side-effects only (watchers, timers).
+ */
 export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): void {
   const tabsStore = useTabsStore()
   const settingsStore = useSettingsStore()

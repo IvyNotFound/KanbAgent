@@ -85,7 +85,7 @@ describe('TopologyView (T750)', () => {
       global: { plugins: [pinia, i18n] },
     })
     await flushPromises()
-    // Find the dev-front agent card (id=1) by its displayed text
+    // Find the dev-front agent card (scope=front-vuejs, id=1)
     const buttons = wrapper.findAll('button[title]')
     const devFrontBtn = buttons.find(b => b.text().includes('dev-front'))!
     await devFrontBtn.trigger('click')

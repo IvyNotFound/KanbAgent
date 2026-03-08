@@ -187,7 +187,7 @@ function tooltip(day: DayRate): string {
         </div>
         <div class="flex items-center gap-1.5">
           <div class="w-2.5 h-2.5 rounded-sm bg-red-500 dark:bg-red-600" />
-          <span class="text-[11px] text-content-tertiary">< 50%</span>
+          <span class="text-[11px] text-content-tertiary">&lt; 50%</span>
         </div>
       </div>
     </template>

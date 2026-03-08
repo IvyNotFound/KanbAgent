@@ -1,6 +1,6 @@
 /**
  * Unit tests for renderMarkdown (T678, T1106).
- * Tests import from the actual module to cover mutation testing.
+ * Validates markdown → sanitized HTML transformation via the actual module.
  */
 import { describe, it, expect } from 'vitest'
 import { renderMarkdown } from './renderMarkdown'

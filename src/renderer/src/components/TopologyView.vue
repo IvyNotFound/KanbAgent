@@ -20,7 +20,7 @@ interface TopologyRow {
 }
 
 // Derived from store.agents + store.tasks — no IPC call needed (T1116)
-// session_tokens comes from AGENT_CTE_SQL (tokens_in + tokens_out for active sessions only)
+// session_tokens comes from AGENT_CTE_SQL (tokens_in + tokens_out for active sessions)
 const rows = computed<TopologyRow[]>(() => {
   const inProgressTask = new Map<number, string>()
   for (const task of store.tasks) {
