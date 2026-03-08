@@ -300,7 +300,8 @@
     "cliUnavailable": "Ikke funnet på denne maskinen",
     "multiInstance": "Multi-instans / Isolert worktree",
     "multiInstanceNote": "Oppretter en dedikert git worktree (ADR-006) — tillater kjøring av flere instanser av samme agent parallelt uten konflikter",
-    "multiInstanceError": "Klarte ikke opprette worktree: {error}"
+    "multiInstanceError": "Klarte ikke opprette worktree: {error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "Søk etter oppgave (Ctrl+K)",

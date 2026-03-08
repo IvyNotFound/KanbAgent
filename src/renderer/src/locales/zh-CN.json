@@ -300,7 +300,8 @@
     "cliUnavailable": "在本机上未检测到",
     "multiInstance": "多实例 / 隔离 worktree",
     "multiInstanceNote": "创建专用 git worktree（ADR-006）— 允许同一 Agent 的多个实例并行运行而不产生冲突",
-    "multiInstanceError": "创建 worktree 失败：{error}"
+    "multiInstanceError": "创建 worktree 失败：{error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "搜索任务（Ctrl+K）",

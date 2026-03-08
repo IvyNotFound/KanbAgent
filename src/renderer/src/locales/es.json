@@ -300,7 +300,8 @@
     "cliUnavailable": "No detectado en este equipo",
     "multiInstance": "Multi-instancia / Worktree aislado",
     "multiInstanceNote": "Crea un git worktree dedicado (ADR-006) — permite ejecutar múltiples instancias del mismo agente en paralelo sin conflictos",
-    "multiInstanceError": "Error al crear el worktree: {error}"
+    "multiInstanceError": "Error al crear el worktree: {error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "Buscar una tarea (Ctrl+K)",

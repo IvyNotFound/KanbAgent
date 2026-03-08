@@ -300,7 +300,8 @@
     "cliUnavailable": "غير مكتشف على هذا الجهاز",
     "multiInstance": "متعدد الحالات / worktree معزول",
     "multiInstanceNote": "ينشئ git worktree مخصصاً (ADR-006) — يسمح بتشغيل حالات متعددة بالتوازي دون تعارضات",
-    "multiInstanceError": "فشل إنشاء worktree: {error}"
+    "multiInstanceError": "فشل إنشاء worktree: {error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "ابحث عن مهمة (Ctrl+K)",

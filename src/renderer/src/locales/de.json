@@ -300,7 +300,8 @@
     "cliUnavailable": "Auf diesem Gerät nicht erkannt",
     "multiInstance": "Multi-Instanz / Isolierter Worktree",
     "multiInstanceNote": "Erstellt einen dedizierten Git-Worktree (ADR-006) — ermöglicht mehrere Instanzen desselben Agenten parallel ohne Konflikte",
-    "multiInstanceError": "Worktree konnte nicht erstellt werden: {error}"
+    "multiInstanceError": "Worktree konnte nicht erstellt werden: {error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "Aufgabe suchen (Ctrl+K)",

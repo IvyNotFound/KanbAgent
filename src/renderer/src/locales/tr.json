@@ -300,7 +300,8 @@
     "cliUnavailable": "Bu makinede algılanamadı",
     "multiInstance": "Çoklu örnek / İzole worktree",
     "multiInstanceNote": "Özel bir git worktree oluşturur (ADR-006) — aynı ajanın birden fazla örneğinin çakışma olmadan paralel çalışmasına izin verir",
-    "multiInstanceError": "Worktree oluşturulamadı: {error}"
+    "multiInstanceError": "Worktree oluşturulamadı: {error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "Görev ara (Ctrl+K)",

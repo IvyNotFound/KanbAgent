@@ -363,7 +363,11 @@ async function launch() {
         </div>
 
         <!-- Footer -->
-        <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-edge-subtle bg-surface-base/50">
+        <div class="px-5 py-4 border-t border-edge-subtle bg-surface-base/50 space-y-2">
+          <p v-if="!loading && allAvailableInstances.length === 0" class="text-xs text-amber-500 text-right">
+            {{ t('launch.noInstanceHelp') }}
+          </p>
+          <div class="flex items-center justify-end gap-2">
           <button
             class="px-4 py-2 text-sm text-content-muted hover:text-content-secondary hover:bg-surface-secondary rounded-lg transition-colors"
             @click="emit('close')"
@@ -373,7 +377,7 @@ async function launch() {
           <button
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name), borderWidth: '1px' }"
-            :disabled="loading || launching"
+            :disabled="loading || launching || allAvailableInstances.length === 0"
             @click="launch"
           >
             <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
@@ -381,6 +385,7 @@ async function launch() {
             </svg>
             {{ launching ? t('launch.launching') : t('launch.launch') }}
           </button>
+          </div>
         </div>
       </div>
     </div>

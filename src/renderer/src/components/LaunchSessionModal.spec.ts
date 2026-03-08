@@ -125,7 +125,13 @@ describe('LaunchSessionModal', () => {
     ])
 
     const pinia = createTestingPinia({
-      initialState: { tasks: { dbPath: '/p/.claude/db' } },
+      initialState: {
+        tasks: { dbPath: '/p/.claude/db' },
+        settings: {
+          enabledClis: ['claude'],
+          allCliInstances: [{ cli: 'claude', distro: 'Ubuntu', version: '2.1', isDefault: true, type: 'wsl' }],
+        },
+      },
     })
     const wrapper = shallowMount(LaunchSessionModal, {
       props: { agent: mockAgent as never },
@@ -488,6 +494,38 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     expect(hasThinkingBtn).toBe(false)
   })
 
+  it('disables launch button and shows help message when no instances are detected (T1088)', async () => {
+    const wrapper = shallowMount(LaunchSessionModal, {
+      props: { agent: mockAgent as never },
+      global: {
+        plugins: [createTestingPinia({
+          initialState: {
+            tasks: { dbPath: '/p/.claude/db' },
+            settings: {
+              enabledClis: ['claude'],
+              allCliInstances: [],
+            },
+          },
+        }), i18n],
+        stubs: teleportStub,
+      },
+    })
+    await flushPromises()
+
+    // Launch button should be disabled
+    const buttons = wrapper.findAll('button')
+    const launchBtn = buttons.find(b => {
+      const text = b.text().toLowerCase()
+      return text.includes('lancer') || text.includes('launch')
+    })
+    expect(launchBtn).toBeDefined()
+    expect(launchBtn!.attributes('disabled')).toBeDefined()
+
+    // Help message should be visible
+    const helpMsg = wrapper.find('p.text-amber-500')
+    expect(helpMsg.exists()).toBe(true)
+  })
+
   it('shows thinking mode section for Claude (thinkingMode=true)', async () => {
     const wrapper = shallowMount(LaunchSessionModal, {
       props: { agent: mockAgent as never },
@@ -529,13 +567,13 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     expect(checkboxes.length).toBe(1) // only multiInstance checkbox
   })
 
-  it('launch for Codex passes undefined thinkingMode and distro', async () => {
+  it('launch for Codex passes undefined thinkingMode (T1088: requires instance)', async () => {
     const pinia = createTestingPinia({
       initialState: {
         tasks: { dbPath: '/p/.claude/db' },
         settings: {
           enabledClis: ['codex'],
-          allCliInstances: [],
+          allCliInstances: [{ cli: 'codex', distro: 'Ubuntu', version: '1.0.0', isDefault: true, type: 'wsl' }],
         },
       },
     })
@@ -556,9 +594,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     await flushPromises()
 
     const call = (tabsStore.addTerminal as ReturnType<typeof vi.fn>).mock.calls[0]
-    // distro (arg[1]) should be undefined — no instances detected for codex
-    expect(call[1]).toBeUndefined()
-    // thinkingMode (arg[4]) should be undefined — codex has no thinkingMode
+    // thinkingMode (arg[4]) should be undefined — codex has no thinkingMode capability
     expect(call[4]).toBeUndefined()
     // cli (arg[10]) should be 'codex'
     expect(call[10]).toBe('codex')

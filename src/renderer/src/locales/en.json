@@ -300,7 +300,8 @@
     "multiInstanceError": "Failed to create worktree: {error}",
     "selectCli": "CLI",
     "instance": "instance",
-    "cliUnavailable": "Not detected on this machine"
+    "cliUnavailable": "Not detected on this machine",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "cli": {
     "claude": "Claude Code",

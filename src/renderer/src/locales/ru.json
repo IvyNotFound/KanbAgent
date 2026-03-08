@@ -300,7 +300,8 @@
     "cliUnavailable": "Не обнаружен на этом компьютере",
     "multiInstance": "Мульти-экземпляр / Изолированное рабочее дерево",
     "multiInstanceNote": "Создаёт выделенное рабочее дерево git (ADR-006) — позволяет запускать несколько экземпляров одного агента параллельно без конфликтов",
-    "multiInstanceError": "Не удалось создать рабочее дерево: {error}"
+    "multiInstanceError": "Не удалось создать рабочее дерево: {error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "Поиск задачи (Ctrl+K)",

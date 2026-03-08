@@ -300,7 +300,8 @@
     "cliUnavailable": "Ei havaittu tällä koneella",
     "multiInstance": "Multi-instanssi / Eristetty worktree",
     "multiInstanceNote": "Luo dedikoidun git worktree -hakemiston (ADR-006) — mahdollistaa useiden rinnakkaisten instanssien ajamisen ilman konflikteja",
-    "multiInstanceError": "Worktreen luominen epäonnistui: {error}"
+    "multiInstanceError": "Worktreen luominen epäonnistui: {error}",
+    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
   },
   "titleBar": {
     "searchTitle": "Hae tehtävää (Ctrl+K)",
