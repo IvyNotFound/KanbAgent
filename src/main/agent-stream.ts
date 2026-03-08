@@ -45,6 +45,58 @@ const agents = new Map<string, ChildProcess>()
 // Track which agent IDs belong to each WebContents (for auto-cleanup on renderer destroy)
 const webContentsAgents = new Map<number, Set<string>>()
 
+// ── Stream batching (T1137) ───────────────────────────────────────────────────
+// Accumulate stream events and flush every 32ms to reduce Mojo IPC buffer pressure.
+
+const STREAM_BATCH_INTERVAL_MS = 32
+const STREAM_MAX_BATCH_SIZE = 100
+
+const streamBatches = new Map<string, Record<string, unknown>[]>()
+const streamTimers = new Map<string, ReturnType<typeof setInterval>>()
+
+function flushStreamBatch(id: string, wcId: number): void {
+  const batch = streamBatches.get(id)
+  if (!batch || batch.length === 0) return
+  const wc = webContents.fromId(wcId)
+  if (wc && !wc.isDestroyed()) {
+    wc.send(`agent:stream:${id}`, batch.splice(0))
+  } else {
+    batch.splice(0)
+  }
+}
+
+function pushStreamEvent(id: string, wcId: number, event: Record<string, unknown>): void {
+  let batch = streamBatches.get(id)
+  if (!batch) {
+    batch = []
+    streamBatches.set(id, batch)
+    const timer = setInterval(() => flushStreamBatch(id, wcId), STREAM_BATCH_INTERVAL_MS)
+    streamTimers.set(id, timer)
+  }
+  batch.push(event)
+  if (batch.length >= STREAM_MAX_BATCH_SIZE) {
+    flushStreamBatch(id, wcId)
+  }
+}
+
+function cleanupStreamBatch(id: string, wcId: number): void {
+  flushStreamBatch(id, wcId)
+  const timer = streamTimers.get(id)
+  if (timer) {
+    clearInterval(timer)
+    streamTimers.delete(id)
+  }
+  streamBatches.delete(id)
+}
+
+function sendTerminalEvent(id: string, wcId: number, event: Record<string, unknown>): void {
+  cleanupStreamBatch(id, wcId)
+  const wc = webContents.fromId(wcId)
+  if (wc && !wc.isDestroyed()) {
+    wc.send(`agent:stream:${id}`, [event])
+  }
+}
+
 let nextAgentId = 1
 
 // ── Kill helpers ──────────────────────────────────────────────────────────────
@@ -352,12 +404,11 @@ export function registerAgentStreamHandlers(): void {
         }
       }
 
-      const wc = webContents.fromId(wcId)
-      if (!wc || wc.isDestroyed()) {
+      if (!webContents.fromId(wcId) || webContents.fromId(wcId)!.isDestroyed()) {
         killAgent(id)
         return
       }
-      wc.send(`agent:stream:${id}`, event)
+      pushStreamEvent(id, wcId, event)
     })
 
     proc.on('error', (err) => {
@@ -366,10 +417,7 @@ export function registerAgentStreamHandlers(): void {
       rl.close()
       agents.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
-      const wc = webContents.fromId(wcId)
-      if (wc && !wc.isDestroyed()) {
-        wc.send(`agent:stream:${id}`, { type: 'error:spawn', error: err.message })
-      }
+      sendTerminalEvent(id, wcId, { type: 'error:spawn', error: err.message })
     })
 
     proc.on('close', (exitCode) => {
@@ -386,28 +434,28 @@ export function registerAgentStreamHandlers(): void {
       logDebug(`close id=${id}: exitCode=${exitCode} eventsReceived=${eventsReceived} stderr=${stderrBuffer.slice(0, 200)} stdout_error=${stdoutErrorBuffer.slice(0, 200)}`)
 
       if (eventsReceived === 0) {
-        const wc = webContents.fromId(wcId)
-        if (wc && !wc.isDestroyed()) {
-          const isAbnormalExit = exitCode === -1 || exitCode === 4294967295
-          const stdoutCtx = stdoutErrorBuffer.trim()
-          let msg: string
-          if (isAbnormalExit && stdoutCtx) {
-            msg = `Process exited abnormally (code ${exitCode}): ${stdoutCtx}`
-          } else if (isAbnormalExit) {
-            msg = `Process exited abnormally (code ${exitCode}).`
-          } else if (exitCode !== 0) {
-            msg = stdoutCtx
-              ? `Process exited with code ${exitCode}: ${stdoutCtx}`
-              : `Process exited with code ${exitCode}`
-          } else {
-            msg = `Process exited without producing any output (code ${exitCode})`
-          }
-          wc.send(`agent:stream:${id}`, {
-            type: 'error:exit',
-            error: msg,
-            stderr: stderrBuffer.trim() || undefined,
-          })
+        const isAbnormalExit = exitCode === -1 || exitCode === 4294967295
+        const stdoutCtx = stdoutErrorBuffer.trim()
+        let msg: string
+        if (isAbnormalExit && stdoutCtx) {
+          msg = `Process exited abnormally (code ${exitCode}): ${stdoutCtx}`
+        } else if (isAbnormalExit) {
+          msg = `Process exited abnormally (code ${exitCode}).`
+        } else if (exitCode !== 0) {
+          msg = stdoutCtx
+            ? `Process exited with code ${exitCode}: ${stdoutCtx}`
+            : `Process exited with code ${exitCode}`
+        } else {
+          msg = `Process exited without producing any output (code ${exitCode})`
         }
+        sendTerminalEvent(id, wcId, {
+          type: 'error:exit',
+          error: msg,
+          stderr: stderrBuffer.trim() || undefined,
+        })
+      } else {
+        // Flush residual buffered events before the exit signal
+        cleanupStreamBatch(id, wcId)
       }
       stderrBuffer = ''
       stdoutErrorBuffer = ''
@@ -452,4 +500,6 @@ export const _testing = {
   agents,
   webContentsAgents,
   getActiveTasksLine,
+  streamBatches,
+  streamTimers,
 }

@@ -265,7 +265,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /** Subscribe to JSONL stream events from the agent process. Returns unsubscribe fn. */
   onAgentStream: (id: string, cb: (event: Record<string, unknown>) => void): (() => void) => {
     const channel = `agent:stream:${id}`
-    const handler = (_: unknown, event: Record<string, unknown>) => cb(event)
+    const handler = (_: unknown, events: Record<string, unknown> | Record<string, unknown>[]) => {
+      const arr = Array.isArray(events) ? events : [events]
+      arr.forEach(e => cb(e))
+    }
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.off(channel, handler)
   },

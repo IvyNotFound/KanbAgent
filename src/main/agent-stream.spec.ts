@@ -111,6 +111,7 @@ describe('agent-stream', () => {
   }
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
     vi.clearAllMocks()
     mockProc = new FakeProc()
 
@@ -138,6 +139,13 @@ describe('agent-stream', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
+    // Clean up batch timers to avoid leaking intervals
+    for (const timer of agentStream._testing.streamTimers.values()) {
+      clearInterval(timer)
+    }
+    agentStream._testing.streamBatches.clear()
+    agentStream._testing.streamTimers.clear()
     senderRegistry.clear()
     agentStream._testing.agents.clear()
     agentStream._testing.webContentsAgents.clear()
@@ -228,10 +236,11 @@ describe('agent-stream', () => {
     // Write a JSONL line to stdout (readline will emit 'line')
     const payload = { type: 'assistant', message: { role: 'assistant', content: [] } }
     mockProc.stdout.write(JSON.stringify(payload) + '\n')
-    // Allow readline 'line' event to propagate
+    // Allow readline 'line' event to propagate, then flush the 32ms batch
     await new Promise(resolve => setImmediate(resolve))
+    vi.advanceTimersByTime(32)
 
-    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, payload)
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, [payload])
   })
 
   it('skips non-JSON lines silently', async () => {
@@ -258,10 +267,11 @@ describe('agent-stream', () => {
     const initEvent = { type: 'system', subtype: 'init', session_id: sessionId }
     mockProc.stdout.write(JSON.stringify(initEvent) + '\n')
     await new Promise(resolve => setImmediate(resolve))
+    vi.advanceTimersByTime(32)
 
-    // Should emit both agent:convId and agent:stream
+    // Should emit both agent:convId and agent:stream (as batch array)
     expect(mockSender.send).toHaveBeenCalledWith(`agent:convId:${id}`, sessionId)
-    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, initEvent)
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, [initEvent])
   })
 
   it('emits agent:exit:<id> on process close', async () => {
@@ -329,10 +339,10 @@ describe('agent-stream', () => {
     mockProc.emit('error', new Error('spawn ENOENT'))
     await new Promise(resolve => setImmediate(resolve))
 
-    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, {
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, [{
       type: 'error:spawn',
       error: 'spawn ENOENT',
-    })
+    }])
   })
 
   it('does not emit error:stderr events — stderr is buffered silently (T697)', async () => {
@@ -362,11 +372,11 @@ describe('agent-stream', () => {
     mockProc.emit('close', 1)
     await new Promise(resolve => setImmediate(resolve))
 
-    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, {
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, [{
       type: 'error:exit',
       error: 'Process exited with code 1',
       stderr: 'bash: command not found: claude',
-    })
+    }])
   })
 
   it('includes non-JSON stdout in error:exit message when process exits non-zero (Windows PS1 path)', async () => {
@@ -385,7 +395,9 @@ describe('agent-stream', () => {
       ([ch]) => ch === `agent:stream:${id}`
     )
     expect(call).toBeDefined()
-    const payload = call![1] as { type: string; error: string }
+    // Terminal events are sent as arrays — extract first element
+    const batch = call![1] as Array<{ type: string; error: string }>
+    const payload = Array.isArray(batch) ? batch[0] : batch
     expect(payload.type).toBe('error:exit')
     expect(payload.error).toContain('Process exited with code 1')
     expect(payload.error).toContain("ERROR: 'claude' not found in PATH")
@@ -400,11 +412,11 @@ describe('agent-stream', () => {
     mockProc.emit('close', 0)
     await new Promise(resolve => setImmediate(resolve))
 
-    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, {
+    expect(mockSender.send).toHaveBeenCalledWith(`agent:stream:${id}`, [{
       type: 'error:exit',
       error: 'Process exited without producing any output (code 0)',
       stderr: undefined,
-    })
+    }])
   })
 
   it('does not emit error:exit when process exits non-zero after receiving events', async () => {

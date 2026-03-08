@@ -356,10 +356,26 @@ export function setHookWindow(win: BrowserWindow): void {
 
 // ── IPC push ─────────────────────────────────────────────────────────────────
 
+const HOOK_PAYLOAD_MAX_BYTES = 64 * 1024 // 64 KB
+
+function truncateHookPayload(payload: unknown): unknown {
+  const json = JSON.stringify(payload)
+  if (json.length <= HOOK_PAYLOAD_MAX_BYTES) return payload
+  // Truncate to a safe size and mark as truncated
+  const truncated = json.slice(0, HOOK_PAYLOAD_MAX_BYTES)
+  try {
+    // Return a wrapper so the renderer knows it was cut
+    return { _truncated: true, _raw: truncated }
+  } catch {
+    return { _truncated: true }
+  }
+}
+
 function pushHookEvent(eventName: string, payload: unknown): void {
   const win = hookWindow
   if (!win || win.isDestroyed()) return
-  const event: HookEvent = { event: eventName, payload, ts: Date.now() }
+  const safePayload = truncateHookPayload(payload)
+  const event: HookEvent = { event: eventName, payload: safePayload, ts: Date.now() }
   win.webContents.send('hook:event', event)
 }
 
@@ -617,6 +633,7 @@ export function startHookServer(userDataPath?: string): http.Server {
 
       try {
         const raw = Buffer.concat(chunks).toString()
+        chunks.length = 0 // release buffer references immediately
         const payload = JSON.parse(raw) as Record<string, unknown>
         const url = req.url!
 
