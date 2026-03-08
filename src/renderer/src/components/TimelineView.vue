@@ -32,14 +32,18 @@ const daysBack = ref(30)
 const now = ref(Date.now())
 
 let nowTimer: ReturnType<typeof setInterval> | null = null
+let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   nowTimer = setInterval(() => { now.value = Date.now() }, 60_000)
+  // Poll every 60s while tab is open instead of reacting to every lastRefresh (T1116)
+  refreshTimer = setInterval(fetchTasks, 60_000)
   fetchTasks()
 })
 
 onUnmounted(() => {
   if (nowTimer) clearInterval(nowTimer)
+  if (refreshTimer) clearInterval(refreshTimer)
 })
 
 async function fetchTasks(): Promise<void> {
@@ -68,7 +72,6 @@ async function fetchTasks(): Promise<void> {
 }
 
 watch(() => store.dbPath, fetchTasks)
-watch(() => store.lastRefresh, fetchTasks)
 watch(daysBack, fetchTasks)
 
 const unassignedLabel = computed(() => t('timeline.unassigned'))
@@ -190,20 +193,25 @@ function taskDurationLabel(task: TimelineTask): string {
   return `${(ms / 86_400_000).toFixed(1)}j`
 }
 
-const tooltip = ref<{ task: TimelineTask; x: number; y: number } | null>(null)
+const tooltipTask = ref<TimelineTask | null>(null)
+const tooltipX = ref(0)
+const tooltipY = ref(0)
 
 function showTooltip(event: MouseEvent, task: TimelineTask): void {
-  tooltip.value = { task, x: event.clientX, y: event.clientY }
+  tooltipTask.value = task
+  tooltipX.value = event.clientX
+  tooltipY.value = event.clientY
 }
 
 function moveTooltip(event: MouseEvent): void {
-  if (tooltip.value) {
-    tooltip.value = { ...tooltip.value, x: event.clientX, y: event.clientY }
+  if (tooltipTask.value) {
+    tooltipX.value = event.clientX
+    tooltipY.value = event.clientY
   }
 }
 
 function hideTooltip(): void {
-  tooltip.value = null
+  tooltipTask.value = null
 }
 
 const legendItems = computed(() => [
@@ -339,29 +347,29 @@ const legendItems = computed(() => [
     <!-- Tooltip -->
     <Teleport to="body">
       <div
-        v-if="tooltip"
+        v-if="tooltipTask"
         class="fixed z-50 bg-surface-primary border border-edge-default rounded-lg shadow-xl p-3 text-xs pointer-events-none"
-        :style="{ left: (tooltip.x + 14) + 'px', top: (tooltip.y - 14) + 'px', maxWidth: '280px' }"
+        :style="{ left: (tooltipX + 14) + 'px', top: (tooltipY - 14) + 'px', maxWidth: '280px' }"
       >
-        <div class="font-semibold text-content-primary mb-1.5 leading-snug">{{ tooltip.task.title }}</div>
+        <div class="font-semibold text-content-primary mb-1.5 leading-snug">{{ tooltipTask.title }}</div>
         <div class="space-y-0.5 text-content-muted">
           <div>
             {{ t('timeline.tooltipStatus') }}:
             <span
               :class="{
-                'text-blue-400': tooltip.task.status === 'in_progress',
-                'text-green-400': tooltip.task.status === 'done',
-                'text-content-tertiary': tooltip.task.status === 'todo',
+                'text-blue-400': tooltipTask.status === 'in_progress',
+                'text-green-400': tooltipTask.status === 'done',
+                'text-content-tertiary': tooltipTask.status === 'todo',
               }"
-            >{{ tooltip.task.status }}</span>
+            >{{ tooltipTask.status }}</span>
           </div>
-          <div>{{ t('timeline.tooltipStart') }}: {{ formatDate(tooltip.task.started_at ?? tooltip.task.created_at) }}</div>
-          <div v-if="tooltip.task.completed_at">
-            {{ t('timeline.tooltipEnd') }}: {{ formatDate(tooltip.task.completed_at) }}
+          <div>{{ t('timeline.tooltipStart') }}: {{ formatDate(tooltipTask.started_at ?? tooltipTask.created_at) }}</div>
+          <div v-if="tooltipTask.completed_at">
+            {{ t('timeline.tooltipEnd') }}: {{ formatDate(tooltipTask.completed_at) }}
           </div>
-          <div>{{ t('timeline.tooltipDuration') }}: {{ taskDurationLabel(tooltip.task) }}</div>
-          <div>{{ t('timeline.tooltipEffort') }}: {{ effortLabel(tooltip.task.effort) }}</div>
-          <div class="text-content-faint mt-0.5">#{{ tooltip.task.id }}</div>
+          <div>{{ t('timeline.tooltipDuration') }}: {{ taskDurationLabel(tooltipTask) }}</div>
+          <div>{{ t('timeline.tooltipEffort') }}: {{ effortLabel(tooltipTask.effort) }}</div>
+          <div class="text-content-faint mt-0.5">#{{ tooltipTask.id }}</div>
         </div>
       </div>
     </Teleport>
