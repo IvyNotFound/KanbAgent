@@ -35,6 +35,9 @@ jobs:
       - name: Check i18n completeness
         run: node scripts/check-i18n.js
 
+      - name: Security audit (critical CVEs)
+        run: npm audit --audit-level=critical --production
+
   unit-tests:
     needs: [i18n-check]
     runs-on: ubuntu-latest
@@ -293,3 +296,20 @@ jobs:
             artifacts/installer-linux/*.AppImage
             artifacts/installer-linux/*.deb
             artifacts/installer-linux/latest-linux.yml
+
+  notify-failure:
+    if: ${{ always() && contains(needs.*.result, 'failure') }}
+    needs: [i18n-check, unit-tests, e2e-linux, e2e-windows, e2e-mac, build-windows, build-mac, build-linux, create-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack on failure
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          payload: |
+            {
+              "text": ":x: Release *${{ github.ref_name }}* failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
