@@ -31,7 +31,7 @@
     "telemetry": "node scripts/code-telemetry.js",
     "lint": "eslint src/",
     "i18n:check": "node scripts/check-i18n.js",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "node -e \"if(!process.env.CI)require('child_process').execSync('electron-builder install-app-deps',{stdio:'inherit'})\""
   },
   "dependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.59.0",

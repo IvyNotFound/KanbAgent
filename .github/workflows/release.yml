@@ -69,19 +69,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: |
-          set +e
-          npm ci
-          NPM_EXIT=$?
-          set -e
-          if [ "$NPM_EXIT" -ne 0 ]; then
-            echo "=== Disk space ===" && df -h /
-            echo "=== Dir state ===" && (ls /home/runner/work/agent-viewer/agent-viewer 2>&1 || echo "WORKING DIR GONE")
-            echo "=== npm debug log (last 100 lines) ==="
-            NPM_LOG=$(ls -t /home/runner/.npm/_logs/*.log 2>/dev/null | head -1)
-            [ -n "$NPM_LOG" ] && tail -100 "$NPM_LOG" || echo "No log found"
-          fi
-          exit "$NPM_EXIT"
+        run: npm ci
 
       - name: Run unit tests with coverage
         run: npm run test:coverage -- --reporter=verbose
@@ -122,6 +110,9 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: ""
         run: node node_modules/electron/install.js
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
 
       - name: Install Playwright + Electron deps
         run: |
@@ -167,6 +158,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download Electron binary (needed for E2E)
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
+        run: node node_modules/electron/install.js
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
+
       - name: Install Playwright
         run: |
           npm install -D @playwright/test playwright
@@ -210,6 +209,9 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: ""
         run: node node_modules/electron/install.js
 
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
+
       - name: Install Playwright
         run: |
           npm install -D @playwright/test playwright
@@ -250,6 +252,9 @@ jobs:
       - name: Download sqlite3 binary
         run: node scripts/download-sqlite3.js
 
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
+
       - name: Build (Vite + electron-builder Windows)
         run: npx electron-vite build && npx electron-builder --win --publish never
       - uses: actions/upload-artifact@v4
@@ -273,6 +278,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download sqlite3 binary
+        run: node scripts/download-sqlite3.js
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
+
       - name: Build (Vite + electron-builder macOS)
         run: npx electron-vite build && npx electron-builder --mac --publish never
       - uses: actions/upload-artifact@v4
@@ -295,6 +306,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Download sqlite3 binary
+        run: node scripts/download-sqlite3.js
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
 
       - name: Build (Vite + electron-builder Linux)
         run: npx electron-vite build && npx electron-builder --linux --publish never
