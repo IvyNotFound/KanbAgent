@@ -23,6 +23,8 @@ export interface Agent {
   permission_mode: string | null
   /** Maximum number of parallel active sessions for this agent. DEFAULT 3. */
   max_sessions: number
+  /** Worktree isolation: null=inherit global, 0=disabled, 1=enabled. */
+  worktree_enabled: number | null
   created_at: string
   /** Session status. */
   session_status?: 'started' | 'completed' | 'blocked' | null

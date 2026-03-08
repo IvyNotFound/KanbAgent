@@ -3,6 +3,7 @@ import { runDropCommentaireColumnMigration, runRemoveThinkingModeBudgetTokensMig
 import { runTaskStatutI18nMigration, runTaskStatusMigration, runSessionStatutI18nMigration } from './migrations/v2-statuts'
 import { runMakeAgentAssigneNotNullMigration, runMakeCommentAgentNotNullMigration, runAddAgentGroupsMigration } from './migrations/v3-relations'
 import { runAddParentIdToAgentGroupsMigration } from './migrations/v4-agent-groups-hierarchy'
+import { runAddWorktreeToAgentsMigration } from './migrations/v5-agent-worktree'
 
 // ── Numbered migration system ────────────────────────────────────────────────
 
@@ -307,6 +308,12 @@ const migrations: Migration[] = [
     db.run('CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status)')
     db.run('CREATE INDEX IF NOT EXISTS idx_sessions_agent_status ON sessions(agent_id, status, started_at DESC)')
     db.run('CREATE INDEX IF NOT EXISTS idx_task_comments_agent_id ON task_comments(agent_id)')
+  } },
+
+  // v28: add agents.worktree_enabled + config worktree_default (T1142)
+  { version: 28, up: (db) => {
+    runAddWorktreeToAgentsMigration(db)
+    db.run("INSERT OR IGNORE INTO config (key, value) VALUES ('worktree_default', '1')")
   } },
 ]
 

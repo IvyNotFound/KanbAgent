@@ -81,23 +81,24 @@ export function registerAgentCrudHandlers(): void {
       assertDbPathAllowed(dbPath)
       const rows = await queryLive(
         dbPath,
-        'SELECT system_prompt, system_prompt_suffix, thinking_mode, permission_mode FROM agents WHERE id = ?',
+        'SELECT system_prompt, system_prompt_suffix, thinking_mode, permission_mode, worktree_enabled FROM agents WHERE id = ?',
         [agentId]
       )
       if (rows.length === 0) {
-        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null }
+        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null }
       }
-      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null; permission_mode: string | null }
+      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null; permission_mode: string | null; worktree_enabled: number | null }
       return {
         success: true,
         systemPrompt: row.system_prompt,
         systemPromptSuffix: row.system_prompt_suffix,
         thinkingMode: row.thinking_mode,
-        permissionMode: row.permission_mode
+        permissionMode: row.permission_mode,
+        worktreeEnabled: row.worktree_enabled
       }
     } catch (err) {
       console.error('[IPC get-agent-system-prompt]', err)
-      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null }
+      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null }
     }
   })
 
@@ -144,6 +145,7 @@ export function registerAgentCrudHandlers(): void {
     autoLaunch?: boolean
     permissionMode?: 'default' | 'auto' | null
     maxSessions?: number
+    worktreeEnabled?: boolean | null
   }) => {
     if (updates.maxSessions !== undefined) {
       if (!Number.isInteger(updates.maxSessions) || (updates.maxSessions < 1 && updates.maxSessions !== -1)) {
@@ -165,6 +167,7 @@ export function registerAgentCrudHandlers(): void {
         if (updates.autoLaunch !== undefined) { cols.push('auto_launch = ?'); vals.push(updates.autoLaunch ? 1 : 0) }
         if (updates.permissionMode !== undefined) { cols.push('permission_mode = ?'); vals.push(updates.permissionMode || null) }
         if (updates.maxSessions !== undefined) { cols.push('max_sessions = ?'); vals.push(updates.maxSessions) }
+        if (updates.worktreeEnabled !== undefined) { cols.push('worktree_enabled = ?'); vals.push(updates.worktreeEnabled === null ? null : updates.worktreeEnabled ? 1 : 0) }
         if (cols.length === 0) return
         vals.push(agentId)
         db.run(`UPDATE agents SET ${cols.join(', ')} WHERE id = ?`, vals)

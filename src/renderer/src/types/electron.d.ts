@@ -37,7 +37,7 @@ declare global {
       getConfigValue(dbPath: string, key: string): Promise<{ success: boolean; value: string | null; error?: string }>
       setConfigValue(dbPath: string, key: string, value: string): Promise<{ success: boolean; error?: string }>
       // Agents
-      updateAgent(dbPath: string, agentId: number, updates: { name?: string; type?: string; scope?: string | null; thinkingMode?: string | null; allowedTools?: string | null; systemPrompt?: string | null; systemPromptSuffix?: string | null; autoLaunch?: boolean; permissionMode?: 'default' | 'auto' | null; maxSessions?: number }): Promise<{ success: boolean; error?: string }>
+      updateAgent(dbPath: string, agentId: number, updates: { name?: string; type?: string; scope?: string | null; thinkingMode?: string | null; allowedTools?: string | null; systemPrompt?: string | null; systemPromptSuffix?: string | null; autoLaunch?: boolean; permissionMode?: 'default' | 'auto' | null; maxSessions?: number; worktreeEnabled?: boolean | null }): Promise<{ success: boolean; error?: string }>
       createAgent(dbPath: string, projectPath: string, data: { name: string; type: string; scope: string | null; thinkingMode: string | null; systemPrompt: string | null; description: string }): Promise<{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }>
       // Task assignees (multi-agent — ADR-008)
       getTaskAssignees(dbPath: string, taskId: number): Promise<{ success: boolean; assignees: Array<{ agent_id: number; agent_name: string; role: string | null; assigned_at: string }>; error?: string }>

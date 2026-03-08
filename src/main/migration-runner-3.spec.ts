@@ -252,10 +252,10 @@ describe('migrateDb v26 — drop locks table', () => {
     expect(calls.some((s: string) => s === 'DROP TABLE IF EXISTS locks')).toBe(true)
   })
 
-  it('updates user_version to 27 (v26 + v27 apply from v25)', () => {
+  it('updates user_version to 28 (v26–v28 apply from v25)', () => {
     const db = makeMockDb({ userVersion: 25 })
     migrateDb(db as unknown as import('sql.js').Database)
-    expect(db._getVersion()).toBe(27)
+    expect(db._getVersion()).toBe(28)
   })
 })
 
@@ -328,10 +328,10 @@ describe('migrateDb v27 — missing indexes on critical columns', () => {
     expect(calls.some((s: string) => s.includes('idx_task_comments_agent_id') && s.includes('task_comments(agent_id)'))).toBe(true)
   })
 
-  it('updates user_version to 27', () => {
+  it('updates user_version to 28 (v27 + v28 apply from v26)', () => {
     const db = makeMockDb({ userVersion: 26 })
     migrateDb(db as unknown as import('sql.js').Database)
-    expect(db._getVersion()).toBe(27)
+    expect(db._getVersion()).toBe(28)
   })
 
   it('uses CREATE INDEX IF NOT EXISTS for all indexes', () => {
@@ -346,6 +346,51 @@ describe('migrateDb v27 — missing indexes on critical columns', () => {
   })
 })
 
+// ── v28 — agents.worktree_enabled + config worktree_default (T1142) ─────────
+
+describe('migrateDb v28 — agents.worktree_enabled + worktree_default config', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('adds worktree_enabled column when missing', () => {
+    const db = makeMockDb({
+      userVersion: 27,
+      colMap: { agents: ['id', 'name', 'type', 'scope'] },
+    })
+    migrateDb(db as unknown as import('sql.js').Database)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    expect(calls.some((s: string) => s.includes('ADD COLUMN worktree_enabled'))).toBe(true)
+  })
+
+  it('skips column when worktree_enabled already exists', () => {
+    const db = makeMockDb({
+      userVersion: 27,
+      colMap: { agents: ['id', 'name', 'worktree_enabled'] },
+    })
+    migrateDb(db as unknown as import('sql.js').Database)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    expect(calls.every((s: string) => !s.includes('ADD COLUMN worktree_enabled'))).toBe(true)
+  })
+
+  it('inserts worktree_default config key', () => {
+    const db = makeMockDb({
+      userVersion: 27,
+      colMap: { agents: ['id', 'name'] },
+    })
+    migrateDb(db as unknown as import('sql.js').Database)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    expect(calls.some((s: string) => s.includes('worktree_default') && s.includes("'1'"))).toBe(true)
+  })
+
+  it('updates user_version to 28', () => {
+    const db = makeMockDb({
+      userVersion: 27,
+      colMap: { agents: ['id', 'name'] },
+    })
+    migrateDb(db as unknown as import('sql.js').Database)
+    expect(db._getVersion()).toBe(28)
+  })
+})
+
 // ── CURRENT_SCHEMA_VERSION alignment ─────────────────────────────────────────
 
 describe('CURRENT_SCHEMA_VERSION alignment', () => {
@@ -354,6 +399,6 @@ describe('CURRENT_SCHEMA_VERSION alignment', () => {
     const db = makeMockDb({ userVersion: 0 })
     const applied = migrateDb(db as unknown as import('sql.js').Database)
     expect(applied).toBeGreaterThan(0)
-    expect(db._getVersion()).toBe(27)
+    expect(db._getVersion()).toBe(28)
   })
 })

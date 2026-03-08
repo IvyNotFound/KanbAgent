@@ -24,3 +24,5 @@ export {
 } from './migrations/v3-relations'
 
 export { runAddParentIdToAgentGroupsMigration } from './migrations/v4-agent-groups-hierarchy'
+
+export { runAddWorktreeToAgentsMigration } from './migrations/v5-agent-worktree'
