@@ -221,7 +221,7 @@
     "exporting": "Eksporterer...",
     "exportSuccess": "Eksport lastet ned: {path}",
     "exportError": "Eksportfeil: {error}",
-    "defaultCliInstance": "Standard Claude Code-instans",
+    "defaultCliInstance": "Standard CLI-instans (per målmiljø)",
     "aiCodingAssistants": "AI-kodingsassistenter",
     "aiCodingAssistantsDesc": "Oppdagede CLI-verktøy tilgjengelige for agentøkter. Aktiver/deaktiver for å vise i starteren.",
     "cliRefresh": "Oppdater",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "Start økt",
-    "claudeInstance": "Claude Code-instans",
-    "noInstance": "Ingen instans funnet — sjekk at Claude Code er installert i WSL",
+    "claudeInstance": "CLI-instans",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "standard",
     "wslUser": "WSL-bruker",
@@ -296,12 +298,11 @@
     "launch": "Start",
     "launching": "Starter…",
     "selectCli": "CLI",
-    "instance": "instance",
+    "instance": "Instance",
     "cliUnavailable": "Ikke funnet på denne maskinen",
     "multiInstance": "Multi-instans / Isolert worktree",
     "multiInstanceNote": "Oppretter en dedikert git worktree (ADR-006) — tillater kjøring av flere instanser av samme agent parallelt uten konflikter",
-    "multiInstanceError": "Klarte ikke opprette worktree: {error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "Klarte ikke opprette worktree: {error}"
   },
   "titleBar": {
     "searchTitle": "Søk etter oppgave (Ctrl+K)",

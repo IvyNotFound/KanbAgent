@@ -221,7 +221,7 @@
     "exporting": "Exporting...",
     "exportSuccess": "Export downloaded: {path}",
     "exportError": "Export error: {error}",
-    "defaultCliInstance": "Default Claude Code instance",
+    "defaultCliInstance": "Default CLI instance (per target environment)",
     "aiCodingAssistants": "AI Coding Assistants",
     "aiCodingAssistantsDesc": "Detected CLI tools available for agent sessions. Toggle to show/hide in the launcher.",
     "cliRefresh": "Refresh",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "Launch session",
-    "claudeInstance": "Claude Code instance",
-    "noInstance": "No instance detected — check that Claude Code is installed in WSL",
+    "claudeInstance": "CLI instance",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "default",
     "wslUser": "WSL user",
@@ -299,9 +301,8 @@
     "multiInstanceNote": "Creates a dedicated git worktree (ADR-006) — allows running multiple instances of the same agent in parallel without conflicts",
     "multiInstanceError": "Failed to create worktree: {error}",
     "selectCli": "CLI",
-    "instance": "instance",
-    "cliUnavailable": "Not detected on this machine",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "instance": "Instance",
+    "cliUnavailable": "Not detected on this machine"
   },
   "cli": {
     "claude": "Claude Code",

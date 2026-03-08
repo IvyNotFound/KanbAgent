@@ -221,7 +221,7 @@
     "exporting": "Eksportowanie...",
     "exportSuccess": "Eksport pobrany: {path}",
     "exportError": "Błąd eksportu: {error}",
-    "defaultCliInstance": "Domyślna instancja Claude Code",
+    "defaultCliInstance": "Domyślna instancja CLI (wg środowiska docelowego)",
     "aiCodingAssistants": "Asystenci AI",
     "aiCodingAssistantsDesc": "Wykryte narzędzia CLI dostępne dla sesji agentów. Włącz/wyłącz aby pokazać w programie uruchamiającym.",
     "cliRefresh": "Odśwież",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "Uruchom sesję",
-    "claudeInstance": "Instancja Claude Code",
-    "noInstance": "Nie wykryto instancji — sprawdź, czy Claude Code jest zainstalowany w WSL",
+    "claudeInstance": "Instancja CLI",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "domyślny",
     "wslUser": "Użytkownik WSL",
@@ -296,12 +298,11 @@
     "launch": "Uruchom",
     "launching": "Uruchamianie…",
     "selectCli": "CLI",
-    "instance": "instance",
+    "instance": "Instance",
     "cliUnavailable": "Nie wykryto na tym komputerze",
     "multiInstance": "Wiele instancji / Izolowane drzewo robocze",
     "multiInstanceNote": "Tworzy dedykowane drzewo robocze git (ADR-006) — umożliwia równoległe uruchamianie wielu instancji tego samego agenta bez konfliktów",
-    "multiInstanceError": "Nie udało się utworzyć drzewa roboczego: {error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "Nie udało się utworzyć drzewa roboczego: {error}"
   },
   "titleBar": {
     "searchTitle": "Szukaj zadania (Ctrl+K)",

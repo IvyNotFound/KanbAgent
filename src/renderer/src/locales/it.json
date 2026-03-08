@@ -221,7 +221,7 @@
     "exporting": "Esportazione...",
     "exportSuccess": "Esportazione scaricata: {path}",
     "exportError": "Errore di esportazione: {error}",
-    "defaultCliInstance": "Istanza Claude Code predefinita",
+    "defaultCliInstance": "Istanza CLI predefinita (per ambiente di destinazione)",
     "aiCodingAssistants": "Assistenti AI",
     "aiCodingAssistantsDesc": "Strumenti CLI rilevati disponibili per le sessioni agente. Attiva/disattiva per mostrare nel launcher.",
     "cliRefresh": "Aggiorna",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "Avvia sessione",
-    "claudeInstance": "Istanza Claude Code",
-    "noInstance": "Nessuna istanza rilevata — controlla che Claude Code sia installato in WSL",
+    "claudeInstance": "Istanza CLI",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "predefinito",
     "wslUser": "Utente WSL",
@@ -296,12 +298,11 @@
     "launch": "Avvia",
     "launching": "Avvio in corso…",
     "selectCli": "CLI",
-    "instance": "instance",
+    "instance": "Instance",
     "cliUnavailable": "Non rilevato su questa macchina",
     "multiInstance": "Multi-istanza / Worktree isolato",
     "multiInstanceNote": "Crea un git worktree dedicato (ADR-006) — consente di eseguire più istanze dello stesso agente in parallelo senza conflitti",
-    "multiInstanceError": "Creazione del worktree non riuscita: {error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "Creazione del worktree non riuscita: {error}"
   },
   "titleBar": {
     "searchTitle": "Cerca un'attività (Ctrl+K)",

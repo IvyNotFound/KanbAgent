@@ -221,7 +221,7 @@
     "exporting": "Dışa aktarılıyor...",
     "exportSuccess": "Dışa aktarma tamamlandı: {path}",
     "exportError": "Dışa aktarma hatası: {error}",
-    "defaultCliInstance": "Varsayılan Claude Code örneği",
+    "defaultCliInstance": "Varsayılan CLI örneği (hedef ortama göre)",
     "aiCodingAssistants": "AI Kodlama Asistanları",
     "aiCodingAssistantsDesc": "Ajan oturumları için mevcut tespit edilen CLI araçları. Başlatıcıda göstermek için geçiş yapın.",
     "cliRefresh": "Yenile",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "Oturum başlat",
-    "claudeInstance": "Claude Code örneği",
-    "noInstance": "Örnek algılanamadı — WSL'de Claude Code kurulu olduğunu doğrulayın",
+    "claudeInstance": "CLI örneği",
+    "noInstanceMac": "No CLI detected. Install Claude Code via npm or brew.",
+    "noInstanceLinux": "No CLI detected. Ensure the CLI binary is in your PATH.",
+    "noInstanceWin": "No CLI detected. Install a CLI natively or inside a WSL distro.",
     "instanceVersion": "v{version}",
     "defaultBadge": "Varsayılan",
     "wslUser": "WSL Kullanıcısı",
@@ -296,12 +298,11 @@
     "launch": "Başlat",
     "launching": "Başlatılıyor…",
     "selectCli": "CLI",
-    "instance": "instance",
+    "instance": "Instance",
     "cliUnavailable": "Bu makinede algılanamadı",
     "multiInstance": "Çoklu örnek / İzole worktree",
     "multiInstanceNote": "Özel bir git worktree oluşturur (ADR-006) — aynı ajanın birden fazla örneğinin çakışma olmadan paralel çalışmasına izin verir",
-    "multiInstanceError": "Worktree oluşturulamadı: {error}",
-    "noInstanceHelp": "No CLI detected. Check Settings > CLI Assistants or restart the app with WSL running."
+    "multiInstanceError": "Worktree oluşturulamadı: {error}"
   },
   "titleBar": {
     "searchTitle": "Görev ara (Ctrl+K)",

@@ -221,7 +221,7 @@
     "exporting": "Export en cours...",
     "exportSuccess": "Export téléchargé : {path}",
     "exportError": "Erreur export : {error}",
-    "defaultCliInstance": "Instance Claude Code par défaut",
+    "defaultCliInstance": "Instance CLI par défaut (par environnement cible)",
     "aiCodingAssistants": "Assistants IA",
     "aiCodingAssistantsDesc": "Outils CLI détectés disponibles pour les sessions agents. Activer/désactiver pour afficher dans le lanceur.",
     "cliRefresh": "Actualiser",
@@ -276,8 +276,10 @@
   },
   "launch": {
     "title": "Lancer une session",
-    "claudeInstance": "Instance Claude Code",
-    "noInstance": "Aucune instance détectée — vérifiez que Claude Code est installé dans WSL",
+    "claudeInstance": "Instance CLI",
+    "noInstanceMac": "Aucun CLI détecté. Installez Claude Code via npm ou brew.",
+    "noInstanceLinux": "Aucun CLI détecté. Vérifiez que le binaire est dans votre PATH.",
+    "noInstanceWin": "Aucun CLI détecté. Installez un CLI nativement ou dans une distro WSL.",
     "instanceVersion": "v{version}",
     "defaultBadge": "défaut",
     "wslUser": "Utilisateur WSL",
@@ -296,12 +298,11 @@
     "launch": "Lancer",
     "launching": "Lancement…",
     "selectCli": "CLI",
-    "instance": "instance",
+    "instance": "Instance",
     "cliUnavailable": "Non détecté sur cette machine",
     "multiInstance": "Multi-instance / Worktree isolé",
     "multiInstanceNote": "Crée un git worktree dédié (ADR-006) — plusieurs instances du même agent en parallèle sans conflits",
-    "multiInstanceError": "Échec de création du worktree : {error}",
-    "noInstanceHelp": "Aucun CLI détecté. Vérifiez Paramètres > Assistants CLI ou relancez l'app avec WSL démarré."
+    "multiInstanceError": "Échec de création du worktree : {error}"
   },
   "titleBar": {
     "searchTitle": "Rechercher une tâche (Ctrl+K)",
