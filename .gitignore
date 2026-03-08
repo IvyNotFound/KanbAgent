@@ -56,6 +56,7 @@ tsconfig.web.tsbuildinfo
 SELECT
 .claude/project-db
 .claude/project_db
+.claude/project.db.test_*
 .claude/worktrees/
 
 # Local debug/memory dumps
