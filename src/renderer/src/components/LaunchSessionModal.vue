@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore, parseDefaultCliInstance } from '@renderer/stores/settings'
 import { agentFg, agentBorder } from '@renderer/utils/agentColor'
 import { useModalEscape } from '@renderer/composables/useModalEscape'
+import { useLaunchSession } from '@renderer/composables/useLaunchSession'
 import { CLI_CAPABILITIES, CLI_LABELS, CLI_BADGE, systemLabel as getSystemLabel } from '@renderer/utils/cliCapabilities'
 import type { Agent } from '@renderer/types'
 import type { CliType, CliInstance, CliCapabilities } from '@shared/cli-types'
@@ -16,9 +16,9 @@ const emit = defineEmits<{ close: [] }>()
 useModalEscape(() => emit('close'))
 
 const { t } = useI18n()
-const tabsStore = useTabsStore()
 const tasksStore = useTasksStore()
 const settingsStore = useSettingsStore()
+const { launchAgentTerminal } = useLaunchSession()
 
 const selectedInstance = ref<CliInstance | null>(null)
 const loading = ref(true)
@@ -136,13 +136,6 @@ async function launch() {
   launching.value = true
   worktreeError.value = null
   try {
-    const finalPrompt = await window.electronAPI.buildAgentPrompt(
-      props.agent.name,
-      customPrompt.value,
-      tasksStore.dbPath ?? undefined,
-      props.agent.id
-    )
-
     // Multi-instance: create a git worktree before launching (ADR-006)
     let workDir: string | undefined
     if (multiInstance.value && tasksStore.projectPath) {
@@ -159,19 +152,20 @@ async function launch() {
       workDir = result.workDir
     }
 
-    const distro = selectedInstance.value?.distro
-    const cli = selectedCli.value
     const convId = caps.value.convResume && useResume.value && lastConvId.value ? lastConvId.value : undefined
     const activeThinking = caps.value.thinkingMode ? thinkingMode.value : undefined
     const activeSystemPrompt = caps.value.systemPrompt ? fullSystemPrompt.value : undefined
 
-    tabsStore.addTerminal(
-      props.agent.name, distro,
-      convId ? undefined : finalPrompt,
-      convId ? undefined : activeSystemPrompt,
-      activeThinking, undefined, convId ?? undefined,
-      true, undefined, 'stream', cli, workDir
-    )
+    await launchAgentTerminal(props.agent, undefined, {
+      customPrompt: customPrompt.value,
+      instance: selectedInstance.value,
+      cli: selectedCli.value,
+      convId,
+      workDir,
+      thinkingMode: activeThinking,
+      systemPrompt: convId ? false : (activeSystemPrompt ?? ''),
+      activate: true,
+    })
     emit('close')
   } finally {
     launching.value = false

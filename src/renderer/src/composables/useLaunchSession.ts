@@ -14,7 +14,29 @@ import type { Task, Agent } from '@renderer/types'
 
 export const MAX_AGENT_SESSIONS = 3
 
-import type { CliInstance } from '@shared/cli-types'
+import type { CliType, CliInstance } from '@shared/cli-types'
+
+/** Options to override defaults when launching from the modal (T1152). */
+export interface LaunchOptions {
+  /** Custom user prompt text (replaces default "T{taskId}") */
+  customPrompt?: string
+  /** Force a specific CLI instance (distro + cli) instead of auto-detection */
+  instance?: CliInstance | null
+  /** Force a specific CLI type */
+  cli?: CliType
+  /** Conversation ID for --resume */
+  convId?: string
+  /** Working directory (e.g. worktree path) */
+  workDir?: string
+  /** Override thinking mode */
+  thinkingMode?: 'auto' | 'disabled'
+  /** Override system prompt (false = skip system prompt entirely) */
+  systemPrompt?: string | false
+  /** Whether to activate the new tab (default: false for drag-drop, true for modal) */
+  activate?: boolean
+  /** Task ID to associate (default: task.id when task is provided) */
+  taskId?: number
+}
 
 const CACHE_TTL_MS = 5 * 60 * 1000
 let cachedInstances: CliInstance[] | null = null
@@ -45,10 +67,13 @@ export function useLaunchSession() {
   }
 
   /**
-   * Launch a terminal session for an agent working on a specific task.
+   * Launch a terminal session for an agent, optionally on a specific task.
    * Returns 'ok' on success, 'session-limit' if max sessions reached, 'error' otherwise.
+   *
+   * The `opts` parameter allows callers (e.g. LaunchSessionModal) to override
+   * defaults for CLI instance, prompt, resume, worktree, etc. (T1152)
    */
-  async function launchAgentTerminal(agent: Agent, task: Task): Promise<'ok' | 'session-limit' | 'error'> {
+  async function launchAgentTerminal(agent: Agent, task?: Task, opts?: LaunchOptions): Promise<'ok' | 'session-limit' | 'error'> {
     const dbPath = tasksStore.dbPath
     if (!dbPath) return 'error'
 
@@ -58,66 +83,102 @@ export function useLaunchSession() {
     }
 
     try {
-      const allInstances = await getCachedCliInstances()
-
       const settingsStore = useSettingsStore()
-      const storedDistro = settingsStore.defaultCliInstance
-      const parsedDefault = parseDefaultCliInstance(storedDistro)
 
-      // Find first enabled CLI that has detected instances, fall back to enabledClis[0]
-      let defaultCli = settingsStore.enabledClis[0] ?? 'claude'
-      let cliInstances = allInstances.filter(i => i.cli === defaultCli)
-      if (cliInstances.length === 0) {
-        for (const cli of settingsStore.enabledClis.slice(1)) {
-          const candidates = allInstances.filter(i => i.cli === cli)
-          if (candidates.length > 0) { defaultCli = cli; cliInstances = candidates; break }
+      // --- CLI instance resolution ---
+      let resolvedInstance: CliInstance | null
+      let resolvedCli: CliType
+
+      if (opts?.instance !== undefined) {
+        // Caller provided an explicit instance (modal)
+        resolvedInstance = opts.instance
+        resolvedCli = opts.cli ?? resolvedInstance?.cli as CliType ?? settingsStore.enabledClis[0] ?? 'claude'
+      } else {
+        // Auto-detect (drag-drop / relaunch path)
+        const allInstances = await getCachedCliInstances()
+        let defaultCli = settingsStore.enabledClis[0] ?? 'claude'
+        let cliInstances = allInstances.filter(i => i.cli === defaultCli)
+        if (cliInstances.length === 0) {
+          for (const cli of settingsStore.enabledClis.slice(1)) {
+            const candidates = allInstances.filter(i => i.cli === cli)
+            if (candidates.length > 0) { defaultCli = cli; cliInstances = candidates; break }
+          }
         }
+
+        const storedDistro = settingsStore.defaultCliInstance
+        const parsedDefault = parseDefaultCliInstance(storedDistro)
+
+        resolvedInstance = cliInstances.length > 0
+          ? ((storedDistro
+                ? cliInstances.find(i =>
+                    i.distro === parsedDefault.distro &&
+                    (parsedDefault.cli === null || i.cli === parsedDefault.cli)
+                  )
+                : undefined)
+              ?? cliInstances.find(i => i.isDefault)
+              ?? cliInstances[0])
+          : null
+        resolvedCli = defaultCli as CliType
       }
 
-      const instance = cliInstances.length > 0
-        ? ((storedDistro
-              ? cliInstances.find(i =>
-                  i.distro === parsedDefault.distro &&
-                  (parsedDefault.cli === null || i.cli === parsedDefault.cli)
-                )
-              : undefined)
-            ?? cliInstances.find(i => i.isDefault)
-            ?? cliInstances[0])
-        : null
+      // --- System prompt resolution ---
+      let fullSystemPrompt: string | undefined
+      let resolvedThinking: string | undefined
 
-      const promptResult = await window.electronAPI.getAgentSystemPrompt(dbPath, agent.id)
-      if (!promptResult.success) return 'error'
+      if (opts?.systemPrompt === false) {
+        // Caller explicitly skipped system prompt (resume mode)
+        fullSystemPrompt = undefined
+        resolvedThinking = opts.thinkingMode
+      } else if (opts?.systemPrompt !== undefined) {
+        // Caller provided a pre-built system prompt (modal)
+        fullSystemPrompt = opts.systemPrompt || undefined
+        resolvedThinking = opts.thinkingMode
+      } else {
+        // Auto-build from DB (drag-drop / relaunch path)
+        const promptResult = await window.electronAPI.getAgentSystemPrompt(dbPath, agent.id)
+        if (!promptResult.success) return 'error'
 
-      const userPrompt = `T${task.id}`
-      const finalPrompt = await window.electronAPI.buildAgentPrompt(
-        agent.name,
-        userPrompt,
-        dbPath,
-        agent.id
-      )
-
-      const parts: string[] = []
-      if (promptResult.systemPrompt) parts.push(promptResult.systemPrompt)
-      if (promptResult.systemPromptSuffix) parts.push(promptResult.systemPromptSuffix)
-      if (settingsStore.maxFileLinesEnabled) {
-        parts.push(`Always produce and maintain files of maximum ${settingsStore.maxFileLinesCount} lines. Split files that exceed this limit into logical modules.`)
+        const parts: string[] = []
+        if (promptResult.systemPrompt) parts.push(promptResult.systemPrompt)
+        if (promptResult.systemPromptSuffix) parts.push(promptResult.systemPromptSuffix)
+        if (settingsStore.maxFileLinesEnabled) {
+          parts.push(`Always produce and maintain files of maximum ${settingsStore.maxFileLinesCount} lines. Split files that exceed this limit into logical modules.`)
+        }
+        fullSystemPrompt = parts.join('\n\n') || undefined
+        resolvedThinking = (promptResult.thinkingMode as string) ?? 'auto'
       }
-      const fullSystemPrompt = parts.join('\n\n') || undefined
 
-      const thinkingMode = (promptResult.thinkingMode as 'auto' | 'disabled') ?? 'auto'
+      // --- Prompt resolution ---
+      let finalPrompt: string | undefined
+      if (opts?.convId) {
+        // Resume mode: no prompt
+        finalPrompt = undefined
+      } else {
+        const userPrompt = opts?.customPrompt ?? (task ? `T${task.id}` : '')
+        finalPrompt = await window.electronAPI.buildAgentPrompt(
+          agent.name,
+          userPrompt,
+          dbPath,
+          agent.id
+        )
+      }
+
+      const resolvedTaskId = opts?.taskId ?? task?.id
+      const activate = opts?.activate ?? false
 
       tabsStore.addTerminal(
         agent.name,
-        instance?.distro,
+        resolvedInstance?.distro,
         finalPrompt,
         fullSystemPrompt,
-        thinkingMode,
+        resolvedThinking,
         undefined,
-        undefined,
-        false,
-        task.id,
+        opts?.convId,
+        activate,
+        resolvedTaskId,
         'stream',
-        defaultCli
+        resolvedCli,
+        opts?.workDir
       )
 
       return 'ok'
