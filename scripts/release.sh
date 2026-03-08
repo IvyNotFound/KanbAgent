@@ -110,10 +110,7 @@ git push origin main --tags
 
 echo ""
 echo "=== Release v$NEW_VERSION Triggered ==="
-echo "GitHub Actions will now:"
-echo "  1. Build installers for Windows, macOS, and Linux"
-echo "  2. Create a draft GitHub Release with all installers attached"
-echo ""
 REPO=$(gh repo --json name,owner --jq '.owner.login + "/" + .name' 2>/dev/null || echo 'your-org/agent-viewer')
-echo "Monitor the build at: https://github.com/$REPO/actions"
-echo "When builds complete, publish the draft release from the GitHub UI."
+echo "Pipeline: i18n-check → E2E → build (win/mac/linux) → publish"
+echo "Monitor: https://github.com/$REPO/actions"
+echo "The GitHub Release will be published automatically when all jobs pass."
