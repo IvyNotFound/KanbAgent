@@ -17,7 +17,7 @@
  * @module agent-stream
  */
 import { ipcMain, webContents, app } from 'electron'
-import { spawn, type ChildProcess, execFile } from 'child_process'
+import { spawn, type ChildProcess } from 'child_process'
 import { createInterface } from 'readline'
 import { writeFileSync, unlinkSync } from 'fs'
 import { join } from 'path'
@@ -37,95 +37,20 @@ import {
 } from './agent-stream-helpers'
 import { getAdapter } from './adapters/index'
 import { createWorktree, removeWorktree, type WorktreeInfo } from './worktree-manager'
+import {
+  agents,
+  webContentsAgents,
+  incrementAgentId,
+  pushStreamEvent,
+  cleanupStreamBatch,
+  sendTerminalEvent,
+  killAgent,
+  killAllAgents,
+  type AgentCreateOpts,
+} from './agent-stream-registry'
 
-// ── Process registry ──────────────────────────────────────────────────────────
-
-const agents = new Map<string, ChildProcess>()
-
-// Track which agent IDs belong to each WebContents (for auto-cleanup on renderer destroy)
-const webContentsAgents = new Map<number, Set<string>>()
-
-// ── Stream batching (T1137) ───────────────────────────────────────────────────
-// Accumulate stream events and flush every 32ms to reduce Mojo IPC buffer pressure.
-
-const STREAM_BATCH_INTERVAL_MS = 32
-const STREAM_MAX_BATCH_SIZE = 100
-
-const streamBatches = new Map<string, Record<string, unknown>[]>()
-const streamTimers = new Map<string, ReturnType<typeof setInterval>>()
-
-function flushStreamBatch(id: string, wcId: number): void {
-  const batch = streamBatches.get(id)
-  if (!batch || batch.length === 0) return
-  const wc = webContents.fromId(wcId)
-  if (wc && !wc.isDestroyed()) {
-    wc.send(`agent:stream:${id}`, batch.splice(0))
-  } else {
-    batch.splice(0)
-  }
-}
-
-function pushStreamEvent(id: string, wcId: number, event: Record<string, unknown>): void {
-  let batch = streamBatches.get(id)
-  if (!batch) {
-    batch = []
-    streamBatches.set(id, batch)
-    const timer = setInterval(() => flushStreamBatch(id, wcId), STREAM_BATCH_INTERVAL_MS)
-    streamTimers.set(id, timer)
-  }
-  batch.push(event)
-  if (batch.length >= STREAM_MAX_BATCH_SIZE) {
-    flushStreamBatch(id, wcId)
-  }
-}
-
-function cleanupStreamBatch(id: string, wcId: number): void {
-  flushStreamBatch(id, wcId)
-  const timer = streamTimers.get(id)
-  if (timer) {
-    clearInterval(timer)
-    streamTimers.delete(id)
-  }
-  streamBatches.delete(id)
-}
-
-function sendTerminalEvent(id: string, wcId: number, event: Record<string, unknown>): void {
-  cleanupStreamBatch(id, wcId)
-  const wc = webContents.fromId(wcId)
-  if (wc && !wc.isDestroyed()) {
-    wc.send(`agent:stream:${id}`, [event])
-  }
-}
-
-let nextAgentId = 1
-
-// ── Kill helpers ──────────────────────────────────────────────────────────────
-
-/**
- * Kill a single agent process and clean up registry.
- * On Windows, also runs taskkill /F /T to terminate the full wsl.exe process tree.
- */
-function killAgent(id: string): void {
-  const proc = agents.get(id)
-  if (!proc) return
-  const pid = proc.pid
-  try { proc.kill() } catch { /* already dead */ }
-  agents.delete(id)
-
-  // On Windows, proc.kill() may not terminate wsl.exe child processes (bash, claude).
-  // Force-kill the full process tree via taskkill — non-blocking, errors ignored.
-  if (process.platform === 'win32' && pid) {
-    execFile('taskkill', ['/F', '/PID', String(pid), '/T'], () => { /* ignore */ })
-  }
-}
-
-/** Kill all active agent processes. Called on app quit. */
-function killAllAgents(): void {
-  for (const id of [...agents.keys()]) {
-    killAgent(id)
-  }
-  webContentsAgents.clear()
-}
+// Re-export _testing for backward compat with spec files
+export { _testing } from './agent-stream-registry'
 
 // ── Handler registration ──────────────────────────────────────────────────────
 
@@ -148,40 +73,7 @@ function killAllAgents(): void {
 export function registerAgentStreamHandlers(): void {
   app.on('before-quit', killAllAgents)
 
-  /**
-   * Spawn a CLI agent session and stream its output to the renderer.
-   *
-   * @param opts.cli              - CLI type key (default: `'claude'`)
-   * @param opts.projectPath      - Absolute path to the project root (used for worktree creation and cwd)
-   * @param opts.workDir          - Override cwd (falls back to projectPath)
-   * @param opts.wslDistro        - WSL distro name or `'local'` for native Windows
-   * @param opts.systemPrompt     - System prompt injected via temp file
-   * @param opts.thinkingMode     - `'disabled'` to suppress thinking in Claude
-   * @param opts.claudeCommand    - Custom binary name override (validated against regex)
-   * @param opts.convId           - Resume an existing conversation by UUID
-   * @param opts.permissionMode   - `'auto'` to add `--dangerously-skip-permissions`
-   * @param opts.dbPath           - Path to the SQLite database passed to the agent context
-   * @param opts.sessionId        - DB session id used for worktree branch naming
-   * @param opts.claudeBinaryPath - Absolute Windows path to `claude.exe`; bypasses Get-Command discovery (T1029)
-   * @param opts.worktree         - Create an isolated git worktree before spawning (default: `true`; set `false` to disable)
-   */
-  ipcMain.handle('agent:create', async (event, opts: {
-    cli?: string
-    cols?: number
-    rows?: number
-    projectPath?: string
-    workDir?: string
-    wslDistro?: string
-    systemPrompt?: string
-    thinkingMode?: string
-    claudeCommand?: string
-    convId?: string
-    permissionMode?: string
-    dbPath?: string
-    sessionId?: number
-    claudeBinaryPath?: string
-    worktree?: boolean
-  } = {}) => {
+  ipcMain.handle('agent:create', async (event, opts: AgentCreateOpts = {}) => {
     // Resolve adapter — defaults to Claude for backward compat
     const adapter = getAdapter(opts.cli ?? 'claude')
 
@@ -197,7 +89,7 @@ export function registerAgentStreamHandlers(): void {
     }
     const validConvId = opts.convId && UUID_REGEX.test(opts.convId) ? opts.convId : undefined
 
-    const id = String(nextAgentId++)
+    const id = incrementAgentId()
     const wcId = event.sender.id
 
     // Register cleanup for this webContents on first agent creation
@@ -270,16 +162,14 @@ export function registerAgentStreamHandlers(): void {
 
     if (isLocalWindows) {
       if (adapter.cli === 'claude') {
-        // T916: Local Windows — spawn PowerShell with a .ps1 script that runs claude directly.
-        // Avoids wsl.exe entirely; PowerShell handles system prompt quoting via List[string] args.
         const ps1Content = buildWindowsPS1Script({
           claudeCommand: opts.claudeCommand,
           convId: validConvId,
-          spTempFile,  // Windows path — no toWslPath conversion
+          spTempFile,
           thinkingMode: opts.thinkingMode,
           permissionMode: opts.permissionMode,
           claudeBinaryPath: opts.claudeBinaryPath,
-          settingsTempFile,  // T1107: temp file for --settings JSON
+          settingsTempFile,
         })
         scriptTempFile = join(tmpdir(), `claude-start-${id}.ps1`)
         writeFileSync(scriptTempFile, ps1Content, 'utf-8')
@@ -295,12 +185,11 @@ export function registerAgentStreamHandlers(): void {
           cwd: worktreeInfo?.path ?? opts.workDir ?? opts.projectPath ?? undefined,
         })
       } else {
-        // Non-Claude local Windows: spawn the CLI binary directly.
         const spec = adapter.buildCommand({
           convId: validConvId,
           thinkingMode: opts.thinkingMode,
           permissionMode: opts.permissionMode,
-          systemPromptFile: spTempFile,  // Windows path, no WSL conversion
+          systemPromptFile: spTempFile,
           binaryName: opts.claudeCommand,
         })
         logDebug(`spawn attempt (local Windows, ${adapter.cli}): ${spec.command} ${spec.args.join(' ')}`)
@@ -331,7 +220,6 @@ export function registerAgentStreamHandlers(): void {
           thinkingMode: opts.thinkingMode,
           permissionMode: opts.permissionMode,
         })
-        // Write bash launch script to avoid wsl.exe outer-shell expansion of $(cat ...) (T706).
         scriptTempFile = join(tmpdir(), `claude-start-${id}.sh`)
         writeFileSync(scriptTempFile, `#!/bin/bash\nexec ${claudeCmd}\n`, 'utf-8')
         const scriptWslPath = toWslPath(scriptTempFile)
@@ -342,7 +230,6 @@ export function registerAgentStreamHandlers(): void {
           env: buildEnv(),
         })
       } else {
-        // Non-Claude WSL/native: build command via adapter, wrap in bash script (T706).
         const spec = adapter.buildCommand({
           convId: validConvId,
           thinkingMode: opts.thinkingMode,
@@ -486,20 +373,4 @@ export function registerAgentStreamHandlers(): void {
     if (typeof id !== 'string') throw new Error('agent:kill requires id: string')
     killAgent(id)
   })
-}
-
-// ── Test-only exports ─────────────────────────────────────────────────────────
-
-export const _testing = {
-  toWslPath,
-  buildClaudeCmd,
-  buildWindowsPS1Script,
-  buildEnv,
-  buildWindowsEnv,
-  killAgent,
-  agents,
-  webContentsAgents,
-  getActiveTasksLine,
-  streamBatches,
-  streamTimers,
 }
