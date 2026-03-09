@@ -1,6 +1,6 @@
-# Contributing to agent-viewer
+# Contributing to KanbAgent
 
-Thank you for your interest in agent-viewer! This guide details the conventions and procedures for contributing to the project.
+Thank you for your interest in KanbAgent! This guide details the conventions and procedures for contributing to the project.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ Thank you for your interest in agent-viewer! This guide details the conventions 
 
 ## Development Workflow
 
-agent-viewer uses a ticket-based workflow stored in the project's SQLite database.
+KanbAgent uses a ticket-based workflow stored in the project's SQLite database.
 
 ### Task Lifecycle
 
@@ -261,7 +261,7 @@ docs: update README with new commands
 
 ## Tests
 
-agent-viewer uses **Vitest** for unit and integration tests.
+KanbAgent uses **Vitest** for unit and integration tests.
 
 ```bash
 npm run test            # Run once
@@ -369,7 +369,7 @@ The auto mode is opt-in and displays a visible warning in the UI. Use only in su
 
 ## Versioning
 
-agent-viewer follows [SemVer](https://semver.org/).
+KanbAgent follows [SemVer](https://semver.org/).
 
 ### Bump Rules
 
@@ -395,4 +395,4 @@ npm run release:major  # Major
 
 - [CLAUDE.md](./CLAUDE.md) — Complete architectural documentation
 - [CHANGELOG.md](./CHANGELOG.md) — Version history
-- [GitHub Issues](https://github.com/IvyNotFound/agent-viewer/issues) — Bug reports and feature requests
+- [GitHub Issues](https://github.com/IvyNotFound/KanbAgent/issues) — Bug reports and feature requests
