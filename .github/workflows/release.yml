@@ -155,7 +155,7 @@ jobs:
 
       - name: Upload test results on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-results-release-linux
           path: |
@@ -201,7 +201,7 @@ jobs:
 
       - name: Upload test results on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-results-release-windows
           path: |
@@ -250,7 +250,7 @@ jobs:
 
       - name: Upload test results on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-results-release-mac
           path: |
@@ -280,7 +280,7 @@ jobs:
 
       - name: Build (Vite + electron-builder Windows)
         run: npx electron-vite build && npx electron-builder --win --publish never
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-windows
           path: |
@@ -312,7 +312,7 @@ jobs:
 
       - name: Build (Vite + electron-builder macOS)
         run: npx electron-vite build && npx electron-builder --mac --publish never
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-mac
           path: |
@@ -344,7 +344,7 @@ jobs:
 
       - name: Build (Vite + electron-builder Linux)
         run: npx electron-vite build && npx electron-builder --linux --publish never
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-linux
           path: |

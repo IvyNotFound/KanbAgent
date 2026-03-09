@@ -22,7 +22,7 @@ jobs:
       - name: Run Stryker (renderer)
         run: npm run test:mutation:renderer
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mutation-report-renderer
@@ -46,7 +46,7 @@ jobs:
       - name: Run Stryker (main)
         run: npm run test:mutation:main
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mutation-report-main
