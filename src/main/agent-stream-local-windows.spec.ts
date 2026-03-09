@@ -74,16 +74,16 @@ describe('buildWindowsPS1Script', () => {
     expect(script).toContain('false')
   })
 
-  it('reads settings JSON from temp file via ReadAllText when settingsTempFile provided (T1107)', () => {
+  it('passes settingsTempFile path directly to --settings when settingsTempFile provided (T1195)', () => {
     const script = buildWindowsPS1Script({
       thinkingMode: 'disabled',
       settingsTempFile: 'C:\\Users\\foo\\AppData\\Local\\Temp\\claude-settings-1.json',
     })
-    expect(script).toContain('ReadAllText')
     expect(script).toContain('claude-settings-1.json')
     expect(script).toContain("$a.Add('--settings')")
-    expect(script).toContain('$a.Add($settingsJson)')
-    // Must NOT contain the literal JSON string — it goes through the temp file
+    // Must NOT contain ReadAllText or $settingsJson — path is passed directly
+    expect(script).not.toContain('ReadAllText')
+    expect(script).not.toContain('$settingsJson')
     expect(script).not.toContain("$a.Add('{\"alwaysThinkingEnabled\":false}')")
   })
 

@@ -217,7 +217,7 @@ describe('agent:create — local Windows spawn (T916)', () => {
     expect((id as string).length).toBeGreaterThan(0)
   })
 
-  it('writes settings JSON to temp file and PS1 reads it via ReadAllText when thinkingMode=disabled (T1107)', async () => {
+  it('writes settings JSON to temp file and PS1 passes path directly to --settings when thinkingMode=disabled (T1195)', async () => {
     const handler = handlers.get('agent:create')!
     await handler({ sender: mockSender }, { wslDistro: 'local', thinkingMode: 'disabled' })
 
@@ -227,15 +227,17 @@ describe('agent:create — local Windows spawn (T916)', () => {
     )
     expect(settingsCall).toBeDefined()
     expect(settingsCall![1]).toBe('{"alwaysThinkingEnabled":false}')
+    const settingsPath = String(settingsCall![0])
 
-    // PS1 script must reference the temp file via ReadAllText (not inline JSON)
+    // PS1 script must pass the file path directly to --settings (not via ReadAllText)
     const ps1Call = mockWriteFileSync.mock.calls.find(
       ([p]: [unknown]) => String(p).includes('claude-start') && String(p).endsWith('.ps1')
     )
     const content = String(ps1Call![1])
-    expect(content).toContain('ReadAllText')
-    expect(content).toContain('$settingsJson')
-    expect(content).toContain('$a.Add($settingsJson)')
+    expect(content).toContain("$a.Add('--settings')")
+    expect(content).toContain(settingsPath)
+    expect(content).not.toContain('ReadAllText')
+    expect(content).not.toContain('$settingsJson')
     expect(content).not.toContain("$a.Add('{\"alwaysThinkingEnabled\":false}')")
   })
 

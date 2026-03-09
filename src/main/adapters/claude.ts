@@ -153,7 +153,9 @@ export function buildWindowsPS1Script(opts: {
   lines.push('  }')
   lines.push('}')
 
+  // Build args list — List[string] lets PowerShell pass each arg verbatim without cmd.exe re-escaping:
   lines.push('$a = [System.Collections.Generic.List[string]]::new()')
+  // Prepend resolved .js entry point when claude was a .cmd wrapper (node.exe $resolvedJsEntry ...):
   lines.push('if ($resolvedJsEntry) { $a.Add($resolvedJsEntry) }')
   lines.push('$a.Add(\'-p\')')
   lines.push('$a.Add(\'--verbose\')')
@@ -162,11 +164,13 @@ export function buildWindowsPS1Script(opts: {
   lines.push('$a.Add(\'--output-format\')')
   lines.push('$a.Add(\'stream-json\')')
 
+  // Optional: resume an existing conversation (appended before prompt flags to keep order stable):
   if (opts.convId) {
     lines.push('$a.Add(\'--resume\')')
     lines.push(`$a.Add('${opts.convId}')`)
   }
 
+  // Read system prompt from Windows temp file — avoids command-line length limits and escaping issues:
   if (opts.spTempFile) {
     const safePath = opts.spTempFile.replace(/'/g, "''")
     lines.push(`$sp = [System.IO.File]::ReadAllText('${safePath}', [System.Text.Encoding]::UTF8)`)
@@ -176,12 +180,12 @@ export function buildWindowsPS1Script(opts: {
 
   if (opts.thinkingMode === 'disabled') {
     if (opts.settingsTempFile) {
-      // T1107: Read settings JSON from temp file to bypass cmd.exe corruption of { } chars
-      // when claude is a .cmd wrapper (npm install). Same pattern as system prompt (spTempFile).
+      // T1195: Pass the file path directly to --settings instead of reading JSON content.
+      // Claude CLI accepts <file-or-json> for --settings — passing the path bypasses
+      // any cmd.exe argument corruption of { } chars entirely (no ReadAllText needed).
       const safePath = opts.settingsTempFile.replace(/'/g, "''")
-      lines.push(`$settingsJson = [System.IO.File]::ReadAllText('${safePath}', [System.Text.Encoding]::UTF8)`)
       lines.push('$a.Add(\'--settings\')')
-      lines.push('$a.Add($settingsJson)')
+      lines.push(`$a.Add('${safePath}')`)
     } else {
       // Fallback for non-Windows callers or tests without a temp file
       lines.push('$a.Add(\'--settings\')')
@@ -189,10 +193,12 @@ export function buildWindowsPS1Script(opts: {
     }
   }
 
+  // Optional: skip permission prompts for fully-automated agent sessions:
   if (opts.permissionMode === 'auto') {
     lines.push('$a.Add(\'--dangerously-skip-permissions\')')
   }
 
+  // Splat the args array — PowerShell @a passes each element as a separate argument:
   lines.push(`& $claudeExe @a`)
 
   return lines.join('\n')
