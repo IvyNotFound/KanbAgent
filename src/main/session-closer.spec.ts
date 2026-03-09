@@ -185,6 +185,9 @@ describe('session-closer', () => {
       expect(mockDb.run).toHaveBeenCalledWith(
         expect.stringContaining("t.status = 'done'")
       )
+      expect(mockDb.run).toHaveBeenCalledWith(
+        expect.stringContaining('sessions.started_at')
+      )
     })
 
     it('callback returns false when no eligible sessions (T1110 skip-write signal)', async () => {

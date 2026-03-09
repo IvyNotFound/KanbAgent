@@ -6,7 +6,8 @@
  *
  * Logic: every 30s,
  * 1. Zombie-close: find sessions in 'started' whose agent has at least one task
- *    in 'done' for more than 1 minute AND no task in 'todo' or 'in_progress'.
+ *    in 'done' for more than 1 minute (done AFTER the session started) AND no
+ *    task in 'todo' or 'in_progress'. Tasks from previous sessions are ignored.
  * 2. Manually-closed: find sessions that transitioned to 'completed' since last poll
  *    (covers agents with no assigned tasks, e.g. review, doc).
  *
@@ -94,6 +95,7 @@ export async function closeZombieSessions(dbPath: string): Promise<number[]> {
           WHERE t.agent_assigned_id = sessions.agent_id
             AND t.status = 'done'
             AND t.updated_at < datetime('now', '-1 minute')
+            AND t.updated_at > sessions.started_at
         )`
   let closedAgentIds: number[] = []
   await writeDb(dbPath, (db) => {

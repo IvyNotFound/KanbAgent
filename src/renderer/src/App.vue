@@ -41,6 +41,7 @@ const unsubSessionsCompleted = window.electronAPI.onSessionsCompleted?.((agentId
   for (const agentId of agentIds) {
     const agent = agentsStore.agents.find((a) => a.id === agentId)
     if (!agent) continue
+    if (agent.name === 'task-creator') continue // never auto-close: interactive agent
     const timer = setTimeout(() => tabsStore.closeTabGroup(agent.name), 3000)
     pendingCloseTimers.push(timer)
   }
