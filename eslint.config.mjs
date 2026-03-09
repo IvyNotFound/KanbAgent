@@ -83,7 +83,6 @@ export default [
       '@typescript-eslint/no-explicit-any': 'error',
     }
   },
-
   // Shared files
   {
     files: ['src/shared/**/*.ts'],
