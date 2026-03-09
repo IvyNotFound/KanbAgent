@@ -51,6 +51,11 @@ export function getAllowedProjectPaths(): string[] {
   return [...allowedProjectPaths]
 }
 
+/** Returns true if projectPath is currently in the in-memory allow-list. */
+export function isProjectPathAllowed(projectPath: string): boolean {
+  return !!projectPath && allowedProjectPaths.has(resolve(projectPath))
+}
+
 /**
  * Throws if projectPath was not registered via registerProjectPath().
  * @throws {Error} PROJECT_PATH_NOT_ALLOWED if path is not in the allow-list.

@@ -9,7 +9,7 @@
 
 import { ipcMain, dialog, app, shell } from 'electron'
 import { access, copyFile, mkdir, readdir, readFile, writeFile } from 'fs/promises'
-import { join, basename } from 'path'
+import { join, basename, resolve } from 'path'
 import { GENERIC_AGENTS_BY_LANG } from './default-agents'
 import type { AgentLanguage } from './default-agents'
 import Database from 'better-sqlite3'
@@ -18,6 +18,7 @@ import {
   registerProjectPath,
   getAllowedProjectPaths,
   assertProjectPathAllowed,
+  isProjectPathAllowed,
 } from './db'
 import { buildSingleFileZip } from './ipc-project-zip'
 
@@ -279,16 +280,30 @@ export function registerProjectHandlers(): void {
 
   /**
    * Locate project.db inside .claude/ subdirectory.
-   * Registers projectPath in the session allowlist so fsListDir works immediately after.
-   * On cold start, trusted-project-paths.json may be absent — this registration is essential (T896).
+   * Only registers the path if it is already in the in-memory allowlist (set by a prior dialog
+   * selection) or in the persisted trusted-project-paths.json (recovery after corrupt/missing file).
+   * This prevents a compromised renderer from elevating arbitrary paths — T1173.
    * @param projectPath - Project root path
    * @returns {string|null} Found DB path, or null
    */
   ipcMain.handle('find-project-db', async (_event, projectPath: string) => {
     if (!projectPath) throw new Error('PROJECT_PATH_REQUIRED')
     const dbPath = await findProjectDb(projectPath)
-    registerDbPath(dbPath)
-    registerProjectPath(projectPath)
+    // Security: only register paths already trusted — do NOT self-register arbitrary renderer input.
+    let trusted = isProjectPathAllowed(projectPath)
+    if (!trusted) {
+      // Fallback: check the persisted file (handles restoreTrustedPaths failure on corrupt JSON).
+      try {
+        const raw = await readFile(getTrustedPathsFile(), 'utf-8')
+        const paths: string[] = JSON.parse(raw)
+        const resolvedPath = resolve(projectPath)
+        trusted = paths.some(p => resolve(p) === resolvedPath)
+      } catch { /* file absent or corrupt — treat as untrusted */ }
+    }
+    if (trusted) {
+      registerDbPath(dbPath)
+      registerProjectPath(projectPath)
+    }
     return dbPath
   })
 
