@@ -22,8 +22,8 @@ test.afterEach(async () => {
 
 test('app window opens and shows title bar', async () => {
   const { page } = handle
-  // TitleBar always renders (it has the "agent-viewer" label)
-  const titleBar = page.locator('text=agent-viewer').first()
+  // TitleBar always renders (it has the "KanbAgent" label)
+  const titleBar = page.locator('text=KanbAgent').first()
   await expect(titleBar).toBeVisible({ timeout: 10_000 })
 })
 
