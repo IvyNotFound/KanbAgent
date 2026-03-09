@@ -24,7 +24,7 @@ export function setupAutoUpdater(win: BrowserWindow): void {
   autoUpdater.setFeedURL({
     provider: 'github',
     owner: 'IvyNotFound',
-    repo: 'agent-viewer',
+    repo: 'KanbAgent',
   })
 
   autoUpdater.autoDownload = false

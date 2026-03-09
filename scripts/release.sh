@@ -163,7 +163,7 @@ git push origin main --tags
 
 echo ""
 echo "=== Release v$NEW_VERSION Triggered ==="
-REPO=$(gh repo --json name,owner --jq '.owner.login + "/" + .name' 2>/dev/null || echo 'your-org/agent-viewer')
+REPO=$(gh repo --json name,owner --jq '.owner.login + "/" + .name' 2>/dev/null || echo 'your-org/KanbAgent')
 echo "Pipeline: i18n-check → E2E → build (win/mac/linux) → publish"
 echo "Monitor: https://github.com/$REPO/actions"
 echo "The GitHub Release will be published automatically when all jobs pass."

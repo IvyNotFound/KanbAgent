@@ -5,7 +5,7 @@ copyright: Copyright © 2024-2026 IvyNotFound
 publish:
   provider: github
   owner: IvyNotFound
-  repo: agent-viewer
+  repo: KanbAgent
   private: false
 
 win:
