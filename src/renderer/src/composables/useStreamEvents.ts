@@ -10,8 +10,8 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { renderMarkdown } from '@renderer/utils/renderMarkdown'
 import type { StreamEvent } from '@renderer/types/stream'
 
-export const MAX_EVENTS = 500
-export const MAX_EVENTS_HIDDEN = 10
+export const MAX_EVENTS = 2000
+export const MAX_EVENTS_HIDDEN = 200
 
 export function useStreamEvents(terminalId: string) {
   const tabsStore = useTabsStore()

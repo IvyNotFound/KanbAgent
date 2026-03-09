@@ -14,7 +14,7 @@ describe('StreamView — hidden-tab eviction (T962)', () => {
     vi.restoreAllMocks()
   })
 
-  it('evicts events to MAX_EVENTS_HIDDEN (10) when tab becomes inactive', async () => {
+  it('evicts events to MAX_EVENTS_HIDDEN (200) when tab becomes inactive', async () => {
     let streamCallback: ((e: Record<string, unknown>) => void) | null = null
     vi.mocked(mockElectronAPI.agentCreate).mockResolvedValue('agent-stream-1')
     vi.mocked(mockElectronAPI.onAgentStream).mockReset()
@@ -52,12 +52,12 @@ describe('StreamView — hidden-tab eviction (T962)', () => {
     })
     await flushPromises()
 
-    // Inject 100 result events
-    for (let i = 0; i < 100; i++) {
+    // Inject 300 result events (above MAX_EVENTS_HIDDEN=200 to trigger eviction)
+    for (let i = 0; i < 300; i++) {
       streamCallback?.({ type: 'result', num_turns: i })
     }
     await flushPromises()
-    expect(wrapper.findAll('[data-testid="block-result"]').length).toBe(100)
+    expect(wrapper.findAll('[data-testid="block-result"]').length).toBe(300)
 
     // Activate then deactivate the tab via real store action (updates ref.value, triggers watcher)
     const store = pinia._s.get('tabs') as { setActive: (id: string) => void; activeTabId: string }
@@ -68,7 +68,7 @@ describe('StreamView — hidden-tab eviction (T962)', () => {
     await flushPromises()
     expect(store.activeTabId).toBe('other-tab')
 
-    expect(wrapper.findAll('[data-testid="block-result"]').length).toBeLessThanOrEqual(10)
+    expect(wrapper.findAll('[data-testid="block-result"]').length).toBeLessThanOrEqual(200)
     wrapper.unmount()
   })
 })
