@@ -96,9 +96,10 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
     <TokenStatsView v-show="activeSubTab === 'tokenStats'" class="flex-1 min-h-0" />
 
     <!-- Git -->
-    <template v-if="activeSubTab === 'git'">
+    <div v-if="activeSubTab === 'git'" class="flex flex-col flex-1 min-h-0 bg-surface-base">
       <!-- Toolbar -->
-      <div class="shrink-0 flex items-center justify-end px-4 py-1.5 border-b border-edge-subtle">
+      <div class="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-edge-subtle">
+        <h2 class="text-xl font-semibold text-content-primary">Git</h2>
         <button
           class="flex items-center gap-1 px-2 py-1 text-xs text-content-muted hover:text-content-primary rounded transition-colors disabled:opacity-40"
           :disabled="gitLoading"
@@ -137,7 +138,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
         class="flex-1 min-h-0"
         @open-task="(id) => { const task = store.tasks.find(x => x.id === id); if (task) store.openTask(task) }"
       />
-    </template>
+    </div>
 
     <!-- Hooks -->
     <HookEventsView v-if="activeSubTab === 'hooks'" class="flex-1 min-h-0" />

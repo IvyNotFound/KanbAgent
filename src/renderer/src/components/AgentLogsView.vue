@@ -195,6 +195,11 @@ watch(() => props.initialAgentId, (v) => {
 <template>
   <div class="flex flex-col h-full bg-surface-base min-h-0">
 
+    <!-- ── Titre ──────────────────────────────────────────────────────────── -->
+    <div class="shrink-0 flex items-center px-6 py-3 border-b border-edge-default">
+      <h2 class="text-xl font-semibold text-content-primary">{{ t('tokenStats.logsTab') }}</h2>
+    </div>
+
     <!-- ── Barre de filtres ──────────────────────────────────────────────── -->
     <div class="shrink-0 flex items-center gap-2 px-6 py-2.5 border-b border-edge-default bg-surface-base">
 

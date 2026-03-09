@@ -189,11 +189,11 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary overflow-hidden">
+  <div class="flex flex-col h-full bg-surface-base overflow-hidden">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-2.5 border-b border-edge-subtle bg-surface-base">
+    <div class="shrink-0 flex items-center justify-between px-5 py-2.5 border-b border-edge-subtle">
       <div class="flex items-center gap-3">
-        <h2 class="text-sm font-semibold text-content-secondary">{{ t('orgchart.agentsTitle') }}</h2>
+        <h2 class="text-xl font-semibold text-content-primary">{{ t('orgchart.agentsTitle') }}</h2>
         <span v-if="loading" class="text-[10px] text-content-faint animate-pulse">•••</span>
       </div>
       <div class="flex items-center gap-2">

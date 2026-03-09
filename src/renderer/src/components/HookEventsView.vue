@@ -56,8 +56,12 @@ watch(() => store.events.length, () => {
 
 <template>
   <div class="flex flex-col h-full overflow-hidden bg-surface-base">
-    <!-- Header filters -->
-    <div class="flex items-center gap-2 px-6 py-2.5 border-b border-edge-default shrink-0 flex-wrap">
+    <!-- Header -->
+    <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-b border-edge-default">
+      <h2 class="text-xl font-semibold text-content-primary">{{ t('sidebar.hooks') }}</h2>
+    </div>
+    <!-- Filters bar -->
+    <div class="flex items-center gap-2 px-6 py-2 border-b border-edge-default shrink-0 flex-wrap">
       <span class="text-xs text-content-muted uppercase tracking-wide mr-1">{{ t('hooks.filters') }}</span>
       <button
         v-for="eventType in ALL_TYPES"

@@ -78,10 +78,10 @@ function onAgentClick(row: TopologyRow): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary overflow-hidden">
+  <div class="flex flex-col h-full bg-surface-base overflow-hidden">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
-      <h2 class="text-sm font-semibold text-content-secondary">{{ t('topology.title') }}</h2>
+    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle">
+      <h2 class="text-xl font-semibold text-content-primary">{{ t('topology.title') }}</h2>
       <button
         class="text-xs text-content-subtle hover:text-content-secondary transition-colors"
         @click="store.refresh()"

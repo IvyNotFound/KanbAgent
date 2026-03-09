@@ -42,6 +42,10 @@ function sortIcon(key: SortKey): string {
 
 <template>
   <div class="flex flex-col h-full overflow-hidden bg-surface-base text-content-primary">
+    <!-- Header -->
+    <div class="shrink-0 flex items-center px-6 py-3 border-b border-edge-default">
+      <h2 class="text-xl font-semibold text-content-primary">{{ t('toolStats.title') }}</h2>
+    </div>
     <!-- Empty state -->
     <div v-if="toolStats.length === 0" class="flex items-center justify-center flex-1 py-12">
       <p class="text-sm text-content-faint italic text-center px-4">{{ t('toolStats.empty') }}</p>

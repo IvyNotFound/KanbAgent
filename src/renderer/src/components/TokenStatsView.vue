@@ -15,10 +15,11 @@ const {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary min-h-0">
+  <div class="flex flex-col h-full bg-surface-base min-h-0">
 
     <!-- ── Period selector ────────────────────────────────────────────── -->
     <div class="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
+      <h2 class="text-xl font-semibold text-content-primary mr-2">{{ t('tokenStats.title') }}</h2>
       <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('tokenStats.period.label') }}</span>
       <div class="flex gap-1">
         <button

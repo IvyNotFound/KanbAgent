@@ -179,6 +179,9 @@ const PRIORITY_CLASSES: Record<string, string> = {
 <template>
   <div class="flex flex-col h-full overflow-auto bg-surface-base text-content-primary p-6 gap-6">
 
+    <!-- Title -->
+    <h2 class="text-xl font-semibold text-content-primary shrink-0">{{ t('dashboard.overview') }}</h2>
+
     <!-- No project state -->
     <div v-if="!store.dbPath" class="flex items-center justify-center h-40">
       <p class="text-sm text-content-faint italic">{{ t('common.noProject') }}</p>
