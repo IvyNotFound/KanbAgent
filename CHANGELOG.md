@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.31.6] - 2026-03-09
+
+### Bug Fixes
+- fix(front-vuejs): keyer useAutoLaunch par tabId pour supporter le multi-tab (T1249) (5d4c885)
+- fix(workflow): instruire review à valider depuis la branche agent worktree (1c587f7)
+
+### Tests
+- test(front-vuejs): ajouter tests T1246 pour fermeture onglets no-task + update CLAUDE.md protocole worktree (49386a6)
+
+### Chores
+- chore(docs): update CLAUDE.md version to 0.31.5 (58a09a6)
+
 ## [0.31.5] - 2026-03-09
 
 ### Bug Fixes
