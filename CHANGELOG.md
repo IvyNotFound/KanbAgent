@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.31.0] - 2026-03-09
+
+### Features
+- feat(global): force agents to develop from dedicated worktree (T1179) (5c7e3ad)
+- feat(front-vuejs): auto-close agent tab groups on session completion (T1186) (028a1ee)
+- feat(back-electron): emit session:agents-completed IPC when session-closer closes sessions (T1184) (57f2408)
+- feat(front-vuejs): ajouter le toggle worktree dans CreateAgentModal (mode edit) — T1183 (8190e29)
+- feat(front-vuejs): increase stream history limits — MAX_EVENTS 500→2000, MAX_EVENTS_HIDDEN 10→200 (6ada3db)
+
+### Bug Fixes
+- fix(front-vuejs): declare onSessionsCompleted in electron.d.ts (T1194) (58a1cc0)
+- fix(back-electron): hookServer — validate cwd against allowlist before writeDb (T1175) (335d480)
+- fix(back-electron): find-project-db no longer self-registers arbitrary paths — T1173 (0ef89d4)
+- fix(back-electron): validate query-db params types before passing to better-sqlite3 (T1178) (709e599)
+- fix(back-electron): remove CSP style-src unsafe-inline in production (T1177) (90cd57c)
+- fix(back-electron): hookServer bind to 127.0.0.1 instead of 0.0.0.0 (T1172) (223d41e)
+- fix(front-vuejs): add allowedDir param to fs API types in electron.d.ts (T1174) (7140865)
+- fix(back-electron): watch parent dir for WAL-mode SQLite + reduce poll to 30s (8603ad8)
+- fix(back-electron): opencode local Windows — pass initial message as positional arg (fbc4452)
+- fix(back-electron): opencode local Windows stdin hang — formatStdinMessage + singleShotStdin (beb4712)
+- fix(back-electron): remove -p '' from gemini adapter — crashes with empty prompt value (aa4fbd9)
+
+### Documentation
+- docs(global): add screenshot 2026-03-09 (1ec5106)
+- docs(front-vuejs): add JSDoc to MAX_EVENTS constants (T1181) (697ade1)
+
+### Chores
+- chore(back-electron): move rollup build deps to devDependencies (T1185) (87ce4c0)
+
+### Other
+- ux(front-vuejs): unlimited depth sidebar groups — dynamic indent, visual guides, collapse persistence (c9720e5)
+- ux(front-vuejs): harmonize dashboard tab styles on telemetry model (f5ff583)
+
 ## [0.30.0] - 2026-03-08
 
 ### Features
