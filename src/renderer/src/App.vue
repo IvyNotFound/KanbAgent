@@ -22,16 +22,35 @@ const CommandPalette = defineAsyncComponent(() => import('@renderer/components/C
 const SetupWizard = defineAsyncComponent(() => import('@renderer/components/SetupWizard.vue'))
 import { useAutoLaunch } from '@renderer/composables/useAutoLaunch'
 import { useHookEventsStore } from '@renderer/stores/hookEvents'
+import { useAgentsStore } from '@renderer/stores/agents'
 import type { Task } from '@renderer/types'
 
 const store = useTasksStore()
 const tabsStore = useTabsStore()
 const hookEventsStore = useHookEventsStore()
+const agentsStore = useAgentsStore()
 
 // Set up global IPC listener for Claude Code hook events (T742).
 // Registered once at app level so all StreamView instances share the same store.
 const unsubHookEvent = window.electronAPI.onHookEvent?.((e) => hookEventsStore.push(e))
-onUnmounted(() => unsubHookEvent?.())
+
+// Auto-close agent tab groups when session-closer completes their sessions (T1186).
+// 3s delay lets the user read the last output lines before tabs disappear.
+const pendingCloseTimers: ReturnType<typeof setTimeout>[] = []
+const unsubSessionsCompleted = window.electronAPI.onSessionsCompleted?.((agentIds: number[]) => {
+  for (const agentId of agentIds) {
+    const agent = agentsStore.agents.find((a) => a.id === agentId)
+    if (!agent) continue
+    const timer = setTimeout(() => tabsStore.closeTabGroup(agent.name), 3000)
+    pendingCloseTimers.push(timer)
+  }
+})
+
+onUnmounted(() => {
+  unsubHookEvent?.()
+  unsubSessionsCompleted?.()
+  for (const timer of pendingCloseTimers) clearTimeout(timer)
+})
 
 // Auto-launch agent terminals when tasks are created with assigned agents (T340)
 useAutoLaunch({
