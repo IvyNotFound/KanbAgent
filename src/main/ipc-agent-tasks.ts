@@ -128,6 +128,7 @@ export function registerAgentTaskHandlers(): void {
           WHERE l.released_at IS NULL
         `)
 
+        // Format all queried data into a structured context block for agent startup:
         const lines: string[] = [
           '=== IDENTIFIANTS ===',
           `agent: ${name} (type:${type ?? '-'} | périmètre:${scope ?? '-'})`,
@@ -160,6 +161,7 @@ export function registerAgentTaskHandlers(): void {
         return lines.join('\n')
       })
 
+      // Prefix the user prompt with the context block, separated by "---"; return bare prompt on failure:
       if (!contextBlock) return base
       return base ? `${contextBlock}\n---\n${base}` : contextBlock
     } catch {
