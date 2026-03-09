@@ -113,6 +113,7 @@ describe('SidebarGroupNode', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.clear()
   })
 
   it('renders group name', () => {
@@ -136,15 +137,15 @@ describe('SidebarGroupNode', () => {
     wrapper.unmount()
   })
 
-  it('applies correct indent class for level 0', () => {
+  it('applies correct indent style for level 0', () => {
     const wrapper = mountGroupNode(makeGroup(), [], {})
-    // level 0 → pl-0
+    // level 0 → paddingLeft: 0px
     const html = wrapper.html()
-    expect(html).toContain('pl-0')
+    expect(html).toContain('padding-left: 0px')
     wrapper.unmount()
   })
 
-  it('applies correct indent class for level 1', () => {
+  it('applies correct indent style for level 1', () => {
     const wrapper = shallowMount(SidebarGroupNode, {
       props: { group: makeGroup(), level: 1 },
       global: {
@@ -166,7 +167,8 @@ describe('SidebarGroupNode', () => {
         },
       },
     })
-    expect(wrapper.html()).toContain('pl-3')
+    // level 1 → paddingLeft: 12px (1 * 12px)
+    expect(wrapper.html()).toContain('padding-left: 12px')
     wrapper.unmount()
   })
 
@@ -190,9 +192,8 @@ describe('SidebarGroupNode', () => {
     const child = makeGroup({ id: 2, name: 'Child Group', parent_id: 1 })
     const parent = makeGroup({ id: 1, name: 'Parent Group', children: [child] })
     const wrapper = mountGroupNode(parent)
-    // shallowMount stubs recursive SidebarGroupNode — verify child stub is present
-    const childStubs = wrapper.findAllComponents({ name: 'SidebarGroupNode' })
-    expect(childStubs.length).toBeGreaterThanOrEqual(1)
+    // shallowMount stubs recursive SidebarGroupNode — stub appears as <sidebar-group-node-stub> in HTML
+    expect(wrapper.html().toLowerCase()).toContain('sidebar-group-node')
     wrapper.unmount()
   })
 

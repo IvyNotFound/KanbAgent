@@ -11,7 +11,7 @@
  *
  * Uses defineOptions({ name: 'SidebarGroupNode' }) for recursive self-reference.
  */
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
@@ -64,7 +64,10 @@ const openContextMenu = inject<(event: MouseEvent, agent: Agent) => void>('openC
 const openEditAgent = inject<(agent: Agent) => void>('openEditAgent')!
 
 // ── Local state ───────────────────────────────────────────────────────────────
-const collapsed = ref(false)
+const collapsedKey = `sidebar-group-${props.group.id}`
+const collapsed = ref(localStorage.getItem(collapsedKey) === 'true')
+watch(collapsed, (val) => localStorage.setItem(collapsedKey, String(val)))
+
 const groupContextMenu = ref<{ x: number; y: number } | null>(null)
 
 // ── Computed ──────────────────────────────────────────────────────────────────
@@ -76,11 +79,17 @@ const groupAgents = computed<Agent[]>(() => {
     .filter(Boolean) as Agent[]
 })
 
-/** Left padding class based on nesting level. */
-const indent = computed(() => {
-  const sizes = ['pl-0', 'pl-3', 'pl-6', 'pl-9']
-  return sizes[Math.min(props.level, sizes.length - 1)]
-})
+/** Left padding as inline style — supports unlimited nesting depth (12px per level). */
+const indentStyle = computed(() => ({ paddingLeft: `${props.level * 12}px` }))
+
+/** Child content indent: group header indent + 8px (pl-2 equivalent). */
+const childContentStyle = computed(() => ({ paddingLeft: `${props.level * 12 + 8}px` }))
+
+/** Subgroup creation input indent: group header indent + 12px (pl-3 equivalent). */
+const subgroupInputStyle = computed(() => ({ paddingLeft: `${props.level * 12 + 12}px` }))
+
+/** Guide line left position: aligns with the parent group's chevron icon center. */
+const guideLineStyle = computed(() => ({ left: `${(props.level - 1) * 12 + 8}px` }))
 
 function isAgentSelected(id: number): boolean {
   return store.selectedAgentId !== null && Number(store.selectedAgentId) === id
@@ -107,14 +116,22 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 
 <template>
   <div
-    class="mb-1"
+    class="relative mb-1"
     @dragover="onGroupDragOver($event, group.id)"
     @dragleave="onGroupDragLeave"
     @drop="onGroupDrop($event, group.id)"
   >
+    <!-- Vertical hierarchy guide line (non-root groups only) -->
+    <div
+      v-if="level > 0"
+      class="absolute top-0 bottom-0 w-px bg-zinc-700/60 pointer-events-none"
+      :style="guideLineStyle"
+    />
+
     <!-- Group header -->
     <div
-      :class="[indent, 'flex items-center gap-0.5 mb-0.5 group/header rounded px-1 transition-colors', dragOverGroupId === group.id ? 'bg-violet-500/10 ring-1 ring-violet-500/40' : '']"
+      :style="indentStyle"
+      :class="['flex items-center gap-0.5 mb-0.5 group/header rounded px-1 transition-colors', dragOverGroupId === group.id ? 'bg-violet-500/10 ring-1 ring-violet-500/40' : '']"
       draggable="true"
       @dragstart="onGroupDragStart($event, group)"
       @contextmenu.prevent="openGroupContextMenu"
@@ -142,7 +159,8 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
       </template>
       <span
         v-else
-        class="flex-1 text-[11px] font-semibold text-content-subtle uppercase tracking-wider cursor-pointer select-none truncate py-0.5"
+        :class="['flex-1 text-[11px] font-semibold uppercase tracking-wider cursor-pointer select-none truncate py-0.5', level >= 5 ? 'text-zinc-500' : 'text-content-subtle']"
+        :title="level >= 5 ? `Profondeur ${level} — organisation complexe` : undefined"
         @dblclick="startRename(group)"
       >{{ group.name }}</span>
 
@@ -175,7 +193,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
     <!-- Content (hidden when collapsed) -->
     <div v-if="!collapsed">
       <!-- Inline subgroup creation for this group -->
-      <div v-if="creatingSubgroupForId === group.id" :class="[indent, 'pl-3 mb-1 flex items-center gap-1']">
+      <div v-if="creatingSubgroupForId === group.id" :style="subgroupInputStyle" class="mb-1 flex items-center gap-1">
         <input
           :ref="(el) => { if (el) createSubgroupInputEl = el as HTMLInputElement }"
           v-model="newSubgroupName"
@@ -189,7 +207,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
       </div>
 
       <!-- Child groups (recursive) -->
-      <div v-if="group.children?.length" :class="[indent, 'pl-2']">
+      <div v-if="group.children?.length" :style="childContentStyle">
         <SidebarGroupNode
           v-for="child in group.children"
           :key="child.id"
@@ -199,7 +217,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
       </div>
 
       <!-- Agents in this group -->
-      <div :class="[indent, 'pl-2 space-y-0.5']">
+      <div :style="childContentStyle" class="space-y-0.5">
         <div
           v-for="agent in groupAgents"
           :key="agent.id"
