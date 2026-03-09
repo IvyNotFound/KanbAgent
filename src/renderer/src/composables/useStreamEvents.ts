@@ -10,7 +10,9 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { renderMarkdown } from '@renderer/utils/renderMarkdown'
 import type { StreamEvent } from '@renderer/types/stream'
 
+/** Maximum number of events retained in the active-tab sliding window (T1167). */
 export const MAX_EVENTS = 2000
+/** Maximum number of events retained while the tab is hidden (T962/T1167). */
 export const MAX_EVENTS_HIDDEN = 200
 
 export function useStreamEvents(terminalId: string) {
