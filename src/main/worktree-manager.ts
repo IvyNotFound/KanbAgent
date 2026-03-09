@@ -145,9 +145,9 @@ function parseWorktreeList(output: string): Array<{ path: string; branch: string
 /**
  * Prune orphaned worktrees when a project is loaded.
  *
- * For each worktree whose branch matches `agent/<sessionId>`:
- * - Session completed/ended or absent from DB → remove the worktree
- * - Session still `started` without `ended_at` → preserve
+ * Handles two branch formats:
+ * - Old: `agent/<sessionId>` — checked against DB; removed if session ended or absent.
+ * - New: `agent/<name>/s<timestamp>` — removed if timestamp is older than 4 hours.
  *
  * Calls `git worktree prune` at the end to clean up git admin files.
  * Best-effort: errors are logged but do not throw.
@@ -172,26 +172,48 @@ export async function pruneOrphanedWorktrees(repoRoot: string, dbPath: string): 
 
   const worktrees = parseWorktreeList(stdout)
 
+  const FOUR_HOURS_MS = 4 * 60 * 60 * 1000
+
   for (const wt of worktrees) {
     if (!wt.branch) continue
-    const match = /^refs\/heads\/agent\/(\d+)$/.exec(wt.branch)
-    if (!match) continue
-    const sessionId = parseInt(match[1], 10)
 
-    let shouldRemove: boolean
-    try {
-      const rows = await queryLive(dbPath, 'SELECT ended_at, status FROM sessions WHERE id = ?', [sessionId])
-      const session = rows[0] as { ended_at: string | null; status: string } | undefined
-      shouldRemove = !session || session.ended_at !== null || session.status === 'completed'
-    } catch (err) {
-      console.warn(`[pruneOrphanedWorktrees] DB query failed for session ${sessionId}:`, err)
+    // Old format: agent/<sessionId> — correlate with DB
+    const oldMatch = /^refs\/heads\/agent\/(\d+)$/.exec(wt.branch)
+    if (oldMatch) {
+      const sessionId = parseInt(oldMatch[1], 10)
+
+      let shouldRemove: boolean
+      try {
+        const rows = await queryLive(dbPath, 'SELECT ended_at, status FROM sessions WHERE id = ?', [sessionId])
+        const session = rows[0] as { ended_at: string | null; status: string } | undefined
+        shouldRemove = !session || session.ended_at !== null || session.status === 'completed'
+      } catch (err) {
+        console.warn(`[pruneOrphanedWorktrees] DB query failed for session ${sessionId}:`, err)
+        continue
+      }
+
+      if (!shouldRemove) continue
+
+      console.log(`[pruneOrphanedWorktrees] removing orphaned worktree for session ${sessionId}`)
+      await removeWorktree(repoRoot, sessionId)
       continue
     }
 
-    if (!shouldRemove) continue
+    // New format: agent/<name>/s<timestamp> — temporal heuristic (> 4h = stale)
+    const newMatch = /^refs\/heads\/agent\/([^/]+)\/s(\d+)$/.exec(wt.branch)
+    if (!newMatch) continue
 
-    console.log(`[pruneOrphanedWorktrees] removing orphaned worktree for session ${sessionId}`)
-    await removeWorktree(repoRoot, sessionId)
+    const timestamp = parseInt(newMatch[2], 10)
+    if (Date.now() - timestamp <= FOUR_HOURS_MS) continue
+
+    const fullBranch = `agent/${newMatch[1]}/s${newMatch[2]}`
+    console.log(`[pruneOrphanedWorktrees] removing stale new-format worktree: ${fullBranch}`)
+    try {
+      await execFileAsync('git', ['-C', repoRoot, 'worktree', 'remove', '--force', wt.path])
+    } catch { /* best-effort */ }
+    try {
+      await execFileAsync('git', ['-C', repoRoot, 'branch', '-D', fullBranch])
+    } catch { /* best-effort */ }
   }
 
   try {

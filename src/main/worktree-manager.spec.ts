@@ -4,7 +4,7 @@
  * and pruneOrphanedWorktrees.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import path from 'path'
 
 // ── child_process mock ────────────────────────────────────────────────────────
@@ -416,6 +416,97 @@ describe('worktree-manager', () => {
       const lastCall = mockExecFile.mock.calls[mockExecFile.mock.calls.length - 1] as [string, string[], ExecFileCbWithStdout]
       const [, lastArgs] = lastCall
       expect(lastArgs).toContain('prune')
+    })
+
+    // ── new-format branches: agent/<name>/s<timestamp> (T1207) ────────────────
+
+    describe('new-format branches (T1207)', () => {
+      const FIXED_TS = 1741478234567
+      const FOUR_HOURS_MS = 4 * 60 * 60 * 1000
+
+      afterEach(() => {
+        vi.restoreAllMocks()
+      })
+
+      it('removes new-format worktree when timestamp > 4h', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_TS + FOUR_HOURS_MS + 1)
+        const wtPath = `/fake/agent-worktrees/review-s${FIXED_TS}`
+        const output = porcelainOutput([
+          { path: REPO, branch: 'main' },
+          { path: wtPath, branch: `agent/review/s${FIXED_TS}` },
+        ])
+        let callCount = 0
+        mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+          callCount++
+          if (callCount === 1) cb(null, output)
+          else cb(null)
+        })
+
+        await pruneOrphanedWorktrees(REPO, DB_PATH)
+
+        // list + worktree remove + branch -D + prune
+        expect(mockExecFile).toHaveBeenCalledTimes(4)
+        const [, removeArgs] = mockExecFile.mock.calls[1] as [string, string[], ExecFileCbWithStdout]
+        expect(removeArgs).toContain('remove')
+        expect(removeArgs).toContain('--force')
+        const [, branchArgs] = mockExecFile.mock.calls[2] as [string, string[], ExecFileCbWithStdout]
+        expect(branchArgs).toContain('-D')
+        expect(branchArgs).toContain(`agent/review/s${FIXED_TS}`)
+        expect(mockQueryLive).not.toHaveBeenCalled()
+      })
+
+      it('preserves new-format worktree when timestamp < 4h', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_TS + FOUR_HOURS_MS - 1)
+        const output = porcelainOutput([
+          { path: `/fake/agent-worktrees/review-s${FIXED_TS}`, branch: `agent/review/s${FIXED_TS}` },
+        ])
+        let callCount = 0
+        mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+          callCount++
+          if (callCount === 1) cb(null, output)
+          else cb(null)
+        })
+
+        await pruneOrphanedWorktrees(REPO, DB_PATH)
+
+        // list + prune only (no remove)
+        expect(mockExecFile).toHaveBeenCalledTimes(2)
+        expect(mockQueryLive).not.toHaveBeenCalled()
+      })
+
+      it('ignores new-format worktree remove errors (best-effort)', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_TS + FOUR_HOURS_MS + 1)
+        const output = porcelainOutput([
+          { path: `/fake/agent-worktrees/review-s${FIXED_TS}`, branch: `agent/review/s${FIXED_TS}` },
+        ])
+        let callCount = 0
+        mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+          callCount++
+          if (callCount === 1) cb(null, output)
+          else cb(new Error('git error'))
+        })
+
+        await expect(pruneOrphanedWorktrees(REPO, DB_PATH)).resolves.toBeUndefined()
+        // list + worktree remove (fails) + branch -D (fails) + prune (fails — still called)
+        expect(mockExecFile).toHaveBeenCalledTimes(4)
+      })
+
+      it('does not query DB for new-format branches', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_TS + FOUR_HOURS_MS + 1)
+        const output = porcelainOutput([
+          { path: `/fake/agent-worktrees/review-s${FIXED_TS}`, branch: `agent/review/s${FIXED_TS}` },
+        ])
+        let callCount = 0
+        mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+          callCount++
+          if (callCount === 1) cb(null, output)
+          else cb(null)
+        })
+
+        await pruneOrphanedWorktrees(REPO, DB_PATH)
+
+        expect(mockQueryLive).not.toHaveBeenCalled()
+      })
     })
   })
 })
