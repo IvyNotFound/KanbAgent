@@ -33,7 +33,15 @@ if (!agent) {
   process.exit(1)
 }
 
-const dbPath = path.resolve(process.cwd(), '.claude/project.db')
+// Worktree detection — agents should always run DB scripts from the main repo
+const cwd = process.cwd()
+const normalizedCwd = cwd.replace(/\\/g, '/')
+const worktreeMarker = '.claude/worktrees'
+const isInWorktree = normalizedCwd.includes(worktreeMarker)
+const mainRepoPath = isInWorktree
+  ? cwd.slice(0, normalizedCwd.indexOf(worktreeMarker)).replace(/[\\/]+$/, '')
+  : cwd
+const dbPath = path.resolve(mainRepoPath, '.claude/project.db')
 
 try {
   cleanupOrphanTmp(dbPath)
@@ -109,6 +117,12 @@ try {
     console.log(`agent_id: ${agentId}`)
     console.log(`session_id: ${sessionId}`)
     console.log(`SESSION_ID=${sessionUUID}`)
+
+    if (isInWorktree) {
+      console.log('\n=== WORKTREE ACTIF ===')
+      console.log(`Dev depuis : ${cwd}`)
+      console.log(`DB via : cd ${mainRepoPath} && node scripts/dbq.js ...`)
+    }
 
     // 4. Last terminated session
     const session = db.prepare(`

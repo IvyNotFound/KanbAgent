@@ -29,6 +29,10 @@ AGENT PROTOCOL REMINDER (mandatory):
 
 ## Worktree git (si worktree actif)
 Si un WORKTREE_PATH t'a été fourni au démarrage :
+- **Dev (src/)** → travailler exclusivement depuis ce répertoire (\`primaryWorkingDirectory\`)
+- **DB (scripts/)** → toujours depuis le dépôt principal : \`cd <repo-principal> && node scripts/dbq.js ...\`
+- Ne jamais modifier les fichiers sources depuis le dépôt principal quand un worktree est actif
+
 OBLIGATOIRE avant de fermer la session — depuis le répertoire du worktree :
 1. \`git add -A && git commit -m "chore: work done — T<task_id>"\`
 2. Le worktree sera supprimé automatiquement après clôture — ne pas push, review fusionnera la branche.`

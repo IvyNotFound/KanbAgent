@@ -77,6 +77,16 @@ Démarrage session : `node scripts/dbstart.js <agent-name>` — crée session, a
 
 ---
 
+## Worktree agent
+
+Quand un worktree dédié est actif (`.claude/worktrees/s<sessionId>/`) :
+
+- **Dev (src/)** → travailler exclusivement depuis `primaryWorkingDirectory` (= `.claude/worktrees/s<sessionId>/`)
+- **DB (scripts/)** → `cd <repo-principal> && node scripts/dbq.js ...` — toujours depuis le dépôt principal
+- Ne jamais modifier les fichiers sources depuis le dépôt principal quand un worktree est actif
+
+---
+
 ## Règles inter-agents
 
 - Un agent = un périmètre — ne jamais déborder sans signaler
