@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useSettingsStore } from '@renderer/stores/settings'
 import type { Agent } from '@renderer/types'
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ const { t, te } = useI18n()
 const isEditMode = computed(() => props.mode === 'edit' && props.agent != null)
 
 const store = useTasksStore()
+const settingsStore = useSettingsStore()
 
 const SCOPED_TYPES = ['dev', 'test', 'ux']
 const ALL_TYPES = ['dev', 'test', 'ux', 'review', 'review-master', 'arch', 'devops', 'doc', 'secu', 'perf', 'data']
@@ -31,6 +33,7 @@ const thinkingMode = ref<'auto' | 'disabled'>('auto')
 const systemPrompt = ref('')
 const systemPromptSuffix = ref('')
 const description = ref('')
+const worktreeEnabled = ref<number | null>(props.agent?.worktree_enabled ?? null)
 // String to allow empty value (empty → -1 = unlimited in DB)
 const maxSessions = ref(props.agent?.max_sessions === -1 ? '' : String(props.agent?.max_sessions ?? 3))
 const maxSessionsInvalid = computed(() => maxSessions.value !== '' && (!/^\d+$/.test(maxSessions.value) || parseInt(maxSessions.value) < 1))
@@ -81,6 +84,7 @@ onMounted(async () => {
     perimetre.value = a.scope ?? ''
     thinkingMode.value = a.thinking_mode === 'disabled' ? 'disabled' : 'auto'
     maxSessions.value = a.max_sessions === -1 ? '' : String(a.max_sessions ?? 3)
+    worktreeEnabled.value = a.worktree_enabled ?? null
     // Load system_prompt and system_prompt_suffix from DB (may be more up-to-date than agent prop)
     if (store.dbPath) {
       const result = await window.electronAPI.getAgentSystemPrompt(store.dbPath, a.id)
@@ -114,6 +118,7 @@ async function submit() {
         systemPrompt: systemPrompt.value.trim() || null,
         systemPromptSuffix: systemPromptSuffix.value.trim() || null,
         maxSessions: maxSessionsDbValue.value,
+        worktreeEnabled: worktreeEnabled.value === null ? null : worktreeEnabled.value === 1,
       })
       if (!result.success) {
         emit('toast', result.error ?? t('agent.saveError'), 'error')
@@ -293,6 +298,44 @@ function handleKeydown(e: KeyboardEvent) {
             />
             <p class="text-xs text-content-faint mt-1">{{ t('agent.maxSessionsNote') }}</p>
             <p v-if="maxSessionsInvalid" class="text-xs text-red-400 mt-1">{{ t('agent.maxSessionsError') }}</p>
+          </div>
+
+          <!-- Worktree isolation (edit mode uniquement) -->
+          <div v-if="isEditMode">
+            <label class="block text-xs text-content-muted mb-1">{{ t('agent.worktreeEnabled') }}</label>
+            <div class="flex gap-2">
+              <button
+                :class="[
+                  'flex-1 py-1.5 text-xs rounded transition-colors border',
+                  worktreeEnabled === null
+                    ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300'
+                    : 'border-edge-default bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
+                ]"
+                @click="worktreeEnabled = null"
+              >{{ t('agent.worktreeInherit') }}</button>
+              <button
+                :class="[
+                  'flex-1 py-1.5 text-xs rounded transition-colors border',
+                  worktreeEnabled === 1
+                    ? 'border-emerald-500/60 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+                    : 'border-edge-default bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
+                ]"
+                @click="worktreeEnabled = 1"
+              >{{ t('agent.worktreeOn') }}</button>
+              <button
+                :class="[
+                  'flex-1 py-1.5 text-xs rounded transition-colors border',
+                  worktreeEnabled === 0
+                    ? 'border-amber-500/60 bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300'
+                    : 'border-edge-default bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
+                ]"
+                @click="worktreeEnabled = 0"
+              >{{ t('agent.worktreeOff') }}</button>
+            </div>
+            <p v-if="worktreeEnabled === null" class="text-xs text-content-faint mt-1">
+              {{ t('agent.worktreeCurrentGlobal', { status: settingsStore.worktreeDefault ? t('agent.worktreeOn') : t('agent.worktreeOff') }) }}
+            </p>
+            <p class="text-xs text-content-faint mt-1">{{ t('agent.worktreeNote') }}</p>
           </div>
 
           <!-- System prompt (optionnel, collapsible) -->
