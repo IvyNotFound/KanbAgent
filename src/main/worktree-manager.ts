@@ -129,7 +129,7 @@ export async function pruneWorktrees(repoRoot: string): Promise<void> {
 }
 
 /** Parse `git worktree list --porcelain` output into a list of entries. */
-function parseWorktreeList(output: string): Array<{ path: string; branch: string | null }> {
+export function parseWorktreeList(output: string): Array<{ path: string; branch: string | null }> {
   return output
     .trim()
     .split(/\n\n+/)

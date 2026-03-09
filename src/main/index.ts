@@ -17,6 +17,7 @@ import { restoreTrustedPaths } from './ipc-project'
 import { registerAgentStreamHandlers } from './agent-stream'
 import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros } from './hookServer'
 import { setupAutoUpdater, registerUpdaterIpc } from './updater'
+import { cleanupOrphanWorktreesAtStartup } from './worktree-cleanup'
 
 // ── GPU flags for improved rendering performance ─────────────────────────────────
 // These MUST be set BEFORE app.whenReady() to take effect
@@ -175,6 +176,9 @@ app.whenReady().then(async () => {
   registerIpcHandlers()
   registerUpdaterIpc()
   await restoreTrustedPaths()
+  void cleanupOrphanWorktreesAtStartup().catch((err) =>
+    console.warn('[startup] cleanupOrphanWorktreesAtStartup error:', err)
+  )
   registerAgentStreamHandlers()
   hookServer = startHookServer(app.getPath('userData'))
   const wslIp = detectWslGatewayIp()

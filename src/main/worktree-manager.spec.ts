@@ -24,7 +24,7 @@ vi.mock('./db', () => ({
   queryLive: mockQueryLive,
 }))
 
-import { createWorktree, removeWorktree, pruneWorktrees, removeWorktreeByPath, pruneOrphanedWorktrees } from './worktree-manager'
+import { createWorktree, removeWorktree, pruneWorktrees, removeWorktreeByPath, pruneOrphanedWorktrees, parseWorktreeList } from './worktree-manager'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -507,6 +507,61 @@ describe('worktree-manager', () => {
 
         expect(mockQueryLive).not.toHaveBeenCalled()
       })
+    })
+  })
+
+  // ── parseWorktreeList ──────────────────────────────────────────────────────
+
+  describe('parseWorktreeList', () => {
+    it('parses main worktree and one agent worktree', () => {
+      const output = [
+        'worktree /repo',
+        'HEAD abc123',
+        'branch refs/heads/main',
+        '',
+        'worktree /agent-worktrees/10',
+        'HEAD def456',
+        'branch refs/heads/agent/10',
+        '',
+      ].join('\n')
+
+      const result = parseWorktreeList(output)
+      expect(result).toHaveLength(2)
+      expect(result[0]).toEqual({ path: '/repo', branch: 'refs/heads/main' })
+      expect(result[1]).toEqual({ path: '/agent-worktrees/10', branch: 'refs/heads/agent/10' })
+    })
+
+    it('returns null branch for detached HEAD', () => {
+      const output = 'worktree /repo\nHEAD abc123\ndetached\n'
+      const result = parseWorktreeList(output)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({ path: '/repo', branch: null })
+    })
+
+    it('returns empty array for empty output', () => {
+      expect(parseWorktreeList('')).toEqual([])
+    })
+
+    it('handles new-format branch agent/<name>/s<timestamp>', () => {
+      const ts = 1741478234567
+      const output = [
+        `worktree /agent-worktrees/review-s${ts}`,
+        'HEAD aabbcc',
+        `branch refs/heads/agent/review/s${ts}`,
+        '',
+      ].join('\n')
+
+      const result = parseWorktreeList(output)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({
+        path: `/agent-worktrees/review-s${ts}`,
+        branch: `refs/heads/agent/review/s${ts}`,
+      })
+    })
+
+    it('filters out blocks with empty path', () => {
+      const output = '\n\n'
+      expect(parseWorktreeList(output)).toEqual([])
     })
   })
 })
