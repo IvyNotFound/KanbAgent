@@ -39,7 +39,7 @@ export interface AppHandle {
  * On first launch (no project configured), the app shows the DbSelector screen.
  */
 export async function launchApp(): Promise<AppHandle> {
-  const testDbDir = mkdtempSync(join(tmpdir(), 'agent-viewer-e2e-'))
+  const testDbDir = mkdtempSync(join(tmpdir(), 'kanbagent-e2e-'))
 
   const app = await electron.launch({
     executablePath: ELECTRON_BIN,
