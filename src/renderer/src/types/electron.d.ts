@@ -17,9 +17,9 @@ declare global {
       findProjectDb(projectPath: string): Promise<string | null>
       migrateDb(dbPath: string): Promise<{ success: boolean; error?: string }>
       // File system
-      fsListDir(dirPath: string): Promise<FileNode[]>
-      fsReadFile(filePath: string): Promise<{ success: boolean; content?: string; error?: string }>
-      fsWriteFile(filePath: string, content: string): Promise<{ success: boolean; error?: string }>
+      fsListDir(dirPath: string, allowedDir: string): Promise<FileNode[]>
+      fsReadFile(filePath: string, allowedDir: string): Promise<{ success: boolean; content?: string; error?: string }>
+      fsWriteFile(filePath: string, content: string, allowedDir: string): Promise<{ success: boolean; error?: string }>
       windowMinimize(): Promise<void>
       windowMaximize(): Promise<void>
       windowClose(): Promise<void>
