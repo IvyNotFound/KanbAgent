@@ -176,4 +176,17 @@ export interface CliAdapter {
    * Only implemented for CLIs that support session resume (currently Claude only).
    */
   extractConvId?(event: StreamEvent): string | null
+
+  /**
+   * Format a user message for delivery via proc.stdin.write().
+   * If defined, `agent:send` uses this instead of the default Claude JSONL format.
+   * Returned string is written verbatim to stdin.
+   */
+  formatStdinMessage?(text: string): string
+
+  /**
+   * If true, stdin is closed (EOF) after each `formatStdinMessage` write.
+   * Prevents indefinite stdin wait for one-shot CLIs (e.g. opencode run).
+   */
+  singleShotStdin?: boolean
 }

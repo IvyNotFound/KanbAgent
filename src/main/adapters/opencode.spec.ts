@@ -176,3 +176,34 @@ describe('opencodeAdapter.parseLine', () => {
     expect(event).toEqual({ type: 'text', text: raw })
   })
 })
+
+// ── opencodeAdapter.formatStdinMessage ────────────────────────────────────────
+
+describe('opencodeAdapter.formatStdinMessage', () => {
+  it('is defined (opencode uses plain-text stdin, not Claude JSONL)', () => {
+    expect(typeof opencodeAdapter.formatStdinMessage).toBe('function')
+  })
+
+  it('returns text with a trailing newline', () => {
+    const result = opencodeAdapter.formatStdinMessage!('hello world')
+    expect(result).toBe('hello world\n')
+  })
+
+  it('preserves special characters in the message', () => {
+    const result = opencodeAdapter.formatStdinMessage!('fix: add "quoted" & <html> stuff')
+    expect(result).toBe('fix: add "quoted" & <html> stuff\n')
+  })
+
+  it('returns empty string + newline for empty input', () => {
+    const result = opencodeAdapter.formatStdinMessage!('')
+    expect(result).toBe('\n')
+  })
+})
+
+// ── opencodeAdapter.singleShotStdin ──────────────────────────────────────────
+
+describe('opencodeAdapter.singleShotStdin', () => {
+  it('is true (opencode run reads one prompt per spawn — stdin must be closed after write)', () => {
+    expect(opencodeAdapter.singleShotStdin).toBe(true)
+  })
+})

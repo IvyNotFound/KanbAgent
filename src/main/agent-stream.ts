@@ -35,6 +35,7 @@ import {
   buildWindowsPS1Script,
   getActiveTasksLine,
 } from './agent-stream-helpers'
+import type { CliAdapter } from '../shared/cli-types'
 import { getAdapter } from './adapters/index'
 import { createWorktree, removeWorktree, type WorktreeInfo } from './worktree-manager'
 import {
@@ -51,6 +52,9 @@ import {
 
 // Re-export _testing for backward compat with spec files
 export { _testing } from './agent-stream-registry'
+
+// Maps agent ID → adapter, used by agent:send to format stdin messages correctly.
+const agentAdapters = new Map<string, CliAdapter>()
 
 // ── Handler registration ──────────────────────────────────────────────────────
 
@@ -252,6 +256,7 @@ export function registerAgentStreamHandlers(): void {
     }
 
     agents.set(id, proc)
+    agentAdapters.set(id, adapter)
 
     let eventsReceived = 0
     let stderrBuffer = ''
@@ -303,6 +308,7 @@ export function registerAgentStreamHandlers(): void {
       console.error(`[agent-stream] spawn error id=${id}:`, err)
       rl.close()
       agents.delete(id)
+      agentAdapters.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
       sendTerminalEvent(id, wcId, { type: 'error:spawn', error: err.message })
     })
@@ -310,6 +316,7 @@ export function registerAgentStreamHandlers(): void {
     proc.on('close', (exitCode) => {
       rl.close()
       agents.delete(id)
+      agentAdapters.delete(id)
       webContentsAgents.get(wcId)?.delete(id)
       if (spTempFile) try { unlinkSync(spTempFile) } catch { /* cleanup best-effort */ }
       if (settingsTempFile) try { unlinkSync(settingsTempFile) } catch { /* cleanup best-effort */ }
@@ -362,11 +369,12 @@ export function registerAgentStreamHandlers(): void {
     }
     const proc = agents.get(id)
     if (!proc || !proc.stdin) throw new Error(`No active agent process for id=${id}`)
-    const msg = JSON.stringify({
-      type: 'user',
-      message: { role: 'user', content: [{ type: 'text', text }] },
-    }) + '\n'
+    if (proc.stdin.writableEnded) throw new Error(`Agent stdin is closed (id=${id})`)
+    const adapter = agentAdapters.get(id)
+    const msg = adapter?.formatStdinMessage?.(text)
+      ?? JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'text', text }] } }) + '\n'
     proc.stdin.write(msg)
+    if (adapter?.singleShotStdin) proc.stdin.end()
   })
 
   ipcMain.handle('agent:kill', (_event, id: string) => {

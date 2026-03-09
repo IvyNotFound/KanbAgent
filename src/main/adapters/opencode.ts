@@ -27,6 +27,12 @@ export const OPENCODE_CMD_REGEX = /^opencode(-[a-z0-9-]+)?$/
 export const opencodeAdapter: CliAdapter = {
   cli: 'opencode',
   binaries: ['opencode'],
+  singleShotStdin: true,
+
+  formatStdinMessage(text: string): string {
+    // opencode run reads stdin as plain text until EOF — not Claude's JSONL format.
+    return text + '\n'
+  },
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
     const cmd = (opts.binaryName && OPENCODE_CMD_REGEX.test(opts.binaryName))
