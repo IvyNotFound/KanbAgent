@@ -61,6 +61,15 @@ NEW_VERSION=$(npm version "$BUMP_TYPE" --no-git-tag-version --allow-same-version
 NEW_VERSION="${NEW_VERSION#v}"
 echo "New version: $NEW_VERSION"
 
+# Sync version in CLAUDE.md
+# Pattern: **Version: `X.Y.Z`** — kept in sync with package.json on every release
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/\*\*Version: \`[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\`\*\*/\*\*Version: \`${NEW_VERSION}\`\*\*/" CLAUDE.md
+else
+    sed -i "s/\*\*Version: \`[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\`\*\*/\*\*Version: \`${NEW_VERSION}\`\*\*/" CLAUDE.md
+fi
+echo "CLAUDE.md version synced to $NEW_VERSION"
+
 # Generate/update CHANGELOG.md
 echo ""
 echo "=== Generating CHANGELOG.md ==="
