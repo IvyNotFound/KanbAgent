@@ -249,7 +249,7 @@
     "initProject": "Initialiser projekt",
     "hasCLAUDEmdDesc": "Dette projekt har en {claudeMd}, men ingen {projectDb} fil blev fundet i {claudeDir}.",
     "hasCLAUDEmdInfo": "Databasen oprettes med det fulde skema (agenter, sessioner, opgaver, logfiler, scope) og standard-scope.",
-    "noFilesDesc": "Denne mappe indeholder hverken {claudeMd} eller en database. Initialiser den som et nyt agent-viewer projekt.",
+    "noFilesDesc": "Denne mappe indeholder hverken {claudeMd} eller en database. Initialiser den som et nyt KanbAgent projekt.",
     "createProjectDb": "Opret {projectDb}",
     "createProjectDbDesc": "Fuldt skema med standard-scope",
     "generateClaudeMd": "Generer en basis {claudeMd}",

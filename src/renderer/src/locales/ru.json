@@ -249,7 +249,7 @@
     "initProject": "Инициализировать проект",
     "hasCLAUDEmdDesc": "В этом проекте есть {claudeMd}, но файл {projectDb} не найден в {claudeDir}.",
     "hasCLAUDEmdInfo": "База данных будет создана с полной схемой (агенты, сессии, задачи, журналы, scopes) и scopes по умолчанию.",
-    "noFilesDesc": "Эта папка не содержит ни {claudeMd}, ни базы данных. Инициализируйте её как новый проект agent-viewer.",
+    "noFilesDesc": "Эта папка не содержит ни {claudeMd}, ни базы данных. Инициализируйте её как новый проект KanbAgent.",
     "createProjectDb": "Создать {projectDb}",
     "createProjectDbDesc": "Полная схема с scopes по умолчанию",
     "generateClaudeMd": "Сгенерировать базовый {claudeMd}",

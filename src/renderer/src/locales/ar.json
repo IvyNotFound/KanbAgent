@@ -249,7 +249,7 @@
     "initProject": "تهيئة المشروع",
     "hasCLAUDEmdDesc": "يحتوي هذا المشروع على {claudeMd} ولكن لم يتم العثور على {projectDb} في {claudeDir}.",
     "hasCLAUDEmdInfo": "سيتم إنشاء قاعدة البيانات بالمخطط الكامل (وكلاء، جلسات، مهام، سجلات، نطاقات) والنطاقات الافتراضية.",
-    "noFilesDesc": "لا يحتوي هذا المجلد على {claudeMd} أو قاعدة بيانات. قم بتهيئته كمشروع agent-viewer جديد.",
+    "noFilesDesc": "لا يحتوي هذا المجلد على {claudeMd} أو قاعدة بيانات. قم بتهيئته كمشروع KanbAgent جديد.",
     "createProjectDb": "إنشاء {projectDb}",
     "createProjectDbDesc": "المخطط الكامل مع النطاقات الافتراضية",
     "generateClaudeMd": "إنشاء {claudeMd} أساسي",

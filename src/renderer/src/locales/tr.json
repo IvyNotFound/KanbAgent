@@ -249,7 +249,7 @@
     "initProject": "Projeyi başlat",
     "hasCLAUDEmdDesc": "Bu proje {claudeMd} içeriyor ancak {claudeDir} içinde {projectDb} dosyası bulunamadı.",
     "hasCLAUDEmdInfo": "Veritabanı tam şema (ajanlar, oturumlar, görevler, günlükler, scopes) ve varsayılan scopesle oluşturulacak.",
-    "noFilesDesc": "Bu klasörde ne {claudeMd} ne de veritabanı var. Yeni bir agent-viewer projesi olarak başlatın.",
+    "noFilesDesc": "Bu klasörde ne {claudeMd} ne de veritabanı var. Yeni bir KanbAgent projesi olarak başlatın.",
     "createProjectDb": "{projectDb} oluştur",
     "createProjectDbDesc": "Varsayılan scopeli tam şema",
     "generateClaudeMd": "{claudeMd} tabanı oluştur",

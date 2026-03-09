@@ -249,7 +249,7 @@
     "initProject": "Inicjalizuj projekt",
     "hasCLAUDEmdDesc": "Ten projekt ma {claudeMd}, ale nie znaleziono pliku {projectDb} w {claudeDir}.",
     "hasCLAUDEmdInfo": "Baza danych zostanie utworzona z pełnym schematem (agenci, sesje, zadania, logi, scopes) i domyślnymi obwodami.",
-    "noFilesDesc": "Ten folder nie zawiera ani {claudeMd} ani bazy danych. Zainicjalizuj go jako nowy projekt agent-viewer.",
+    "noFilesDesc": "Ten folder nie zawiera ani {claudeMd} ani bazy danych. Zainicjalizuj go jako nowy projekt KanbAgent.",
     "createProjectDb": "Utwórz {projectDb}",
     "createProjectDbDesc": "Pełny schemat z domyślnymi obwodami",
     "generateClaudeMd": "Wygeneruj bazowy {claudeMd}",

@@ -249,7 +249,7 @@
     "initProject": "初始化项目",
     "hasCLAUDEmdDesc": "此项目包含 {claudeMd}，但在 {claudeDir} 中未找到 {projectDb} 文件。",
     "hasCLAUDEmdInfo": "数据库将使用完整架构（Agent、会话、任务、日志、Scope）和默认Scope创建。",
-    "noFilesDesc": "此文件夹既没有 {claudeMd} 也没有数据库。请将其初始化为新的 agent-viewer 项目。",
+    "noFilesDesc": "此文件夹既没有 {claudeMd} 也没有数据库。请将其初始化为新的 KanbAgent 项目。",
     "createProjectDb": "创建 {projectDb}",
     "createProjectDbDesc": "带默认Scope的完整架构",
     "generateClaudeMd": "生成基础 {claudeMd}",

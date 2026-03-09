@@ -249,7 +249,7 @@
     "initProject": "Alusta projekti",
     "hasCLAUDEmdDesc": "Tässä projektissa on {claudeMd}, mutta {projectDb}-tiedostoa ei löydy hakemistosta {claudeDir}.",
     "hasCLAUDEmdInfo": "Tietokanta luodaan täydellä skeemalla (agentit, istunnot, tehtävät, lokit, scopes) ja oletusscopes.",
-    "noFilesDesc": "Tässä kansiossa ei ole {claudeMd}:tä eikä tietokantaa. Alusta se uutena agent-viewer-projektina.",
+    "noFilesDesc": "Tässä kansiossa ei ole {claudeMd}:tä eikä tietokantaa. Alusta se uutena KanbAgent-projektina.",
     "createProjectDb": "Luo {projectDb}",
     "createProjectDbDesc": "Täydellinen skeema oletusscopes",
     "generateClaudeMd": "Luo pohja {claudeMd}:lle",

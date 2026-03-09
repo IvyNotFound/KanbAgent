@@ -249,7 +249,7 @@
     "initProject": "Initialiser le projet",
     "hasCLAUDEmdDesc": "Ce projet possède un {claudeMd} mais aucun fichier {projectDb} n'a été trouvé dans {claudeDir}.",
     "hasCLAUDEmdInfo": "La base sera créée avec le schéma complet (agents, sessions, tâches, logs, périmètres) et les périmètres par défaut.",
-    "noFilesDesc": "Ce dossier ne contient ni {claudeMd} ni base de données. Initialisez-le en tant que nouveau projet agent-viewer.",
+    "noFilesDesc": "Ce dossier ne contient ni {claudeMd} ni base de données. Initialisez-le en tant que nouveau projet KanbAgent.",
     "createProjectDb": "Créer {projectDb}",
     "createProjectDbDesc": "Schéma complet avec périmètres par défaut",
     "generateClaudeMd": "Générer un {claudeMd} de base",

@@ -249,7 +249,7 @@
     "initProject": "프로젝트 초기화",
     "hasCLAUDEmdDesc": "이 프로젝트에는 {claudeMd}가 있지만 {claudeDir}에서 {projectDb} 파일을 찾을 수 없습니다.",
     "hasCLAUDEmdInfo": "데이터베이스는 전체 스키마(에이전트, 세션, 작업, 로그, 스코프)와 기본 스코프로 생성됩니다.",
-    "noFilesDesc": "이 폴더에는 {claudeMd}도 데이터베이스도 없습니다. 새 agent-viewer 프로젝트로 초기화하세요.",
+    "noFilesDesc": "이 폴더에는 {claudeMd}도 데이터베이스도 없습니다. 새 KanbAgent 프로젝트로 초기화하세요.",
     "createProjectDb": "{projectDb} 생성",
     "createProjectDbDesc": "기본 스코프 포함 전체 스키마",
     "generateClaudeMd": "{claudeMd} 기본 파일 생성",

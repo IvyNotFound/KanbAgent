@@ -249,7 +249,7 @@
     "initProject": "Initialize project",
     "hasCLAUDEmdDesc": "This project has a {claudeMd} but no {projectDb} file was found in {claudeDir}.",
     "hasCLAUDEmdInfo": "The database will be created with the full schema (agents, sessions, tasks, logs, scopes) and default scopes.",
-    "noFilesDesc": "This folder contains neither {claudeMd} nor a database. Initialize it as a new agent-viewer project.",
+    "noFilesDesc": "This folder contains neither {claudeMd} nor a database. Initialize it as a new KanbAgent project.",
     "createProjectDb": "Create {projectDb}",
     "createProjectDbDesc": "Full schema with default scopes",
     "generateClaudeMd": "Generate a base {claudeMd}",
