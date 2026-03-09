@@ -53,10 +53,24 @@ export function attachStreamHandlers({
   let stderrBuffer = ''
   let stdoutErrorBuffer = '' // WSL errors go to stdout, not stderr
 
-  // Buffer stderr silently — do not emit line-by-line (T697).
-  proc.stderr!.on('data', (chunk: Buffer) => {
-    stderrBuffer = (stderrBuffer + chunk.toString()).slice(-MAX_STDERR_BUFFER_SIZE)
-  })
+  // For non-Claude CLIs: forward stderr lines in real time so the user can see diagnostic info
+  // (API key errors, config issues) without waiting for process close (T1248).
+  // For Claude: buffer silently, only shown via error:exit if no events received (T697).
+  let rlStderr: ReturnType<typeof createInterface> | undefined
+  if (adapter.cli !== 'claude') {
+    rlStderr = createInterface({ input: proc.stderr! })
+    rlStderr.on('line', (line) => {
+      const clean = line.trim()
+      if (!clean) return
+      pushStreamEvent(id, wcId, { type: 'error', text: `[stderr] ${clean}` })
+      eventsReceived++
+      stderrBuffer = (stderrBuffer + '\n' + clean).slice(-MAX_STDERR_BUFFER_SIZE)
+    })
+  } else {
+    proc.stderr!.on('data', (chunk: Buffer) => {
+      stderrBuffer = (stderrBuffer + chunk.toString()).slice(-MAX_STDERR_BUFFER_SIZE)
+    })
+  }
 
   const rl = createInterface({ input: proc.stdout! })
   rl.on('line', (line) => {
@@ -94,6 +108,7 @@ export function attachStreamHandlers({
     logDebug(`spawn error id=${id}: ${err.message} (code=${(err as NodeJS.ErrnoException).code})`)
     console.error(`[agent-stream] spawn error id=${id}:`, err)
     rl.close()
+    rlStderr?.close()
     agents.delete(id)
     agentAdapters.delete(id)
     webContentsAgents.get(wcId)?.delete(id)
@@ -102,6 +117,7 @@ export function attachStreamHandlers({
 
   proc.on('close', (exitCode) => {
     rl.close()
+    rlStderr?.close()
     agents.delete(id)
     agentAdapters.delete(id)
     webContentsAgents.get(wcId)?.delete(id)

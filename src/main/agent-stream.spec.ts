@@ -379,4 +379,60 @@ describe('agent-stream', () => {
     }])
   })
 
+  // ── Non-Claude stderr forwarding (T1248) ──────────────────────────────────
+
+  it('non-Claude: stderr lines forwarded in real time as error events (T1248)', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, { cli: 'opencode' })) as string
+
+    mockProc.stderr.write('API key not found\n')
+    await new Promise(resolve => setImmediate(resolve))
+    vi.advanceTimersByTime(32)
+
+    const streamCalls = vi.mocked(mockSender.send).mock.calls.filter(
+      ([ch]) => ch === `agent:stream:${id}`
+    )
+    expect(streamCalls.length).toBeGreaterThan(0)
+    const events = streamCalls.flatMap(([, payload]) => payload as unknown[])
+    expect(events).toContainEqual({ type: 'error', text: '[stderr] API key not found' })
+  })
+
+  it('non-Claude: empty stderr lines are filtered out', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, { cli: 'opencode' })) as string
+
+    mockProc.stderr.write('   \n\n')
+    await new Promise(resolve => setImmediate(resolve))
+    vi.advanceTimersByTime(32)
+
+    const streamCalls = vi.mocked(mockSender.send).mock.calls.filter(
+      ([ch]) => ch === `agent:stream:${id}`
+    )
+    expect(streamCalls).toHaveLength(0)
+  })
+
+  it('non-Claude: stderr increments eventsReceived — no redundant error:exit when only stderr received', async () => {
+    const handler = handlers.get('agent:create')!
+    const event = { sender: mockSender }
+    const id = (await handler(event, { cli: 'opencode' })) as string
+
+    mockProc.stderr.write('Some stderr output\n')
+    await new Promise(resolve => setImmediate(resolve))
+    vi.advanceTimersByTime(32)
+
+    // Process exits with code 1 — but eventsReceived > 0, so no error:exit
+    mockProc.emit('close', 1)
+    await new Promise(resolve => setImmediate(resolve))
+
+    const allCalls = vi.mocked(mockSender.send).mock.calls
+    const errorExitCalls = allCalls.filter(
+      ([, payload]) => Array.isArray(payload) && payload.some((e: unknown) =>
+        (e as { type?: string })?.type === 'error:exit'
+      )
+    )
+    expect(errorExitCalls).toHaveLength(0)
+  })
+
 })
