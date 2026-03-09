@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * init-project.js — Bootstrap complet d'un nouveau projet agent-viewer
+ * init-project.js — Bootstrap complet d'un nouveau projet KanbAgent
  *
  * Usage: node scripts/init-project.js [/path/to/project.db]
  *        (défaut : .claude/project.db)
@@ -167,7 +167,7 @@ function log(msg) {
 const dbPath = path.resolve(process.cwd(), process.argv[2] || '.claude/project.db')
 const targetDir = path.dirname(dbPath)
 
-console.log(`\nagent-viewer — init-project.js`)
+console.log(`\nKanbAgent — init-project.js`)
 console.log(`Cible DB  : ${dbPath}`)
 console.log(`Cible dir : ${targetDir}`)
 

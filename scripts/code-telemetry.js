@@ -84,7 +84,7 @@ const c = {
   reset: '\x1b[0m',
 };
 
-console.log(`${c.cyan}=== TELEMETRIE CODE agent-viewer/src ===${c.reset}`);
+console.log(`${c.cyan}=== TELEMETRIE CODE KanbAgent/src ===${c.reset}`);
 
 console.log(`\n${c.yellow}--- Par extension ---${c.reset}`);
 for (const ext of Object.keys(stats).sort()) {

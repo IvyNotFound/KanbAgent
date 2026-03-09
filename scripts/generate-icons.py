@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate agent-viewer application icons (pure Python, no dependencies).
+Generate KanbAgent application icons (pure Python, no dependencies).
 Design: dark kanban board with 3 columns (a_faire/en_cours/terminé)
 Palette: zinc-900 bg, zinc-800 columns, indigo/amber/green cards
 """
