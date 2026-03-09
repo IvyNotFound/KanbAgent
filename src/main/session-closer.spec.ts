@@ -1,6 +1,7 @@
 /**
- * Tests for session-closer — auto-closes started sessions when their task is done.
- * T990
+ * Tests for session-closer — auto-closes started sessions when their task is done,
+ * and detects sessions manually closed between poll cycles.
+ * T990, T1204
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -9,10 +10,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('./db', () => ({
   writeDb: vi.fn().mockResolvedValue(undefined),
   assertDbPathAllowed: vi.fn(),
+  queryLive: vi.fn().mockResolvedValue([]),
 }))
 
-import { writeDb, assertDbPathAllowed } from './db'
-import { startSessionCloser, stopSessionCloser, closeZombieSessions } from './session-closer'
+import { writeDb, assertDbPathAllowed, queryLive } from './db'
+import { startSessionCloser, stopSessionCloser, closeZombieSessions, detectManuallyClosed } from './session-closer'
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -61,7 +63,7 @@ describe('session-closer', () => {
       expect(writeDb).toHaveBeenCalledWith('/fake/project2.db', expect.any(Function))
     })
 
-    it('should invoke onSessionsClosed callback with agent_ids when sessions are closed', async () => {
+    it('should invoke onSessionsClosed callback with agent_ids when zombie sessions are closed', async () => {
       const mockDb = {
         exec: vi.fn().mockReturnValue([{ columns: ['agent_id'], values: [[5], [7]] }]),
         run: vi.fn(),
@@ -75,11 +77,60 @@ describe('session-closer', () => {
     })
 
     it('should NOT invoke onSessionsClosed when no sessions are closed', async () => {
-      // default mock resolves without calling the callback → closedAgentIds stays []
+      // default mocks resolve to empty → closedAgentIds stays []
       const onSessionsClosed = vi.fn()
       startSessionCloser('/fake/project.db', onSessionsClosed)
       await vi.advanceTimersByTimeAsync(30_000)
       expect(onSessionsClosed).not.toHaveBeenCalled()
+    })
+
+    it('should invoke onSessionsClosed with manually-closed agent_ids (no assigned tasks)', async () => {
+      // zombie-close returns nothing
+      vi.mocked(writeDb).mockResolvedValue(undefined)
+      // manually-closed returns review agent
+      vi.mocked(queryLive).mockResolvedValueOnce([{ agent_id: 42 }])
+      const onSessionsClosed = vi.fn()
+      startSessionCloser('/fake/project.db', onSessionsClosed)
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(onSessionsClosed).toHaveBeenCalledWith([42])
+    })
+
+    it('should deduplicate agent_ids appearing in both zombie-close and manually-closed', async () => {
+      // zombie-close returns [5, 7]
+      const mockDb = {
+        exec: vi.fn().mockReturnValue([{ columns: ['agent_id'], values: [[5], [7]] }]),
+        run: vi.fn(),
+        getRowsModified: vi.fn().mockReturnValue(2),
+      }
+      vi.mocked(writeDb).mockImplementationOnce(async (_path, fn) => { fn(mockDb); return undefined })
+      // manually-closed returns [7, 9] (7 appears in both)
+      vi.mocked(queryLive).mockResolvedValueOnce([{ agent_id: 7 }, { agent_id: 9 }])
+      const onSessionsClosed = vi.fn()
+      startSessionCloser('/fake/project.db', onSessionsClosed)
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(onSessionsClosed).toHaveBeenCalledTimes(1)
+      expect(onSessionsClosed).toHaveBeenCalledWith(expect.arrayContaining([5, 7, 9]))
+      expect(onSessionsClosed.mock.calls[0][0]).toHaveLength(3)
+    })
+
+    it('should call detectManuallyClosed on every cycle', async () => {
+      startSessionCloser('/fake/project.db')
+      await vi.advanceTimersByTimeAsync(90_000)
+      expect(queryLive).toHaveBeenCalledTimes(3)
+    })
+
+    it('should update lastCheckedAt between cycles (no re-emission of prev cycle sessions)', async () => {
+      // First cycle: manually-closed returns agent 10
+      vi.mocked(queryLive).mockResolvedValueOnce([{ agent_id: 10 }])
+      // Second cycle: manually-closed returns nothing (lastCheckedAt advanced past it)
+      vi.mocked(queryLive).mockResolvedValueOnce([])
+      const onSessionsClosed = vi.fn()
+      startSessionCloser('/fake/project.db', onSessionsClosed)
+      await vi.advanceTimersByTimeAsync(30_000)
+      await vi.advanceTimersByTimeAsync(30_000)
+      // Agent 10 should only be emitted once
+      expect(onSessionsClosed).toHaveBeenCalledTimes(1)
+      expect(onSessionsClosed).toHaveBeenCalledWith([10])
     })
   })
 
@@ -200,6 +251,55 @@ describe('session-closer', () => {
       }
       vi.mocked(writeDb).mockImplementationOnce(async (_path, fn) => { fn(mockDb); return undefined })
       const result = await closeZombieSessions('/fake/project.db')
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('detectManuallyClosed', () => {
+    it('should call assertDbPathAllowed', async () => {
+      await detectManuallyClosed('/fake/project.db', '2026-01-01 00:00:00')
+      expect(assertDbPathAllowed).toHaveBeenCalledWith('/fake/project.db')
+    })
+
+    it('should throw if assertDbPathAllowed throws', async () => {
+      vi.mocked(assertDbPathAllowed).mockImplementationOnce(() => {
+        throw new Error('DB_PATH_NOT_ALLOWED: /evil/db')
+      })
+      await expect(detectManuallyClosed('/evil/db', '2026-01-01 00:00:00')).rejects.toThrow('DB_PATH_NOT_ALLOWED')
+    })
+
+    it('should call queryLive with the correct query and since parameter', async () => {
+      const since = '2026-03-09 10:00:00'
+      await detectManuallyClosed('/fake/project.db', since)
+      expect(queryLive).toHaveBeenCalledWith(
+        '/fake/project.db',
+        expect.stringContaining("status = 'completed'"),
+        [since]
+      )
+      expect(queryLive).toHaveBeenCalledWith(
+        '/fake/project.db',
+        expect.stringContaining('ended_at > ?'),
+        [since]
+      )
+      expect(queryLive).toHaveBeenCalledWith(
+        '/fake/project.db',
+        expect.stringContaining('agent_id IS NOT NULL'),
+        [since]
+      )
+    })
+
+    it('should return agent_ids from completed sessions', async () => {
+      vi.mocked(queryLive).mockResolvedValueOnce([
+        { agent_id: 2 },
+        { agent_id: 8 },
+      ])
+      const result = await detectManuallyClosed('/fake/project.db', '2026-01-01 00:00:00')
+      expect(result).toEqual([2, 8])
+    })
+
+    it('should return empty array when no sessions were manually closed', async () => {
+      vi.mocked(queryLive).mockResolvedValueOnce([])
+      const result = await detectManuallyClosed('/fake/project.db', '2026-01-01 00:00:00')
       expect(result).toEqual([])
     })
   })

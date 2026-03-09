@@ -1,22 +1,40 @@
 /**
- * Session closer — auto-closes started sessions when their associated task is done.
+ * Session closer — auto-closes started sessions when their associated task is done,
+ * and detects sessions manually closed between poll cycles.
  *
  * Poll interval: 30s. Started from ipc-db.ts on watch-db / stopped on unwatch-db.
  *
- * Logic: every 30s, find sessions in 'started' whose agent has at least one task
- * in 'done' for more than 1 minute AND no task in 'todo' or 'in_progress'.
+ * Logic: every 30s,
+ * 1. Zombie-close: find sessions in 'started' whose agent has at least one task
+ *    in 'done' for more than 1 minute AND no task in 'todo' or 'in_progress'.
+ * 2. Manually-closed: find sessions that transitioned to 'completed' since last poll
+ *    (covers agents with no assigned tasks, e.g. review, doc).
+ *
  * Uses agent_id FK instead of summary LIKE (which matched nothing on active sessions).
  *
  * @module session-closer
  */
 
-import { writeDb, assertDbPathAllowed } from './db'
+import { writeDb, queryLive, assertDbPathAllowed } from './db'
 
 let pollerInterval: ReturnType<typeof setInterval> | null = null
 
 /**
+ * Timestamp of the last poll cycle end (SQLite format: 'YYYY-MM-DD HH:MM:SS').
+ * Used by detectManuallyClosed to find sessions closed since the last cycle.
+ * Initialized to now() on startSessionCloser to avoid re-emitting old sessions.
+ */
+let lastCheckedAt: string = ''
+
+/** Return current time as SQLite datetime string ('YYYY-MM-DD HH:MM:SS'). */
+function currentSqliteTime(): string {
+  return new Date().toISOString().replace('T', ' ').slice(0, 19)
+}
+
+/**
  * Start periodic poll (30s) that closes started sessions
- * whose associated task has been in 'done' for more than 1 minute.
+ * whose associated task has been in 'done' for more than 1 minute,
+ * and emits agent_ids for sessions that were manually closed between cycles.
  * Replaces any existing poller.
  *
  * @param onSessionsClosed - Optional callback called with the list of agent_ids
@@ -27,12 +45,17 @@ export function startSessionCloser(
   onSessionsClosed?: (agentIds: number[]) => void
 ): void {
   stopSessionCloser()
-  pollerInterval = setInterval(() => {
-    closeZombieSessions(dbPath)
-      .then((agentIds) => {
-        if (agentIds.length > 0) onSessionsClosed?.(agentIds)
-      })
-      .catch((err) => console.error('[session-closer] poll error:', err))
+  lastCheckedAt = currentSqliteTime()
+  pollerInterval = setInterval(async () => {
+    try {
+      const zombieIds = await closeZombieSessions(dbPath)
+      const manualIds = await detectManuallyClosed(dbPath, lastCheckedAt)
+      lastCheckedAt = currentSqliteTime()
+      const allIds = [...new Set([...zombieIds, ...manualIds])]
+      if (allIds.length > 0) onSessionsClosed?.(allIds)
+    } catch (err) {
+      console.error('[session-closer] poll error:', err)
+    }
   }, 30_000)
   console.log('[session-closer] started for', dbPath)
 }
@@ -82,4 +105,29 @@ export async function closeZombieSessions(dbPath: string): Promise<number[]> {
     return db.getRowsModified() > 0
   })
   return closedAgentIds
+}
+
+/**
+ * Detect sessions that transitioned to 'completed' since the last poll cycle.
+ * Covers agents with no assigned tasks (review, doc, etc.) who close their own session.
+ *
+ * Uses `ended_at > since` (strictly greater) to avoid re-emitting sessions already
+ * detected in the previous cycle.
+ *
+ * @param since - SQLite datetime string; only sessions closed strictly after this are returned.
+ * @returns List of agent_ids whose sessions were manually closed since `since`.
+ *
+ * Exported for testing.
+ */
+export async function detectManuallyClosed(dbPath: string, since: string): Promise<number[]> {
+  assertDbPathAllowed(dbPath)
+  const rows = await queryLive(
+    dbPath,
+    `SELECT DISTINCT agent_id FROM sessions
+     WHERE status = 'completed'
+       AND ended_at > ?
+       AND agent_id IS NOT NULL`,
+    [since]
+  )
+  return rows.map((r) => (r as { agent_id: number }).agent_id)
 }
