@@ -31,14 +31,18 @@ if (process.platform !== 'win32') {
 }
 
 // ── Content Security Policy ───────────────────────────────────────────────────
-// 'unsafe-inline' for style-src is required by Tailwind CSS (utility classes injected as inline styles).
-// Removing it would break the entire UI. CSS nonce/hash is not feasible with Vite+Tailwind without
-// a custom PostCSS plugin. Risk is low (no external content loaded, no user-generated HTML rendered).
-// style-src-attr 'none' is added to restrict inline style= attributes as a partial mitigation.
+// In development (ELECTRON_RENDERER_URL set), Vite HMR injects styles via dynamically created
+// <style> elements, which requires 'unsafe-inline' for style-src.
+// In production, Vite extracts all CSS into bundled .css files loaded via <link rel="stylesheet">,
+// so 'unsafe-inline' is not needed and is omitted to tighten the CSP.
+// style-src-attr 'none' blocks inline style= attributes in all modes.
+// Accepted residual risk (dev-only): XSS + style injection → CSS exfiltration; mitigated by
+// DOMPurify and script-src 'self' which already block the primary XSS vector.
+const isDev = !!process.env['ELECTRON_RENDERER_URL']
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
+  isDev ? "style-src 'self' 'unsafe-inline'" : "style-src 'self'",
   "style-src-attr 'none'",
   "img-src 'self' data:",
   "connect-src 'self'",
@@ -111,9 +115,14 @@ function createWindow(): BrowserWindow {
 
   win.once('ready-to-show', () => win.show())
 
-  // DevTools shortcut: always in dev, in packaged app only when DEBUG_DEVTOOLS=1 env var is set.
+  // DevTools shortcut: always in dev, in packaged app only when AGENT_VIEWER_DEVTOOLS=1 env var is set.
   // Useful for diagnosing issues in packaged builds without rebuilding (T704).
-  if (!app.isPackaged || process.env['DEBUG_DEVTOOLS'] === '1') {
+  // Note: Using AGENT_VIEWER_DEVTOOLS (app-specific) instead of DEBUG_DEVTOOLS to avoid collision with
+  // generic DEBUG_* variables that may be set by Node.js tools or other frameworks (T1180).
+  if (!app.isPackaged || process.env['AGENT_VIEWER_DEVTOOLS'] === '1') {
+    if (app.isPackaged) {
+      console.warn('[agent-viewer] AGENT_VIEWER_DEVTOOLS=1 is set — DevTools shortcut enabled in packaged build.')
+    }
     globalShortcut.register('CommandOrControl+Shift+I', () => {
       const focused = BrowserWindow.getFocusedWindow()
       if (focused) focused.webContents.toggleDevTools()
