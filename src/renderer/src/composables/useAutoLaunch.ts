@@ -130,14 +130,23 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
           if (agent.name === 'task-creator') continue // never auto-close: runs interactively
           if (agent.auto_launch === 0) continue
           if (!tabsStore.hasAgentTerminal(agent.name)) continue
-          if (pendingCloses.has(agent.name)) continue // already scheduled
           const hasActiveTasks = current.some(
             t =>
               t.agent_assigned_id === agent.id &&
               (t.status === 'todo' || t.status === 'in_progress')
           )
-          if (!hasActiveTasks) {
-            scheduleClose(agent.name, agent.id, FALLBACK_CLOSE_NOTASK_MS)
+          if (hasActiveTasks) {
+            // Cancel any pending close — agent received active work (T1241 / T1242)
+            const pending = pendingCloses.get(agent.name)
+            if (pending) {
+              clearInterval(pending.intervalId)
+              clearTimeout(pending.fallbackId)
+              pendingCloses.delete(agent.name)
+            }
+          } else if (!pendingCloses.has(agent.name)) {
+            // lookbackMs=0: only match sessions that completed AFTER this schedule
+            // (prevents false positives from old sessions on terminal reopen — T1242)
+            scheduleClose(agent.name, agent.id, FALLBACK_CLOSE_NOTASK_MS, 0)
           }
         }
       }
@@ -217,7 +226,7 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     }
   }
 
-  function scheduleClose(agentName: string, agentId: number, fallbackMs: number = FALLBACK_CLOSE_MS): void {
+  function scheduleClose(agentName: string, agentId: number, fallbackMs: number = FALLBACK_CLOSE_MS, lookbackMs: number = SCHEDULE_LOOKBACK_MS): void {
     const existing = pendingCloses.get(agentName)
     if (existing) {
       clearInterval(existing.intervalId)
@@ -238,7 +247,7 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     // "YYYY-MM-DDTHH:MM:SS.mmmZ". Lexicographic comparison: space (ASCII 32) < T
     // (ASCII 84), so ISO strings always compare GREATER than SQLite timestamps,
     // making ended_at >= notBefore always false. Fix: use SQLite datetime format.
-    const notBefore = new Date(Date.now() - SCHEDULE_LOOKBACK_MS).toISOString().replace('T', ' ').slice(0, 19)
+    const notBefore = new Date(Date.now() - lookbackMs).toISOString().replace('T', ' ').slice(0, 19)
 
     // Immediate poll — guarded to prevent N parallel polls when watch fires rapidly
     if (!pendingImmediatePolls.has(agentName)) {
