@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.31.5] - 2026-03-09
+
+### Bug Fixes
+- fix(front-vuejs): corriger les fermetures intempestives d'onglets agents (T1242) (d57171b)
+
 ## [0.31.4] - 2026-03-09
 
 ### Changes
