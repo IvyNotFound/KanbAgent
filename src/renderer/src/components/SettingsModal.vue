@@ -109,7 +109,7 @@ function handleKeydown(e: KeyboardEvent) {
       @click.self="emit('close')"
       @keydown="handleKeydown"
     >
-      <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl w-[700px] max-w-[95vw] max-h-[85vh] flex flex-col">
+      <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl w-[700px] max-w-[95vw] h-[600px] max-h-[85vh] flex flex-col">
 
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-edge-subtle shrink-0">
