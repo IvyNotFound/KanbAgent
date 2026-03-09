@@ -210,4 +210,44 @@ describe('IPC git handlers', () => {
       expect(result).toHaveLength(1)
     })
   })
+
+  // ── git:worktree-remove ────────────────────────────────────────────────────
+
+  describe('git:worktree-remove handler (T1205)', () => {
+    it('should throw for unregistered projectPath', async () => {
+      await expect(
+        callHandler('git:worktree-remove', '/unregistered/path', '/some/workdir')
+      ).rejects.toThrow()
+    })
+
+    it('should return error for empty workDir', async () => {
+      const result = await callHandler('git:worktree-remove', '/fake/project', '') as { success: boolean; error?: string }
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Invalid workDir')
+    })
+
+    it('should return error for whitespace-only workDir', async () => {
+      const result = await callHandler('git:worktree-remove', '/fake/project', '   ') as { success: boolean; error?: string }
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Invalid workDir')
+    })
+
+    it('should return { success: true } when removeWorktreeByPath resolves', async () => {
+      // list --porcelain returns empty, worktree remove succeeds
+      mockExecFile.mockImplementation((_f: unknown, _a: unknown, cb: (err: null, stdout: string) => void) => cb(null, ''))
+      const result = await callHandler('git:worktree-remove', '/fake/project', '/fake/project/.claude/worktrees/s123') as { success: boolean }
+      expect(result.success).toBe(true)
+    })
+
+    it('should still return { success: true } when git worktree remove fails (idempotent)', async () => {
+      let callCount = 0
+      mockExecFile.mockImplementation((_f: unknown, _a: unknown, cb: (err: Error | null, stdout?: string) => void) => {
+        callCount++
+        if (callCount === 1) cb(null, '') // list --porcelain: empty
+        else cb(new Error('worktree not found'))
+      })
+      const result = await callHandler('git:worktree-remove', '/fake/project', '/fake/project/.claude/worktrees/s123') as { success: boolean }
+      expect(result.success).toBe(true)
+    })
+  })
 })

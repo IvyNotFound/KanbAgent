@@ -13,6 +13,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { CliType } from '@shared/cli-types'
+import { useProjectStore } from '@renderer/stores/project'
 
 export type TabType = 'backlog' | 'terminal' | 'explorer' | 'file' | 'dashboard' | 'hooks' | 'workload' | 'topology' | 'timeline'
 
@@ -217,6 +218,15 @@ export const useTabsStore = defineStore('tabs', () => {
     // Explicit kill — agentKill is idempotent; onUnmounted in StreamView is the fallback (T730).
     if (tab.streamId) {
       window.electronAPI.agentKill(tab.streamId)
+    }
+    // Worktree cleanup on tab close (T1205) — best-effort, fire-and-forget.
+    // agentKill is called first so the process releases file locks before removal.
+    if (tab.workDir) {
+      const projectStore = useProjectStore()
+      const pp = projectStore.projectPath
+      if (pp) {
+        window.electronAPI.worktreeRemove(pp, tab.workDir).catch(() => { /* best-effort */ })
+      }
     }
     const closedAgentName = tab.agentName
     const idx = tabs.value.findIndex(t => t.id === id)

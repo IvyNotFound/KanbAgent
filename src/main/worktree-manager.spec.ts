@@ -1,6 +1,6 @@
 /**
  * Unit tests for worktree-manager.ts
- * Covers createWorktree, removeWorktree, pruneWorktrees.
+ * Covers createWorktree, removeWorktree, pruneWorktrees, removeWorktreeByPath.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -15,7 +15,7 @@ vi.mock('child_process', () => ({
   execFile: mockExecFile,
 }))
 
-import { createWorktree, removeWorktree, pruneWorktrees } from './worktree-manager'
+import { createWorktree, removeWorktree, pruneWorktrees, removeWorktreeByPath } from './worktree-manager'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -165,6 +165,84 @@ describe('worktree-manager', () => {
     it('propagates errors from git worktree prune', async () => {
       mockError('fatal: not a git repository')
       await expect(pruneWorktrees(REPO)).rejects.toThrow('fatal: not a git repository')
+    })
+  })
+
+  // ── removeWorktreeByPath ────────────────────────────────────────────────────
+
+  describe('removeWorktreeByPath (T1205)', () => {
+    const WT_PATH = path.resolve(REPO, '..', 'agent-worktrees', 'my-worktree')
+    const PORCELAIN_OUTPUT = [
+      `worktree ${REPO}`,
+      'HEAD abc123',
+      'branch refs/heads/main',
+      '',
+      `worktree ${WT_PATH}`,
+      'HEAD def456',
+      'branch refs/heads/agent/foo/s99',
+      '',
+    ].join('\n')
+
+    type ExecFileCbWithStdout = (err: Error | null, stdout?: string, stderr?: string) => void
+
+    it('calls list --porcelain, worktree remove --force, then branch -D with extracted branch', async () => {
+      let callCount = 0
+      mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+        callCount++
+        if (callCount === 1) cb(null, PORCELAIN_OUTPUT, '') // list --porcelain
+        else cb(null)                                        // worktree remove + branch -D
+      })
+
+      await removeWorktreeByPath(REPO, WT_PATH)
+
+      expect(mockExecFile).toHaveBeenCalledTimes(3)
+      const [, listArgs] = mockExecFile.mock.calls[0] as [string, string[], ExecFileCbWithStdout]
+      expect(listArgs).toEqual(['-C', REPO, 'worktree', 'list', '--porcelain'])
+      const [, removeArgs] = mockExecFile.mock.calls[1] as [string, string[], ExecFileCbWithStdout]
+      expect(removeArgs).toContain('remove')
+      expect(removeArgs).toContain('--force')
+      const [, branchArgs] = mockExecFile.mock.calls[2] as [string, string[], ExecFileCbWithStdout]
+      expect(branchArgs).toEqual(['-C', REPO, 'branch', '-D', 'agent/foo/s99'])
+    })
+
+    it('is idempotent when worktree remove fails (already removed)', async () => {
+      let callCount = 0
+      mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+        callCount++
+        if (callCount === 1) cb(null, PORCELAIN_OUTPUT, '')  // list --porcelain
+        if (callCount === 2) cb(new Error('worktree not found')) // worktree remove
+        if (callCount === 3) cb(null) // branch -D
+      })
+
+      await expect(removeWorktreeByPath(REPO, WT_PATH)).resolves.toBeUndefined()
+      expect(mockExecFile).toHaveBeenCalledTimes(3)
+    })
+
+    it('skips branch -D when path not found in porcelain output', async () => {
+      let callCount = 0
+      mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+        callCount++
+        if (callCount === 1) cb(null, 'worktree /other/path\nHEAD abc\nbranch refs/heads/main\n', '')
+        else cb(null)
+      })
+
+      await removeWorktreeByPath(REPO, WT_PATH)
+
+      // Only list + worktree remove — no branch -D
+      expect(mockExecFile).toHaveBeenCalledTimes(2)
+    })
+
+    it('is idempotent when list --porcelain fails', async () => {
+      let callCount = 0
+      mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
+        callCount++
+        if (callCount === 1) cb(new Error('not a git repo')) // list fails
+        else cb(null) // worktree remove succeeds
+      })
+
+      await expect(removeWorktreeByPath(REPO, WT_PATH)).resolves.toBeUndefined()
+      // list + worktree remove (no branch -D since list failed)
+      expect(mockExecFile).toHaveBeenCalledTimes(2)
     })
   })
 })

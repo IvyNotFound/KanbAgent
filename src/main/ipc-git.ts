@@ -48,6 +48,26 @@ export function registerGitHandlers(): void {
   })
 
   /**
+   * Remove a git worktree by its absolute path (T1205).
+   *
+   * Called on tab close to ensure orphan worktrees are cleaned up independently
+   * of whether the agent process has already exited or not.
+   * Idempotent: resolves successfully if the worktree is already gone.
+   *
+   * @param projectPath - Registered project root (validated via allowlist)
+   * @param workDir     - Absolute path to the worktree directory to remove
+   */
+  ipcMain.handle('git:worktree-remove', async (_event, projectPath: string, workDir: string) => {
+    assertProjectPathAllowed(projectPath)
+    if (!workDir || typeof workDir !== 'string' || workDir.trim() === '') {
+      return { success: false, error: 'Invalid workDir' }
+    }
+    const { removeWorktreeByPath } = await import('./worktree-manager')
+    await removeWorktreeByPath(projectPath, workDir)
+    return { success: true }
+  })
+
+  /**
    * Execute `git log` on the registered project path and return parsed commits.
    * @param projectPath - Registered project root (validated via allowlist)
    * @param options - { limit?: number (1-500, default 100), since?: string (date string) }

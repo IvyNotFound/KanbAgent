@@ -78,6 +78,8 @@ declare global {
       gitLog(projectPath: string, options?: { limit?: number; since?: string }): Promise<Array<{ hash: string; date: string; subject: string; author: string; taskIds: number[] }>>
       /** Create a git worktree for multi-instance isolation (ADR-006). */
       worktreeCreate(projectPath: string, sessionId: string, agentName: string): Promise<{ success: boolean; workDir?: string; error?: string }>
+      /** Remove a git worktree by path — called on tab close for orphan cleanup (T1205). */
+      worktreeRemove(projectPath: string, workDir: string): Promise<{ success: boolean; error?: string }>
       /** Subscribe to Claude Code hook events (SessionStart, SubagentStart/Stop, PreToolUse, PostToolUse). Returns unsubscribe fn. */
       onHookEvent(callback: (event: { event: string; payload: unknown; ts: number }) => void): () => void
       /** Quality stats per agent: total tasks, rejections, rejection rate (T770). Heuristic-based. */

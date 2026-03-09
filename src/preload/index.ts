@@ -321,6 +321,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   worktreeCreate: (projectPath: string, sessionId: string, agentName: string): Promise<{ success: boolean; workDir?: string; error?: string }> =>
     ipcRenderer.invoke('git:worktree-create', projectPath, sessionId, agentName),
 
+  /** Remove a git worktree by path — called on tab close for orphan cleanup (T1205). */
+  worktreeRemove: (projectPath: string, workDir: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('git:worktree-remove', projectPath, workDir),
+
   /** Persist cost_usd, duration_ms, num_turns from the Claude result event into the session row. */
   sessionUpdateResult: (dbPath: string, sessionId: number, data: { cost_usd?: number | null; duration_ms?: number | null; num_turns?: number | null }): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('session:updateResult', dbPath, sessionId, data),
