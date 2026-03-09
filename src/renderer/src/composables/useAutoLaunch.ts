@@ -121,11 +121,13 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
         }
       }
 
-      // --- Auto-close agents with no assigned tasks (task-creator, review, test, perf…) ---
+      // --- Auto-close agents with no assigned tasks (review, test, perf…) ---
       // Covers agents that never receive assigned tasks: their terminal stays open indefinitely
       // unless we poll their session status independently of any task transition. (T646)
+      // Exception: task-creator is exempt — it runs interactively and may stay open indefinitely.
       if (settingsStore.autoLaunchAgentSessions) {
         for (const agent of agents.value) {
+          if (agent.name === 'task-creator') continue // never auto-close: runs interactively
           if (agent.auto_launch === 0) continue
           if (!tabsStore.hasAgentTerminal(agent.name)) continue
           if (pendingCloses.has(agent.name)) continue // already scheduled

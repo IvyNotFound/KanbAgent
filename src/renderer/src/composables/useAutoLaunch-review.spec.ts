@@ -299,7 +299,7 @@ describe('composables/useAutoLaunch', () => {
     it('should close no-task agent terminal after its own session completes post-scheduling', async () => {
       api.queryDb.mockResolvedValue([]) // initially no completed session
 
-      const noTaskAgent = makeAgent({ id: 20, name: 'task-creator' })
+      const noTaskAgent = makeAgent({ id: 20, name: 'review-master', type: 'review' })
       agents.value = [noTaskAgent]
       useAutoLaunch({ tasks, agents, dbPath })
 
@@ -307,9 +307,9 @@ describe('composables/useAutoLaunch', () => {
       await nextTick()
 
       const tabsStore = useTabsStore()
-      tabsStore.addTerminal('task-creator', 'Ubuntu-24.04')
+      tabsStore.addTerminal('review-master', 'Ubuntu-24.04')
       const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
-      termTab.streamId = 'stream-task-creator-close'
+      termTab.streamId = 'stream-review-master-close'
 
       // Trigger no-task check
       tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 999 })]
@@ -322,7 +322,7 @@ describe('composables/useAutoLaunch', () => {
       api.queryDb.mockResolvedValue([{ id: 99 }])
       await vi.advanceTimersByTimeAsync(5_000 + 100) // POLL_INTERVAL_MS = 5_000
 
-      expect(api.agentKill).toHaveBeenCalledWith('stream-task-creator-close')
+      expect(api.agentKill).toHaveBeenCalledWith('stream-review-master-close')
     })
 
     it('should pass a notBefore ISO timestamp as 2nd queryDb param (with 5min lookback)', async () => {
@@ -332,7 +332,7 @@ describe('composables/useAutoLaunch', () => {
         return Promise.resolve([])
       })
 
-      const noTaskAgent = makeAgent({ id: 20, name: 'task-creator' })
+      const noTaskAgent = makeAgent({ id: 20, name: 'review-master', type: 'review' })
       agents.value = [noTaskAgent]
       useAutoLaunch({ tasks, agents, dbPath })
 
@@ -340,7 +340,7 @@ describe('composables/useAutoLaunch', () => {
       await nextTick()
 
       const tabsStore = useTabsStore()
-      tabsStore.addTerminal('task-creator', 'Ubuntu-24.04')
+      tabsStore.addTerminal('review-master', 'Ubuntu-24.04')
 
       const beforeSchedule = new Date().toISOString()
       tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 999 })]

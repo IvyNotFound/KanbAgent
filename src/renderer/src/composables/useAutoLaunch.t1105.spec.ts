@@ -137,7 +137,7 @@ describe('useAutoLaunch T1105: FALLBACK_CLOSE_NOTASK_MS (5 minutes)', () => {
   afterEach(() => { vi.useRealTimers() })
 
   it('should NOT force-close no-task agent after 1min (it uses 5min fallback)', async () => {
-    const noTaskAgent = makeAgent({ id: 20, name: 'task-creator' })
+    const noTaskAgent = makeAgent({ id: 20, name: 'review-master', type: 'review' })
     agents.value = [noTaskAgent]
     useAutoLaunch({ tasks, agents, dbPath })
 
@@ -145,7 +145,7 @@ describe('useAutoLaunch T1105: FALLBACK_CLOSE_NOTASK_MS (5 minutes)', () => {
     await nextTick()
 
     const tabsStore = useTabsStore()
-    tabsStore.addTerminal('task-creator', 'Ubuntu-24.04')
+    tabsStore.addTerminal('review-master', 'Ubuntu-24.04')
     const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
     termTab.streamId = 'stream-notask-5min'
 
@@ -159,7 +159,7 @@ describe('useAutoLaunch T1105: FALLBACK_CLOSE_NOTASK_MS (5 minutes)', () => {
   })
 
   it('should force-close no-task agent after 5 minutes (FALLBACK_CLOSE_NOTASK_MS)', async () => {
-    const noTaskAgent = makeAgent({ id: 20, name: 'task-creator' })
+    const noTaskAgent = makeAgent({ id: 20, name: 'review-master', type: 'review' })
     agents.value = [noTaskAgent]
     useAutoLaunch({ tasks, agents, dbPath })
 
@@ -167,7 +167,7 @@ describe('useAutoLaunch T1105: FALLBACK_CLOSE_NOTASK_MS (5 minutes)', () => {
     await nextTick()
 
     const tabsStore = useTabsStore()
-    tabsStore.addTerminal('task-creator', 'Ubuntu-24.04')
+    tabsStore.addTerminal('review-master', 'Ubuntu-24.04')
     const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
     termTab.streamId = 'stream-notask-5min-force'
 
@@ -177,6 +177,28 @@ describe('useAutoLaunch T1105: FALLBACK_CLOSE_NOTASK_MS (5 minutes)', () => {
     await vi.advanceTimersByTimeAsync(80 + 5 * 60 * 1000 + 1000)
 
     expect(api.agentKill).toHaveBeenCalledWith('stream-notask-5min-force')
+  })
+
+  it('should NEVER auto-close task-creator (exempt from no-task close)', async () => {
+    const taskCreator = makeAgent({ id: 20, name: 'task-creator' })
+    agents.value = [taskCreator]
+    useAutoLaunch({ tasks, agents, dbPath })
+
+    tasks.value = []
+    await nextTick()
+
+    const tabsStore = useTabsStore()
+    tabsStore.addTerminal('task-creator', 'Ubuntu-24.04')
+    const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+    termTab.streamId = 'stream-task-creator-exempt'
+
+    tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 999 })]
+    await nextTick()
+
+    // Well past 5-minute fallback — task-creator must remain open
+    await vi.advanceTimersByTimeAsync(80 + 10 * 60 * 1000)
+
+    expect(api.agentKill).not.toHaveBeenCalled()
   })
 })
 
@@ -312,7 +334,7 @@ describe('useAutoLaunch T1105: autoReviewEnabled false skips review at init', ()
     const settingsStore = useSettingsStore()
     settingsStore.setAutoLaunchAgentSessions(false)
 
-    const noTaskAgent = makeAgent({ id: 20, name: 'task-creator' })
+    const noTaskAgent = makeAgent({ id: 20, name: 'review-master', type: 'review' })
     agents.value = [noTaskAgent]
     useAutoLaunch({ tasks, agents, dbPath })
 
@@ -320,7 +342,7 @@ describe('useAutoLaunch T1105: autoReviewEnabled false skips review at init', ()
     await nextTick()
 
     const tabsStore = useTabsStore()
-    tabsStore.addTerminal('task-creator', 'Ubuntu-24.04')
+    tabsStore.addTerminal('review-master', 'Ubuntu-24.04')
     const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
     termTab.streamId = 'stream-notask-disabled'
 
