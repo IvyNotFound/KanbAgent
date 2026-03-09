@@ -54,13 +54,13 @@ describe('stores/tasks — projectPath derivation from dbPath (mutation: Equalit
   })
 
   it('should derive projectPath from WSL-style dbPath /mnt/c/.../.claude/project.db', async () => {
-    localStorage.setItem('dbPath', '/mnt/c/Users/Cover/dev/agent-viewer/.claude/project.db')
+    localStorage.setItem('dbPath', '/mnt/c/Users/Cover/dev/kanbagent/.claude/project.db')
 
     useTasksStore()
     await nextTick()
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    expect(localStorage.getItem('projectPath')).toBe('/mnt/c/Users/Cover/dev/agent-viewer')
+    expect(localStorage.getItem('projectPath')).toBe('/mnt/c/Users/Cover/dev/kanbagent')
   })
 
   it('should NOT derive projectPath when second-to-last segment is not .claude', async () => {

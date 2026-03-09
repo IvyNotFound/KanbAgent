@@ -17,7 +17,7 @@ describe('TitleBar (T353)', () => {
       global: { plugins: [i18n] },
     })
     await flushPromises()
-    expect(wrapper.text()).toContain('agent-viewer')
+    expect(wrapper.text()).toContain('KanbAgent')
   })
 
   it('calls windowMinimize when minimize button is clicked', async () => {

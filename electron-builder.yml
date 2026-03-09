@@ -1,5 +1,5 @@
-appId: com.ivynotfound.agent-viewer
-productName: agent-viewer
+appId: com.ivynotfound.kanbagent
+productName: KanbAgent
 copyright: Copyright © 2024-2026 IvyNotFound
 
 publish:
@@ -20,8 +20,8 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
-  menuCategory: agent-viewer
-  shortcutName: agent-viewer
+  menuCategory: KanbAgent
+  shortcutName: KanbAgent
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   multiLanguageInstaller: true

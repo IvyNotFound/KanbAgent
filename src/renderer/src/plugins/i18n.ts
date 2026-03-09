@@ -1,5 +1,5 @@
 /**
- * Vue I18n plugin setup for agent-viewer.
+ * Vue I18n plugin setup for KanbAgent.
  *
  * Supports 18 locales: fr (default), en, es, pt, pt-BR, de, no, it, ar, ru, pl, sv, fi, da, tr, zh-CN, ko, ja.
  * Language is persisted in localStorage under the key 'language'.

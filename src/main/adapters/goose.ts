@@ -1,5 +1,5 @@
 /**
- * Block Goose CLI adapter for agent-viewer.
+ * Block Goose CLI adapter for KanbAgent.
  *
  * Goose is Block's AI agent with CLI + ACP (Agent Communication Protocol) support.
  * Non-interactive mode: `goose run` with `--with-builtin developer`.

@@ -1,5 +1,5 @@
 /**
- * Agent stream management for agent-viewer.
+ * Agent stream management for KanbAgent.
  *
  * Implements ADR-009: child_process.spawn + stdio:pipe for Claude Code agent sessions.
  * Replaces the node-pty approach for stream-json sessions — avoids ANSI injection,

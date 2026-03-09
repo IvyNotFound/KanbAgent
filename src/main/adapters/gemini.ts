@@ -1,5 +1,5 @@
 /**
- * Google Gemini CLI adapter for agent-viewer.
+ * Google Gemini CLI adapter for KanbAgent.
  *
  * Gemini's `-p`/`--prompt` flag requires a non-empty prompt value (single-turn mode).
  * Since no initial prompt is available at spawn time (delivered via stdin via agent:send),

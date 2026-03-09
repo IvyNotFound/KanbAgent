@@ -19,7 +19,7 @@ import { execSync } from 'child_process'
 
 export const HOOK_PORT = 27182
 
-/** Hook routes managed by agent-viewer — bootstrapped automatically if absent. */
+/** Hook routes managed by KanbAgent — bootstrapped automatically if absent. */
 export const HOOK_ROUTES: Record<string, string> = {
   Stop:          '/hooks/stop',
   SessionStart:  '/hooks/session-start',

@@ -1,5 +1,5 @@
 /**
- * Agent color utilities for agent-viewer.
+ * Agent color utilities for KanbAgent.
  *
  * Generates deterministic HSL colors from agent names using a hash function.
  * Each agent always gets the same hue + saturation, ensuring consistent visual identity

@@ -58,7 +58,7 @@ export const AGENT_SCRIPTS = [
  * Locate a SQLite database inside a project directory.
  *
  * Search order (cold-start safe — T615):
- *  1. `<projectPath>/.claude/*.db`  — standard agent-viewer layout
+ *  1. `<projectPath>/.claude/*.db`  — standard KanbAgent layout
  *  2. `<projectPath>/*.db`          — fallback for flat layouts
  *
  * @param projectPath - Absolute path to the project root
@@ -324,7 +324,7 @@ export function registerProjectHandlers(): void {
       const filename = basename(dbPath)
       const zipBuffer = buildSingleFileZip(filename, fileData)
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-      const zipName = `agent-viewer-export-${ts}.zip`
+      const zipName = `kanbagent-export-${ts}.zip`
       const downloadsDir = app.getPath('downloads')
       const zipPath = join(downloadsDir, zipName)
       await writeFile(zipPath, zipBuffer)

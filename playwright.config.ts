@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 import { join } from 'path'
 
 /**
- * Playwright E2E configuration for agent-viewer (Electron).
+ * Playwright E2E configuration for KanbAgent (Electron).
  *
  * Prerequisites:
  *   - Run `npm run build:vite` to generate out/main/index.js and out/renderer/

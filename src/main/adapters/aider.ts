@@ -1,5 +1,5 @@
 /**
- * Aider CLI adapter for agent-viewer.
+ * Aider CLI adapter for KanbAgent.
  *
  * Aider (Paul Gauthier) is a multi-LLM coding assistant with headless support.
  * Headless mode: `aider --no-auto-commits --yes-always` (non-interactive).
@@ -33,7 +33,7 @@ export const aiderAdapter: CliAdapter = {
       : 'aider'
 
     const args: string[] = [
-      '--no-auto-commits',  // never auto-commit — agent-viewer manages git state
+      '--no-auto-commits',  // never auto-commit — KanbAgent manages git state
       '--yes-always',       // non-interactive: answer yes to prompts automatically
     ]
 

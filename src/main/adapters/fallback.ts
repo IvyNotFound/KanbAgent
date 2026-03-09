@@ -1,5 +1,5 @@
 /**
- * Fallback CLI adapter for agent-viewer.
+ * Fallback CLI adapter for KanbAgent.
  *
  * Used for any CLI not recognized in the registry.
  * Spawns the binary directly with no extra flags.

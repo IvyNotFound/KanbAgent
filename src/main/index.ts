@@ -1,5 +1,5 @@
 /**
- * Electron main process entry point for agent-viewer.
+ * Electron main process entry point for KanbAgent.
  *
  * Handles:
  * - Application lifecycle (ready, activate, quit)
@@ -115,13 +115,14 @@ function createWindow(): BrowserWindow {
 
   win.once('ready-to-show', () => win.show())
 
-  // DevTools shortcut: always in dev, in packaged app only when AGENT_VIEWER_DEVTOOLS=1 env var is set.
+  // DevTools shortcut: always in dev, in packaged app only when KANBAGENT_DEVTOOLS=1 env var is set.
+  // Also accepts AGENT_VIEWER_DEVTOOLS=1 for backward compatibility with existing user scripts (T1209).
   // Useful for diagnosing issues in packaged builds without rebuilding (T704).
-  // Note: Using AGENT_VIEWER_DEVTOOLS (app-specific) instead of DEBUG_DEVTOOLS to avoid collision with
+  // Note: Using KANBAGENT_DEVTOOLS (app-specific) instead of DEBUG_DEVTOOLS to avoid collision with
   // generic DEBUG_* variables that may be set by Node.js tools or other frameworks (T1180).
-  if (!app.isPackaged || process.env['AGENT_VIEWER_DEVTOOLS'] === '1') {
+  if (!app.isPackaged || process.env['KANBAGENT_DEVTOOLS'] === '1' || process.env['AGENT_VIEWER_DEVTOOLS'] === '1') {
     if (app.isPackaged) {
-      console.warn('[agent-viewer] AGENT_VIEWER_DEVTOOLS=1 is set — DevTools shortcut enabled in packaged build.')
+      console.warn('[KanbAgent] KANBAGENT_DEVTOOLS=1 (or AGENT_VIEWER_DEVTOOLS) is set — DevTools shortcut enabled in packaged build.')
     }
     globalShortcut.register('CommandOrControl+Shift+I', () => {
       const focused = BrowserWindow.getFocusedWindow()

@@ -1,5 +1,5 @@
 /**
- * SST OpenCode CLI adapter for agent-viewer.
+ * SST OpenCode CLI adapter for KanbAgent.
  *
  * OpenCode is a terminal-based coding agent from SST.
  * Headless mode: `opencode run --format json` emits JSONL events to stdout.

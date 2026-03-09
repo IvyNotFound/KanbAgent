@@ -1,5 +1,5 @@
 /**
- * Preload script for agent-viewer.
+ * Preload script for KanbAgent.
  *
  * Exposes a secure `electronAPI` object to the renderer process via contextBridge.
  * All Node.js / Electron APIs are accessed through IPC invoke/on — no direct

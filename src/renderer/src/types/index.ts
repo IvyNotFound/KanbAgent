@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript types for agent-viewer.
+ * Shared TypeScript types for KanbAgent.
  *
  * Defines all interfaces used across the renderer (stores, components, utils).
  * These types mirror the SQLite schema defined in `.claude/SETUP.md`.

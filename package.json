@@ -1,5 +1,5 @@
 {
-  "name": "agent-viewer",
+  "name": "kanbagent",
   "version": "0.31.1",
   "description": "Interface desktop Trello/Jira pour visualiser les agents Claude",
   "author": "IvyNotFound",

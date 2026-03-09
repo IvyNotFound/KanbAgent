@@ -22,7 +22,7 @@ describe('DbSelector', () => {
     })
     await flushPromises()
     const text = wrapper.text()
-    expect(text).toContain('agent-viewer')
+    expect(text).toContain('KanbAgent')
   })
 
   it('calls store.selectProject when open button is clicked', async () => {

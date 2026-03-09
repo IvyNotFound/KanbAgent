@@ -1,5 +1,5 @@
 /**
- * Claude Code CLI adapter for agent-viewer.
+ * Claude Code CLI adapter for KanbAgent.
  *
  * Implements CliAdapter for `claude` (Anthropic Claude Code).
  * Claude emits JSONL stream-json output — parseLine returns raw parsed JSON events.

@@ -1,5 +1,5 @@
 /**
- * OpenAI Codex CLI adapter for agent-viewer.
+ * OpenAI Codex CLI adapter for KanbAgent.
  *
  * Codex runs in headless mode via `--approval-mode full-auto`.
  * System prompt is injected via `--instructions <file>` (file path, no shell interpolation).

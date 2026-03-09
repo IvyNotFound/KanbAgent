@@ -1,5 +1,5 @@
 /**
- * Vue application entry point for agent-viewer renderer.
+ * Vue application entry point for KanbAgent renderer.
  *
  * Initializes:
  * - Vue 3 application instance

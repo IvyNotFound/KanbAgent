@@ -1,5 +1,5 @@
 /**
- * Auto-update composable for agent-viewer.
+ * Auto-update composable for KanbAgent.
  *
  * Wraps the `window.electronAPI.updater` IPC bridge and exposes a reactive
  * state machine that drives the `UpdateNotification` banner.

@@ -1,5 +1,5 @@
 /**
- * Database infrastructure for agent-viewer
+ * Database infrastructure for KanbAgent
  *
  * Provides better-sqlite3 (native) connection pool, read/write helpers
  * with concurrency protection, and security registries for allowed paths.

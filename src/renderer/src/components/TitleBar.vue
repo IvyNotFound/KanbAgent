@@ -30,7 +30,7 @@ onUnmounted(() => {
     <!-- Left: App identity -->
     <div class="flex items-center gap-2 px-4">
       <div class="w-2 h-2 rounded-full bg-violet-500 shrink-0"></div>
-      <span class="text-xs font-semibold text-content-subtle tracking-widest uppercase">agent-viewer</span>
+      <span class="text-xs font-semibold text-content-subtle tracking-widest uppercase">KanbAgent</span>
     </div>
 
     <!-- Center: Search bar (always visible, VS Code style) -->

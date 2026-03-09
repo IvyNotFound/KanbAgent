@@ -1,5 +1,5 @@
 /**
- * Auto-updater module for agent-viewer.
+ * Auto-updater module for KanbAgent.
  *
  * Handles update checks from GitHub Releases (public repo — no token required).
  *

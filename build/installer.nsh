@@ -1,4 +1,4 @@
-; installer.nsh — NSIS custom hooks for agent-viewer
+; installer.nsh — NSIS custom hooks for KanbAgent
 ; Adds/removes $INSTDIR\resources\bin from the system PATH
 ; so that sqlite3.exe is available in CMD, PowerShell, and WSL (via Windows interop).
 ; Uses PowerShell instead of the EnVar plugin (not bundled with electron-builder).

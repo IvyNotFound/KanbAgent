@@ -140,7 +140,7 @@ describe('SettingsModal', () => {
         plugins: [createTestingPinia({
           initialState: {
             tasks: { dbPath: '/p/.claude/db' },
-            settings: { appInfo: { name: 'agent-viewer', version: '0.4.0' } },
+            settings: { appInfo: { name: 'KanbAgent', version: '0.4.0' } },
           },
         }), i18n],
         stubs: teleportStub,

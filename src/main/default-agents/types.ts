@@ -25,7 +25,7 @@ export type AgentLanguage =
 
 /**
  * Describes a Claude agent definition to be seeded into a project.db.
- * Used by both GENERIC_AGENTS (any project) and DEFAULT_AGENTS (agent-viewer).
+ * Used by both GENERIC_AGENTS (any project) and DEFAULT_AGENTS (KanbAgent).
  */
 export interface DefaultAgent {
   /** Unique agent name — used as the lookup key in agents table. */

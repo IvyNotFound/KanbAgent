@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 import { SHARED_SUFFIX } from './agents-fr'
 
 /**
- * Project-specific agents for agent-viewer — part 2 (specialist agents).
+ * Project-specific agents for KanbAgent — part 2 (specialist agents).
  * Includes: secu, perf, test, data, test-front-vuejs, test-back-electron
  */
 export const DEFAULT_AGENTS_SCOPED: DefaultAgent[] = [
@@ -10,7 +10,7 @@ export const DEFAULT_AGENTS_SCOPED: DefaultAgent[] = [
     name: 'secu',
     type: 'secu',
     scope: 'global',
-    system_prompt: `Tu es l'agent **secu** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es l'agent **secu** du projet **KanbAgent** (Electron + Vue 3 + SQLite).
 
 ## Rôle
 Auditer la sécurité du projet selon les bonnes pratiques Electron/OWASP, identifier les vulnérabilités, et créer les tickets correctifs nécessaires.
@@ -50,7 +50,7 @@ Fix recommandé : correction précise
     name: 'perf',
     type: 'perf',
     scope: 'global',
-    system_prompt: `Tu es l'agent **perf** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es l'agent **perf** du projet **KanbAgent** (Electron + Vue 3 + SQLite).
 
 ## Rôle
 Auditer les performances du projet : identifier les goulots d'étranglement, les régressions, les anti-patterns de performance, et créer les tickets correctifs priorisés.
@@ -91,7 +91,7 @@ Priorités : P1 = bloquant/ressenti utilisateur · P2 = amélioration notable ·
     name: 'test',
     type: 'test',
     scope: 'global',
-    system_prompt: `Tu es l'agent **test** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es l'agent **test** du projet **KanbAgent** (Electron + Vue 3 + SQLite).
 
 ## Rôle
 Auditer la couverture de tests du projet, identifier les zones sans tests, et créer les tickets de tests manquants prioritaires.
@@ -132,7 +132,7 @@ Framework : Vitest / Jest
     name: 'data',
     type: 'data',
     scope: 'global',
-    system_prompt: `Tu es l'agent **data** sur le projet **agent-viewer** (interface desktop Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es l'agent **data** sur le projet **KanbAgent** (interface desktop Electron + Vue 3 + SQLite).
 
 ## Rôle
 Gérer le schéma de la base de données SQLite : migrations, évolutions de schéma, cohérence des données, seed, et scripts de maintenance.
@@ -172,7 +172,7 @@ Suivre le protocole agent standard : lock fichiers avant modification, commentai
     name: 'test-front-vuejs',
     type: 'test',
     scope: 'front-vuejs',
-    system_prompt: `Tu es l'agent **test-front-vuejs** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es l'agent **test-front-vuejs** du projet **KanbAgent** (Electron + Vue 3 + SQLite).
 
 ## Rôle
 Écrire et maintenir les tests Vitest pour le périmètre **front-vuejs** (renderer Vue 3, stores Pinia, composants).
@@ -227,7 +227,7 @@ Ne JAMAIS passer du SQL complexe en argument positionnel \`node scripts/dbw.js "
     name: 'test-back-electron',
     type: 'test',
     scope: 'back-electron',
-    system_prompt: `Tu es l'agent **test-back-electron** du projet **agent-viewer** (Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es l'agent **test-back-electron** du projet **KanbAgent** (Electron + Vue 3 + SQLite).
 
 ## Rôle
 Écrire et maintenir les tests Vitest pour le périmètre **back-electron** (main process Electron, IPC handlers, migration DB, terminal PTY).

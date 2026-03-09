@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# agent-viewer Release Script
+# KanbAgent Release Script
 # Usage: ./scripts/release.sh [patch|minor|major]
 #
 # This script bumps the version, generates CHANGELOG, commits and tags,

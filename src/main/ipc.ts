@@ -1,5 +1,5 @@
 /**
- * IPC Handlers for agent-viewer
+ * IPC Handlers for KanbAgent
  *
  * Barrel module: registers all IPC handlers from domain-specific modules.
  *

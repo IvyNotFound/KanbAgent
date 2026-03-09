@@ -92,7 +92,7 @@ async function create() {
         </svg>
       </div>
       <div>
-        <h2 class="text-xl font-semibold text-content-primary mb-1">agent-viewer</h2>
+        <h2 class="text-xl font-semibold text-content-primary mb-1">KanbAgent</h2>
         <p class="text-sm text-content-subtle">{{ t('dbSelector.tagline') }}</p>
       </div>
 

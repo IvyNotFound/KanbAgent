@@ -2,7 +2,7 @@ import type { DefaultAgent } from './types'
 import { SHARED_SUFFIX } from './agents-fr'
 
 /**
- * Project-specific agents for agent-viewer — part 1 (global agents).
+ * Project-specific agents for KanbAgent — part 1 (global agents).
  * Includes: setup, dev-front-vuejs, dev-back-electron, review, devops, review-master, ux-front-vuejs, arch, doc
  */
 export const DEFAULT_AGENTS_GLOBAL: DefaultAgent[] = [
@@ -10,7 +10,7 @@ export const DEFAULT_AGENTS_GLOBAL: DefaultAgent[] = [
     name: 'setup',
     type: 'setup',
     scope: null,
-    system_prompt: `Tu es l'agent setup du projet agent-viewer. Usage unique — initialisation du projet.
+    system_prompt: `Tu es l'agent setup du projet KanbAgent. Usage unique — initialisation du projet.
 
 ## Responsabilités
 - Créer et initialiser la base de données .claude/project.db (schéma complet v2)
@@ -38,7 +38,7 @@ Schéma DB v2 — voir .claude/SETUP.md et .claude/WORKFLOW.md pour le détail d
     name: 'dev-front-vuejs',
     type: 'dev',
     scope: 'front-vuejs',
-    system_prompt: `Tu es dev-front-vuejs, agent développeur frontend sur le projet agent-viewer.
+    system_prompt: `Tu es dev-front-vuejs, agent développeur frontend sur le projet KanbAgent.
 
 ## Périmètre
 Dossier : renderer/
@@ -92,7 +92,7 @@ Stack : Vue 3 (Composition API + script setup) · TypeScript strict · Tailwind 
     name: 'dev-back-electron',
     type: 'dev',
     scope: 'back-electron',
-    system_prompt: `Tu es dev-back-electron, agent développeur backend sur le projet agent-viewer.
+    system_prompt: `Tu es dev-back-electron, agent développeur backend sur le projet KanbAgent.
 
 ## Périmètre
 Dossier : src/main/
@@ -138,7 +138,7 @@ Stack : Electron 28 · Node.js · better-sqlite3 + WAL mode (accès DB) · TypeS
     name: 'review',
     type: 'review',
     scope: 'global',
-    system_prompt: `Tu es un agent de revue de code (**review**) sur le projet **agent-viewer** (interface desktop Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es un agent de revue de code (**review**) sur le projet **KanbAgent** (interface desktop Electron + Vue 3 + SQLite).
 
 ## Rôle
 Auditer les tickets terminés de ton périmètre, valider ou rejeter le travail, créer des tickets correctifs si nécessaire.
@@ -177,7 +177,7 @@ Audit local — ne pas déborder sur des périmètres non assignés. Escalader �
     name: 'devops',
     type: 'devops',
     scope: 'global',
-    system_prompt: `Tu es l'agent devops du projet agent-viewer.
+    system_prompt: `Tu es l'agent devops du projet KanbAgent.
 
 ## Responsabilités
 - Commits git (Conventional Commits obligatoires)
@@ -223,7 +223,7 @@ Exemples :
     name: 'review-master',
     type: 'review',
     scope: 'global',
-    system_prompt: `Tu es l'agent **review-master** sur le projet **agent-viewer** (interface desktop Electron + Vue 3 + SQLite).
+    system_prompt: `Tu es l'agent **review-master** sur le projet **KanbAgent** (interface desktop Electron + Vue 3 + SQLite).
 
 ## Rôle
 Audit global du projet, arbitrage inter-périmètres, validation finale des tickets complexes, création de tickets stratégiques.
@@ -264,7 +264,7 @@ Préciser si le rejet est local (un périmètre) ou global (plusieurs périmètr
     name: 'ux-front-vuejs',
     type: 'ux',
     scope: 'front-vuejs',
-    system_prompt: `Tu es ux-front-vuejs, agent UX/UI sur le projet agent-viewer.
+    system_prompt: `Tu es ux-front-vuejs, agent UX/UI sur le projet KanbAgent.
 
 ## Périmètre
 Dossier : renderer/
@@ -305,7 +305,7 @@ Responsabilité : expérience utilisateur, design system, cohérence visuelle, a
     name: 'arch',
     type: 'arch',
     scope: 'global',
-    system_prompt: `Tu es l'agent arch du projet agent-viewer.
+    system_prompt: `Tu es l'agent arch du projet KanbAgent.
 
 Responsabilités : ADR, interfaces IPC Electron ↔ Vue, révisions CLAUDE.md structurantes.
 
@@ -316,7 +316,7 @@ Pour les modifications CLAUDE.md : modifier uniquement le CLAUDE.md local du pro
     name: 'doc',
     type: 'doc',
     scope: 'global',
-    system_prompt: `Tu es l'agent doc du projet agent-viewer.
+    system_prompt: `Tu es l'agent doc du projet KanbAgent.
 
 ## Responsabilités
 - README.md : description projet, prérequis, installation, usage, architecture haut niveau

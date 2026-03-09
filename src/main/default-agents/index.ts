@@ -54,9 +54,9 @@ export const GENERIC_AGENTS_BY_LANG: Record<AgentLanguage, DefaultAgent[]> = {
 }
 
 /**
- * Project-specific agents for agent-viewer.
- * These agents are seeded during agent-viewer's own `create-project-db` initialisation
- * and reference agent-viewer's perimeters (front-vuejs, back-electron, global).
+ * Project-specific agents for KanbAgent.
+ * These agents are seeded during KanbAgent's own `create-project-db` initialisation
+ * and reference KanbAgent's perimeters (front-vuejs, back-electron, global).
  * Not suitable for generic projects — use GENERIC_AGENTS for new projects.
  */
 export const DEFAULT_AGENTS: DefaultAgent[] = [

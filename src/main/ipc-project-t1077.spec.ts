@@ -131,7 +131,7 @@ describe('ipc-project T1077 — ZIP export, dialog guard, agentLang', () => {
       vi.mocked(writeFile).mockResolvedValueOnce(undefined)
       const result = await callHandler('project:exportZip', '/fake/project.db') as { success: boolean; path?: string }
       expect(result.success).toBe(true)
-      expect(result.path).toMatch(/agent-viewer-export-.+\.zip$/)
+      expect(result.path).toMatch(/kanbagent-export-.+\.zip$/)
     })
 
     it('calls shell.showItemInFolder with the zip path', async () => {
@@ -223,7 +223,7 @@ describe('ipc-project T1077 — ZIP export, dialog guard, agentLang', () => {
       await callHandler('project:exportZip', '/fake/project.db')
       expect(capturedPath).toBeDefined()
       const filename = capturedPath!.split(/[/\\]/).pop()!
-      expect(filename).toMatch(/^agent-viewer-export-[\dT-]+\.zip$/)
+      expect(filename).toMatch(/^kanbagent-export-[\dT-]+\.zip$/)
       expect(filename).not.toContain(':')
     })
 

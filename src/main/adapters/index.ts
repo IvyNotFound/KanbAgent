@@ -1,5 +1,5 @@
 /**
- * CLI adapter registry for agent-viewer.
+ * CLI adapter registry for KanbAgent.
  *
  * Maps CliType values to their CliAdapter implementations.
  * `getAdapter()` returns the appropriate adapter for a given CLI identifier,
