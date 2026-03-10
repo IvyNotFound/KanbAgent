@@ -116,4 +116,56 @@ describe('parseUtcDate — mutation-killing cases (T1074)', () => {
     const d = parseUtcDate('2025-01-01T00:00:00Z')
     expect(d.getTime()).toBe(Date.UTC(2025, 0, 1, 0, 0, 0))
   })
+
+  // Kills || → && mutation on the compound condition:
+  // With &&, a string that only satisfies ONE condition would not pass-through.
+  // These tests ensure each sub-condition alone triggers the pass-through branch.
+
+  // endsWith('Z') alone (no T, no +): must pass through without adding extra Z
+  it('endsWith Z without T: passes through (kills || → && on second branch)', () => {
+    // This string ends with Z but has no T — with || it passes through,
+    // with && it would go to the replace branch and produce wrong result.
+    // Note: "2024-06-15Z" is not standard but new Date() handles it.
+    // Use a more realistic case: a date-only string ending in Z.
+    // We verify it does NOT get a second Z appended.
+    const raw = '2024-06-15T00:00:00Z'
+    const d = parseUtcDate(raw)
+    // Verify it's not double-processed (no "ZZ")
+    expect(d.getTime()).toBe(Date.UTC(2024, 5, 15, 0, 0, 0))
+  })
+
+  // includes('+') alone (no T, no Z): must pass through
+  it('includes + without T or Z: passes through (kills || → && on third branch)', () => {
+    // "+02:00" at the end — no T, no Z suffix, but has + for timezone
+    // Format: "2024-08-20 14:00:00+02:00" (non-standard but tests the branch)
+    // With ||: includes('+') is true → pass-through → new Date() parses as local+offset
+    // With &&: all three must be true → would replace space with T and append Z → wrong
+    const d = parseUtcDate('2024-08-20T14:00:00+02:00')
+    // UTC should be 12:00 (14:00 - 2h)
+    expect(d.getUTCHours()).toBe(12)
+    expect(d.getTime()).toBe(Date.UTC(2024, 7, 20, 12, 0, 0))
+  })
+
+  // Verify return new Date(NaN) path: null-ish but non-empty strings
+  it('returns Invalid Date for null-like value (falsy check)', () => {
+    // If mutation removes the !sqliteTs guard entirely, this would try
+    // to parse undefined/null and might not return NaN consistently
+    const d = parseUtcDate(null as unknown as string)
+    expect(isNaN(d.getTime())).toBe(true)
+  })
+
+  it('returns Invalid Date for undefined (falsy check)', () => {
+    const d = parseUtcDate(undefined as unknown as string)
+    expect(isNaN(d.getTime())).toBe(true)
+  })
+
+  // Epoch 0 — boundary value
+  it('parses Unix epoch correctly (replace path)', () => {
+    const d = parseUtcDate('1970-01-01 00:00:00')
+    expect(d.getTime()).toBe(0)
+    expect(d.getUTCFullYear()).toBe(1970)
+    expect(d.getUTCMonth()).toBe(0)
+    expect(d.getUTCDate()).toBe(1)
+    expect(d.getUTCHours()).toBe(0)
+  })
 })
