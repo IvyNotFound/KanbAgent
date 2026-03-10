@@ -159,6 +159,13 @@ export function registerAgentStreamHandlers(): void {
     agents.set(id, proc)
     agentAdapters.set(id, adapter)
 
+    // singleShotStdin adapters (e.g. opencode) pass initialMessage as a positional arg and then
+    // block waiting for stdin EOF. Close stdin immediately so the process can proceed.
+    // Without this, opencode (bun) hangs indefinitely when spawned with an open pipe on stdin.
+    if (adapter.singleShotStdin && opts.initialMessage && proc.stdin && !proc.stdin.writableEnded) {
+      proc.stdin.end()
+    }
+
     attachStreamHandlers({
       proc, id, wcId, adapter, worktreeInfo, spTempFile, settingsTempFile, scriptTempFile,
       sessionId: opts.sessionId, projectPath: opts.projectPath, agentAdapters,

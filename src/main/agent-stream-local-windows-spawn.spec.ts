@@ -41,7 +41,7 @@ vi.mock('electron', () => ({
   },
 }))
 
-const mockStdin = { write: vi.fn() }
+const mockStdin = { write: vi.fn(), end: vi.fn() }
 
 class FakeProc extends EventEmitter {
   stdin = mockStdin
@@ -271,5 +271,30 @@ describe('agent:create — local Windows spawn (T916)', () => {
       ([p]: [unknown]) => String(p).includes('claude-settings') && String(p).endsWith('.json')
     )
     expect(settingsCall).toBeUndefined()
+  })
+
+  // ── singleShotStdin stdin close (T1244) ───────────────────────────────────
+
+  it('closes stdin immediately for opencode with initialMessage (local Windows, T1244)', async () => {
+    const handler = handlers.get('agent:create')!
+    await handler({ sender: mockSender }, {
+      wslDistro: 'local',
+      cli: 'opencode',
+      initialMessage: 'fix the bug',
+    })
+    expect(mockStdin.end).toHaveBeenCalledOnce()
+  })
+
+  it('does NOT close stdin for claude with initialMessage (no singleShotStdin)', async () => {
+    const handler = handlers.get('agent:create')!
+    // Claude is the default adapter — singleShotStdin is falsy
+    await handler({ sender: mockSender }, { wslDistro: 'local', initialMessage: 'hello' })
+    expect(mockStdin.end).not.toHaveBeenCalled()
+  })
+
+  it('does NOT close stdin for opencode without initialMessage (stdin needed for agent:send)', async () => {
+    const handler = handlers.get('agent:create')!
+    await handler({ sender: mockSender }, { wslDistro: 'local', cli: 'opencode' })
+    expect(mockStdin.end).not.toHaveBeenCalled()
   })
 })
