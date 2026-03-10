@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(genel: {status})"
   },
   "dbSelector": {
-    "tagline": "AI ajan görevlerini gerçek zamanlı izleyin.",
+    "tagline": "Claude ajan görevlerini gerçek zamanlı izleyin.",
     "open": "Aç",
     "existingProject": "Mevcut proje",
     "createNew": "Oluştur",
     "back": "Geri",
     "masterDesc": "Ana {claudeMd}, referans depodan indirilir ve seçilen klasöre kopyalanır.",
     "terminalDesc": "Projeyi başlatmak için otomatik olarak bir {setup} terminali açılır.",
-    "wslUser": "WSL Kullanıcısı",
-    "noUser": "Kullanıcı algılanamadı — varsayılan WSL kabuğu",
+    "instance": "Örnek",
     "selectAndInit": "Klasör seç ve başlat"
   },
   "fileView": {

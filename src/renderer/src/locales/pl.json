@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(globalny: {status})"
   },
   "dbSelector": {
-    "tagline": "Przeglądaj zadania agentów AI w czasie rzeczywistym.",
+    "tagline": "Przeglądaj zadania agentów Claude w czasie rzeczywistym.",
     "open": "Otwórz",
     "existingProject": "Istniejący projekt",
     "createNew": "Utwórz",
     "back": "Wstecz",
     "masterDesc": "Główny {claudeMd} zostanie pobrany z repozytorium referencyjnego i skopiowany do wybranego folderu.",
     "terminalDesc": "Terminal {setup} uruchomi się automatycznie, aby zainicjalizować projekt.",
-    "wslUser": "Użytkownik WSL",
-    "noUser": "Nie wykryto użytkownika — domyślna powłoka WSL",
+    "instance": "Instancja",
     "selectAndInit": "Wybierz folder i zainicjalizuj"
   },
   "fileView": {

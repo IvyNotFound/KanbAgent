@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(عام: {status})"
   },
   "dbSelector": {
-    "tagline": "عرض مهام وكلاء الذكاء الاصطناعي الخاصة بك في الوقت الفعلي.",
+    "tagline": "عرض مهام وكلاء Claude الخاصة بك في الوقت الفعلي.",
     "open": "فتح",
     "existingProject": "مشروع موجود",
     "createNew": "إنشاء",
     "back": "رجوع",
     "masterDesc": "سيتم تنزيل {claudeMd} الرئيسي من مستودع المرجع ونسخه إلى المجلد المختار.",
     "terminalDesc": "ستبدأ طرفية {setup} تلقائياً لتهيئة المشروع.",
-    "wslUser": "مستخدم WSL",
-    "noUser": "لم يتم اكتشاف أي مستخدم — قشرة WSL الافتراضية",
+    "instance": "النسخة",
     "selectAndInit": "اختر المجلد وهيّئ"
   },
   "fileView": {

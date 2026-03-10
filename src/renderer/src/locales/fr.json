@@ -386,15 +386,14 @@
     }
   },
   "dbSelector": {
-    "tagline": "Visualisez les tâches de vos agents IA en temps réel.",
+    "tagline": "Visualisez les tâches de vos agents Claude en temps réel.",
     "open": "Ouvrir",
     "existingProject": "Projet existant",
     "createNew": "Créer",
     "back": "Retour",
     "masterDesc": "Le {claudeMd} maître sera téléchargé depuis le dépôt de référence et copié dans le dossier choisi.",
     "terminalDesc": "Un terminal {setup} sera lancé automatiquement pour initialiser le projet.",
-    "wslUser": "Utilisateur WSL",
-    "noUser": "Aucun utilisateur détecté — shell WSL par défaut",
+    "instance": "Instance",
     "selectAndInit": "Sélectionner le dossier et initialiser"
   },
   "fileView": {

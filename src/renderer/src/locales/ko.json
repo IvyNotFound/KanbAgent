@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(전역: {status})"
   },
   "dbSelector": {
-    "tagline": "AI 에이전트 작업을 실시간으로 확인하세요.",
+    "tagline": "Claude 에이전트 작업을 실시간으로 확인하세요.",
     "open": "열기",
     "existingProject": "기존 프로젝트",
     "createNew": "생성",
     "back": "뒤로",
     "masterDesc": "마스터 {claudeMd}가 참조 저장소에서 다운로드되어 선택한 폴더에 복사됩니다.",
     "terminalDesc": "{setup} 터미널이 프로젝트를 초기화하기 위해 자동으로 시작됩니다.",
-    "wslUser": "WSL 사용자",
-    "noUser": "사용자가 감지되지 않음 — 기본 WSL 셸",
+    "instance": "인스턴스",
     "selectAndInit": "폴더 선택 및 초기화"
   },
   "fileView": {

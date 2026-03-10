@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { useProjectStore } from '@renderer/stores/project'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { systemLabel as getSystemLabel } from '@renderer/utils/cliCapabilities'
 import type { Language } from '@renderer/stores/settings'
+import type { CliInstance } from '@shared/cli-types'
 
 const { t, locale } = useI18n()
 const store = useTasksStore()
-const projectStore = useProjectStore()
 const tabsStore = useTabsStore()
 const settingsStore = useSettingsStore()
 
@@ -18,17 +18,45 @@ function setLocale(lang: Language) {
 }
 
 const step = ref<'home' | 'create'>('home')
-const wslUsers = ref<string[]>([])
-const selectedUser = ref<string | null>(null)
-const loadingUsers = ref(false)
+const selectedInstance = ref<CliInstance | null>(null)
+const loadingInstances = ref(false)
 const creating = ref(false)
 const creatingError = ref<string | null>(null)
 
+/**
+ * Deduplicated list of available CLI instances, filtered by unique distro.
+ *
+ * For the setup terminal only the environment (distro) matters — CLI binary
+ * differences within the same distro are irrelevant. Hidden in the template
+ * when ≤ 1 instance is available (the single instance is auto-selected in
+ * `onMounted`).
+ */
+const availableInstances = computed(() => {
+  const seen = new Set<string>()
+  return settingsStore.allCliInstances.filter(i => {
+    if (seen.has(i.distro)) return false
+    seen.add(i.distro)
+    return true
+  })
+})
+
+/**
+ * Trigger CLI detection and apply auto-selection.
+ *
+ * - If the store cache is empty (first mount), fires `refreshCliDetection()`
+ *   to populate `allCliInstances`.
+ * - Auto-selects the only available instance when exactly one environment
+ *   is detected, so the user can proceed without manual selection.
+ */
 onMounted(async () => {
-  loadingUsers.value = true
-  wslUsers.value = await window.electronAPI.getWslUsers()
-  if (wslUsers.value.length === 1) selectedUser.value = wslUsers.value[0]
-  loadingUsers.value = false
+  loadingInstances.value = true
+  if (settingsStore.allCliInstances.length === 0) {
+    await settingsStore.refreshCliDetection()
+  }
+  if (availableInstances.value.length === 1) {
+    selectedInstance.value = availableInstances.value[0]
+  }
+  loadingInstances.value = false
 })
 
 async function create() {
@@ -45,8 +73,9 @@ async function create() {
       return
     }
 
-    projectStore.setProjectPathOnly(path)
-    tabsStore.addTerminal('setup', selectedUser.value ?? undefined, 'Initialisation d\'un nouveau projet passe en mode setup')
+    const wslDistro = selectedInstance.value?.type === 'wsl' ? selectedInstance.value.distro : undefined
+    store.setProjectPathOnly(path)
+    tabsStore.addTerminal('setup', wslDistro, 'Initialisation d\'un nouveau projet passe en mode setup')
     store.watchForDb(path)
   } catch (e) {
     creatingError.value = String(e)
@@ -164,32 +193,28 @@ async function create() {
         <p>Un terminal <span class="text-violet-600 dark:text-violet-300 font-mono">setup</span> sera lancé automatiquement pour initialiser le projet.</p>
       </div>
 
-      <!-- WSL user -->
-      <div>
-        <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('dbSelector.wslUser') }}</p>
+      <!-- Instance selector (hidden when ≤ 1 instance — auto-selected) -->
+      <div v-if="availableInstances.length > 1">
+        <p class="text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('dbSelector.instance') }}</p>
 
-        <div v-if="loadingUsers" class="text-sm text-content-subtle animate-pulse">{{ t('common.loading') }}</div>
-
-        <div v-else-if="wslUsers.length === 0" class="text-sm text-content-subtle italic px-1">
-          {{ t('dbSelector.noUser') }}
-        </div>
+        <div v-if="loadingInstances" class="text-sm text-content-subtle animate-pulse">{{ t('common.loading') }}</div>
 
         <div v-else class="space-y-1.5">
           <label
-            v-for="user in wslUsers"
-            :key="user"
+            v-for="inst in availableInstances"
+            :key="inst.distro"
             class="flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all"
-            :class="selectedUser === user
+            :class="selectedInstance?.distro === inst.distro
               ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30'
               : 'border-edge-default hover:border-content-faint bg-surface-secondary/40'"
           >
             <input
-              v-model="selectedUser"
+              v-model="selectedInstance"
               type="radio"
-              :value="user"
+              :value="inst"
               class="accent-violet-500"
             />
-            <span class="text-sm font-mono text-content-secondary">{{ user }}</span>
+            <span class="text-sm font-mono text-content-secondary">{{ getSystemLabel(inst.type, inst.distro) }}</span>
           </label>
         </div>
       </div>
@@ -197,7 +222,7 @@ async function create() {
       <!-- Bouton lancer -->
       <button
         class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600 hover:bg-violet-500 text-white"
-        :disabled="creating || loadingUsers || (wslUsers.length > 0 && !selectedUser)"
+        :disabled="creating || loadingInstances || (availableInstances.length > 1 && !selectedInstance)"
         @click="create"
       >
         <svg v-if="creating" class="w-4 h-4 animate-spin" viewBox="0 0 16 16" fill="none">

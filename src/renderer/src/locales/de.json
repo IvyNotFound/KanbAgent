@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(global: {status})"
   },
   "dbSelector": {
-    "tagline": "Aufgaben Ihrer KI-Agenten in Echtzeit anzeigen.",
+    "tagline": "Aufgaben Ihrer Claude-Agenten in Echtzeit anzeigen.",
     "open": "Öffnen",
     "existingProject": "Vorhandenes Projekt",
     "createNew": "Erstellen",
     "back": "Zurück",
     "masterDesc": "Die Master-{claudeMd} wird aus dem Referenz-Repository heruntergeladen und in den ausgewählten Ordner kopiert.",
     "terminalDesc": "Ein {setup}-Terminal wird automatisch gestartet, um das Projekt zu initialisieren.",
-    "wslUser": "WSL-Benutzer",
-    "noUser": "Kein Benutzer erkannt — Standard-WSL-Shell",
+    "instance": "Instanz",
     "selectAndInit": "Ordner auswählen und initialisieren"
   },
   "fileView": {

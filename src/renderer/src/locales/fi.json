@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(yleinen: {status})"
   },
   "dbSelector": {
-    "tagline": "Tarkastele AI-agenttitehtäviäsi reaaliajassa.",
+    "tagline": "Tarkastele Claude-agenttitehtäviäsi reaaliajassa.",
     "open": "Avaa",
     "existingProject": "Olemassa oleva projekti",
     "createNew": "Luo",
     "back": "Takaisin",
     "masterDesc": "Master-{claudeMd} ladataan viitehakemistosta ja kopioidaan valittuun kansioon.",
     "terminalDesc": "{setup}-pääte käynnistyy automaattisesti projektin alustamiseksi.",
-    "wslUser": "WSL-käyttäjä",
-    "noUser": "Käyttäjää ei löydy — oletus-WSL-komentotulkki",
+    "instance": "Instanssi",
     "selectAndInit": "Valitse kansio ja alusta"
   },
   "fileView": {

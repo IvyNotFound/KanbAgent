@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(global: {status})"
   },
   "dbSelector": {
-    "tagline": "Se dina AI-agenters uppgifter i realtid.",
+    "tagline": "Se dina Claude-agenters uppgifter i realtid.",
     "open": "Öppna",
     "existingProject": "Befintligt projekt",
     "createNew": "Skapa",
     "back": "Tillbaka",
     "masterDesc": "Master {claudeMd} laddas ner från referensrepo och kopieras till den valda mappen.",
     "terminalDesc": "En {setup}-terminal startar automatiskt för att initiera projektet.",
-    "wslUser": "WSL-användare",
-    "noUser": "Ingen användare hittades — standard WSL-skal",
+    "instance": "Instans",
     "selectAndInit": "Välj mapp och initiera"
   },
   "fileView": {

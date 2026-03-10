@@ -11,7 +11,7 @@ describe('DbSelector', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getWslUsers.mockResolvedValue([])
+    api.getCliInstances.mockResolvedValue([])
   })
 
   it('renders the home screen with open and create buttons', async () => {

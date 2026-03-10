@@ -146,8 +146,12 @@ export function parseWorktreeList(output: string): Array<{ path: string; branch:
  * Prune orphaned worktrees when a project is loaded.
  *
  * Handles two branch formats:
- * - Old: `agent/<sessionId>` — checked against DB; removed if session ended or absent.
- * - New: `agent/<name>/s<timestamp>` — removed if timestamp is older than 4 hours.
+ * - Old: `agent/<sessionId>` — checked against DB via {@link queryLive}; removed if
+ *   session ended (`ended_at` set or status `completed`) or absent from the DB.
+ * - New: `agent/<name>/s<timestamp>` — DB check first: queries `sessions JOIN agents`
+ *   by agent name within ±5 minutes of the timestamp. If the session is active
+ *   (`started`) the worktree is kept; if completed it is removed. Falls back to a
+ *   4-hour temporal heuristic when no matching session is found.
  *
  * Calls `git worktree prune` at the end to clean up git admin files.
  * Best-effort: errors are logged but do not throw.
@@ -199,14 +203,46 @@ export async function pruneOrphanedWorktrees(repoRoot: string, dbPath: string): 
       continue
     }
 
-    // New format: agent/<name>/s<timestamp> — temporal heuristic (> 4h = stale)
+    // New format: agent/<name>/s<timestamp> — DB check first, 4h heuristic as fallback
     const newMatch = /^refs\/heads\/agent\/([^/]+)\/s(\d+)$/.exec(wt.branch)
     if (!newMatch) continue
 
+    const agentName = newMatch[1]
     const timestamp = parseInt(newMatch[2], 10)
-    if (Date.now() - timestamp <= FOUR_HOURS_MS) continue
+    const fullBranch = `agent/${agentName}/s${newMatch[2]}`
 
-    const fullBranch = `agent/${newMatch[1]}/s${newMatch[2]}`
+    // Try to find the closest session for this agent within ±5 minutes of the timestamp.
+    // If found and active (started) → keep; if completed → remove.
+    // If not found → fall back to temporal heuristic.
+    let shouldRemoveNewFormat: boolean | null = null
+    try {
+      const rows = await queryLive(
+        dbPath,
+        `SELECT s.status
+         FROM sessions s
+         JOIN agents a ON s.agent_id = a.id
+         WHERE a.name = ?
+         AND ABS(CAST(strftime('%s', s.started_at) AS INTEGER) * 1000 - ?) < 300000
+         ORDER BY ABS(CAST(strftime('%s', s.started_at) AS INTEGER) * 1000 - ?) ASC
+         LIMIT 1`,
+        [agentName, timestamp, timestamp]
+      )
+      const session = rows[0] as { status: string } | undefined
+      if (session) {
+        // Active session → keep; completed session → remove
+        shouldRemoveNewFormat = session.status !== 'started'
+      }
+    } catch (err) {
+      console.warn(`[pruneOrphanedWorktrees] DB query failed for new-format worktree ${fullBranch}:`, err)
+    }
+
+    // Fall back to temporal heuristic when no matching session was found in DB
+    if (shouldRemoveNewFormat === null) {
+      shouldRemoveNewFormat = Date.now() - timestamp > FOUR_HOURS_MS
+    }
+
+    if (!shouldRemoveNewFormat) continue
+
     console.log(`[pruneOrphanedWorktrees] removing stale new-format worktree: ${fullBranch}`)
     try {
       await execFileAsync('git', ['-C', repoRoot, 'worktree', 'remove', '--force', wt.path])

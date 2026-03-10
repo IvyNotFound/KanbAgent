@@ -146,7 +146,7 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 - **Tab Bar**: `TabBar` — multi-type tab bar with close / reorder support
 - **Title Bar**: `TitleBar` — custom Electron frameless title bar with window controls
 - **Agent Badge**: `AgentBadge` — colour-coded agent avatar with role indicator
-- **DB Selector**: `DbSelector` — graphical project database switcher; language selector displayed below action buttons with accessible `aria-label`
+- **DB Selector**: `DbSelector` — graphical project database switcher; unified CLI instance selector (deduped by distro, hidden when only one environment is detected — auto-selected); language selector displayed below action buttons with accessible `aria-label`
 - **Project Popup**: Click the project button in the sidebar to open a modal showing active project name, database path, version, and quick actions (switch project, close project)
 - **Keyboard Shortcuts**: Press `Escape` to close any modal (standardised via `useModalEscape` composable)
 - **Dark / Light Mode**: Dark theme by default, light mode available

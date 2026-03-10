@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(グローバル: {status})"
   },
   "dbSelector": {
-    "tagline": "AI エージェントのタスクをリアルタイムで確認。",
+    "tagline": "Claude エージェントのタスクをリアルタイムで確認。",
     "open": "開く",
     "existingProject": "既存プロジェクト",
     "createNew": "作成",
     "back": "戻る",
     "masterDesc": "マスター {claudeMd} が参照リポジトリからダウンロードされ、選択したフォルダにコピーされます。",
     "terminalDesc": "{setup} ターミナルがプロジェクトを初期化するために自動的に起動します。",
-    "wslUser": "WSL ユーザー",
-    "noUser": "ユーザーが検出されません — デフォルト WSL シェル",
+    "instance": "インスタンス",
     "selectAndInit": "フォルダを選択して初期化"
   },
   "fileView": {

@@ -394,15 +394,14 @@
     }
   },
   "dbSelector": {
-    "tagline": "View your AI agents' tasks in real time.",
+    "tagline": "View your Claude agents' tasks in real time.",
     "open": "Open",
     "existingProject": "Existing project",
     "createNew": "Create",
     "back": "Back",
     "masterDesc": "The master {claudeMd} will be downloaded from the reference repo and copied into the chosen folder.",
     "terminalDesc": "A {setup} terminal will start automatically to initialize the project.",
-    "wslUser": "WSL user",
-    "noUser": "No user detected — default WSL shell",
+    "instance": "Instance",
     "selectAndInit": "Select folder and initialize"
   },
   "fileView": {

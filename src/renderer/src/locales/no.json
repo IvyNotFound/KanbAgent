@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(global: {status})"
   },
   "dbSelector": {
-    "tagline": "Se AI-agentoppgavene dine i sanntid.",
+    "tagline": "Se Claude-agentoppgavene dine i sanntid.",
     "open": "Åpne",
     "existingProject": "Eksisterende prosjekt",
     "createNew": "Opprett",
     "back": "Tilbake",
     "masterDesc": "Hoved-{claudeMd} vil bli lastet ned fra referanselageret og kopiert til den valgte mappen.",
     "terminalDesc": "En {setup}-terminal vil starte automatisk for å initialisere prosjektet.",
-    "wslUser": "WSL-bruker",
-    "noUser": "Ingen bruker funnet — standard WSL-skall",
+    "instance": "Instans",
     "selectAndInit": "Velg mappe og initialiser"
   },
   "fileView": {

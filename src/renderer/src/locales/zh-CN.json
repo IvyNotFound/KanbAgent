@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "（全局：{status}）"
   },
   "dbSelector": {
-    "tagline": "实时查看您的 AI Agent 任务。",
+    "tagline": "实时查看您的 Claude Agent 任务。",
     "open": "打开",
     "existingProject": "现有项目",
     "createNew": "创建",
     "back": "返回",
     "masterDesc": "主 {claudeMd} 将从参考仓库下载并复制到所选文件夹。",
     "terminalDesc": "将自动启动 {setup} 终端以初始化项目。",
-    "wslUser": "WSL 用户",
-    "noUser": "未检测到用户 — 使用默认 WSL Shell",
+    "instance": "实例",
     "selectAndInit": "选择文件夹并初始化"
   },
   "fileView": {

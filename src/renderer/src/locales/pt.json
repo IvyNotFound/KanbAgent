@@ -386,15 +386,14 @@
     "worktreeCurrentGlobal": "(global: {status})"
   },
   "dbSelector": {
-    "tagline": "Visualize as tarefas dos seus agentes IA em tempo real.",
+    "tagline": "Visualize as tarefas dos seus agentes Claude em tempo real.",
     "open": "Abrir",
     "existingProject": "Projeto existente",
     "createNew": "Criar",
     "back": "Voltar",
     "masterDesc": "O {claudeMd} mestre será transferido do repositório de referência e copiado para a pasta escolhida.",
     "terminalDesc": "Um terminal {setup} iniciará automaticamente para inicializar o projeto.",
-    "wslUser": "Utilizador WSL",
-    "noUser": "Nenhum utilizador detetado — shell WSL padrão",
+    "instance": "Instância",
     "selectAndInit": "Selecionar pasta e inicializar"
   },
   "fileView": {
