@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.35.0] - 2026-03-10
+
+### Features
+- feat(front-vuejs): i18n des chaînes hardcodées dans StreamView (T1291) (ef1a072)
+
+### Bug Fixes
+- fix(back-electron): detectManuallyClosed ignore agents with in_progress tasks (T1297) (0b17a32)
+- fix(front-vuejs): ne pas auto-fermer StreamView si utilisateur a interagi (T1294) (3fee8cd)
+- fix(front-vuejs): mettre à jour snapshots DbSelector post-T1271 (T1292) (58cb3ad)
+- fix(front-vuejs)!: intégrer T1271 DbSelector instance unifié + T1274 worktree DB-aware + T1290 JSDoc (5a0892d)
+
+### Chores
+- chore(deps): migrer ESLint v9 → v10 (T1287) (3064fe1)
+
+### Other
+- Revert "fix(front-vuejs): ne pas auto-fermer StreamView si utilisateur a interagi (T1294)" (c8a47bd)
+- i18n(front-vuejs): traduire noInstanceMac et noInstanceWin dans 17 langues (T1296) (96f762b)
+
 ## [0.34.0] - 2026-03-10
 
 ### Bug Fixes
