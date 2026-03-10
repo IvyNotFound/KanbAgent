@@ -232,7 +232,7 @@ docs: update README with new commands
 |--------|---------|-------------|
 | `ipc-git.ts` | `git:log` | Run `git log` and return parsed commits (limit 1–500) |
 | `ipc-telemetry.ts` | `telemetry:scan` | Recursively scan project directory for per-language statistics |
-| `ipc-wsl.ts` | `wsl:get-cli-instances` | Detect Claude Code instances (local + WSL distros) |
+| `ipc-cli-detect.ts` | `wsl:get-cli-instances` | Detect CLI instances (local + WSL distros) |
 | `ipc-wsl.ts` | `wsl:openTerminal` | Open an external WSL terminal window |
 | `updater.ts` | `updater:check` | Trigger an update check via electron-updater |
 | `updater.ts` | `updater:download` | Start downloading the available update |
