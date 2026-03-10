@@ -30,7 +30,7 @@ export const useTasksStore = defineStore('tasks', () => {
   const settingsStore = useSettingsStore()
 
   const { projectPath, dbPath, setupWizardTarget } = storeToRefs(projectStore)
-  const { agents, agentGroups, agentGroupsTree } = storeToRefs(agentsStore)
+  const { agents, agentGroups } = storeToRefs(agentsStore)
 
   // Local tasks state
   const tasks = ref<Task[]>([])
@@ -99,10 +99,6 @@ export const useTasksStore = defineStore('tasks', () => {
     }
     return groups
   })
-
-  async function agentRefresh(): Promise<void> {
-    await agentsStore.agentRefresh()
-  }
 
   async function setProject(pPath: string, dPath: string): Promise<void> {
     projectPath.value = pPath
@@ -190,17 +186,6 @@ export const useTasksStore = defineStore('tasks', () => {
     selectedPerimetre.value = null
     error.value = null
   }
-
-  function setProjectPathOnly(path: string): void { projectStore.setProjectPathOnly(path) }
-  function closeWizard(): void { projectStore.closeWizard() }
-
-  // Agent group operations — delegate to agentsStore
-  async function fetchAgentGroups(): Promise<void> { await agentsStore.fetchAgentGroups() }
-  async function createAgentGroup(name: string, parentId?: number | null) { return agentsStore.createAgentGroup(name, parentId) }
-  async function renameAgentGroup(groupId: number, name: string): Promise<void> { return agentsStore.renameAgentGroup(groupId, name) }
-  async function deleteAgentGroup(groupId: number): Promise<void> { return agentsStore.deleteAgentGroup(groupId) }
-  async function setAgentGroup(agentId: number, groupId: number | null, sortOrder?: number): Promise<void> { return agentsStore.setAgentGroup(agentId, groupId, sortOrder) }
-  async function setGroupParent(groupId: number, parentId: number | null): Promise<void> { return agentsStore.setGroupParent(groupId, parentId) }
 
   async function setTaskStatut(taskId: number, statut: 'in_progress'): Promise<void> {
     if (!dbPath.value) return
@@ -321,11 +306,10 @@ export const useTasksStore = defineStore('tasks', () => {
   }
 
   return {
+    // Project store re-exports (backward compat — prefer useProjectStore for new code)
     projectPath, dbPath, setupWizardTarget,
-    setProjectPathOnly, closeWizard,
-    agents, agentGroups, agentGroupsTree,
-    agentRefresh, fetchAgentGroups,
-    createAgentGroup, renameAgentGroup, deleteAgentGroup, setAgentGroup, setGroupParent,
+    // Agent store re-exports (backward compat — prefer useAgentsStore for new code)
+    agents, agentGroups,
     tasks, stats, lastRefresh, loading, error, staleThresholdMinutes, doneTasksLimited,
     selectedAgentId, toggleAgentFilter,
     selectedPerimetre, togglePerimetreFilter, perimetres, perimetresData,

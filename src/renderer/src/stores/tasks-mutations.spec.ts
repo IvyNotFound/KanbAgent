@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useAgentsStore } from '@renderer/stores/agents'
 
 const mockElectronAPI = {
   queryDb: vi.fn().mockResolvedValue([]),
@@ -53,41 +54,44 @@ describe('tasks — setGroupParent (NoCoverage)', () => {
 
   it('calls agentGroupsSetParent with dbPath, groupId and parentId', async () => {
     const store = useTasksStore()
+    const agentsStore = useAgentsStore()
     await store.setProject('/test/project', DB_PATH)
     vi.clearAllMocks()
     mockElectronAPI.agentGroupsList.mockResolvedValue({ success: true, groups: [] })
 
-    await store.setGroupParent(3, 1)
+    await agentsStore.setGroupParent(3, 1)
 
     expect(mockElectronAPI.agentGroupsSetParent).toHaveBeenCalledWith(DB_PATH, 3, 1)
   })
 
   it('calls agentGroupsSetParent with null parentId to detach group', async () => {
     const store = useTasksStore()
+    const agentsStore = useAgentsStore()
     await store.setProject('/test/project', DB_PATH)
     vi.clearAllMocks()
     mockElectronAPI.agentGroupsList.mockResolvedValue({ success: true, groups: [] })
 
-    await store.setGroupParent(5, null)
+    await agentsStore.setGroupParent(5, null)
 
     expect(mockElectronAPI.agentGroupsSetParent).toHaveBeenCalledWith(DB_PATH, 5, null)
   })
 
   it('does not call agentGroupsSetParent when dbPath is null', async () => {
-    const store = useTasksStore()
-    await store.setGroupParent(1, 2)
+    const agentsStore = useAgentsStore()
+    await agentsStore.setGroupParent(1, 2)
 
     expect(mockElectronAPI.agentGroupsSetParent).not.toHaveBeenCalled()
   })
 
   it('refetches agentGroups after setGroupParent succeeds', async () => {
     const store = useTasksStore()
+    const agentsStore = useAgentsStore()
     await store.setProject('/test/project', DB_PATH)
     vi.clearAllMocks()
     const groups = [{ id: 10, name: 'Root', position: 0, members: [] }]
     mockElectronAPI.agentGroupsList.mockResolvedValue({ success: true, groups })
 
-    await store.setGroupParent(3, null)
+    await agentsStore.setGroupParent(3, null)
 
     expect(mockElectronAPI.agentGroupsList).toHaveBeenCalled()
     expect(store.agentGroups).toHaveLength(1)

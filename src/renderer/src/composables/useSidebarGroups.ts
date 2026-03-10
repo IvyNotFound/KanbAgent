@@ -3,14 +3,14 @@
  *
  * Provides inline rename state, create-group flow (top-level or sub-group) and
  * delete confirmation (with a guard when the group still has members).
- * All mutations are delegated to `useTasksStore`.
+ * All mutations are delegated to `useAgentsStore`.
  */
 import { ref, nextTick } from 'vue'
 import type { InjectionKey } from 'vue'
-import { useTasksStore } from '@renderer/stores/tasks'
+import { useAgentsStore } from '@renderer/stores/agents'
 
 export function useSidebarGroups() {
-  const store = useTasksStore()
+  const store = useAgentsStore()
 
   const confirmDeleteGroup = ref<{ groupId: number } | null>(null)
 

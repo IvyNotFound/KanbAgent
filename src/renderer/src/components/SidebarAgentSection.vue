@@ -7,6 +7,7 @@
 import { computed, ref, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useAgentsStore } from '@renderer/stores/agents'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { agentFg, agentBg } from '@renderer/utils/agentColor'
 import { useToast } from '@renderer/composables/useToast'
@@ -22,6 +23,7 @@ import type { Agent } from '@renderer/types'
 
 const { t } = useI18n()
 const store = useTasksStore()
+const agentsStore = useAgentsStore()
 const tabsStore = useTabsStore()
 const { push: pushToast } = useToast()
 
@@ -178,7 +180,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 
     <!-- ── Groupes hiérarchiques ── -->
     <SidebarGroupNode
-      v-for="group in store.agentGroupsTree"
+      v-for="group in agentsStore.agentGroupsTree"
       :key="group.id"
       :group="group"
       :level="0"

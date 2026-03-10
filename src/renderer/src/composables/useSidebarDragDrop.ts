@@ -14,10 +14,10 @@
 import { ref } from 'vue'
 import type { InjectionKey } from 'vue'
 import type { Agent, AgentGroup } from '@renderer/types'
-import { useTasksStore } from '@renderer/stores/tasks'
+import { useAgentsStore } from '@renderer/stores/agents'
 
 export function useSidebarDragDrop() {
-  const store = useTasksStore()
+  const store = useAgentsStore()
 
   const dragAgentId = ref<number | null>(null)
   const dragGroupId = ref<number | null>(null)

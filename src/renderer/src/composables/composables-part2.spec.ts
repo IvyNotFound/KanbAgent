@@ -65,11 +65,11 @@ describe('useSidebarGroups (T840)', () => {
   })
 
   it('confirmRename() calls store.renameAgentGroup IPC and resets renamingGroupId', async () => {
-    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const { useAgentsStore } = await import('@renderer/stores/agents')
     const { useSidebarGroups } = await import('@renderer/composables/useSidebarGroups')
 
-    const store = useTasksStore()
-    const spy = vi.spyOn(store, 'renameAgentGroup').mockResolvedValue(undefined)
+    const agentsStore = useAgentsStore()
+    const spy = vi.spyOn(agentsStore, 'renameAgentGroup').mockResolvedValue(undefined)
 
     const { renamingGroupId, renameGroupName, confirmRename } = useSidebarGroups()
     renamingGroupId.value = 7
@@ -82,11 +82,11 @@ describe('useSidebarGroups (T840)', () => {
   })
 
   it('confirmCreateGroup() with empty name does not call store.createAgentGroup', async () => {
-    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const { useAgentsStore } = await import('@renderer/stores/agents')
     const { useSidebarGroups } = await import('@renderer/composables/useSidebarGroups')
 
-    const store = useTasksStore()
-    const spy = vi.spyOn(store, 'createAgentGroup').mockResolvedValue(null)
+    const agentsStore = useAgentsStore()
+    const spy = vi.spyOn(agentsStore, 'createAgentGroup').mockResolvedValue(null)
 
     const { newGroupName, confirmCreateGroup } = useSidebarGroups()
     newGroupName.value = '   ' // whitespace only
@@ -97,12 +97,12 @@ describe('useSidebarGroups (T840)', () => {
   })
 
   it('handleDeleteGroup() with members sets confirmDeleteGroup (does not delete immediately)', async () => {
-    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const { useAgentsStore } = await import('@renderer/stores/agents')
     const { useSidebarGroups } = await import('@renderer/composables/useSidebarGroups')
 
-    const store = useTasksStore()
-    store.agentGroups = [{ id: 10, name: 'GroupWithMembers', sort_order: 0, created_at: '', members: [{ agent_id: 1, sort_order: 0 }] }]
-    const deleteSpy = vi.spyOn(store, 'deleteAgentGroup').mockResolvedValue(undefined)
+    const agentsStore = useAgentsStore()
+    agentsStore.agentGroups = [{ id: 10, name: 'GroupWithMembers', sort_order: 0, created_at: '', members: [{ agent_id: 1, sort_order: 0 }] }]
+    const deleteSpy = vi.spyOn(agentsStore, 'deleteAgentGroup').mockResolvedValue(undefined)
 
     const { confirmDeleteGroup, handleDeleteGroup } = useSidebarGroups()
 
@@ -113,11 +113,11 @@ describe('useSidebarGroups (T840)', () => {
   })
 
   it('onConfirmDeleteGroup() calls store.deleteAgentGroup and clears confirmDeleteGroup', async () => {
-    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const { useAgentsStore } = await import('@renderer/stores/agents')
     const { useSidebarGroups } = await import('@renderer/composables/useSidebarGroups')
 
-    const store = useTasksStore()
-    const deleteSpy = vi.spyOn(store, 'deleteAgentGroup').mockResolvedValue(undefined)
+    const agentsStore = useAgentsStore()
+    const deleteSpy = vi.spyOn(agentsStore, 'deleteAgentGroup').mockResolvedValue(undefined)
 
     const { confirmDeleteGroup, onConfirmDeleteGroup } = useSidebarGroups()
     confirmDeleteGroup.value = { groupId: 42 }
@@ -170,11 +170,11 @@ describe('useSidebarDragDrop (T840)', () => {
   })
 
   it('onGroupDrop() with valid agentId calls store.setAgentGroup', async () => {
-    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const { useAgentsStore } = await import('@renderer/stores/agents')
     const { useSidebarDragDrop } = await import('@renderer/composables/useSidebarDragDrop')
 
-    const store = useTasksStore()
-    const setSpy = vi.spyOn(store, 'setAgentGroup').mockResolvedValue(undefined)
+    const agentsStore = useAgentsStore()
+    const setSpy = vi.spyOn(agentsStore, 'setAgentGroup').mockResolvedValue(undefined)
 
     const { onGroupDrop } = useSidebarDragDrop()
     const event = makeDragEvent({ dataTransferData: { 'agent-id': '42' } })
@@ -185,11 +185,11 @@ describe('useSidebarDragDrop (T840)', () => {
   })
 
   it('onGroupDrop() with agentId=0 (empty string) does not call setAgentGroup', async () => {
-    const { useTasksStore } = await import('@renderer/stores/tasks')
+    const { useAgentsStore } = await import('@renderer/stores/agents')
     const { useSidebarDragDrop } = await import('@renderer/composables/useSidebarDragDrop')
 
-    const store = useTasksStore()
-    const setSpy = vi.spyOn(store, 'setAgentGroup').mockResolvedValue(undefined)
+    const agentsStore = useAgentsStore()
+    const setSpy = vi.spyOn(agentsStore, 'setAgentGroup').mockResolvedValue(undefined)
 
     const { onGroupDrop } = useSidebarDragDrop()
     const event = makeDragEvent({ dataTransferData: { 'agent-id': '' } })

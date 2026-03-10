@@ -23,12 +23,14 @@ const SetupWizard = defineAsyncComponent(() => import('@renderer/components/Setu
 import { useAutoLaunch } from '@renderer/composables/useAutoLaunch'
 import { useHookEventsStore } from '@renderer/stores/hookEvents'
 import { useAgentsStore } from '@renderer/stores/agents'
+import { useProjectStore } from '@renderer/stores/project'
 import type { Task } from '@renderer/types'
 
 const store = useTasksStore()
 const tabsStore = useTabsStore()
 const hookEventsStore = useHookEventsStore()
 const agentsStore = useAgentsStore()
+const projectStore = useProjectStore()
 
 // Set up global IPC listener for Claude Code hook events (T742).
 // Registered once at app level so all StreamView instances share the same store.
@@ -67,7 +69,7 @@ function openTaskFromPalette(task: Task) {
 }
 
 async function onWizardDone(payload: { projectPath: string; dbPath: string }) {
-  store.closeWizard()
+  projectStore.closeWizard()
   await store.setProject(payload.projectPath, payload.dbPath)
 }
 

@@ -142,10 +142,10 @@ describe('SidebarAgentSection', () => {
         tasks: {
           agents,
           agentGroups: [group],
-          agentGroupsTree: [group],
           selectedAgentId: null,
           dbPath: '/db',
         },
+        agents: { agentGroupsTree: [group] },
         tabs: { tabs: [] },
       },
     })

@@ -30,64 +30,6 @@ Object.defineProperty(window, 'electronAPI', {
 })
 
 
-describe('stores/tasks — agentRefresh', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-    localStorage.clear()
-    mockElectronAPI.queryDb.mockResolvedValue([])
-    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
-    mockElectronAPI.watchDb.mockResolvedValue(undefined)
-    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
-  })
-
-  it('should not call queryDb when dbPath is null', async () => {
-    const store = useTasksStore()
-    store.dbPath = null
-
-    await store.agentRefresh()
-
-    expect(mockElectronAPI.queryDb).not.toHaveBeenCalled()
-  })
-
-  it('should call queryDb for agents when dbPath is valid', async () => {
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-    mockElectronAPI.queryDb.mockClear()
-    const agentData = [{ id: 1, name: 'review', type: 'global' }]
-    mockElectronAPI.queryDb.mockResolvedValueOnce(agentData)
-
-    await store.agentRefresh()
-
-    expect(mockElectronAPI.queryDb).toHaveBeenCalledTimes(1)
-    expect(store.agents).toEqual(agentData)
-  })
-
-  it('should not throw when queryDb fails (silent catch)', async () => {
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-    mockElectronAPI.queryDb.mockRejectedValue(new Error('DB error'))
-
-    await expect(store.agentRefresh()).resolves.not.toThrow()
-  })
-
-  it('should skip refresh when document is hidden', async () => {
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-    mockElectronAPI.queryDb.mockClear()
-    // Simulate hidden tab
-    Object.defineProperty(document, 'visibilityState', { value: 'hidden', writable: true })
-
-    await store.agentRefresh()
-
-    expect(mockElectronAPI.queryDb).not.toHaveBeenCalled()
-
-    // Restore
-    Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: true })
-  })
-})
-
-
 describe('stores/tasks — watchForDb', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -161,58 +103,6 @@ describe('stores/tasks — watchForDb', () => {
     expect(mockElectronAPI.findProjectDb).not.toHaveBeenCalledWith('/first')
 
     vi.useRealTimers()
-  })
-})
-
-
-describe('stores/tasks — setProjectPathOnly', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-    localStorage.clear()
-    mockElectronAPI.queryDb.mockResolvedValue([])
-    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
-    mockElectronAPI.watchDb.mockResolvedValue(undefined)
-    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
-  })
-
-  it('should set projectPath and persist to localStorage', () => {
-    const store = useTasksStore()
-
-    store.setProjectPathOnly('/my/project')
-
-    expect(store.projectPath).toBe('/my/project')
-    expect(localStorage.getItem('projectPath')).toBe('/my/project')
-  })
-
-  it('should not set dbPath', () => {
-    const store = useTasksStore()
-
-    store.setProjectPathOnly('/my/project')
-
-    expect(store.dbPath).toBeNull()
-  })
-})
-
-
-describe('stores/tasks — closeWizard', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-    localStorage.clear()
-    mockElectronAPI.queryDb.mockResolvedValue([])
-    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
-    mockElectronAPI.watchDb.mockResolvedValue(undefined)
-    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
-  })
-
-  it('should set setupWizardTarget to null', () => {
-    const store = useTasksStore()
-    store.setupWizardTarget = { projectPath: '/p', hasCLAUDEmd: true } as never
-
-    store.closeWizard()
-
-    expect(store.setupWizardTarget).toBeNull()
   })
 })
 

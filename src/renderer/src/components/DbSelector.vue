@@ -2,12 +2,14 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { useProjectStore } from '@renderer/stores/project'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useSettingsStore } from '@renderer/stores/settings'
 import type { Language } from '@renderer/stores/settings'
 
 const { t, locale } = useI18n()
 const store = useTasksStore()
+const projectStore = useProjectStore()
 const tabsStore = useTabsStore()
 const settingsStore = useSettingsStore()
 
@@ -43,7 +45,7 @@ async function create() {
       return
     }
 
-    store.setProjectPathOnly(path)
+    projectStore.setProjectPathOnly(path)
     tabsStore.addTerminal('setup', selectedUser.value ?? undefined, 'Initialisation d\'un nouveau projet passe en mode setup')
     store.watchForDb(path)
   } catch (e) {
