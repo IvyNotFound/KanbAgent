@@ -11,9 +11,9 @@
 
 **The command center for your AI agent team.**
 
-KanbAgent is a desktop application that brings order to multi-agent AI development. Visualize every task your Claude agents are working on, watch their sessions stream live, track costs and quality metrics, and orchestrate the full workflow — all from a single interface, all locally, no cloud required.
+KanbAgent is a desktop application that brings order to multi-agent AI development. Visualize every task your AI agents are working on, watch their sessions stream live, track costs and quality metrics, and orchestrate the full workflow — all from a single interface, all locally, no cloud required.
 
-Built for developers who run Claude Code agents at scale and need more than a terminal to stay in control.
+Built for developers who run AI coding agents at scale and need more than a terminal to stay in control.
 
 **What you get:**
 - **Kanban board** — full task lifecycle across all your agents, drag-and-drop status updates
@@ -112,7 +112,7 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 - **Activity Heatmap**: `ActivityHeatmap` — GitHub-style contribution heatmap of agent activity over time
 - **Workload View**: `WorkloadView` — per-agent task load and effort distribution
 - **Agent Quality Panel**: `AgentQualityPanel` — quality metrics (done rate, rejection rate, avg effort) per agent
-- **Tool Stats Panel**: `ToolStatsPanel` — usage frequency and timing per Claude tool
+- **Tool Stats Panel**: `ToolStatsPanel` — usage frequency and timing per agent tool
 - **Telemetry View**: `TelemetryView` — code metrics (languages, LOC, tests, quality scan) accessible from the Dashboard Telemetry sub-tab
 - **Timeline / Gantt**: `TimelineView` — inter-agent Gantt chart of sessions and tasks over time
 
@@ -125,13 +125,13 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 
 ### Stream & Session
 - **Improved StreamView**: User message bubbles, live thinking preview, collapsible `tool_use` / `tool_result` / `thinking` blocks (auto-collapse >15 lines), ANSI stripping, markdown rendering
-- **Stream Input Bar**: `StreamInputBar` — send messages to active Claude sessions via IPC
+- **Stream Input Bar**: `StreamInputBar` — send messages to active agent sessions via IPC
 - **Stream Tool Block**: `StreamToolBlock` — isolated rendering of individual tool call blocks
 - **Thinking Live Preview**: Status bar shows last 120 chars of live thinking text in real time
 - **Guaranteed Agent Kill on Tab Close**: `agentKill` called explicitly before tab unmount — eliminates orphan processes
 - **Session Resume**: Claude Code sessions resumed via `--resume <conv_id>` to save tokens
 - **Windows Native Claude**: Launch Claude sessions directly on Windows (no WSL) via PowerShell spawn with a `.ps1` script — system prompt passed verbatim via `List[string]`, bypassing cmd.exe quoting issues; PATH enriched from both HKCU and HKLM registry at startup (covers user, winget, choco, and Claude Code Desktop installs); custom binary path configurable via `Settings > Claude Binary Path` for non-standard installs
-- **External WSL Terminal**: Launch Claude sessions in external WSL terminal windows (Windows Terminal → `wsl://` URI → `wsl.exe` fallback chain)
+- **External WSL Terminal**: Launch agent sessions in external WSL terminal windows (Windows Terminal → `wsl://` URI → `wsl.exe` fallback chain)
 - **Auto-launch Terminals**: Automatic agent session launch on task creation with assignment
 - **Auto-close Session on Stop Hook**: When Claude Code sends a `Stop` hook, the session is automatically marked as `completed` in the database — no manual cleanup needed
 - **Auto-trigger Review**: Automatic review session launch when ≥10 tasks reach `done` status (configurable threshold, cooldown); fires independently of the agent auto-launch toggle
@@ -196,7 +196,7 @@ KanbAgent is fully translated into 18 languages. All locales ship at **100% cove
 |----------|-----------------|
 | Node.js | ≥ 20 |
 | npm | ≥ 10 |
-| WSL2 | For launching Claude sessions in external terminal windows |
+| WSL2 | For launching agent sessions in external terminal windows |
 | better-sqlite3 | Native SQLite binding (included via `npm install`) |
 
 ## Installation
@@ -326,11 +326,11 @@ KanbAgent/
 │           │   ├── ActivityHeatmap.vue    # Agent activity heatmap
 │           │   ├── WorkloadView.vue       # Agent workload chart
 │           │   ├── AgentQualityPanel.vue  # Per-agent quality metrics
-│           │   ├── ToolStatsPanel.vue     # Claude tool usage stats
+│           │   ├── ToolStatsPanel.vue     # Agent tool usage stats
 │           │   ├── TokenStatsView.vue     # Token / cost dashboard
 │           │   ├── CostStatsSection.vue   # Cost breakdown section
 │           │   ├── DashboardView.vue      # Analytics hub (9 sub-tabs)
-│           │   ├── StreamView.vue         # Claude session streaming
+│           │   ├── StreamView.vue         # Agent session streaming
 │           │   ├── StreamInputBar.vue     # Send messages to active session
 │           │   ├── StreamToolBlock.vue    # Tool call block renderer
 │           │   ├── UpdateNotification.vue # Auto-update banner (download progress + install)
@@ -466,7 +466,7 @@ No environment variables required for basic operation.
 
 ### Recommended WSL 2 Configuration (heavy agent usage)
 
-WSL 2 runs in a Hyper-V VM that allocates RAM dynamically but does not automatically return it to Windows. By default, WSL 2 can use up to 50% of system RAM. After several hours of active Claude agents, the VM accumulates RAM (Node.js heap, kernel buffers, etc.) even after processes end.
+WSL 2 runs in a Hyper-V VM that allocates RAM dynamically but does not automatically return it to Windows. By default, WSL 2 can use up to 50% of system RAM. After several hours of active AI agents, the VM accumulates RAM (Node.js heap, kernel buffers, etc.) even after processes end.
 
 **Create or edit** `C:\Users\<your-user>\.wslconfig`:
 
@@ -483,7 +483,7 @@ autoMemoryReclaim=gradual   # Recommended for heavy multi-agent sessions (see be
 
 | Mode | Behaviour | When to use |
 |------|-----------|-------------|
-| `gradual` | Progressively reclaims unused pages when WSL is less active — low impact, transparent | **Recommended** for sustained agent workloads (multiple Claude sessions running in parallel) |
+| `gradual` | Progressively reclaims unused pages when WSL is less active — low impact, transparent | **Recommended** for sustained agent workloads (multiple agent sessions running in parallel) |
 | `dropcache` | Aggressively drops kernel page cache — equivalent to running `sync && echo 3 > /proc/sys/vm/drop_caches` automatically | Use when WSL RAM usage climbs rapidly and `gradual` is not sufficient |
 | `disabled` | Default — WSL never returns RAM to Windows; heap and kernel buffers accumulate indefinitely | Avoid for long-running agent sessions |
 
