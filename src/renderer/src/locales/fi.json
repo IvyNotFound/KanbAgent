@@ -568,7 +568,13 @@
     "tool": "työkalu",
     "error": "✗ Virhe",
     "result": "✓ Tulos",
-    "lines": "riviä"
+    "lines": "riviä",
+    "sessionStarted": "Istunto aloitettu",
+    "thinking": "Mietitään…",
+    "streaming": "Käynnissä…",
+    "waitingMessages": "Odotetaan viestejä…",
+    "turns": "{n} kierros | {n} kierrosta",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Tehtävä käynnissä",

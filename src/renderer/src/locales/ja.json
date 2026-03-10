@@ -568,7 +568,13 @@
     "tool": "ツール",
     "error": "✗ エラー",
     "result": "✓ 結果",
-    "lines": "行"
+    "lines": "行",
+    "sessionStarted": "セッション開始",
+    "thinking": "思考中…",
+    "streaming": "処理中…",
+    "waitingMessages": "メッセージを待っています…",
+    "turns": "{n} ターン | {n} ターン",
+    "ctx": "ctx"
   },
   "task": {
     "running": "タスク進行中",

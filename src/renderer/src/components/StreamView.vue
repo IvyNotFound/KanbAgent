@@ -5,6 +5,7 @@
  * Used in App.vue for tabs with viewMode === 'stream' (T597).
  */
 import { computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
@@ -28,6 +29,7 @@ const props = defineProps<{
 const tabsStore = useTabsStore()
 const tasksStore = useTasksStore()
 const settingsStore = useSettingsStore()
+const { t } = useI18n()
 
 // Dynamic highlight.js theme — switches between github.css (light) and github-dark.css (T895)
 function applyHljsTheme(theme: string): void {
@@ -234,7 +236,7 @@ onUnmounted(() => {
         class="flex items-center justify-center h-full text-content-subtle text-xs"
         data-testid="empty-state"
       >
-        En attente de messages…
+        {{ t('stream.waitingMessages') }}
       </div>
 
       <template v-for="event in displayEvents" :key="event._id">
@@ -244,13 +246,13 @@ onUnmounted(() => {
           class="text-content-subtle text-xs italic"
           data-testid="block-system-init"
         >
-          Session démarrée
+          {{ t('stream.sessionStarted') }}
           <span v-if="event.session_id" class="ml-1 font-mono">· {{ event.session_id.slice(0, 8) }}…</span>
           <template v-if="sessionContextMap.get(event._id!)">
             <button
               class="ml-2 text-content-faint hover:text-content-muted transition-colors not-italic"
               @click="toggleCollapsed(`init-ctx-${event._id}`, true)"
-            >{{ (collapsed[`init-ctx-${event._id}`] ?? true) ? '▶ ctx' : '▼ ctx' }}</button>
+            >{{ (collapsed[`init-ctx-${event._id}`] ?? true) ? '▶ ' + t('stream.ctx') : '▼ ' + t('stream.ctx') }}</button>
             <div
               v-show="!(collapsed[`init-ctx-${event._id}`] ?? true)"
               class="mt-1 ml-4 not-italic text-content-faint whitespace-pre-wrap font-mono text-xs"
@@ -321,7 +323,7 @@ onUnmounted(() => {
           class="flex flex-wrap gap-4 text-xs text-content-subtle border-t border-edge-subtle pt-2"
           data-testid="block-result"
         >
-          <span v-if="event.num_turns !== undefined">{{ event.num_turns }} tour{{ event.num_turns > 1 ? 's' : '' }}</span>
+          <span v-if="event.num_turns !== undefined">{{ t('stream.turns', event.num_turns, { named: { n: event.num_turns } }) }}</span>
           <span v-if="event.cost_usd !== undefined">${{ event.cost_usd.toFixed(4) }}</span>
           <span v-if="event.duration_ms !== undefined">{{ (event.duration_ms / 1000).toFixed(1) }}s</span>
           <span v-if="event.session_id" class="ml-auto font-mono text-content-faint">{{ event.session_id.slice(0, 8) }}…</span>
@@ -360,10 +362,10 @@ onUnmounted(() => {
           <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" :style="{ backgroundColor: accentFg }" />
         </span>
         <span v-if="activeThinkingText" class="flex items-center gap-1 min-w-0">
-          <span class="shrink-0 font-medium" data-testid="thinking-label">Thinking…</span>
+          <span class="shrink-0 font-medium" data-testid="thinking-label">{{ t('stream.thinking') }}</span>
           <span class="truncate italic opacity-75 text-content-muted" data-testid="thinking-preview">{{ activeThinkingText.slice(-120) }}</span>
         </span>
-        <span v-else class="opacity-75">En cours…</span>
+        <span v-else class="opacity-75">{{ t('stream.streaming') }}</span>
       </div>
     </div>
 

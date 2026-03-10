@@ -568,7 +568,13 @@
     "tool": "ferramenta",
     "error": "✗ Erro",
     "result": "✓ Resultado",
-    "lines": "linhas"
+    "lines": "linhas",
+    "sessionStarted": "Sessão iniciada",
+    "thinking": "A pensar…",
+    "streaming": "Em progresso…",
+    "waitingMessages": "Aguardando mensagens…",
+    "turns": "{n} turno | {n} turnos",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Tarefa em progresso",

@@ -568,7 +568,13 @@
     "tool": "도구",
     "error": "✗ 오류",
     "result": "✓ 결과",
-    "lines": "줄"
+    "lines": "줄",
+    "sessionStarted": "세션 시작됨",
+    "thinking": "생각 중…",
+    "streaming": "진행 중…",
+    "waitingMessages": "메시지를 기다리는 중…",
+    "turns": "{n} 턴 | {n} 턴",
+    "ctx": "ctx"
   },
   "task": {
     "running": "작업 진행 중",

@@ -568,7 +568,13 @@
     "tool": "verktøy",
     "error": "✗ Feil",
     "result": "✓ Resultat",
-    "lines": "linjer"
+    "lines": "linjer",
+    "sessionStarted": "Økt startet",
+    "thinking": "Tenker…",
+    "streaming": "Pågår…",
+    "waitingMessages": "Venter på meldinger…",
+    "turns": "{n} runde | {n} runder",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Oppgave pågår",

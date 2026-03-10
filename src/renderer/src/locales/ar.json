@@ -568,7 +568,13 @@
     "tool": "أداة",
     "error": "✗ خطأ",
     "result": "✓ نتيجة",
-    "lines": "أسطر"
+    "lines": "أسطر",
+    "sessionStarted": "بدأت الجلسة",
+    "thinking": "جارٍ التفكير…",
+    "streaming": "قيد التشغيل…",
+    "waitingMessages": "في انتظار الرسائل…",
+    "turns": "{n} دور | {n} أدوار",
+    "ctx": "ctx"
   },
   "task": {
     "running": "المهمة قيد التنفيذ",

@@ -568,7 +568,13 @@
     "tool": "инструмент",
     "error": "✗ Ошибка",
     "result": "✓ Результат",
-    "lines": "строк"
+    "lines": "строк",
+    "sessionStarted": "Сессия запущена",
+    "thinking": "Думаю…",
+    "streaming": "В процессе…",
+    "waitingMessages": "Ожидание сообщений…",
+    "turns": "{n} ход | {n} ходов",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Задача выполняется",

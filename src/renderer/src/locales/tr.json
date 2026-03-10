@@ -568,7 +568,13 @@
     "tool": "Araç",
     "error": "✗ Hata",
     "result": "✓ Sonuç",
-    "lines": "satır"
+    "lines": "satır",
+    "sessionStarted": "Oturum başlatıldı",
+    "thinking": "Düşünüyor…",
+    "streaming": "Devam ediyor…",
+    "waitingMessages": "Mesajlar bekleniyor…",
+    "turns": "{n} tur | {n} tur",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Görev devam ediyor",

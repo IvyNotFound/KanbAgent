@@ -568,7 +568,13 @@
     "tool": "verktyg",
     "error": "✗ Fel",
     "result": "✓ Resultat",
-    "lines": "rader"
+    "lines": "rader",
+    "sessionStarted": "Session startad",
+    "thinking": "Tänker…",
+    "streaming": "Pågår…",
+    "waitingMessages": "Väntar på meddelanden…",
+    "turns": "{n} varv | {n} varv",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Uppgift pågår",

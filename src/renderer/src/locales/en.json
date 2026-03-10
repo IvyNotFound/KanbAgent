@@ -576,7 +576,13 @@
     "tool": "tool",
     "error": "✗ Error",
     "result": "✓ Result",
-    "lines": "lines"
+    "lines": "lines",
+    "sessionStarted": "Session started",
+    "thinking": "Thinking…",
+    "streaming": "In progress…",
+    "waitingMessages": "Waiting for messages…",
+    "turns": "{n} turn | {n} turns",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Task in progress",

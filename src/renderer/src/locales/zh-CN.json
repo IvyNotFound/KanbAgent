@@ -568,7 +568,13 @@
     "tool": "工具",
     "error": "✗ 错误",
     "result": "✓ 结果",
-    "lines": "行"
+    "lines": "行",
+    "sessionStarted": "会话已开始",
+    "thinking": "思考中…",
+    "streaming": "处理中…",
+    "waitingMessages": "等待消息…",
+    "turns": "{n} 轮 | {n} 轮",
+    "ctx": "ctx"
   },
   "task": {
     "running": "任务进行中",

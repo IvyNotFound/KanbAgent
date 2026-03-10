@@ -568,7 +568,13 @@
     "tool": "outil",
     "error": "✗ Erreur",
     "result": "✓ Résultat",
-    "lines": "lignes"
+    "lines": "lignes",
+    "sessionStarted": "Session démarrée",
+    "thinking": "Réflexion…",
+    "streaming": "En cours…",
+    "waitingMessages": "En attente de messages…",
+    "turns": "{n} tour | {n} tours",
+    "ctx": "ctx"
   },
   "task": {
     "running": "Tâche en cours d'exécution",
