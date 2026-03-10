@@ -232,38 +232,20 @@ describe('IPC project handlers', () => {
   // ── init-new-project ──────────────────────────────────────────────────────
 
   describe('init-new-project handler', () => {
-    it('should return { success: true } on nominal path', async () => {
-      const { writeFile, mkdir } = await import('fs/promises')
-      vi.mocked(mkdir).mockResolvedValueOnce(undefined)
-      vi.mocked(writeFile).mockResolvedValueOnce(undefined)
-      const originalFetch = globalThis.fetch
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        text: vi.fn().mockResolvedValueOnce('# CLAUDE.md content'),
-      })
-      try {
-        const result = await callHandler('init-new-project', '/fake/project') as { success: boolean }
-        expect(result).toMatchObject({ success: true })
-      } finally {
-        globalThis.fetch = originalFetch
+    it('should return { success: true, filesCreated } on nominal path', async () => {
+      const result = await callHandler('init-new-project', '/fake/project') as {
+        success: boolean; filesCreated?: string[]
       }
+      expect(result.success).toBe(true)
+      expect(result.filesCreated).toEqual(['CLAUDE.md', '.claude/WORKFLOW.md'])
     })
 
-    it('should return { success: false, error } when fetch fails', async () => {
-      const { mkdir } = await import('fs/promises')
-      vi.mocked(mkdir).mockResolvedValueOnce(undefined)
-      const originalFetch = globalThis.fetch
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-      })
-      try {
-        const result = await callHandler('init-new-project', '/fake/project') as { success: boolean; error?: string }
-        expect(result.success).toBe(false)
-        expect(typeof result.error).toBe('string')
-      } finally {
-        globalThis.fetch = originalFetch
-      }
+    it('should return { success: false, error } when writeFile fails', async () => {
+      const { writeFile } = await import('fs/promises')
+      vi.mocked(writeFile).mockRejectedValueOnce(new Error('ENOSPC: no space left on device'))
+      const result = await callHandler('init-new-project', '/fake/project') as { success: boolean; error?: string }
+      expect(result.success).toBe(false)
+      expect(typeof result.error).toBe('string')
     })
 
     it('should return { success: false, error } when mkdir fails (EACCES)', async () => {

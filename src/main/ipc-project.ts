@@ -10,6 +10,7 @@
 import { ipcMain, dialog, app, shell } from 'electron'
 import { access, copyFile, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { join, basename, resolve } from 'path'
+import { CLAUDE_MD_TEMPLATE, WORKFLOW_MD_TEMPLATE } from './project-templates'
 import { GENERIC_AGENTS_BY_LANG } from './default-agents'
 import type { AgentLanguage } from './default-agents'
 import Database from 'better-sqlite3'
@@ -256,9 +257,9 @@ export function registerProjectHandlers(): void {
   })
 
   /**
-   * Initialize a new project: create .claude/ dir and download CLAUDE.md from GitHub.
+   * Initialize a new project: create .claude/ dir and deploy bundled templates locally.
    * @param projectPath - Registered project path
-   * @returns {{ success: boolean, error?: string }}
+   * @returns {{ success: boolean, filesCreated?: string[], error?: string }}
    */
   ipcMain.handle('init-new-project', async (_event, projectPath: string) => {
     try {
@@ -266,12 +267,10 @@ export function registerProjectHandlers(): void {
       const claudeDir = join(projectPath, '.claude')
       await mkdir(claudeDir, { recursive: true })
 
-      const response = await fetch('https://raw.githubusercontent.com/IvyNotFound/claude.md/main/CLAUDE.md')
-      if (!response.ok) throw new Error(`HTTP ${response.status} lors du téléchargement de CLAUDE.md`)
-      const content = await response.text()
+      await writeFile(join(projectPath, 'CLAUDE.md'), CLAUDE_MD_TEMPLATE, 'utf-8')
+      await writeFile(join(claudeDir, 'WORKFLOW.md'), WORKFLOW_MD_TEMPLATE, 'utf-8')
 
-      await writeFile(join(projectPath, 'CLAUDE.md'), content, 'utf-8')
-      return { success: true }
+      return { success: true, filesCreated: ['CLAUDE.md', '.claude/WORKFLOW.md'] }
     } catch (err) {
       console.error('[IPC init-new-project]', err)
       return { success: false, error: String(err) }
