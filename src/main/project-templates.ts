@@ -5,6 +5,7 @@
  * directory by the `init-new-project` IPC handler — no network access required.
  */
 
+/** Template content for `CLAUDE.md` written at the project root on initialization. */
 export const CLAUDE_MD_TEMPLATE = `# CLAUDE.md — [project-name]
 
 > Remplacer [project-name] par le nom du projet. État vivant → \`.claude/project.db\`. Refs → \`.claude/WORKFLOW.md\`
@@ -49,6 +50,7 @@ Démarrage session : \`node scripts/dbstart.js <agent-name>\`
 Voir \`.claude/WORKFLOW.md\` pour le protocole SQL complet.
 `
 
+/** Template content for `.claude/WORKFLOW.md` written on initialization. */
 export const WORKFLOW_MD_TEMPLATE = `# Ticket Workflow — Full SQL Reference
 
 > Statuses: \`todo\` → \`in_progress\` → \`done\` → \`archived\` (rejected → back to \`todo\`)

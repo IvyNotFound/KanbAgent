@@ -42,7 +42,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation — enabled by default for all CLI adapters (branch `agent/<sessionId>`, path `../agent-worktrees/<sessionId>`); falls back gracefully if git is unavailable
 - **Multi-CLI Support**: Select any supported coding agent CLI per session — Claude Code, OpenAI Codex, Google Gemini, OpenCode, Aider, Goose — detected automatically across WSL distros and native installs; each CLI has a dedicated adapter (`src/main/adapters/<cli>.ts`) following the `CliAdapter` contract (ADR-010); `LaunchSessionModal` shows a unified list of all detected CLI×environment combinations (local Windows/macOS/Linux + every WSL distro), filtered by the CLIs enabled in Settings
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
-- **Setup Wizard**: First-run configuration assistant (`SetupWizard`) — guides through WSL detection, project creation and initial agents
+- **Setup Wizard**: First-run configuration assistant (`SetupWizard`) — guides through WSL detection, project creation and initial agents; project templates (`CLAUDE.md`, `.claude/WORKFLOW.md`) are bundled at compile time and written locally — no network access required
 
 ### Dashboard & Analytics
 - **Dashboard Tab**: `DashboardView` — unified analytics hub with 9 sub-tabs (Overview, Token Stats, Git, Hooks, Tools, Topology, OrgChart, Logs, Telemetry); active sub-tab persisted in `localStorage`
@@ -85,7 +85,7 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **Tab Bar**: `TabBar` — multi-type tab bar with close / reorder support
 - **Title Bar**: `TitleBar` — custom Electron frameless title bar with window controls
 - **Agent Badge**: `AgentBadge` — colour-coded agent avatar with role indicator
-- **DB Selector**: `DbSelector` — graphical project database switcher
+- **DB Selector**: `DbSelector` — graphical project database switcher; language selector displayed below action buttons with accessible `aria-label`
 - **Project Popup**: Click the project button in the sidebar to open a modal showing active project name, database path, version, and quick actions (switch project, close project)
 - **Keyboard Shortcuts**: Press `Escape` to close any modal (standardised via `useModalEscape` composable)
 - **Dark / Light Mode**: Dark theme by default, light mode available
