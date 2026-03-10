@@ -128,7 +128,6 @@ const sessionContextMap = computed(() => {
 
 async function handleSend(text: string): Promise<void> {
   agentStopped.value = false
-  tabsStore.setTabUserInteraction(props.terminalId)
   const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text }] } }
   assignEventId(userEvent)
   events.value.push(userEvent)

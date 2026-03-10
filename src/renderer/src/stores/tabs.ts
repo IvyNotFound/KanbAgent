@@ -44,8 +44,6 @@ export interface Tab {
   dirty?: boolean
   logsAgentId?: number | null
   permanent?: boolean
-  /** True if the user sent at least one message in this session (T1294). Prevents auto-close. */
-  hasUserInteraction?: boolean
 }
 
 /**
@@ -202,20 +200,6 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   /**
-   * Mark a terminal tab as having user interaction (T1294).
-   *
-   * Once set, the auto-close mechanism in `useAutoLaunch` will skip this tab
-   * when the associated task transitions to `done`, keeping it open so the
-   * user can continue reading the agent's response.
-   *
-   * @param tabId - Unique identifier of the terminal tab.
-   */
-  function setTabUserInteraction(tabId: string): void {
-    const tab = tabs.value.find(t => t.id === tabId)
-    if (tab) tab.hasUserInteraction = true
-  }
-
-  /**
    * Remove a tab by ID and activate an appropriate replacement.
    *
    * Activation priority for closed terminal tabs (T619 — intra-group selection):
@@ -287,5 +271,5 @@ export const useTabsStore = defineStore('tabs', () => {
     }
   }
 
-  return { tabs, activeTabId, activeTab, tabActivity, setActive, addTerminal, addLogs, addExplorer, openFile, setTabDirty, setPtyId, setStreamId, setTabUserInteraction, closeTab, renameTab, closeTabGroup, closeAllTerminals, markTabActive, isAgentActive, hasAgentTerminal }
+  return { tabs, activeTabId, activeTab, tabActivity, setActive, addTerminal, addLogs, addExplorer, openFile, setTabDirty, setPtyId, setStreamId, closeTab, renameTab, closeTabGroup, closeAllTerminals, markTabActive, isAgentActive, hasAgentTerminal }
 })

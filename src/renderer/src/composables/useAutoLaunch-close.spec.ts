@@ -156,55 +156,6 @@ describe('composables/useAutoLaunch', () => {
     })
   })
 
-  describe('T1294: hasUserInteraction guard', () => {
-    it('should NOT schedule close when tab.hasUserInteraction is true', async () => {
-      useAutoLaunch({ tasks, agents, dbPath })
-
-      tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
-      await nextTick()
-
-      const tabsStore = useTabsStore()
-      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
-      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
-      termTab.taskId = 1
-      termTab.streamId = 'stream-user-interaction'
-      termTab.hasUserInteraction = true
-
-      // Task transitions to done
-      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
-      await nextTick()
-
-      // Advance past debounce + poll + fallback — tab must remain open
-      await vi.advanceTimersByTimeAsync(80 + 5000 + 60000)
-
-      expect(api.agentKill).not.toHaveBeenCalled()
-      expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)
-    })
-
-    it('should schedule close normally when tab.hasUserInteraction is false', async () => {
-      useAutoLaunch({ tasks, agents, dbPath })
-
-      tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
-      await nextTick()
-
-      const tabsStore = useTabsStore()
-      tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
-      const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
-      termTab.taskId = 1
-      termTab.streamId = 'stream-no-interaction'
-      // hasUserInteraction not set (defaults to undefined/false)
-
-      tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
-      await nextTick()
-
-      // Advance past debounce + immediate poll resolves + kill delay
-      await vi.advanceTimersByTimeAsync(81)
-      await vi.advanceTimersByTimeAsync(2000)
-
-      expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(0)
-    })
-  })
-
   describe('scheduleClose edge cases', () => {
     it('should closeTab without agentKill when tab has no streamId', async () => {
       useAutoLaunch({ tasks, agents, dbPath })

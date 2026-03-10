@@ -132,10 +132,7 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
               t.agentName === agent.name &&
               t.taskId === task.id
             )
-            if (tab) {
-              if (tab.hasUserInteraction) continue // user is active — skip auto-close (T1294)
-              scheduleClose(tab, agent.id)
-            }
+            if (tab) scheduleClose(tab, agent.id)
           }
         }
 
