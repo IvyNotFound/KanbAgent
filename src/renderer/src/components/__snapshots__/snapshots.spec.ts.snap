@@ -84,7 +84,7 @@ exports[`DbSelector — snapshots > matches snapshot: home screen (no project se
       </svg></div>
     <div>
       <h2 class="text-xl font-semibold text-content-primary mb-1">KanbAgent</h2>
-      <p class="text-sm text-content-subtle">Visualisez les tâches de vos agents IA en temps réel.</p>
+      <p class="text-sm text-content-subtle">Visualisez les tâches de vos agents Claude en temps réel.</p>
     </div><!-- 2 options -->
     <div class="grid grid-cols-2 gap-3">
       <!-- Ouvrir existant --><button class="flex flex-col items-center gap-2 px-4 py-5 rounded-xl border border-edge-default hover:border-content-subtle bg-surface-secondary/40 hover:bg-surface-secondary transition-all group">
@@ -142,7 +142,7 @@ exports[`DbSelector — snapshots > matches snapshot: home screen with error 1`]
       </svg></div>
     <div>
       <h2 class="text-xl font-semibold text-content-primary mb-1">KanbAgent</h2>
-      <p class="text-sm text-content-subtle">Visualisez les tâches de vos agents IA en temps réel.</p>
+      <p class="text-sm text-content-subtle">Visualisez les tâches de vos agents Claude en temps réel.</p>
     </div><!-- 2 options -->
     <div class="grid grid-cols-2 gap-3">
       <!-- Ouvrir existant --><button class="flex flex-col items-center gap-2 px-4 py-5 rounded-xl border border-edge-default hover:border-content-subtle bg-surface-secondary/40 hover:bg-surface-secondary transition-all group">
