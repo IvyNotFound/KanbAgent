@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.35.1] - 2026-03-10
+
+### Bug Fixes
+- fix(front-vuejs): appeler setProjectPathOnly depuis useProjectStore (T1300) (b2863be)
+
+### Tests
+- test(front-vuejs): update snapshots after aboutDesc/tagline i18n changes (245d976)
+
+### Documentation
+- docs(global): migrate all project documentation to English (T1305) (5f127bd)
+- docs(contributing): fix module name ipc-wsl.ts -> ipc-cli-detect.ts for wsl:get-cli-instances (9c6dd47)
+- docs(global): aligner la documentation sur les versions et API réelles (T1303) (2171d6b)
+- docs(claude-md): clarify commit messages must be in English (T1301) (849b3c3)
+- docs(front-vuejs): remove generic Claude references from README (T1302) (c0e9efb)
+
+### Other
+- i18n(front-vuejs): supprimer les références Claude dans aboutDesc et tagline (18 locales) (6cae197)
+
 ## [0.35.0] - 2026-03-10
 
 ### Features

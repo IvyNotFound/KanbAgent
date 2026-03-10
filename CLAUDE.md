@@ -20,7 +20,7 @@ Scopes: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind, key files: `App.vue`,
 
 Conventions: english (conv & code) · mandatory tests · Conventional Commits
 
-**Version: `0.35.0`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Beta: MAJOR → `arch` + lead validation.
+**Version: `0.35.1`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Beta: MAJOR → `arch` + lead validation.
 
 ---
 
