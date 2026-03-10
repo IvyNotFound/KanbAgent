@@ -67,7 +67,7 @@
     "@vitejs/plugin-vue": "^6.0.4",
     "@vitest/coverage-v8": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
-    "autoprefixer": "^10.4.17",
+    "autoprefixer": "^10.4.27",
     "codemirror": "^6.0.2",
     "dompurify": "^3.3.2",
     "electron": "^40.8.0",
