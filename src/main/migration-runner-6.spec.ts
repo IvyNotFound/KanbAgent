@@ -102,13 +102,14 @@ describe('migrateDb — bootstrap only triggers when user_version === 0', () => 
     expect(firstUVCall).toBe('PRAGMA user_version = 3')
   })
 
-  it('first PRAGMA user_version write is 23 (bootstrap cursor) for legacy DB (v0 + config)', () => {
+  it('first PRAGMA user_version write is 23 (bootstrap cursor) for genuine legacy DB (v0 + config + permission_mode + max_sessions)', () => {
     const db = makeMockDb({
       userVersion: 0,
       hasConfigTable: true,
       colMap: {
         agent_groups: ['id', 'name', 'sort_order', 'created_at'],
-        agents: ['id', 'name', 'scope'],
+        agents: ['id', 'name', 'scope', 'system_prompt', 'system_prompt_suffix',
+          'thinking_mode', 'allowed_tools', 'auto_launch', 'permission_mode', 'max_sessions'],
         sessions: ['id', 'status'],
         tasks: ['id', 'title', 'status'],
         task_comments: ['id', 'task_id', 'content'],
@@ -122,6 +123,23 @@ describe('migrateDb — bootstrap only triggers when user_version === 0', () => 
     // The bootstrap sets user_version = 23 BEFORE the migration loop
     const firstUVCall = calls.find((s: string) => /PRAGMA user_version\s*=/.test(s))
     expect(firstUVCall).toBe('PRAGMA user_version = 23')
+  })
+
+  it('first PRAGMA user_version write is 1 (no bootstrap) for external DB (v0 + config, no permission_mode)', () => {
+    const db = makeMockDb({
+      userVersion: 0,
+      hasConfigTable: true,
+      colMap: {
+        agents: ['id', 'name', 'scope'],
+      },
+      tableMap: { config: true },
+    })
+    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    // External DB — no bootstrap: first PRAGMA user_version = 1
+    const firstUVCall = calls.find((s: string) => /PRAGMA user_version\s*=/.test(s))
+    expect(firstUVCall).toBe('PRAGMA user_version = 1')
+    expect(firstUVCall).not.toBe('PRAGMA user_version = 23')
   })
 
   it('for fresh DB (v0, no config), first PRAGMA user_version is 1 (not 23)', () => {
@@ -189,13 +207,14 @@ describe('migrateDb — exact return value', () => {
     expect(result).not.toBe(CURRENT_SCHEMA_VERSION - 1)
   })
 
-  it('returns 6 for legacy bootstrap (v0 + config = runs v24..v29)', () => {
+  it('returns 6 for genuine legacy bootstrap (v0 + config + permission_mode + max_sessions = runs v24..v29)', () => {
     const db = makeMockDb({
       userVersion: 0,
       hasConfigTable: true,
       colMap: {
         agent_groups: ['id', 'name', 'sort_order', 'created_at'],
-        agents: ['id', 'name', 'scope'],
+        agents: ['id', 'name', 'scope', 'system_prompt', 'system_prompt_suffix',
+          'thinking_mode', 'allowed_tools', 'auto_launch', 'permission_mode', 'max_sessions'],
         sessions: ['id', 'status'],
         tasks: ['id', 'title', 'status'],
         task_comments: ['id', 'task_id', 'content'],
@@ -208,6 +227,20 @@ describe('migrateDb — exact return value', () => {
     expect(result).toBe(6) // v24, v25, v26, v27, v28, v29
     expect(result).not.toBe(7)
     expect(result).not.toBe(5)
+  })
+
+  it('returns CURRENT_SCHEMA_VERSION for external DB (v0 + config, no permission_mode/max_sessions)', () => {
+    const db = makeMockDb({
+      userVersion: 0,
+      hasConfigTable: true,
+      colMap: {
+        agents: ['id', 'name', 'scope'],
+      },
+      tableMap: { config: true },
+    })
+    const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    expect(result).toBe(CURRENT_SCHEMA_VERSION) // all migrations run
+    expect(result).not.toBe(6)
   })
 })
 

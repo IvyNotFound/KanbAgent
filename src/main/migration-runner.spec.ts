@@ -126,13 +126,17 @@ describe('migrateDb — legacy bootstrap', () => {
   beforeEach(() => vi.clearAllMocks())
 
   function createLegacyDb() {
-    // agent_groups without parent_id (v24 must run), no French cols (v25 idempotent)
+    // Genuine legacy KanbAgent DB: user_version=0, config table present, and
+    // agents already has permission_mode+max_sessions (added by old migration
+    // system before the numbered schema). agent_groups without parent_id (v24
+    // must run), no French cols (v25 idempotent).
     return createMockDb({
       userVersion: 0,
       hasConfigTable: true,
       colMap: {
         agent_groups: ['id', 'name', 'sort_order', 'created_at'],
-        agents: ['id', 'name', 'scope'],
+        agents: ['id', 'name', 'scope', 'system_prompt', 'system_prompt_suffix',
+          'thinking_mode', 'allowed_tools', 'auto_launch', 'permission_mode', 'max_sessions'],
         sessions: ['id', 'status'],
         tasks: ['id', 'title', 'status'],
         task_comments: ['id', 'task_id', 'agent_id', 'content'],
@@ -171,6 +175,70 @@ describe('migrateDb — legacy bootstrap', () => {
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     const calls = db.run.mock.calls.map((c: string[]) => c[0])
     expect(calls.some((s: string) => s.includes('ADD COLUMN parent_id'))).toBe(true)
+  })
+})
+
+// ── migrateDb — external DB (config table but missing v18/v19 columns) ────────
+
+describe('migrateDb — external DB (config table, no permission_mode/max_sessions)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('runs all migrations (no bootstrap skip) when permission_mode is absent', () => {
+    const db = createMockDb({
+      userVersion: 0,
+      hasConfigTable: true,
+      colMap: {
+        agents: ['id', 'name', 'scope'],
+      },
+      tableMap: { config: true },
+    })
+    const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    expect(result).toBe(CURRENT_SCHEMA_VERSION)
+  })
+
+  it('adds permission_mode column when missing on external DB', () => {
+    const db = createMockDb({
+      userVersion: 0,
+      hasConfigTable: true,
+      colMap: {
+        agents: ['id', 'name', 'scope'],
+      },
+      tableMap: { config: true },
+    })
+    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    expect(calls.some((s: string) => s.includes('ADD COLUMN permission_mode'))).toBe(true)
+  })
+
+  it('adds max_sessions column when missing on external DB', () => {
+    const db = createMockDb({
+      userVersion: 0,
+      hasConfigTable: true,
+      colMap: {
+        agents: ['id', 'name', 'scope'],
+      },
+      tableMap: { config: true },
+    })
+    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    expect(calls.some((s: string) => s.includes('ADD COLUMN max_sessions'))).toBe(true)
+  })
+
+  it('first PRAGMA user_version write is 1 (not 23 bootstrap) when columns absent', () => {
+    const db = createMockDb({
+      userVersion: 0,
+      hasConfigTable: true,
+      colMap: {
+        agents: ['id', 'name', 'scope'],
+      },
+      tableMap: { config: true },
+    })
+    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
+    const calls = db.run.mock.calls.map((c: string[]) => c[0])
+    // No bootstrap: first user_version write is from v1 running, not the bootstrap cursor
+    const firstUVCall = calls.find((s: string) => /PRAGMA user_version\s*=/.test(s))
+    expect(firstUVCall).toBe('PRAGMA user_version = 1')
+    expect(firstUVCall).not.toBe('PRAGMA user_version = 23')
   })
 })
 

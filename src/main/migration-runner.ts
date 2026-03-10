@@ -349,13 +349,25 @@ export function migrateDb(db: MigrationDb): number {
   // user_version=0 but a config table with schema_version. All migrations through
   // v23 are assumed applied by the old system — set cursor to 23 so only v24+
   // will run. Do NOT return early; fall through to the migration loop.
+  //
+  // Guard: only skip v1-v23 if agents already has the columns added by v18/v19.
+  // External DBs (e.g. created by project init scripts) may have a config table
+  // but lack permission_mode / max_sessions — fall through so all idempotent
+  // migrations run and the missing columns are added.
   const LEGACY_BOOTSTRAP_VERSION = 23
   let current = rawCurrent
   if (rawCurrent === 0) {
     const configResult = db.exec("SELECT value FROM config WHERE key = 'schema_version'")
     if (configResult.length > 0 && configResult[0].values.length > 0) {
-      db.run(`PRAGMA user_version = ${LEGACY_BOOTSTRAP_VERSION}`)
-      current = LEGACY_BOOTSTRAP_VERSION
+      const colResult = db.exec('PRAGMA table_info(agents)')
+      const agentCols = new Set(
+        colResult.length > 0 ? colResult[0].values.map((r: unknown[]) => r[1] as string) : []
+      )
+      if (agentCols.has('permission_mode') && agentCols.has('max_sessions')) {
+        db.run(`PRAGMA user_version = ${LEGACY_BOOTSTRAP_VERSION}`)
+        current = LEGACY_BOOTSTRAP_VERSION
+      }
+      // else: current stays 0, all migrations v1+ will run (all idempotent)
     }
   }
 
