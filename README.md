@@ -3,8 +3,69 @@
 ![Version](https://img.shields.io/github/v/release/IvyNotFound/KanbAgent?label=version)
 ![Release](https://github.com/IvyNotFound/KanbAgent/actions/workflows/release.yml/badge.svg)
 ![Status](https://img.shields.io/badge/status-beta-orange)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+![Contributors](https://img.shields.io/github/contributors/IvyNotFound/KanbAgent)
+![Top language](https://img.shields.io/github/languages/top/IvyNotFound/KanbAgent?color=7c3aed&label=Top%20language)
+![Languages](https://img.shields.io/github/languages/count/IvyNotFound/KanbAgent?color=2563eb&label=Languages)
+[![Twitter](https://img.shields.io/badge/Twitter-@kanbagent-1d9bf0?logo=x)](https://x.com/kanbagent)
 
-Desktop interface in Trello/Jira style for real-time visualization of Claude agent tasks from a local SQLite database. The application manages agents, launches Claude sessions in external WSL terminals, and monitors activity in real time.
+**The command center for your AI agent team.**
+
+KanbAgent is a desktop application that brings order to multi-agent AI development. Visualize every task your Claude agents are working on, watch their sessions stream live, track costs and quality metrics, and orchestrate the full workflow — all from a single interface, all locally, no cloud required.
+
+Built for developers who run Claude Code agents at scale and need more than a terminal to stay in control.
+
+**What you get:**
+- **Kanban board** — full task lifecycle across all your agents, drag-and-drop status updates
+- **Live session streaming** — watch agents think and code in real time, send messages mid-session
+- **Multi-agent orchestration** — spawn, resume, and kill agents across WSL distros and native installs; supports Claude Code, Codex, Gemini, Aider, Goose, and OpenCode
+- **Analytics dashboard** — token usage, cost tracking, agent quality scores, git activity, and more
+- **Git worktree isolation** — each agent works on its own branch, automatically, no conflicts
+- **Zero dependencies** — local SQLite database, no account, no API, no subscription
+
+---
+
+## The Numbers Don't Lie
+
+> **14 calendar days. Solo. While watching anime.**
+> A team of 5 developers would have needed ~3.5 months. One person did it in two weeks.
+
+### Estimated scope (from ticket data)
+
+The project manages **1,279 tasks** in its own SQLite database, each tagged with an effort estimate:
+
+| Effort | Definition | Avg. hours | Tickets | Total |
+|--------|-----------|-----------|---------|-------|
+| 1 — Small | < 2h | 1.5h | 558 | 837h |
+| 2 — Medium | Half-day (~4h) | 4h | 372 | 1,488h |
+| 3 — Large | > 1 day (~10h) | 10h | 63 | 630h |
+| **Total** | | | **993** | **~2,955h** |
+
+*286 tasks had no effort estimate and are excluded from the calculation.*
+
+### If a team of 5 had built this (5 days/week, 8h/day)
+
+```
+Team weekly capacity : 5 devs × 5 days × 8h = 200h/week
+Estimated work scope : ~2,955h
+Best-case delivery   : 2,955 ÷ 200 = ~15 weeks ≈ 3.5 months
+```
+
+That's the best-case scenario: full parallel utilization, zero overhead, no standups, no onboarding, no context switching, no code review lag. Add realistic team overhead (×1.3) and you're looking at **4–5 months**.
+
+### What actually happened
+
+**First commit: February 24, 2026. Last commit: March 10, 2026. That's 14 days.**
+
+838 commits. 1,279 tickets created, assigned, implemented, reviewed, and closed. One person. Built entirely solo while watching streams or anime on a second monitor.
+
+The model mix across all sessions: **90% Claude Sonnet 4.6** for the bulk of implementation work, **5% Claude Opus 4.6** for architecture decisions and complex reviews, and **5% MiniMax M2.5** for lightweight tasks — proving the workflow is model-agnostic.
+
+Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is a strict multi-agent workflow that makes cutting corners structurally impossible: every task goes through dedicated agents (dev, test, review, doc), every ticket requires validation before archiving, and nothing ships without passing lint and tests. Agents can't drift because the process won't allow it.
+
+**The result: vibe coding speed, production-grade output.**
+
+---
 
 ## Screenshots
 
@@ -103,6 +164,31 @@ Desktop interface in Trello/Jira style for real-time visualization of Claude age
 - **External File Connection**: Open any `.claude/project.db` file
 - **WSL Memory Monitoring**: Real-time WSL RAM monitoring with alerts and memory release
 - **Agent Error Visibility**: Spawn failures (`error:spawn`) and abnormal exits (`error:exit`) surfaced directly in StreamView UI — no DevTools needed
+
+## Internationalization
+
+KanbAgent is fully translated into 18 languages. All locales ship at **100% coverage** (531 strings).
+
+| Language | Code | Coverage |
+|----------|------|----------|
+| 🇫🇷 French | `fr` | ✅ 100% |
+| 🇬🇧 English | `en` | ✅ 100% |
+| 🇪🇸 Spanish | `es` | ✅ 100% |
+| 🇩🇪 German | `de` | ✅ 100% |
+| 🇮🇹 Italian | `it` | ✅ 100% |
+| 🇵🇹 Portuguese | `pt` | ✅ 100% |
+| 🇧🇷 Portuguese (Brazil) | `pt-BR` | ✅ 100% |
+| 🇷🇺 Russian | `ru` | ✅ 100% |
+| 🇵🇱 Polish | `pl` | ✅ 100% |
+| 🇸🇪 Swedish | `sv` | ✅ 100% |
+| 🇳🇴 Norwegian | `no` | ✅ 100% |
+| 🇩🇰 Danish | `da` | ✅ 100% |
+| 🇫🇮 Finnish | `fi` | ✅ 100% |
+| 🇹🇷 Turkish | `tr` | ✅ 100% |
+| 🇸🇦 Arabic | `ar` | ✅ 100% |
+| 🇨🇳 Chinese (Simplified) | `zh-CN` | ✅ 100% |
+| 🇯🇵 Japanese | `ja` | ✅ 100% |
+| 🇰🇷 Korean | `ko` | ✅ 100% |
 
 ## Prerequisites
 
