@@ -578,52 +578,22 @@ describe('ipc-project T1226 — exact string & value assertions', () => {
     })
   })
 
-  // ── init-new-project — L266-276: exact return shapes ─────────────────────
+  // ── init-new-project — exact return shapes ───────────────────────────────
 
-  describe('init-new-project — exact return shapes (L266-276)', () => {
-    it('success: returns exactly { success: true } with no extra fields', async () => {
-      const originalFetch = globalThis.fetch
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        text: vi.fn().mockResolvedValueOnce('# CLAUDE.md'),
-      })
-      try {
-        const result = await callHandler('init-new-project', '/fake/project') as Record<string, unknown>
-        expect(result.success).toBe(true)
-        expect(result.success).not.toBe(false)
-        // No error field on success
-        expect(result.error).toBeUndefined()
-      } finally {
-        globalThis.fetch = originalFetch
-      }
+  describe('init-new-project — exact return shapes', () => {
+    it('success: returns { success: true } without error field', async () => {
+      const result = await callHandler('init-new-project', '/fake/project') as Record<string, unknown>
+      expect(result.success).toBe(true)
+      expect(result.success).not.toBe(false)
+      expect(result.error).toBeUndefined()
     })
 
-    it('fetch 404: error message contains HTTP status number', async () => {
-      const originalFetch = globalThis.fetch
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 404 })
-      try {
-        const result = await callHandler('init-new-project', '/fake/project') as {
-          success: boolean; error: string
-        }
-        expect(result.success).toBe(false)
-        expect(result.error).toContain('404')
-      } finally {
-        globalThis.fetch = originalFetch
+    it('success: filesCreated contains exactly CLAUDE.md and .claude/WORKFLOW.md', async () => {
+      const result = await callHandler('init-new-project', '/fake/project') as {
+        success: boolean; filesCreated: string[]
       }
-    })
-
-    it('fetch 503: error message contains HTTP status number', async () => {
-      const originalFetch = globalThis.fetch
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 503 })
-      try {
-        const result = await callHandler('init-new-project', '/fake/project') as {
-          success: boolean; error: string
-        }
-        expect(result.success).toBe(false)
-        expect(result.error).toContain('503')
-      } finally {
-        globalThis.fetch = originalFetch
-      }
+      expect(result.filesCreated).toEqual(['CLAUDE.md', '.claude/WORKFLOW.md'])
+      expect(result.filesCreated).toHaveLength(2)
     })
 
     it('mkdir failure: success=false, error contains EACCES', async () => {
@@ -636,43 +606,49 @@ describe('ipc-project T1226 — exact string & value assertions', () => {
       expect(result.error).toContain('EACCES')
     })
 
-    it('writes CLAUDE.md content to exact path (L273)', async () => {
+    it('writeFile failure: success=false, error is a string', async () => {
       const { writeFile } = await import('fs/promises')
-      const originalFetch = globalThis.fetch
-      const content = '# CLAUDE.md content from GitHub'
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        text: vi.fn().mockResolvedValueOnce(content),
-      })
-      try {
-        await callHandler('init-new-project', '/fake/project')
-        const writeFileCalls = vi.mocked(writeFile).mock.calls
-        const claudeCall = writeFileCalls.find(c => String(c[0]).includes('CLAUDE.md'))
-        expect(claudeCall).toBeDefined()
-        expect(String(claudeCall![0])).toContain('CLAUDE.md')
-        expect(claudeCall![1]).toBe(content)
-        expect(claudeCall![2]).toBe('utf-8')
-      } finally {
-        globalThis.fetch = originalFetch
+      vi.mocked(writeFile).mockRejectedValueOnce(new Error('ENOSPC: no space left on device'))
+      const result = await callHandler('init-new-project', '/fake/project') as {
+        success: boolean; error: string
       }
+      expect(result.success).toBe(false)
+      expect(typeof result.error).toBe('string')
+      expect(result.error).toContain('ENOSPC')
     })
 
-    it('creates .claude dir with { recursive: true } (L267)', async () => {
+    it('writes CLAUDE.md with template content to exact path', async () => {
+      const { writeFile } = await import('fs/promises')
+      const { CLAUDE_MD_TEMPLATE } = await import('./project-templates')
+      await callHandler('init-new-project', '/fake/project')
+      const writeFileCalls = vi.mocked(writeFile).mock.calls
+      const claudeCall = writeFileCalls.find(c => String(c[0]).includes('CLAUDE.md') && !String(c[0]).includes('WORKFLOW'))
+      expect(claudeCall).toBeDefined()
+      expect(String(claudeCall![0])).toContain('CLAUDE.md')
+      expect(claudeCall![1]).toBe(CLAUDE_MD_TEMPLATE)
+      expect(claudeCall![2]).toBe('utf-8')
+    })
+
+    it('writes WORKFLOW.md to .claude/WORKFLOW.md with utf-8', async () => {
+      const { writeFile } = await import('fs/promises')
+      const { WORKFLOW_MD_TEMPLATE } = await import('./project-templates')
+      await callHandler('init-new-project', '/fake/project')
+      const writeFileCalls = vi.mocked(writeFile).mock.calls
+      const workflowCall = writeFileCalls.find(c => String(c[0]).includes('WORKFLOW.md'))
+      expect(workflowCall).toBeDefined()
+      expect(String(workflowCall![0])).toContain('.claude')
+      expect(String(workflowCall![0])).toContain('WORKFLOW.md')
+      expect(workflowCall![1]).toBe(WORKFLOW_MD_TEMPLATE)
+      expect(workflowCall![2]).toBe('utf-8')
+    })
+
+    it('creates .claude dir with { recursive: true }', async () => {
       const { mkdir } = await import('fs/promises')
-      const originalFetch = globalThis.fetch
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        text: vi.fn().mockResolvedValueOnce('content'),
-      })
-      try {
-        await callHandler('init-new-project', '/fake/project')
-        expect(mkdir).toHaveBeenCalledWith(
-          expect.stringContaining('.claude'),
-          { recursive: true }
-        )
-      } finally {
-        globalThis.fetch = originalFetch
-      }
+      await callHandler('init-new-project', '/fake/project')
+      expect(mkdir).toHaveBeenCalledWith(
+        expect.stringContaining('.claude'),
+        { recursive: true }
+      )
     })
   })
 
