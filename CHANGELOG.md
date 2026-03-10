@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.31.8] - 2026-03-10
+
+### Bug Fixes
+- fix(session-closer): exclure les agents avec session active dans detectManuallyClosed et pollSessionStatus (45f2358)
+
 ## [0.31.7] - 2026-03-09
 
 ### Bug Fixes

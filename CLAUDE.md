@@ -18,7 +18,7 @@ Périmètres: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind, clés: `App.vue
 
 Conventions: français (conv) · anglais (code) · tests obligatoires · Conventional Commits
 
-**Version: `0.31.7`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Bêta: MAJOR → validation `arch` + lead.
+**Version: `0.31.8`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Bêta: MAJOR → validation `arch` + lead.
 
 ---
 
