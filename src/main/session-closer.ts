@@ -128,7 +128,12 @@ export async function detectManuallyClosed(dbPath: string, since: string): Promi
     `SELECT DISTINCT agent_id FROM sessions
      WHERE status = 'completed'
        AND ended_at > ?
-       AND agent_id IS NOT NULL`,
+       AND agent_id IS NOT NULL
+       AND NOT EXISTS (
+         SELECT 1 FROM sessions s2
+         WHERE s2.agent_id = sessions.agent_id
+           AND s2.status = 'started'
+       )`,
     [since]
   )
   return rows.map((r) => (r as { agent_id: number }).agent_id)

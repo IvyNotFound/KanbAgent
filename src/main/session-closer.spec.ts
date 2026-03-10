@@ -289,6 +289,22 @@ describe('session-closer', () => {
         expect.stringContaining('agent_id IS NOT NULL'),
         [since]
       )
+      // Guard: must exclude agents that have an active 'started' session (prevents zombie-close
+      // sessions created by dbstart.js from triggering tab closure on the newly opened session)
+      expect(queryLive).toHaveBeenCalledWith(
+        '/fake/project.db',
+        expect.stringContaining("s2.status = 'started'"),
+        [since]
+      )
+    })
+
+    it('should NOT return agent_ids when agent has an active started session (anti-zombie-false-positive)', async () => {
+      // Simulate: queryLive returns nothing because the NOT EXISTS clause filters out
+      // agents that have a 'started' session (i.e. a new session was just opened after
+      // the zombie-close done by dbstart.js).
+      vi.mocked(queryLive).mockResolvedValueOnce([])
+      const result = await detectManuallyClosed('/fake/project.db', '2026-01-01 00:00:00')
+      expect(result).toEqual([])
     })
 
     it('should return agent_ids from completed sessions', async () => {

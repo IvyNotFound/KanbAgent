@@ -216,8 +216,13 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
       // false positives from previous sessions completed within the last few minutes.
       const rows = await window.electronAPI.queryDb(
         path,
-        `SELECT id FROM sessions WHERE agent_id = ? AND status = 'completed' AND ended_at >= ? ORDER BY id DESC LIMIT 1`,
-        [agentId, notBefore]
+        `SELECT id FROM sessions WHERE agent_id = ? AND status = 'completed' AND ended_at >= ?
+         AND NOT EXISTS (
+           SELECT 1 FROM sessions s2
+           WHERE s2.agent_id = ? AND s2.status = 'started' AND s2.id > sessions.id
+         )
+         ORDER BY id DESC LIMIT 1`,
+        [agentId, notBefore, agentId]
       ) as { id: number }[]
       if (rows.length > 0) {
         doClose(tabId)
