@@ -435,6 +435,7 @@ describe('worktree-manager', () => {
           { path: REPO, branch: 'main' },
           { path: wtPath, branch: `agent/review/s${FIXED_TS}` },
         ])
+        mockQueryLive.mockResolvedValue([]) // no matching session → fallback to heuristic
         let callCount = 0
         mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
           callCount++
@@ -452,7 +453,7 @@ describe('worktree-manager', () => {
         const [, branchArgs] = mockExecFile.mock.calls[2] as [string, string[], ExecFileCbWithStdout]
         expect(branchArgs).toContain('-D')
         expect(branchArgs).toContain(`agent/review/s${FIXED_TS}`)
-        expect(mockQueryLive).not.toHaveBeenCalled()
+        expect(mockQueryLive).toHaveBeenCalledOnce() // T1274: DB check before heuristic
       })
 
       it('preserves new-format worktree when timestamp < 4h', async () => {
@@ -460,6 +461,7 @@ describe('worktree-manager', () => {
         const output = porcelainOutput([
           { path: `/fake/agent-worktrees/review-s${FIXED_TS}`, branch: `agent/review/s${FIXED_TS}` },
         ])
+        mockQueryLive.mockResolvedValue([]) // no matching session → fallback to heuristic
         let callCount = 0
         mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
           callCount++
@@ -471,7 +473,7 @@ describe('worktree-manager', () => {
 
         // list + prune only (no remove)
         expect(mockExecFile).toHaveBeenCalledTimes(2)
-        expect(mockQueryLive).not.toHaveBeenCalled()
+        expect(mockQueryLive).toHaveBeenCalledOnce() // T1274: DB check before heuristic
       })
 
       it('ignores new-format worktree remove errors (best-effort)', async () => {
@@ -491,11 +493,12 @@ describe('worktree-manager', () => {
         expect(mockExecFile).toHaveBeenCalledTimes(4)
       })
 
-      it('does not query DB for new-format branches', async () => {
+      it('queries DB for new-format branches before temporal heuristic (T1274)', async () => {
         vi.spyOn(Date, 'now').mockReturnValue(FIXED_TS + FOUR_HOURS_MS + 1)
         const output = porcelainOutput([
           { path: `/fake/agent-worktrees/review-s${FIXED_TS}`, branch: `agent/review/s${FIXED_TS}` },
         ])
+        mockQueryLive.mockResolvedValue([]) // no matching session → fallback to heuristic
         let callCount = 0
         mockExecFile.mockImplementation((_cmd: string, _args: string[], cb: ExecFileCbWithStdout) => {
           callCount++
@@ -505,7 +508,11 @@ describe('worktree-manager', () => {
 
         await pruneOrphanedWorktrees(REPO, DB_PATH)
 
-        expect(mockQueryLive).not.toHaveBeenCalled()
+        expect(mockQueryLive).toHaveBeenCalledOnce()
+        const [dbPath, sql, params] = mockQueryLive.mock.calls[0] as [string, string, unknown[]]
+        expect(dbPath).toBe(DB_PATH)
+        expect(sql).toContain('JOIN agents')
+        expect(params[0]).toBe('review') // agentName
       })
     })
   })
