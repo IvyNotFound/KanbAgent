@@ -989,6 +989,198 @@ describe('useStreamEvents — ANSI sanitisation on re-render (L115-L117)', () =>
   })
 })
 
+describe('useStreamEvents — enqueueEvent flushPending guard (L73)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  it('two sequential enqueues before flush only schedule one nextTick flush', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    // Enqueue two events in same tick — should only flush once (not twice)
+    enqueueEvent({ type: 'result', num_turns: 1 })
+    enqueueEvent({ type: 'result', num_turns: 2 })
+
+    // Before flush — nothing committed yet (micro-batch pending)
+    expect(events.value).toHaveLength(0)
+
+    await nextTick()
+    // Both events present after single flush
+    expect(events.value).toHaveLength(2)
+  })
+
+  it('enqueueEvent after flush can schedule another flush', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'result', num_turns: 1 })
+    await nextTick()
+    expect(events.value).toHaveLength(1)
+
+    // New enqueue after previous flush completes → should flush again
+    enqueueEvent({ type: 'result', num_turns: 2 })
+    await nextTick()
+    expect(events.value).toHaveLength(2)
+  })
+
+  it('initial flushPending state is false — first enqueue triggers flush', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    // No events before enqueue
+    expect(events.value).toHaveLength(0)
+
+    // First enqueue — flushPending was false, so sets it to true and schedules flush
+    enqueueEvent({ type: 'text', text: 'first event' })
+    expect(events.value).toHaveLength(0) // not yet flushed
+
+    await nextTick()
+    expect(events.value).toHaveLength(1)
+    expect(events.value[0]._html).toBe('<p>first event</p>')
+  })
+})
+
+describe('useStreamEvents — scrollToBottom called after flush (L68)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  it('scrollToBottom is called after flush when near bottom', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent, scrollContainer } = useStreamEvents('tab-1')
+
+    const el = document.createElement('div')
+    Object.defineProperty(el, 'scrollHeight', { value: 500, configurable: true })
+    Object.defineProperty(el, 'scrollTop', { value: 490, configurable: true, writable: true })
+    Object.defineProperty(el, 'clientHeight', { value: 0, configurable: true })
+    scrollContainer.value = el
+
+    enqueueEvent({ type: 'result', num_turns: 1 })
+    await nextTick()
+    await nextTick() // scrollToBottom uses nextTick internally
+
+    expect(el.scrollTop).toBe(500)
+  })
+})
+
+describe('useStreamEvents — eviction arithmetic MAX_EVENTS (L62)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  it('eviction removes exactly (total - MAX_EVENTS) oldest events', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    const total = MAX_EVENTS + 100
+    for (let i = 0; i < total; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    // Exactly MAX_EVENTS remain
+    expect(events.value.length).toBe(MAX_EVENTS)
+    // The first remaining event is the 101st (index 100)
+    expect(events.value[0].num_turns).toBe(100)
+    // The last remaining event is the last one added
+    expect(events.value[events.value.length - 1].num_turns).toBe(MAX_EVENTS + 99)
+  })
+
+  it('eviction preserves the most recent MAX_EVENTS events (not the oldest)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    const total = MAX_EVENTS + 5
+    for (let i = 0; i < total; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    // The oldest 5 events (num_turns 0-4) should be evicted
+    const turnValues = events.value.map((e: any) => e.num_turns)
+    expect(turnValues).not.toContain(0)
+    expect(turnValues).not.toContain(4)
+    expect(turnValues).toContain(5)
+  })
+})
+
+describe('useStreamEvents — hidden eviction arithmetic MAX_EVENTS_HIDDEN (L102)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  it('hidden eviction keeps exactly MAX_EVENTS_HIDDEN most recent events', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS_HIDDEN } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    const total = MAX_EVENTS_HIDDEN + 50
+    for (let i = 0; i < total; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN)
+    // Most recent MAX_EVENTS_HIDDEN events kept
+    expect((events.value[events.value.length - 1] as any).num_turns).toBe(total - 1)
+  })
+
+  it('exactly MAX_EVENTS_HIDDEN events: no hidden eviction', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS_HIDDEN } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    for (let i = 0; i < MAX_EVENTS_HIDDEN; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    // Exactly MAX_EVENTS_HIDDEN: condition is > MAX_EVENTS_HIDDEN, so no eviction
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN)
+  })
+
+  it('MAX_EVENTS_HIDDEN + 1 events: evicts to MAX_EVENTS_HIDDEN', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS_HIDDEN } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    for (let i = 0; i < MAX_EVENTS_HIDDEN + 1; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN)
+  })
+})
+
 describe('useStreamEvents — HTML rendering at re-activation: _html null vs défini (L113)', () => {
   beforeEach(() => {
     vi.resetModules()
