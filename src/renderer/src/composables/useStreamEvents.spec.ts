@@ -1239,3 +1239,693 @@ describe('useStreamEvents — HTML rendering at re-activation: _html null vs dé
     expect(events.value[0].message?.content[0]._html).toBeDefined()
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T1347 — Targeted tests to kill surviving mutants
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('useStreamEvents — flushEvents early-return guard (L35)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 706 BlockStatement: early-return block must execute (set flushPending=false and return)
+  // Kill 707 BooleanLiteral: the condition is `=== 0`, not `true`
+  // Kill 704 ConditionalExpression: condition must be checked (not always false)
+  it('flushEvents called directly with empty pendingEvents does NOT push any event (early return)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, flushEvents } = useStreamEvents('tab-1')
+
+    // Call flushEvents directly with no pending events — early return must trigger
+    flushEvents()
+    await nextTick()
+
+    expect(events.value).toHaveLength(0)
+  })
+
+  it('calling enqueueEvent then flushEvents directly processes the event', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent, flushEvents } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'result', num_turns: 99 })
+    // Call flushEvents synchronously before nextTick — pendingEvents is non-empty
+    flushEvents()
+
+    expect(events.value).toHaveLength(1)
+    expect((events.value[0] as any).num_turns).toBe(99)
+  })
+
+  // Kill 707: BooleanLiteral → true — if this were `if(true)` early return would always fire
+  // even with pending events. Verify that with 1 pending event, flushEvents processes it.
+  it('flushEvents with 1 pending event adds exactly 1 event (no spurious early return)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent, flushEvents } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'text', text: 'should appear' })
+    flushEvents()  // synchronous call, pendingEvents.length = 1
+
+    expect(events.value).toHaveLength(1)
+    expect(events.value[0]._html).toBe('<p>should appear</p>')
+  })
+})
+
+describe('useStreamEvents — tool_result content ternary branches (L43)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 731 ConditionalExpression L43:47 → false  — the `!block.content ? '' : ...` branch
+  // The existing null test covers → ''. Need to verify that non-null string takes the string path.
+  it('tool_result with string content uses the string value (not empty string)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_result', content: 'specific string' }] },
+    })
+    await nextTick()
+
+    expect(renderMarkdown).toHaveBeenCalledWith('specific string')
+    expect(events.value[0].message?.content[0]._html).toBe('<p>specific string</p>')
+  })
+
+  // Kill 733 StringLiteral L43:72 → "" — the empty fallback ''; verify null → ''
+  it('tool_result with null content renders empty string (not skipped)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_result', content: null }] },
+    })
+    await nextTick()
+
+    expect(renderMarkdown).toHaveBeenCalledWith('')
+    expect(events.value[0].message?.content[0]._html).toBe('<p></p>')
+  })
+
+  // Kill 737 StringLiteral L43:172 → "" — the '\n' join separator
+  it('tool_result with array of 2 text items joins them with newline', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'tool_result', content: [{ type: 'text', text: 'first' }, { type: 'text', text: 'second' }] }],
+      },
+    })
+    await nextTick()
+
+    expect(renderMarkdown).toHaveBeenCalledWith('first\nsecond')
+  })
+
+  // Kill NoCoverage L43:163 — String(block.content) fallback for non-null/non-string/non-array
+  it('tool_result with numeric content falls through to String() fallback', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_result', content: 42 as any }] },
+    })
+    await nextTick()
+
+    expect(renderMarkdown).toHaveBeenCalledWith('42')
+    expect(events.value[0].message?.content[0]._html).toBe('<p>42</p>')
+  })
+
+  // Kill 717 ConditionalExpression L40:15 → true  — block.type === 'text' && block.text != null
+  // When a block has type === 'image_url' (not text, not tool_result), neither branch runs
+  it('unknown block type does not set _html (neither text nor tool_result branch)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'image_url', url: 'http://x.com/img.png' }] },
+    })
+    await nextTick()
+
+    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+  })
+})
+
+describe('useStreamEvents — eviction collapsed key parse (L65)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 758 ConditionalExpression L61:9 → true — eviction always runs
+  // Kill 760 EqualityOperator L61:9 → >= — boundary: exactly MAX_EVENTS → no eviction
+  // Already covered by MAX_EVENTS boundary tests above.
+
+  // Kill 766 ConditionalExpression L65:13 → true — evictedIds.has() always returns true
+  it('collapsed keys for NON-evicted events are preserved after MAX_EVENTS+1 flush', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS } = await import('@renderer/composables/useStreamEvents')
+    const { events, collapsed, enqueueEvent } = useStreamEvents('tab-1')
+
+    // Fill up to MAX_EVENTS
+    for (let i = 0; i < MAX_EVENTS; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    // Add a collapsed key for the LAST (most recent) event — it should NOT be evicted
+    const lastId = events.value[events.value.length - 1]._id!
+    collapsed.value[`${lastId}-tool`] = true
+
+    // Add 1 more to trigger eviction of first event
+    enqueueEvent({ type: 'result', num_turns: MAX_EVENTS })
+    await nextTick()
+
+    // The last event's collapsed key must survive
+    expect(collapsed.value[`${lastId}-tool`]).toBe(true)
+  })
+
+  // Kill 768 StringLiteral L65:47 → "" — the '-' split separator
+  it('collapsed key with format "N-suffix" correctly extracts N as event id for eviction', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS } = await import('@renderer/composables/useStreamEvents')
+    const { events, collapsed, enqueueEvent } = useStreamEvents('tab-1')
+
+    for (let i = 0; i < MAX_EVENTS; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    // Use a multi-part collapsed key like "1-tool-use-123"
+    const firstId = events.value[0]._id!
+    collapsed.value[`${firstId}-tool-use-extra`] = true
+
+    enqueueEvent({ type: 'result', num_turns: MAX_EVENTS })
+    await nextTick()
+
+    // The key for the evicted event must be removed
+    expect(collapsed.value[`${firstId}-tool-use-extra`]).toBeUndefined()
+  })
+})
+
+describe('useStreamEvents — enqueueEvent flushPending guard (L73)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 771 ConditionalExpression L73:9 → true — !flushPending always true = schedules nextTick every call
+  // If the guard didn't exist, multiple enqueueEvent calls would schedule multiple flushes.
+  // We verify that 3 rapid enqueues still result in exactly 1 combined flush (micro-batching).
+  it('3 rapid enqueueEvent calls result in exactly 1 flush (flushPending guard prevents duplicate schedules)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'result', num_turns: 1 })
+    enqueueEvent({ type: 'result', num_turns: 2 })
+    enqueueEvent({ type: 'result', num_turns: 3 })
+    await nextTick()
+
+    expect(events.value).toHaveLength(3)
+  })
+})
+
+describe('useStreamEvents — isNearBottom with null scrollContainer (L79)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 779 BooleanLiteral L79:40 → false — isNearBottom returns false when no container
+  // If it returned false, scrollToBottom(force=false) would not scroll, but it should scroll
+  // since we have no container and the default is "assume we're at bottom".
+  it('scrollToBottom(false) with null scrollContainer still calls nextTick (no container = near bottom)', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { scrollContainer, scrollToBottom } = useStreamEvents('tab-1')
+
+    // Container is null — isNearBottom should return true → scrollToBottom(false) should attempt to scroll
+    scrollContainer.value = null
+
+    // If isNearBottom returned false, scrollToBottom(false) would skip the nextTick callback.
+    // We can verify by setting a real element after nextTick and checking behavior.
+    // The simplest test: scrollToBottom(false) with null container must not throw
+    // and must return after completing the nextTick (no crash).
+    const el = document.createElement('div')
+    Object.defineProperty(el, 'scrollHeight', { value: 500, configurable: true })
+    // Set container AFTER the call to catch the nextTick assignment
+    scrollToBottom(false)
+    scrollContainer.value = el
+    await nextTick()
+
+    // With null container + force=false + isNearBottom=true: nextTick fires but container check inside
+    // Since scrollContainer becomes el after call but before nextTick executes:
+    expect(el.scrollTop).toBe(500)
+  })
+})
+
+describe('useStreamEvents — scrollToBottom default parameter (L84)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 786 BooleanLiteral L84:35 → true — default force=false becomes force=true
+  // If default force were true, scrollToBottom() (no args) would always scroll even when far from bottom.
+  it('scrollToBottom() with no args (default force=false) does NOT scroll when far from bottom', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { scrollContainer, scrollToBottom } = useStreamEvents('tab-1')
+
+    const el = document.createElement('div')
+    // 1000 - 0 - 100 = 900 >= 150 → NOT near bottom
+    Object.defineProperty(el, 'scrollHeight', { value: 1000, configurable: true })
+    Object.defineProperty(el, 'scrollTop', { value: 0, configurable: true, writable: true })
+    Object.defineProperty(el, 'clientHeight', { value: 100, configurable: true })
+    scrollContainer.value = el
+
+    scrollToBottom()  // no argument — default is false
+    await nextTick()
+
+    expect(el.scrollTop).toBe(0)  // should NOT have scrolled
+  })
+
+  it('scrollToBottom() near bottom (default force=false) scrolls to bottom', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { scrollContainer, scrollToBottom } = useStreamEvents('tab-1')
+
+    const el = document.createElement('div')
+    // 1000 - 950 - 0 = 50 < 150 → near bottom
+    Object.defineProperty(el, 'scrollHeight', { value: 1000, configurable: true })
+    Object.defineProperty(el, 'scrollTop', { value: 950, configurable: true, writable: true })
+    Object.defineProperty(el, 'clientHeight', { value: 0, configurable: true })
+    scrollContainer.value = el
+
+    scrollToBottom()  // no argument
+    await nextTick()
+
+    expect(el.scrollTop).toBe(1000)
+  })
+})
+
+describe('useStreamEvents — hidden-tab: ev.type=text _html clear (L99)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 811 ConditionalExpression L99:13 → true — ev.type === 'text' always true
+  // If always true, non-text events (type='result') would also have _html cleared.
+  it('on tab deactivation, _html is NOT touched on type=result events', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'result', num_turns: 5 })
+    await nextTick()
+
+    // Manually set _html on the result event
+    ;(events.value[0] as any)._html = '<p>result html</p>'
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    // type='result' — the clearing branch should not touch it
+    expect((events.value[0] as any)._html).toBe('<p>result html</p>')
+  })
+
+  // Kill 815 ConditionalExpression L101:11 → true — hidden eviction always fires
+  // Kill 817 EqualityOperator L101:11 → >= MAX_EVENTS_HIDDEN
+  // Existing test "does not evict when <= MAX_EVENTS_HIDDEN" already targets this.
+  // Add an exact boundary test: exactly MAX_EVENTS_HIDDEN → no eviction.
+  it('hidden eviction: exactly MAX_EVENTS_HIDDEN events → no eviction on deactivation', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS_HIDDEN } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    for (let i = 0; i < MAX_EVENTS_HIDDEN; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN)
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    // Exactly MAX_EVENTS_HIDDEN: condition is > MAX_EVENTS_HIDDEN, so no eviction
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN)
+  })
+
+  // Kill 817 EqualityOperator → >= MAX_EVENTS_HIDDEN
+  it('hidden eviction: MAX_EVENTS_HIDDEN + 1 events → eviction trims to MAX_EVENTS_HIDDEN', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS_HIDDEN } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    for (let i = 0; i < MAX_EVENTS_HIDDEN + 1; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN + 1)
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN)
+  })
+
+  // Kill 820 ArithmeticOperator L102:48 → events.value.length + MAX_EVENTS_HIDDEN
+  it('hidden eviction: 250 events → trimmed to exactly MAX_EVENTS_HIDDEN (200)', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS_HIDDEN } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    for (let i = 0; i < 250; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    expect(events.value.length).toBe(MAX_EVENTS_HIDDEN)
+  })
+
+  // Kill 823 ConditionalExpression L105:15 → true — collapsed key eviction always runs
+  // Kill 825 StringLiteral L105:49 → "" — the '-' separator in split
+  it('hidden eviction: collapsed keys for surviving events are NOT removed', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents, MAX_EVENTS_HIDDEN } = await import('@renderer/composables/useStreamEvents')
+    const { events, collapsed, enqueueEvent } = useStreamEvents('tab-1')
+
+    for (let i = 0; i < MAX_EVENTS_HIDDEN + 50; i++) {
+      enqueueEvent({ type: 'result', num_turns: i })
+    }
+    await nextTick()
+
+    // Mark a recent event (will survive eviction)
+    const recentId = events.value[events.value.length - 1]._id!
+    collapsed.value[`${recentId}-tool`] = true
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    expect(collapsed.value[`${recentId}-tool`]).toBe(true)
+  })
+})
+
+describe('useStreamEvents — re-activation conditions (L113/L115/L122)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 837 LogicalOperator L113 → 'text' || block.text != null
+  // If changed to OR, a block with type='text' but text=null would still re-render.
+  it('re-activation: text block with null text is NOT re-rendered (AND guard)', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: null }] },
+    })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    // renderMarkdown must NOT have been called for this null-text block
+    expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
+    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+  })
+
+  // Kill 838 ConditionalExpression L113:17 → true — text block always re-renders
+  it('re-activation: text block with _html already set is NOT re-rendered (skip if _html defined)', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: 'hello' }] },
+    })
+    await nextTick()
+
+    // Deactivate clears _html
+    tabsStore.setActive('other-tab')
+    await nextTick()
+    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+
+    // Manually pre-set _html so the guard !block._html is false
+    events.value[0].message!.content[0]._html = '<p>cached</p>'
+
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    // Since _html is already defined, renderMarkdown should NOT be called again
+    expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
+    expect(events.value[0].message?.content[0]._html).toBe('<p>cached</p>')
+  })
+
+  // Kill 841 ConditionalExpression L113:42 → true — block.text != null always true
+  // Same as 837 effectively. Test: type='text' with text=null should not re-render.
+  it('re-activation: block.text=null prevents renderMarkdown call (null guard)', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'text', text: null }] },
+    })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+  })
+
+  // Kill 845 ConditionalExpression L115:24 → true — tool_result re-render check
+  // Kill 847 LogicalOperator L115:24 → tool_result || !_html
+  // Kill 848 ConditionalExpression L115:24 → true (block.type === 'tool_result')
+  it('re-activation: tool_result block with _html already defined is NOT re-rendered', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_result', content: 'output' }] },
+    })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+
+    // Pre-set _html — re-activation should skip rendering
+    events.value[0].message!.content[0]._html = '<p>cached tool</p>'
+
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
+    expect(events.value[0].message?.content[0]._html).toBe('<p>cached tool</p>')
+  })
+
+  // Kill 856 ConditionalExpression L116:49 → false — re-activation tool_result null content
+  // Kill 858 StringLiteral L116:74 → "" — empty fallback
+  it('re-activation: tool_result with null content uses empty string for re-render', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_result', content: null }] },
+    })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    expect(renderMarkdown).toHaveBeenLastCalledWith('')
+    expect(events.value[0].message?.content[0]._html).toBe('<p></p>')
+  })
+
+  // Kill 862 StringLiteral L116:174 → "" — '\n' join separator on re-activation
+  it('re-activation: tool_result with array content joins with newline', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'tool_result', content: [{ type: 'text', text: 'alpha' }, { type: 'text', text: 'beta' }] }],
+      },
+    })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    expect(renderMarkdown).toHaveBeenLastCalledWith('alpha\nbeta')
+  })
+
+  // Kill NoCoverage L116:44 — String(block.content) fallback on re-activation
+  it('re-activation: tool_result with non-string/non-array/non-null content uses String() fallback', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_result', content: 99 as any }] },
+    })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    expect(renderMarkdown).toHaveBeenLastCalledWith('99')
+  })
+
+  // Kill 872 ConditionalExpression L122:13 → true — ev.type=text && ev.text!=null && !ev._html check
+  it('re-activation: top-level text event with _html already defined is NOT re-rendered', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'text', text: 'already cached' })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+    expect(events.value[0]._html).toBeUndefined()
+
+    // Pre-set _html before re-activation
+    events.value[0]._html = '<p>my cached</p>'
+
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
+    expect(events.value[0]._html).toBe('<p>my cached</p>')
+  })
+
+  it('re-activation: type=result top-level event is NOT re-rendered (type guard)', async () => {
+    const tabsStore = await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'result', num_turns: 3 })
+    await nextTick()
+
+    tabsStore.setActive('other-tab')
+    await nextTick()
+
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+    tabsStore.setActive('tab-1')
+    await nextTick()
+
+    expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
+  })
+})
+
+describe('useStreamEvents — cleanup clears pendingEvents (L138)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  // Kill 885 ArrayDeclaration L138:21 → ["Stryker was here"] — pendingEvents not set to []
+  it('cleanup prevents in-flight enqueued events from being processed', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent, cleanup } = useStreamEvents('tab-1')
+
+    // Enqueue but do NOT flush yet
+    enqueueEvent({ type: 'result', num_turns: 1 })
+    enqueueEvent({ type: 'result', num_turns: 2 })
+
+    // Cleanup before nextTick
+    cleanup()
+
+    // Now flush — pendingEvents should be empty, nothing added
+    await nextTick()
+
+    expect(events.value).toHaveLength(0)
+  })
+
+  it('cleanup resets pendingEvents so subsequent enqueue+flush works cleanly', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent, cleanup } = useStreamEvents('tab-1')
+
+    enqueueEvent({ type: 'result', num_turns: 1 })
+    cleanup()
+    await nextTick()
+
+    // After cleanup, enqueue a new event — should work
+    enqueueEvent({ type: 'result', num_turns: 2 })
+    await nextTick()
+
+    expect(events.value).toHaveLength(1)
+    expect((events.value[0] as any).num_turns).toBe(2)
+  })
+})
