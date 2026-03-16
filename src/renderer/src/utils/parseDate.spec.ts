@@ -168,4 +168,34 @@ describe('parseUtcDate — mutation-killing cases (T1074)', () => {
     expect(d.getUTCDate()).toBe(1)
     expect(d.getUTCHours()).toBe(0)
   })
+
+  // Kills endsWith('Z') → startsWith('Z') mutation (L14):
+  // A string with a space + trailing Z (no T) must pass through unchanged.
+  // The mutant (startsWith) returns false → replace path → appends extra Z → NaN.
+  it('endsWith Z without T: passes through, no extra Z appended (kills startsWith mutation)', () => {
+    // "2024-06-15 12:00:00Z" ends with Z but has no T and doesn't start with Z.
+    // original: endsWith('Z') = true → pass-through → new Date parses correctly
+    // mutant:   startsWith('Z') = false → replace path → "2024-06-15T12:00:00ZZ" → NaN
+    const d = parseUtcDate('2024-06-15 12:00:00Z')
+    expect(isNaN(d.getTime())).toBe(false)
+    expect(d.getUTCFullYear()).toBe(2024)
+    expect(d.getUTCHours()).toBe(12)
+    expect(d.getUTCMinutes()).toBe(0)
+  })
+
+  // Kills includes('T') || endsWith('Z') → includes('T') && endsWith('Z') mutation (L14):
+  // A space-separated SQLite string with a trailing Z (no T) must be treated as UTC pass-through.
+  // With &&: includes('T') = false → condition collapses → goes to replace path → appends 'ZZ' → NaN.
+  it('SQLite string ending in Z without T: passes through (kills && mutation on first ||)', () => {
+    // "2025-12-31 23:59:59Z" has no T but endsWith('Z').
+    // original ||: endsWith('Z') alone triggers pass-through.
+    // mutant &&:   includes('T') && endsWith('Z') = false && true = false → replace → "…ZZ" → NaN.
+    const d = parseUtcDate('2025-12-31 23:59:59Z')
+    expect(isNaN(d.getTime())).toBe(false)
+    expect(d.getUTCFullYear()).toBe(2025)
+    expect(d.getUTCMonth()).toBe(11)
+    expect(d.getUTCDate()).toBe(31)
+    expect(d.getUTCHours()).toBe(23)
+    expect(d.getUTCMinutes()).toBe(59)
+  })
 })
