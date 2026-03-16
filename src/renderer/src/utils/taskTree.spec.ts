@@ -85,6 +85,31 @@ describe('buildTree', () => {
     expect(childIds).toEqual([2, 3])
   })
 
+  it('sorts roots by id ascending (kills sort removal and arithmetic mutations)', () => {
+    // 3 independent roots added in reverse id order — roots.sort must produce [1,2,3]
+    // Mutant "roots.sort(() => undefined)": non-deterministic, may not sort
+    // Mutant "a.id + b.id": comparator always positive → undefined sort behaviour
+    // Mutant "roots" (no sort): order from Map iteration, which is insertion order [3,2,1]
+    const tasks = [makeTask(3), makeTask(1), makeTask(2)]
+    const roots = buildTree(tasks)
+    expect(roots.map((n) => n.id)).toEqual([1, 2, 3])
+  })
+
+  it('treats node with an ancestor cycle (not involving itself) as root (kills visited.has survivor)', () => {
+    // Task 4 → Task 3, Task 3 ↔ Task 2 (cycle in ancestors, does not involve id=4)
+    // hasAncestorCycle(4, 3): current=3 → add(3) → current=2 → add(2) → current=3 → visited.has(3)=true
+    // Without visited.has guard (mutant): loop 3→2→3→2→... until Stryker timeout
+    // The test ensures node 4 is treated as root (its parent chain forms a cycle)
+    const tasks = [makeTask(2, 3), makeTask(3, 2), makeTask(4, 3)]
+    const roots = buildTree(tasks)
+    const ids = roots.map((n) => n.id).sort((a, b) => a - b)
+    expect(ids).toEqual([2, 3, 4])
+    // Node 4 must be a root (its ancestor chain has a 2↔3 cycle)
+    const node4 = roots.find((n) => n.id === 4)
+    expect(node4).toBeDefined()
+    expect(node4!.depth).toBe(0)
+  })
+
   describe('MAX_TREE_DEPTH boundary', () => {
     it('does NOT promote a child at exactly MAX_TREE_DEPTH', () => {
       // Build a chain of MAX_TREE_DEPTH+1 nodes (depth 0..MAX_TREE_DEPTH)

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { isStale, staleDuration } from './staleTask'
 
 describe('isStale', () => {
@@ -72,5 +72,32 @@ describe('isStale — boundary', () => {
     // Exactly at boundary: elapsed == threshold * 60 * 1000, strict > is false
     const exactBoundary = new Date(Date.now() - threshold * 60 * 1000).toISOString()
     expect(isStale(exactBoundary, threshold)).toBe(false)
+  })
+})
+
+describe('staleDuration — boundary (T1330)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('returns empty string when ms === 0 (kills <= → < mutation)', () => {
+    // Freeze time so Date.now() === start time → ms = 0
+    // With ms <= 0: returns '' (correct)
+    // With ms < 0 (mutant): 0 < 0 = false → proceeds to format '0min'
+    const fixedNow = 1_700_000_000_000
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow)
+    const startedAt = new Date(fixedNow).toISOString()
+    expect(staleDuration(startedAt)).toBe('')
+  })
+
+  it('returns "0min" for 1ms elapsed (ms > 0)', () => {
+    // Ensure the > 0 path returns a value (not caught by the guard)
+    const fixedNow = 1_700_000_000_000
+    vi.useFakeTimers()
+    vi.setSystemTime(fixedNow + 1)
+    const startedAt = new Date(fixedNow).toISOString()
+    // 1ms → totalMin=0, hours=0, returns '0min'
+    expect(staleDuration(startedAt)).toBe('0min')
   })
 })
