@@ -202,6 +202,61 @@ describe('composables/useArchivedPagination', () => {
 
     expect(api.tasksGetArchived).not.toHaveBeenCalled()
   })
+
+  it('loadPage error path: loading is false after rejection, no unhandled throw', async () => {
+    api.tasksGetArchived.mockRejectedValue(new Error('IPC rejected'))
+    setupStore()
+
+    const { loading, archivedTasks, total, loadPage } = useArchivedPagination()
+
+    // Should not throw — error is caught internally
+    await loadPage(0)
+
+    expect(loading.value).toBe(false)
+    // Data stays at initial values on error
+    expect(archivedTasks.value).toHaveLength(0)
+    expect(total.value).toBe(0)
+  })
+
+  it('loadPage(3) sets page.value to 3', async () => {
+    setupStore()
+    const { page, loadPage } = useArchivedPagination()
+
+    await loadPage(3)
+
+    expect(page.value).toBe(3)
+  })
+
+  it('watch lastRefresh: change triggers loadPage with current page', async () => {
+    const store = setupStore()
+    const { loadPage } = useArchivedPagination()
+
+    // First load to enable the guard
+    await loadPage(2)
+    api.tasksGetArchived.mockClear()
+
+    // Simulate a DB refresh event
+    store.lastRefresh = new Date()
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(api.tasksGetArchived).toHaveBeenCalledWith(
+      '/project/.claude/project.db',
+      expect.objectContaining({ page: 2 })
+    )
+  })
+
+  it('watch lastRefresh: does NOT reload before first loadPage call', async () => {
+    const store = setupStore()
+    // Do NOT call loadPage — hasLoaded guard should prevent reload
+    useArchivedPagination()
+
+    store.lastRefresh = new Date()
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(api.tasksGetArchived).not.toHaveBeenCalled()
+  })
 })
 
 // ---------------------------------------------------------------------------
