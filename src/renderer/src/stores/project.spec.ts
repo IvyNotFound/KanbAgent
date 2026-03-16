@@ -83,3 +83,61 @@ describe('stores/project — closeWizard (T838)', () => {
   })
 })
 
+
+describe('stores/project — localStorage initialisation (T1343)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    localStorage.clear()
+  })
+
+  it('initialises projectPath from localStorage when set', () => {
+    localStorage.setItem('projectPath', '/saved/project')
+    const store = useProjectStore()
+    expect(store.projectPath).toBe('/saved/project')
+  })
+
+  it('initialises projectPath to null when localStorage is empty', () => {
+    const store = useProjectStore()
+    expect(store.projectPath).toBeNull()
+  })
+
+  it('initialises dbPath from localStorage when set', () => {
+    localStorage.setItem('dbPath', '/saved/db.sqlite')
+    const store = useProjectStore()
+    expect(store.dbPath).toBe('/saved/db.sqlite')
+  })
+
+  it('initialises dbPath to null when localStorage is empty', () => {
+    const store = useProjectStore()
+    expect(store.dbPath).toBeNull()
+  })
+
+  it('initialises setupWizardTarget to null on creation', () => {
+    const store = useProjectStore()
+    expect(store.setupWizardTarget).toBeNull()
+  })
+
+  it('setProjectPathOnly updates localStorage and projectPath', () => {
+    const store = useProjectStore()
+    store.setProjectPathOnly('/new/path')
+    expect(store.projectPath).toBe('/new/path')
+    expect(localStorage.getItem('projectPath')).toBe('/new/path')
+  })
+
+  it('setProjectPathOnly overwrites a previously persisted projectPath', () => {
+    localStorage.setItem('projectPath', '/old/path')
+    const store = useProjectStore()
+    store.setProjectPathOnly('/new/path')
+    expect(store.projectPath).toBe('/new/path')
+    expect(localStorage.getItem('projectPath')).toBe('/new/path')
+  })
+
+  it('setupWizardTarget can be set and then cleared by closeWizard', () => {
+    const store = useProjectStore()
+    store.setupWizardTarget = { projectPath: '/wizard/path', hasCLAUDEmd: false }
+    expect(store.setupWizardTarget).toEqual({ projectPath: '/wizard/path', hasCLAUDEmd: false })
+    store.closeWizard()
+    expect(store.setupWizardTarget).toBeNull()
+  })
+})
+
