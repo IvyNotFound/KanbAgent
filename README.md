@@ -251,6 +251,49 @@ The `download-sqlite3.js` pre-build script auto-detects `process.platform` and d
 | `npm run release` | Patch release (SemVer) |
 | `npm run release:minor` | Minor release |
 | `npm run release:major` | Major release |
+| `npm run test:mutation` | Mutation testing — full run (renderer + main) |
+| `npm run test:mutation:renderer` | Mutation testing — renderer scope only |
+| `npm run test:mutation:main` | Mutation testing — main scope only |
+
+## Mutation Testing
+
+KanbAgent uses [Stryker Mutator](https://stryker-mutator.io/) with the Vitest runner to measure test quality. Stryker injects code mutations (flipped conditions, removed statements, etc.) into source files and checks whether existing tests catch them.
+
+```bash
+npm run test:mutation              # Full run (renderer + main)
+npm run test:mutation:renderer     # renderer/ scope only
+npm run test:mutation:main         # main/ scope only
+```
+
+Reports are written to `reports/mutation/index.html` (full), or `reports/mutation/renderer/` and `reports/mutation/main/` for scoped runs.
+
+**Reading results:**
+
+| Status | Meaning |
+|--------|---------|
+| `Killed` | A test caught the mutation — good |
+| `Survived` | No test caught it — potential coverage gap |
+| `NoCoverage` | No test ran against this mutant |
+
+The mutation score is `killed / (killed + survived)`. Thresholds: ≥ 60 high, ≥ 40 low (see `stryker.config.mjs`).
+
+> **Note:** Vue SFCs (`.vue` files) are excluded from mutation — `<script setup>` is incompatible with Stryker's instrumentation. Only `.ts` source files are mutated.
+
+### Vitest configuration files
+
+| File | Purpose |
+|------|---------|
+| `vitest.config.ts` | Standard test runs (`npm run test`, coverage, watch). Includes all tests, snapshot assertions, and coverage thresholds. |
+| `vitest.stryker.config.ts` | Used exclusively by Stryker for its internal dry run. Same include patterns, but excludes two files with pre-existing failures unrelated to mutations. |
+
+**Known exclusions in `vitest.stryker.config.ts`:**
+
+| Excluded file | Reason |
+|---------------|--------|
+| `src/renderer/src/components/StreamView.spec.ts` | Pre-existing eviction failure tracked as T962, unrelated to any mutation. Causes the Stryker dry run to abort. |
+| `src/renderer/src/components/snapshots.spec.ts` | Platform-sensitive HTML snapshots produce different diffs on Windows vs Linux, causing false dry-run failures in CI. |
+
+Both files run normally under `npm run test` — the exclusions apply only to Stryker.
 
 ## Architecture
 
