@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.35.2] - 2026-03-31
+
+### Bug Fixes
+- fix(migration): skip bootstrap for external DBs missing permission_mode/max_sessions (7f61899)
+- fix(front-vuejs): mask zombie started sessions in topology (T1308) (ca0c03e)
+
+### Tests
+- test(front-vuejs): kill surviving mutants in staleTask and taskTree (T1330) (fb37649)
+- test(front-vuejs): kill surviving mutations in tabs.ts and tasks.ts (T1342) (bb92bb3)
+- test(back-electron): raise hookServer.ts mutation score from 64% to ~87% (T1336) (1eb32ba)
+- test(front-vuejs): kill agentColor+agents mutants — sat math, hash, sort, FIFO (T1319) (e2893da)
+- test(front-vuejs): add mutation-killing specs for tabs, tasks, useTaskRefresh (T1348) (fa221ad)
+- test(back-electron): kill surviving mutants in ipc-telemetry (T1324) (f244b7e)
+- test(front-vuejs): add whereClause/andOrWhere/fetchStats tests to useTokenStats (T1326, T1332, T1344) (3451072)
+- test(back-electron): kill surviving mutants in migration-runner (T1340) (14c21d8)
+- test(front-vuejs): kill agentColor mutation survivors — SAT_STEPS, Math.min cap, FIFO, arithmetic (T1349) (6af815c)
+- test(front-vuejs): kill surviving mutants in useStreamEvents (T1347) (378b5e9)
+- test(front-vuejs): kill surviving mutations in useLaunchSession (T1346) (647fdae)
+- test(front-vuejs): kill surviving mutants in useLaunchSession & useAutoLaunch (T1338) (93318f3)
+- test(front-vuejs): kill L125/L127 mutants in useAutoLaunch (T1327) (4502440)
+- test(front-vuejs): kill surviving mutations in useTaskRefresh and tabs (T1314) (d0627ab)
+- test(front-vuejs): kill surviving mutants in utils/parseDate (T1311) (a17082b)
+- test(back-electron): kill surviving mutations in migration-runner idempotence guards (T1325) (f8ebb92)
+- test(back-electron): add real-DB tests for v2-statuts and v3-relations migrations (T1334) (5b5d12a)
+- test(back-electron): add schema-init.ts tests to raise mutation score (T1331) (2e7814c)
+- test(front-vuejs): kill ConditionalExpression mutations in useAutoLaunch (T1345) (a929f7c)
+- test(front-vuejs): kill surviving mutants L149/L199/L203 in tasks store (T1329) (7027e12)
+- test(front-vuejs): add missing branch tests for useArchivedPagination, useConfirmDialog, useToolStats (T1341) (ff5c9dc)
+- test(back-electron): kill LogicalOperator L103 & err-reject mutants in worktree-manager (T1320) (b63534e)
+- test(front-vuejs): kill P2 mutations in staleTask, renderMarkdown, taskTree (T1339) (e71152a)
+- test(front-vuejs): add localStorage initialisation tests for stores/project (T1343) (4ba75a0)
+- test(front-vuejs): add useLaunchSession coverage for T1312 (436affb)
+- test(back-electron): kill surviving mutants on hookServer auth/routing (T1316) (9789fcf)
+- test(front-vuejs): add T1313 mutation coverage for useAutoLaunch (14ddc9b)
+- test(renderer): kill surviving mutations in useTabBarGroups + useStreamEvents (T1318) (6b3ebc7)
+- test(front-vuejs): add useTokenStats specs — mutation score T1310 (7918061)
+- test(back-electron): kill survived mutants in ipc-agent-sessions syncAllTokens (T1321) (ae3e329)
+- test(back-electron): add ipc-agent-groups spec covering cycle detection & setParent handler (T1317) (c553fae)
+- test(back-electron): kill trusted path mutants L293/L299 in ipc-project (T1322) (9add9a2)
+- test(back-electron): add security tests for isPathAllowed & fs handlers (T1315) (a7be005)
+- test(back-electron): kill surviving mutations in ipc-wsl (T1323) (1a7d1af)
+
+### Documentation
+- docs(readme): add Mutation Testing section (T1350) (f65b9b8)
+
+### Chores
+- chore(gitignore): ignore all .stryker-* directories (17a3246)
+- chore(global): replace remaining agent-viewer references with KanbAgent (9a835d8)
+
 ## [0.35.1] - 2026-03-10
 
 ### Bug Fixes
