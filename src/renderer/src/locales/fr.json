@@ -360,6 +360,8 @@
     "deleting": "Suppression…",
     "newPerimetre": "Nouveau périmètre",
     "newPerimetrePlaceholder": "scope-name",
+    "preferredModel": "Modèle préféré (OpenCode)",
+    "preferredModelNote": "Surcharge le modèle global défini dans les paramètres",
     "worktreeEnabled": "Isolation worktree",
     "worktreeInherit": "Hériter",
     "worktreeOn": "Activé",

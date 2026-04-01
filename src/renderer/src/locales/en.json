@@ -368,6 +368,8 @@
     "deleting": "Deleting…",
     "newPerimetre": "New scope",
     "newPerimetrePlaceholder": "scope-name",
+    "preferredModel": "Preferred model (OpenCode)",
+    "preferredModelNote": "Overrides the global model defined in settings",
     "worktreeEnabled": "Worktree isolation",
     "worktreeInherit": "Inherit",
     "worktreeOn": "Enabled",

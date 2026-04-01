@@ -38,6 +38,7 @@ const worktreeEnabled = ref<number | null>(props.agent?.worktree_enabled ?? null
 const maxSessions = ref(props.agent?.max_sessions === -1 ? '' : String(props.agent?.max_sessions ?? 3))
 const maxSessionsInvalid = computed(() => maxSessions.value !== '' && (!/^\d+$/.test(maxSessions.value) || parseInt(maxSessions.value) < 1))
 const maxSessionsDbValue = computed(() => maxSessions.value === '' ? -1 : parseInt(maxSessions.value))
+const preferredModel = ref('')
 const showPrompt = ref(false)
 const loading = ref(false)
 const deleting = ref(false)
@@ -85,6 +86,7 @@ onMounted(async () => {
     thinkingMode.value = a.thinking_mode === 'disabled' ? 'disabled' : 'auto'
     maxSessions.value = a.max_sessions === -1 ? '' : String(a.max_sessions ?? 3)
     worktreeEnabled.value = a.worktree_enabled ?? null
+    preferredModel.value = a.preferred_model ?? ''
     // Load system_prompt and system_prompt_suffix from DB (may be more up-to-date than agent prop)
     if (store.dbPath) {
       const result = await window.electronAPI.getAgentSystemPrompt(store.dbPath, a.id)
@@ -92,6 +94,7 @@ onMounted(async () => {
         systemPrompt.value = result.systemPrompt ?? ''
         systemPromptSuffix.value = result.systemPromptSuffix ?? ''
         thinkingMode.value = result.thinkingMode === 'disabled' ? 'disabled' : 'auto'
+        preferredModel.value = result.preferredModel ?? preferredModel.value
         if (systemPrompt.value || systemPromptSuffix.value) showPrompt.value = true
       }
     }
@@ -119,6 +122,7 @@ async function submit() {
         systemPromptSuffix: systemPromptSuffix.value.trim() || null,
         maxSessions: maxSessionsDbValue.value,
         worktreeEnabled: worktreeEnabled.value === null ? null : worktreeEnabled.value === 1,
+        preferredModel: preferredModel.value.trim() || null,
       })
       if (!result.success) {
         emit('toast', result.error ?? t('agent.saveError'), 'error')
@@ -139,6 +143,7 @@ async function submit() {
       thinkingMode: thinkingMode.value,
       systemPrompt: systemPrompt.value.trim() || null,
       description: description.value.trim() || defaultDescription(type.value),
+      preferredModel: preferredModel.value.trim() || null,
     })
 
     if (!result.success) {
@@ -283,6 +288,18 @@ function handleKeydown(e: KeyboardEvent) {
                 @click="thinkingMode = 'disabled'"
               >{{ t('launch.disabled') }}</button>
             </div>
+          </div>
+
+          <!-- Modèle préféré -->
+          <div>
+            <label class="block text-xs text-content-muted mb-1">{{ t('agent.preferredModel') }}</label>
+            <input
+              v-model="preferredModel"
+              type="text"
+              placeholder="anthropic/claude-opus-4-5"
+              class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 transition-colors"
+            />
+            <p class="text-xs text-content-faint mt-1">{{ t('agent.preferredModelNote') }}</p>
           </div>
 
           <!-- Sessions parallèles max (edit mode uniquement) -->

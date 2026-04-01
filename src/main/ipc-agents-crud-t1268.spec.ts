@@ -620,3 +620,76 @@ describe('delete-agent — agent_logs history (T1268)', () => {
     expect(result.error).toContain('Invalid agentId')
   })
 })
+
+// ── get-agent-system-prompt: returns preferredModel (T1356) ──────────────────
+
+describe('get-agent-system-prompt — preferredModel field (T1356)', () => {
+  it('returns preferredModel:null when not set', async () => {
+    const agentId = await insertAgent('gsp-pm-null')
+    const result = await handlers['get-agent-system-prompt'](null, TEST_DB_PATH, agentId) as {
+      success: boolean; preferredModel: string | null
+    }
+    expect(result.success).toBe(true)
+    expect(result.preferredModel).toBeNull()
+  })
+
+  it('returns preferredModel after update-agent sets it', async () => {
+    const agentId = await insertAgent('gsp-pm-set')
+    await handlers['update-agent'](null, TEST_DB_PATH, agentId, { preferredModel: 'anthropic/claude-opus-4-5' })
+
+    const result = await handlers['get-agent-system-prompt'](null, TEST_DB_PATH, agentId) as {
+      success: boolean; preferredModel: string | null
+    }
+    expect(result.success).toBe(true)
+    expect(result.preferredModel).toBe('anthropic/claude-opus-4-5')
+  })
+
+  it('returns preferredModel:null after clearing with empty string', async () => {
+    const agentId = await insertAgent('gsp-pm-clear')
+    await handlers['update-agent'](null, TEST_DB_PATH, agentId, { preferredModel: 'some-model' })
+    await handlers['update-agent'](null, TEST_DB_PATH, agentId, { preferredModel: '' })
+
+    const result = await handlers['get-agent-system-prompt'](null, TEST_DB_PATH, agentId) as {
+      success: boolean; preferredModel: string | null
+    }
+    expect(result.success).toBe(true)
+    expect(result.preferredModel).toBeNull()
+  })
+
+  it('returns preferredModel:null in error response for unknown agent', async () => {
+    const result = await handlers['get-agent-system-prompt'](null, TEST_DB_PATH, 99999) as {
+      success: boolean; preferredModel: null
+    }
+    expect(result.success).toBe(false)
+    expect(result.preferredModel).toBeNull()
+  })
+})
+
+// ── update-agent: preferredModel field (T1356) ───────────────────────────────
+
+describe('update-agent — preferredModel field (T1356)', () => {
+  it('persists preferredModel string via update-agent', async () => {
+    const agentId = await insertAgent('ua-pm-persist')
+    const result = await handlers['update-agent'](null, TEST_DB_PATH, agentId, { preferredModel: 'gemini-2.5-pro' }) as { success: boolean }
+    expect(result.success).toBe(true)
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT preferred_model FROM agents WHERE id = ?', [agentId]) as Array<{ preferred_model: string | null }>
+    expect(rows[0].preferred_model).toBe('gemini-2.5-pro')
+  })
+
+  it('stores NULL when preferredModel is null', async () => {
+    const agentId = await insertAgent('ua-pm-null')
+    await handlers['update-agent'](null, TEST_DB_PATH, agentId, { preferredModel: 'some-model' })
+    await handlers['update-agent'](null, TEST_DB_PATH, agentId, { preferredModel: null })
+
+    const rows = await queryLive(TEST_DB_PATH, 'SELECT preferred_model FROM agents WHERE id = ?', [agentId]) as Array<{ preferred_model: string | null }>
+    expect(rows[0].preferred_model).toBeNull()
+  })
+
+  it('rejects preferredModel exceeding 200 chars', async () => {
+    const agentId = await insertAgent('ua-pm-toolong')
+    const result = await handlers['update-agent'](null, TEST_DB_PATH, agentId, { preferredModel: 'x'.repeat(201) }) as { success: boolean; error: string }
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('preferredModel')
+  })
+})

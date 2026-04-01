@@ -25,6 +25,8 @@ export interface Agent {
   max_sessions: number
   /** Worktree isolation: null=inherit global, 0=disabled, 1=enabled. */
   worktree_enabled: number | null
+  /** Preferred CLI model override (e.g. "anthropic/claude-opus-4-5"). Null = use global default. */
+  preferred_model: string | null
   created_at: string
   /** Session status. */
   session_status?: 'started' | 'completed' | 'blocked' | null

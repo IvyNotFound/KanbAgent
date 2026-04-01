@@ -87,6 +87,7 @@ export const CreateAgentDataSchema = z.object({
   thinkingMode: z.string().nullable().optional(),
   systemPrompt: SystemPromptSchema.nullable().optional(),
   description: z.string().max(2000).optional(),
+  preferredModel: z.string().max(200).nullable().optional(),
 })
 
 /**
@@ -108,6 +109,7 @@ export const UpdateAgentDataSchema = z.object({
     message: 'maxSessions must be an integer >= 1 or -1 (unlimited)',
   }).optional(),
   worktreeEnabled: z.boolean().nullable().optional(),
+  preferredModel: z.string().max(200).nullable().optional(),
 })
 
 // ── Inferred TypeScript types ─────────────────────────────────────────────────

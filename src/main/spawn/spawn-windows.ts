@@ -57,6 +57,7 @@ export function spawnWindows({
       systemPromptFile: spTempFile,
       binaryName: opts.claudeCommand,
       initialMessage: opts.initialMessage,
+      modelId: opts.modelId,
     })
     logDebug(`spawn attempt (local Windows, ${adapter.cli}): ${spec.command} ${spec.args.join(' ')}`)
     const proc = spawn(spec.command, spec.args, {

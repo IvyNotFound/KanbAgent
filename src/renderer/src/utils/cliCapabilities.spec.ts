@@ -7,23 +7,25 @@ import { CLI_CAPABILITIES, CLI_LABELS, CLI_BADGE, systemLabel } from './cliCapab
 describe('CLI_CAPABILITIES — exhaustive boolean assertions', () => {
   // Kills all BooleanLiteral mutants: each true/false is explicitly checked.
 
-  it('claude: all capabilities enabled', () => {
+  it('claude: all capabilities enabled except modelSelection', () => {
     expect(CLI_CAPABILITIES.claude).toEqual({
       worktree: true,
       profileSelection: true,
       systemPrompt: true,
       thinkingMode: true,
       convResume: true,
+      modelSelection: false,
     })
   })
 
-  it('codex: profileSelection, thinkingMode, convResume disabled', () => {
+  it('codex: profileSelection, thinkingMode, convResume, modelSelection disabled', () => {
     expect(CLI_CAPABILITIES.codex).toEqual({
       worktree: true,
       profileSelection: false,
       systemPrompt: true,
       thinkingMode: false,
       convResume: false,
+      modelSelection: false,
     })
   })
 
@@ -34,16 +36,18 @@ describe('CLI_CAPABILITIES — exhaustive boolean assertions', () => {
       systemPrompt: false,
       thinkingMode: false,
       convResume: false,
+      modelSelection: false,
     })
   })
 
-  it('opencode: only worktree enabled', () => {
+  it('opencode: worktree and modelSelection enabled', () => {
     expect(CLI_CAPABILITIES.opencode).toEqual({
       worktree: true,
       profileSelection: false,
       systemPrompt: false,
       thinkingMode: false,
       convResume: false,
+      modelSelection: true,
     })
   })
 
@@ -54,6 +58,7 @@ describe('CLI_CAPABILITIES — exhaustive boolean assertions', () => {
       systemPrompt: true,
       thinkingMode: false,
       convResume: false,
+      modelSelection: false,
     })
   })
 
@@ -64,6 +69,7 @@ describe('CLI_CAPABILITIES — exhaustive boolean assertions', () => {
       systemPrompt: true,
       thinkingMode: false,
       convResume: false,
+      modelSelection: false,
     })
   })
 
@@ -87,6 +93,13 @@ describe('CLI_CAPABILITIES — exhaustive boolean assertions', () => {
       .filter(([, v]) => v.convResume)
       .map(([k]) => k)
     expect(withResume).toEqual(['claude'])
+  })
+
+  it('only opencode has modelSelection=true', () => {
+    const withModel = Object.entries(CLI_CAPABILITIES)
+      .filter(([, v]) => v.modelSelection)
+      .map(([k]) => k)
+    expect(withModel).toEqual(['opencode'])
   })
 
   it('claude, codex, aider, goose have systemPrompt=true', () => {

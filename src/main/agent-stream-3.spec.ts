@@ -203,7 +203,8 @@ describe('agent-stream', () => {
     it('calls queryLive when dbPath + valid positive integer sessionId provided', async () => {
       const handler = handlers.get('agent:create')!
       await handler({ sender: mockSender }, { dbPath: '/fake/project.db', sessionId: 5 })
-      expect(mockQueryLive).toHaveBeenCalledOnce()
+      // 3 calls: T1356 model resolution (agent + config) + T772 active tasks
+      expect(mockQueryLive).toHaveBeenCalledTimes(3)
     })
   })
 

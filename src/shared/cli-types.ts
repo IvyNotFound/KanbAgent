@@ -69,6 +69,8 @@ export interface CliCapabilities {
   thinkingMode: boolean
   /** Session resume via --resume / conversation ID (Claude only). */
   convResume: boolean
+  /** Model selection via --model flag (T1356). */
+  modelSelection: boolean
 }
 
 /**
@@ -89,6 +91,8 @@ export interface LaunchOpts {
   initialMessage?: string
   /** Model identifier to pass via CLI flag (e.g. `-m gemini-2.5-flash` for Gemini). */
   model?: string
+  /** Model ID to pass via --model flag (T1356 — OpenCode only for now). */
+  modelId?: string
 }
 
 /**

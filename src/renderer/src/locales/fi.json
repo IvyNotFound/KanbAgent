@@ -380,6 +380,8 @@
       "devops": "Commitit, haarat, CI/CD, julkaisut",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
+    "preferredModel": "Preferred model (OpenCode)",
+    "preferredModelNote": "Overrides the global model defined in settings",
     "worktreeEnabled": "Worktree-eristys",
     "worktreeInherit": "Peri",
     "worktreeOn": "Käytössä",

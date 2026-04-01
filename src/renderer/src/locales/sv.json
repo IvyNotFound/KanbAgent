@@ -380,6 +380,8 @@
       "devops": "Incheckningar, grenar, CI/CD, releaser",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
+    "preferredModel": "Preferred model (OpenCode)",
+    "preferredModelNote": "Overrides the global model defined in settings",
     "worktreeEnabled": "Worktree-isolering",
     "worktreeInherit": "Ärv",
     "worktreeOn": "Aktiverad",

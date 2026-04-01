@@ -123,7 +123,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   buildAgentPrompt: (agentName: string, userPrompt: string, dbPath?: string, agentId?: number): Promise<string> =>
     ipcRenderer.invoke('build-agent-prompt', agentName, userPrompt, dbPath, agentId),
 
-  getAgentSystemPrompt: (dbPath: string, agentId: number): Promise<{ success: boolean; systemPrompt: string | null; systemPromptSuffix: string | null; thinkingMode: string | null; permissionMode: string | null; worktreeEnabled: number | null; error?: string }> =>
+  getAgentSystemPrompt: (dbPath: string, agentId: number): Promise<{ success: boolean; systemPrompt: string | null; systemPromptSuffix: string | null; thinkingMode: string | null; permissionMode: string | null; worktreeEnabled: number | null; preferredModel: string | null; error?: string }> =>
     ipcRenderer.invoke('get-agent-system-prompt', dbPath, agentId),
 
   updateAgentThinkingMode: (dbPath: string, agentId: number, thinkingMode: string | null): Promise<{ success: boolean; error?: string }> =>
@@ -140,6 +140,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     autoLaunch?: boolean
     permissionMode?: 'default' | 'auto' | null
     worktreeEnabled?: boolean | null
+    preferredModel?: string | null
   }): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-agent', dbPath, agentId, updates),
 
@@ -160,7 +161,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createAgent: (
     dbPath: string,
     projectPath: string,
-    data: { name: string; type: string; scope: string | null; thinkingMode: string | null; systemPrompt: string | null; description: string }
+    data: { name: string; type: string; scope: string | null; thinkingMode: string | null; systemPrompt: string | null; description: string; preferredModel?: string | null }
   ): Promise<{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }> =>
     ipcRenderer.invoke('create-agent', dbPath, projectPath, data),
 

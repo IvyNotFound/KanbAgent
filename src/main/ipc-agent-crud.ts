@@ -100,24 +100,25 @@ export function registerAgentCrudHandlers(): void {
       assertDbPathAllowed(dbPath)
       const rows = await queryLive(
         dbPath,
-        'SELECT system_prompt, system_prompt_suffix, thinking_mode, permission_mode, worktree_enabled FROM agents WHERE id = ?',
+        'SELECT system_prompt, system_prompt_suffix, thinking_mode, permission_mode, worktree_enabled, preferred_model FROM agents WHERE id = ?',
         [agentId]
       )
       if (rows.length === 0) {
-        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null }
+        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null, preferredModel: null }
       }
-      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null; permission_mode: string | null; worktree_enabled: number | null }
+      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null; permission_mode: string | null; worktree_enabled: number | null; preferred_model: string | null }
       return {
         success: true,
         systemPrompt: row.system_prompt,
         systemPromptSuffix: row.system_prompt_suffix,
         thinkingMode: row.thinking_mode,
         permissionMode: row.permission_mode,
-        worktreeEnabled: row.worktree_enabled
+        worktreeEnabled: row.worktree_enabled,
+        preferredModel: row.preferred_model,
       }
     } catch (err) {
       console.error('[IPC get-agent-system-prompt]', err)
-      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null }
+      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null, preferredModel: null }
     }
   })
 
@@ -165,6 +166,7 @@ export function registerAgentCrudHandlers(): void {
     permissionMode?: 'default' | 'auto' | null
     maxSessions?: number
     worktreeEnabled?: boolean | null
+    preferredModel?: string | null
   }) => {
     if (!PositiveIdSchema.safeParse(agentId).success) {
       return { success: false, error: 'Invalid agentId: must be a positive integer' }
@@ -193,6 +195,7 @@ export function registerAgentCrudHandlers(): void {
         if (updates.permissionMode !== undefined) { cols.push('permission_mode = ?'); vals.push(updates.permissionMode || null) }
         if (updates.maxSessions !== undefined) { cols.push('max_sessions = ?'); vals.push(updates.maxSessions) }
         if (updates.worktreeEnabled !== undefined) { cols.push('worktree_enabled = ?'); vals.push(updates.worktreeEnabled === null ? null : updates.worktreeEnabled ? 1 : 0) }
+        if (updates.preferredModel !== undefined) { cols.push('preferred_model = ?'); vals.push(updates.preferredModel || null) }
         if (cols.length === 0) return
         vals.push(agentId)
         db.run(`UPDATE agents SET ${cols.join(', ')} WHERE id = ?`, vals)
@@ -269,8 +272,8 @@ export function registerAgentCrudHandlers(): void {
 
       const agentId = await writeDb<number>(dbPath, (db) => {
         db.run(
-          'INSERT INTO agents (name, type, scope, thinking_mode, system_prompt, system_prompt_suffix) VALUES (?, ?, ?, ?, ?, ?)',
-          [data.name, data.type, data.scope ?? data.perimetre ?? null, data.thinkingMode ?? null, data.systemPrompt ?? null, STANDARD_AGENT_SUFFIX]
+          'INSERT INTO agents (name, type, scope, thinking_mode, system_prompt, system_prompt_suffix, preferred_model) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [data.name, data.type, data.scope ?? data.perimetre ?? null, data.thinkingMode ?? null, data.systemPrompt ?? null, STANDARD_AGENT_SUFFIX, data.preferredModel ?? null]
         )
         const rows = db.exec('SELECT last_insert_rowid() as id')
         return rows[0].values[0][0] as number

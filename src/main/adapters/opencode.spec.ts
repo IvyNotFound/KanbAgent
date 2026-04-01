@@ -137,6 +137,26 @@ describe('opencodeAdapter.buildCommand', () => {
     const positionalArgs = spec.args.slice(3)
     expect(positionalArgs).toEqual(['fix the bug in app.ts'])
   })
+
+  it('injects --model flag when modelId is provided (T1356)', () => {
+    const spec = opencodeAdapter.buildCommand({ modelId: 'anthropic/claude-opus-4-5' })
+    expect(spec.args).toContain('--model')
+    const idx = spec.args.indexOf('--model')
+    expect(spec.args[idx + 1]).toBe('anthropic/claude-opus-4-5')
+  })
+
+  it('does not inject --model when modelId is absent (T1356)', () => {
+    const spec = opencodeAdapter.buildCommand({})
+    expect(spec.args).not.toContain('--model')
+  })
+
+  it('places --model before initialMessage positional arg (T1356)', () => {
+    const spec = opencodeAdapter.buildCommand({ modelId: 'gemini-2.5-pro', initialMessage: 'hello' })
+    const modelIdx = spec.args.indexOf('--model')
+    const msgIdx = spec.args.indexOf('hello')
+    expect(modelIdx).toBeGreaterThan(-1)
+    expect(msgIdx).toBeGreaterThan(modelIdx)
+  })
 })
 
 // ── opencodeAdapter.parseLine ─────────────────────────────────────────────────

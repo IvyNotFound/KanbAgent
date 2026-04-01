@@ -380,6 +380,8 @@
       "devops": "提交、分支、CI/CD、发布",
       "doc": "README、CONTRIBUTING、JSDoc"
     },
+    "preferredModel": "Preferred model (OpenCode)",
+    "preferredModelNote": "Overrides the global model defined in settings",
     "worktreeEnabled": "Worktree 隔离",
     "worktreeInherit": "继承",
     "worktreeOn": "已启用",

@@ -66,6 +66,11 @@ export const opencodeAdapter: CliAdapter = {
     // opts.systemPromptFile is intentionally ignored here; configure system
     // prompt via opencode's project config file instead.
 
+    // Inject --model flag if a model ID is provided (T1356).
+    if (opts.modelId) {
+      args.push('--model', opts.modelId)
+    }
+
     // opencode run takes the prompt as a positional argument array (not via stdin).
     // Passing it here ensures opencode processes the message immediately on spawn.
     if (opts.initialMessage) {

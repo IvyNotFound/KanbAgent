@@ -380,6 +380,8 @@
       "devops": "Commits, branches, CI/CD, releases",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
+    "preferredModel": "Preferred model (OpenCode)",
+    "preferredModelNote": "Overrides the global model defined in settings",
     "worktreeEnabled": "Worktree-isolation",
     "worktreeInherit": "Arv",
     "worktreeOn": "Aktiveret",

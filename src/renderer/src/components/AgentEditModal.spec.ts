@@ -16,6 +16,7 @@ describe('AgentEditModal', () => {
     system_prompt_suffix: null,
     thinking_mode: 'auto' as const,
     allowed_tools: 'Bash,Edit,Read',
+    preferred_model: null,
     created_at: '2025-01-01',
   }
 
@@ -23,7 +24,7 @@ describe('AgentEditModal', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
-    api.getAgentSystemPrompt.mockResolvedValue({ success: true, thinkingMode: 'auto' })
+    api.getAgentSystemPrompt.mockResolvedValue({ success: true, thinkingMode: 'auto', preferredModel: null })
     api.updateAgent.mockResolvedValue({ success: true })
   })
 

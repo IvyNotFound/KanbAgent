@@ -132,6 +132,8 @@ export interface AgentCreateOpts {
   worktree?: boolean
   /** Initial user message — passed as positional arg for CLIs that don't use stdin (e.g. opencode). */
   initialMessage?: string
+  /** Resolved model ID to pass via --model (T1356 — set by main process from agent.preferred_model or global config). */
+  modelId?: string
 }
 
 // ── Test-only exports ─────────────────────────────────────────────────────────

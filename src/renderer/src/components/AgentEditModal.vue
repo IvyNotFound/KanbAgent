@@ -27,6 +27,7 @@ const worktreeEnabled = ref<number | null>(props.agent.worktree_enabled ?? null)
 const maxSessions = ref(props.agent.max_sessions === -1 ? '' : String(props.agent.max_sessions ?? 3))
 const maxSessionsInvalid = computed(() => maxSessions.value !== '' && (!/^\d+$/.test(maxSessions.value) || parseInt(maxSessions.value) < 1))
 const maxSessionsDbValue = computed(() => maxSessions.value === '' ? -1 : parseInt(maxSessions.value))
+const preferredModel = ref(props.agent.preferred_model ?? '')
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref<string | null>(null)
@@ -40,6 +41,7 @@ onMounted(async () => {
     if (result.success) {
       thinkingMode.value = result.thinkingMode === 'disabled' ? 'disabled' : 'auto'
       permissionMode.value = result.permissionMode === 'auto' ? 'auto' : 'default'
+      preferredModel.value = result.preferredModel ?? preferredModel.value
     }
   }
 })
@@ -98,6 +100,7 @@ async function save() {
       permissionMode: permissionMode.value,
       maxSessions: maxSessionsDbValue.value,
       worktreeEnabled: worktreeEnabled.value === null ? null : worktreeEnabled.value === 1,
+      preferredModel: preferredModel.value.trim() || null,
     })
     if (!result.success) {
       error.value = result.error ?? 'Erreur inconnue'
@@ -176,6 +179,18 @@ async function save() {
               >{{ t('launch.disabled') }}</button>
             </div>
             <p class="text-[10px] text-content-faint mt-1.5">{{ t('launch.thinkingNote') }}</p>
+          </div>
+
+          <!-- Modèle préféré -->
+          <div>
+            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.preferredModel') }}</label>
+            <input
+              v-model="preferredModel"
+              type="text"
+              placeholder="anthropic/claude-opus-4-5"
+              class="w-full bg-surface-secondary border border-edge-default rounded-lg px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+            />
+            <p class="text-[10px] text-content-faint mt-1.5">{{ t('agent.preferredModelNote') }}</p>
           </div>
 
           <!-- Tâches autorisées (--allowedTools) -->

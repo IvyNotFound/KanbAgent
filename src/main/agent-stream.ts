@@ -115,6 +115,30 @@ export function registerAgentStreamHandlers(): void {
       }
     }
 
+    // T1356: Resolve model ID — agent.preferred_model → opencode_default_model config → undefined.
+    // Only resolved if not already set by caller and a DB+session context is available.
+    if (!opts.modelId && opts.dbPath && Number.isInteger(opts.sessionId) && opts.sessionId! > 0) {
+      try {
+        assertDbPathAllowed(opts.dbPath)
+        const agentRows = await queryLive(
+          opts.dbPath,
+          `SELECT a.preferred_model FROM sessions s JOIN agents a ON a.id = s.agent_id WHERE s.id = ?`,
+          [opts.sessionId]
+        ) as Array<{ preferred_model: string | null }>
+        const agentModel = agentRows[0]?.preferred_model ?? null
+
+        const configRows = await queryLive(
+          opts.dbPath,
+          `SELECT value FROM config WHERE key = 'opencode_default_model'`,
+          []
+        ) as Array<{ value: string | null }>
+        const globalModel = configRows[0]?.value ?? null
+
+        const resolved = agentModel || globalModel || undefined
+        if (resolved) opts.modelId = resolved
+      } catch { /* never block spawn on model resolution failure */ }
+    }
+
     // T772: Inject active tasks context into system prompt (DB-first, ultra-compact).
     let effectiveSystemPrompt = opts.systemPrompt ?? ''
     if (opts.dbPath && Number.isInteger(opts.sessionId) && opts.sessionId! > 0) {

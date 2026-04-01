@@ -61,6 +61,7 @@ export function spawnWsl({
       systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
       binaryName: opts.claudeCommand,
       initialMessage: opts.initialMessage,
+      modelId: opts.modelId,
     })
     const bashLine = [spec.command, ...spec.args].map(a =>
       /[\s'"\\$`!]/.test(a) ? `'${a.replace(/'/g, "'\\''")}'` : a

@@ -380,6 +380,8 @@
       "devops": "Commit, dal, CI/CD, sürüm",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
+    "preferredModel": "Preferred model (OpenCode)",
+    "preferredModelNote": "Overrides the global model defined in settings",
     "worktreeEnabled": "Worktree yalıtımı",
     "worktreeInherit": "Devral",
     "worktreeOn": "Etkin",

@@ -380,6 +380,8 @@
       "devops": "コミット・ブランチ・CI/CD・リリース",
       "doc": "README・CONTRIBUTING・JSDoc"
     },
+    "preferredModel": "Preferred model (OpenCode)",
+    "preferredModelNote": "Overrides the global model defined in settings",
     "worktreeEnabled": "Worktree分離",
     "worktreeInherit": "継承",
     "worktreeOn": "有効",

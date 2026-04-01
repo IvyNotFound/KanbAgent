@@ -324,7 +324,10 @@ describe('agent-stream', () => {
     })
 
     it('appends active tasks line when dbPath + sessionId provided and tasks exist', async () => {
-      mockQueryLive.mockResolvedValueOnce([{ id: 42 }, { id: 67 }])
+      // T1356: model resolution queries run first (agent preferred_model, then config)
+      mockQueryLive.mockResolvedValueOnce([]) // model: agent preferred_model → null
+      mockQueryLive.mockResolvedValueOnce([]) // model: opencode_default_model → null
+      mockQueryLive.mockResolvedValueOnce([{ id: 42 }, { id: 67 }]) // active tasks
       const handler = handlers.get('agent:create')!
       const event = { sender: mockSender }
       await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: 5 })
