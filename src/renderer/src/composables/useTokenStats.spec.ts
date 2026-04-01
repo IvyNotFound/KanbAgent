@@ -37,7 +37,8 @@ vi.mock('@renderer/utils/agentColor', async (importOriginal) => {
 
 // ─── Tests: formatNumber ───────────────────────────────────────────────────────
 
-import { formatNumber, formatCost, PERIODS } from '@renderer/composables/useTokenStats'
+import { formatNumber, formatCost, PERIODS, estimateSessionCost } from '@renderer/composables/useTokenStats'
+import type { SessionTokenRow } from '@renderer/composables/useTokenStats'
 
 describe('formatNumber', () => {
   it('formats >= 1_000_000 as M with 1 decimal', () => {
@@ -730,5 +731,76 @@ describe('fetchStats error handling', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(mockQueryDb).not.toHaveBeenCalled()
+  })
+})
+
+// ─── Tests: estimateSessionCost (T1366) ──────────────────────────────────────
+
+function makeRow(overrides: Partial<SessionTokenRow> = {}): SessionTokenRow {
+  return {
+    id: 1, agent_id: 1, agent_name: 'dev-front',
+    started_at: '2026-01-01T10:00:00Z', ended_at: null, status: 'completed',
+    cli_type: null, cost_usd: null,
+    tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0,
+    total: 0,
+    ...overrides,
+  }
+}
+
+describe('estimateSessionCost', () => {
+  it('returns cost_usd directly when it is set (any CLI)', () => {
+    expect(estimateSessionCost(makeRow({ cost_usd: 0.042, cli_type: 'gemini' }))).toBeCloseTo(0.042)
+    expect(estimateSessionCost(makeRow({ cost_usd: 0.001, cli_type: 'claude' }))).toBeCloseTo(0.001)
+    expect(estimateSessionCost(makeRow({ cost_usd: 0.0, cli_type: null }))).toBeCloseTo(0.0)
+  })
+
+  it('uses Anthropic pricing for cli_type="claude"', () => {
+    // 1M tokens_in at $3/M = $3.00
+    const row = makeRow({ cli_type: 'claude', tokens_in: 1_000_000 })
+    expect(estimateSessionCost(row)).toBeCloseTo(3.0, 5)
+  })
+
+  it('uses Anthropic pricing for cli_type=null (legacy sessions)', () => {
+    // 1M tokens_out at $15/M = $15.00
+    const row = makeRow({ cli_type: null, tokens_out: 1_000_000 })
+    expect(estimateSessionCost(row)).toBeCloseTo(15.0, 5)
+  })
+
+  it('computes all 4 pricing terms for Claude', () => {
+    // 1M each: $3 + $15 + $0.30 + $3.75 = $22.05
+    const row = makeRow({
+      cli_type: 'claude',
+      tokens_in: 1_000_000, tokens_out: 1_000_000,
+      tokens_cache_read: 1_000_000, tokens_cache_write: 1_000_000,
+    })
+    expect(estimateSessionCost(row)).toBeCloseTo(22.05, 5)
+  })
+
+  it('returns null for gemini without cost_usd', () => {
+    expect(estimateSessionCost(makeRow({ cli_type: 'gemini', cost_usd: null }))).toBeNull()
+  })
+
+  it('returns null for opencode without cost_usd', () => {
+    expect(estimateSessionCost(makeRow({ cli_type: 'opencode', cost_usd: null }))).toBeNull()
+  })
+
+  it('returns null for aider without cost_usd', () => {
+    expect(estimateSessionCost(makeRow({ cli_type: 'aider', cost_usd: null }))).toBeNull()
+  })
+
+  it('returns null for codex without cost_usd', () => {
+    expect(estimateSessionCost(makeRow({ cli_type: 'codex', cost_usd: null }))).toBeNull()
+  })
+
+  it('cost_usd takes priority over Anthropic pricing for Claude', () => {
+    // cost_usd=0.5 should override calculated pricing
+    const row = makeRow({ cli_type: 'claude', cost_usd: 0.5, tokens_in: 1_000_000 })
+    expect(estimateSessionCost(row)).toBeCloseTo(0.5, 5)
+  })
+
+  it('cost_usd=0 is treated as a valid cost (not null)', () => {
+    const row = makeRow({ cli_type: 'gemini', cost_usd: 0 })
+    expect(estimateSessionCost(row)).toBeCloseTo(0.0, 5)
+    expect(estimateSessionCost(row)).not.toBeNull()
   })
 })

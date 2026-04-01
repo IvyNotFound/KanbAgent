@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CostStatsSection from '@renderer/components/CostStatsSection.vue'
-import { useTokenStats } from '@renderer/composables/useTokenStats'
+import { useTokenStats, estimateSessionCost } from '@renderer/composables/useTokenStats'
 
 const {
   store, t,
@@ -196,6 +196,7 @@ const {
               <th class="py-1.5 px-2 font-medium text-right text-emerald-600 dark:text-emerald-400">↓ In</th>
               <th class="py-1.5 px-2 font-medium text-right text-sky-600 dark:text-sky-400">↑ Out</th>
               <th class="py-1.5 px-2 font-medium text-right">Total</th>
+              <th class="py-1.5 px-2 font-medium text-right">{{ t('tokenStats.cost') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -217,6 +218,13 @@ const {
               <td class="py-1.5 px-2 text-right text-emerald-600 dark:text-emerald-400 tabular-nums font-mono">{{ formatNumber(s.tokens_in) }}</td>
               <td class="py-1.5 px-2 text-right text-sky-600 dark:text-sky-400 tabular-nums font-mono">{{ formatNumber(s.tokens_out) }}</td>
               <td class="py-1.5 px-2 text-right text-content-secondary font-semibold tabular-nums font-mono">{{ formatNumber(s.total) }}</td>
+              <td
+                class="py-1.5 px-2 text-right tabular-nums font-mono"
+                :class="estimateSessionCost(s) !== null ? 'text-violet-600 dark:text-violet-400' : 'text-content-faint'"
+                :title="estimateSessionCost(s) === null ? `Cost estimation not available for ${s.cli_type ?? 'unknown'} sessions` : undefined"
+              >
+                {{ estimateSessionCost(s) !== null ? formatCost(estimateSessionCost(s)!) : '—' }}
+              </td>
             </tr>
           </tbody>
         </table>

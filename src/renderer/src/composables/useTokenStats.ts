@@ -31,6 +31,8 @@ export interface SessionTokenRow {
   started_at: string
   ended_at: string | null
   status: string
+  cli_type: string | null
+  cost_usd: number | null
   tokens_in: number
   tokens_out: number
   tokens_cache_read: number
@@ -84,6 +86,27 @@ export function formatNumber(n: number): string {
 export function formatCost(usd: number): string {
   if (usd < 0.01) return '< $0.01'
   return '$' + usd.toFixed(2)
+}
+
+/**
+ * Returns the cost in USD for a session row, or null when no estimate is available.
+ *
+ * Priority:
+ * 1. cost_usd from DB (populated by the CLI when it reports the cost directly)
+ * 2. Anthropic Sonnet 4.6 pricing for Claude sessions (cli_type='claude' or legacy null)
+ * 3. null for all other CLIs without a direct cost_usd
+ */
+export function estimateSessionCost(row: SessionTokenRow): number | null {
+  if (row.cost_usd != null) return row.cost_usd
+  if (row.cli_type === 'claude' || row.cli_type == null) {
+    return (
+      row.tokens_in        * PRICING.input       +
+      row.tokens_out       * PRICING.output      +
+      row.tokens_cache_read  * PRICING.cache_read  +
+      row.tokens_cache_write * PRICING.cache_write
+    ) / 1_000_000
+  }
+  return null
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
@@ -165,6 +188,8 @@ export function useTokenStats() {
           `SELECT s.id, s.agent_id,
                   a.name as agent_name,
                   s.started_at, s.ended_at, s.status,
+                  s.cli_type,
+                  s.cost_usd,
                   COALESCE(s.tokens_in, 0) as tokens_in,
                   COALESCE(s.tokens_out, 0) as tokens_out,
                   COALESCE(s.tokens_cache_read, 0) as tokens_cache_read,
