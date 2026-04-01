@@ -177,18 +177,18 @@ describe('migrateDb — bootstrap config empty values edge case', () => {
 describe('migrateDb — exact return value', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('returns 1 when exactly one migration is pending (v28 only)', () => {
+  it('returns 1 when exactly one migration is pending (v29 only)', () => {
     const db = makeMockDb({
-      userVersion: 28,
+      userVersion: 29,
     })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     expect(result).toBe(1)
   })
 
-  it('returns 3 when three migrations are pending (v27, v28, v29)', () => {
+  it('returns 4 when four migrations are pending (v27, v28, v29, v30)', () => {
     const db = makeMockDb({ userVersion: 26, colMap: { agents: ['id', 'name'] } })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(3) // v27, v28, v29
+    expect(result).toBe(4) // v27, v28, v29, v30
   })
 
   it('returns 0 exactly (not falsy) when already at CURRENT_SCHEMA_VERSION', () => {
@@ -207,7 +207,7 @@ describe('migrateDb — exact return value', () => {
     expect(result).not.toBe(CURRENT_SCHEMA_VERSION - 1)
   })
 
-  it('returns 6 for genuine legacy bootstrap (v0 + config + permission_mode + max_sessions = runs v24..v29)', () => {
+  it('returns 7 for genuine legacy bootstrap (v0 + config + permission_mode + max_sessions = runs v24..v30)', () => {
     const db = makeMockDb({
       userVersion: 0,
       hasConfigTable: true,
@@ -224,9 +224,9 @@ describe('migrateDb — exact return value', () => {
       tableMap: { config: true },
     })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(6) // v24, v25, v26, v27, v28, v29
-    expect(result).not.toBe(7)
-    expect(result).not.toBe(5)
+    expect(result).toBe(7) // v24, v25, v26, v27, v28, v29, v30
+    expect(result).not.toBe(8)
+    expect(result).not.toBe(6)
   })
 
   it('returns CURRENT_SCHEMA_VERSION for external DB (v0 + config, no permission_mode/max_sessions)', () => {

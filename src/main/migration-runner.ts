@@ -5,6 +5,7 @@ import { runMakeAgentAssigneNotNullMigration, runMakeCommentAgentNotNullMigratio
 import { runAddParentIdToAgentGroupsMigration } from './migrations/v4-agent-groups-hierarchy'
 import { runAddWorktreeToAgentsMigration } from './migrations/v5-agent-worktree'
 import { runFixTasksSessionFkMigration } from './migrations/v6-tasks-session-fk'
+import { runAddPreferredModelToAgentsMigration } from './migrations/v7-agent-preferred-model'
 
 // ── Numbered migration system ────────────────────────────────────────────────
 
@@ -319,6 +320,9 @@ const migrations: Migration[] = [
 
   // v29: fix tasks.session_id FK broken reference (sessions_backup_i18n → sessions) (T1161)
   { version: 29, up: (db) => { runFixTasksSessionFkMigration(db) } },
+
+  // v30: add agents.preferred_model for CLI model selection (T1354)
+  { version: 30, up: (db) => { runAddPreferredModelToAgentsMigration(db) } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */

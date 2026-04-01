@@ -24,6 +24,7 @@ export async function buildSchema(): Promise<void> {
       permission_mode TEXT CHECK(permission_mode IN ('default', 'auto')) DEFAULT 'default',
       worktree_enabled INTEGER NOT NULL DEFAULT 0,
       max_sessions INTEGER NOT NULL DEFAULT 3,
+      preferred_model TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`)
 

@@ -26,3 +26,5 @@ export {
 export { runAddParentIdToAgentGroupsMigration } from './migrations/v4-agent-groups-hierarchy'
 
 export { runAddWorktreeToAgentsMigration } from './migrations/v5-agent-worktree'
+
+export { runAddPreferredModelToAgentsMigration } from './migrations/v7-agent-preferred-model'
