@@ -11,7 +11,7 @@ import type { CliType, CliCapabilities } from '@shared/cli-types'
 export const CLI_CAPABILITIES: Record<CliType, CliCapabilities> = {
   claude:   { worktree: true, profileSelection: true,  systemPrompt: true,  thinkingMode: true,  convResume: true,  modelSelection: false },
   codex:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: false },
-  gemini:   { worktree: true, profileSelection: false, systemPrompt: false, thinkingMode: false, convResume: true,  modelSelection: false },
+  gemini:   { worktree: true, profileSelection: false, systemPrompt: false, thinkingMode: false, convResume: false, modelSelection: false },
   opencode: { worktree: true, profileSelection: false, systemPrompt: false, thinkingMode: false, convResume: false, modelSelection: true  },
   aider:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: false },
   goose:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: false },

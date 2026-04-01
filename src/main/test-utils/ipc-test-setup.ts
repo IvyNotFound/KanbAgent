@@ -55,7 +55,9 @@ export async function buildSchema(): Promise<any> {
       allowed_tools TEXT,
       auto_launch INTEGER NOT NULL DEFAULT 1,
       permission_mode TEXT DEFAULT 'default',
+      worktree_enabled INTEGER NOT NULL DEFAULT 0,
       max_sessions INTEGER NOT NULL DEFAULT 3,
+      preferred_model TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`)
 
