@@ -4,6 +4,50 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.35.3] - 2026-04-01
+
+### Features
+- feat(front-vuejs): update cost display for non-Claude CLI sessions (T1366) (fec625a)
+- feat(front-vuejs): add preferred_model field to agent create/edit modals (T1365) (8503107)
+- feat(back-electron): token telemetry for non-Claude CLIs (T1364) (070b667)
+- feat(front-vuejs): auto-close tab on process exit for non-Claude CLIs (T1373) (4b2e591)
+- feat(front-vuejs): set gemini.convResume=true in cliCapabilities (T1372) (9f0a3ef)
+- feat(back-electron): inject lifecycle hooks for Gemini CLI and Codex CLI (T1371) (5584d5e)
+- feat(back-electron): add session resume support to Gemini CLI adapter (bedd729)
+- feat(global): add model selection flag support for Gemini CLI (-m) (edfe6bb)
+- feat(front-vuejs): add OpenCode default model field in settings CLI section (25ad58b)
+
+### Bug Fixes
+- fix(back-electron): add eslint-disable for no-explicit-any in adapter extractTokenUsage (eba0e62)
+- fix(back-electron): rename T1364 migration to v31, fix opencode step_finish test conflict (T1364) (f960077)
+- fix(front-vuejs): remove auto-scroll and scroll button from HookEventsView (7e074ad)
+- fix(back-electron): handle new opencode text event part-wrapped format (37fe336)
+
+### Tests
+- test(back-electron): update opencode spec for v1.3.4+ part-wrapped format (a44f18a)
+
+### Documentation
+- docs(back-electron): add JSDoc to extractTokenUsage, TokenCounts, and related types (86d9c94)
+- docs(skills): add mandatory session_start log step in agent-session-starting (T1368) (af242ae)
+
+### Chores
+- chore(deps): update package-lock.json (832e397)
+- chore(back-electron): migration v30 — add preferred_model column to agents (T1354) (18b864f)
+- chore(back-electron): upgrade electron to 41.0.3 and better-sqlite3 to 12.8.0 (b5dce82)
+- chore(deps): bump dompurify 3.3.2→3.3.3 and @types/dompurify 3.0.5→3.2.0 (#21) (7e27d1e)
+- chore(deps-dev): bump the vue group across 1 directory with 3 updates (01d4869)
+- chore(deps-dev): bump electron in the electron group (2b1fa5d)
+- chore(deps-dev): bump the testing group with 2 updates (d3ab3bd)
+- chore(deps): bump slackapi/slack-github-action from 2.1.0 to 3.0.1 (efebb63)
+- chore(deps-dev): bump postcss from 8.5.6 to 8.5.8 (cf1f0b0)
+
+### Other
+- Merge pull request #22 from IvyNotFound/dependabot/npm_and_yarn/vue-736ede71e4 (aa9030d)
+- Merge pull request #17 from IvyNotFound/dependabot/github_actions/slackapi/slack-github-action-3.0.1 (5f46d43)
+- Merge pull request #15 from IvyNotFound/dependabot/npm_and_yarn/postcss-8.5.8 (129385d)
+- Merge pull request #20 from IvyNotFound/dependabot/npm_and_yarn/testing-dd5d044042 (03a87ea)
+- Merge pull request #18 from IvyNotFound/dependabot/npm_and_yarn/electron-89fed64323 (20c3bf8)
+
 ## [0.35.2] - 2026-03-31
 
 ### Bug Fixes

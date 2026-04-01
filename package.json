@@ -1,6 +1,6 @@
 {
   "name": "kanbagent",
-  "version": "0.35.2",
+  "version": "0.35.3",
   "description": "Interface desktop Trello/Jira pour visualiser les agents Claude",
   "author": "IvyNotFound",
   "main": "out/main/index.js",
