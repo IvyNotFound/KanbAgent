@@ -147,12 +147,22 @@ describe('opencodeAdapter.parseLine', () => {
     expect(opencodeAdapter.parseLine('   ')).toBeNull()
   })
 
-  it('maps type:text event to StreamEvent text', () => {
+  it('maps type:text event — new part-wrapped format v1.3.4+ (primary format)', () => {
+    const line = '{"type":"text","sessionID":"ses_abc","part":{"id":"p1","type":"text","text":"hello","time":{"start":0,"end":1}}}'
+    expect(opencodeAdapter.parseLine(line)).toEqual({ type: 'text', text: 'hello' })
+  })
+
+  it('maps type:text event — legacy flat format (backward compat < v1.3.4)', () => {
     const event = opencodeAdapter.parseLine('{"type":"text","text":"hello","sessionID":"s1"}')
     expect(event).toEqual({ type: 'text', text: 'hello' })
   })
 
-  it('maps type:reasoning event to StreamEvent text', () => {
+  it('maps type:reasoning event — new part-wrapped format v1.3.4+ (primary format)', () => {
+    const line = '{"type":"reasoning","sessionID":"ses_abc","part":{"id":"r1","type":"reasoning","text":"thinking...","time":{"start":0,"end":2}}}'
+    expect(opencodeAdapter.parseLine(line)).toEqual({ type: 'text', text: 'thinking...' })
+  })
+
+  it('maps type:reasoning event — legacy flat format (backward compat < v1.3.4)', () => {
     const event = opencodeAdapter.parseLine('{"type":"reasoning","text":"thinking...","sessionID":"s1"}')
     expect(event).toEqual({ type: 'text', text: 'thinking...' })
   })
@@ -182,18 +192,23 @@ describe('opencodeAdapter.parseLine', () => {
     expect(event).toBeNull()
   })
 
+  it('returns null for type:step_finish with cost and tokens (v1.3.4+ full format)', () => {
+    const line = '{"type":"step_finish","sessionID":"ses_abc","cost":0.0042,"tokens":{"input":1200,"output":350,"cache_read":0,"cache_write":0},"duration":3800}'
+    expect(opencodeAdapter.parseLine(line)).toBeNull()
+  })
+
   it('falls back to plain text for non-JSON line', () => {
     const event = opencodeAdapter.parseLine('some plain text output')
     expect(event).toEqual({ type: 'text', text: 'some plain text output' })
   })
 
   it('maps type:text event with part-wrapped format (v1.3+)', () => {
-    const event = opencodeAdapter.parseLine('{"type":"text","part":{"text":"hello from part"},"sessionID":"s1"}')
+    const event = opencodeAdapter.parseLine('{"type":"text","part":{"id":"p1","type":"text","text":"hello from part","time":{"start":0,"end":1}},"sessionID":"s1"}')
     expect(event).toEqual({ type: 'text', text: 'hello from part' })
   })
 
   it('maps type:reasoning event with part-wrapped format (v1.3+)', () => {
-    const event = opencodeAdapter.parseLine('{"type":"reasoning","part":{"text":"thinking via part"},"sessionID":"s1"}')
+    const event = opencodeAdapter.parseLine('{"type":"reasoning","part":{"id":"r1","type":"reasoning","text":"thinking via part","time":{"start":0,"end":2}},"sessionID":"s1"}')
     expect(event).toEqual({ type: 'text', text: 'thinking via part' })
   })
 
