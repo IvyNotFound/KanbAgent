@@ -84,6 +84,7 @@ export const codexAdapter: CliAdapter = {
    */
   extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
     // Codex emits OpenAI-compatible JSON events; usage may appear in response.completed or similar
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const usage = (event as any).usage
     if (!usage) return null
     try {

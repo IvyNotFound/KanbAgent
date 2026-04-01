@@ -89,7 +89,9 @@ export const geminiAdapter: CliAdapter = {
    */
   extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
     // Only system:stats events (emitted from result:success) carry token data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((event as any).subtype !== 'stats') return null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stats = (event as any).stats
     if (!stats) return null
     try {

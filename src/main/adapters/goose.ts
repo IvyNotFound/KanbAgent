@@ -84,6 +84,7 @@ export const gooseAdapter: CliAdapter = {
    */
   extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
     // Goose ACP format — defensive: check both 'usage' and 'token_usage' field names
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = event as any
     const usage = raw.usage ?? raw.token_usage
     if (!usage) return null

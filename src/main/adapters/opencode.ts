@@ -46,6 +46,7 @@ export const opencodeAdapter: CliAdapter = {
    */
   extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
     // step_finish events may carry OpenAI-compatible usage data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = event as any
     const usage = raw.usage
     if (!usage) return null
