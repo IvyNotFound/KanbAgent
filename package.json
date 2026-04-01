@@ -34,7 +34,7 @@
     "postinstall": "node -e \"if(!process.env.CI)require('child_process').execSync('electron-builder install-app-deps',{stdio:'inherit'})\""
   },
   "dependencies": {
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.8.0",
     "electron-updater": "^6.8.3",
     "ignore": "^7.0.5",
     "zod": "^4.3.6"
