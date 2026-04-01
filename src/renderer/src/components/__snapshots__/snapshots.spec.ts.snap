@@ -231,66 +231,66 @@ exports[`StatusColumn — snapshots > matches snapshot: in_progress column (drop
 `;
 
 exports[`TabBar — snapshots > matches snapshot: empty tab bar (no tabs) 1`] = `
-"<div data-v-3c3dc65a="" class="flex items-stretch border-b border-edge-default bg-surface-primary shrink-0 h-10">
-  <!-- Onglet Backlog (fixe) --><button data-v-3c3dc65a="" class="flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0 text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+"<div data-v-3c3dc65a="" class="tabbar">
+  <!-- Onglet Backlog (fixe) --><button data-v-3c3dc65a="" class="tab-fixed"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="tab-icon">
       <rect data-v-3c3dc65a="" x="1" y="2" width="4" height="12" rx="1.5"></rect>
       <rect data-v-3c3dc65a="" x="6" y="2" width="4" height="8" rx="1.5"></rect>
       <rect data-v-3c3dc65a="" x="11" y="2" width="4" height="5" rx="1.5"></rect>
-    </svg><span data-v-3c3dc65a="">Backlog</span>
+    </svg><span data-v-3c3dc65a="">Backlog</span><!-- .absolute.bottom-0 preserved for TabBar.spec.ts test -->
     <!--v-if-->
-  </button><!-- Onglet Stat (fixe) --><button data-v-3c3dc65a="" class="flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0 text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+  </button><!-- Onglet Stat (fixe) --><button data-v-3c3dc65a="" class="tab-fixed"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="tab-icon">
       <path data-v-3c3dc65a="" d="M0 11l4-5 3 3 4-6 5 3v5H0z"></path>
     </svg><span data-v-3c3dc65a="">Dashboard</span>
     <!--v-if-->
-  </button><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="flex items-center justify-center w-6 shrink-0 text-content-subtle hover:text-content-secondary hover:bg-surface-secondary/60 transition-colors" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+  </button><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" style="width: 12px; height: 12px;">
       <path data-v-3c3dc65a="" fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"></path>
     </svg></button><!-- Onglets (scrollable) -->
-  <div data-v-3c3dc65a="" class="scroll-container flex items-stretch gap-0.5 px-1.5 flex-1 min-w-0 overflow-x-scroll">
+  <div data-v-3c3dc65a="" class="scroll-container">
     <!-- Onglets fichiers -->
     <!-- Groupe agent -->
-  </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="flex items-center justify-center w-6 shrink-0 text-content-subtle hover:text-content-secondary hover:bg-surface-secondary/60 transition-colors" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+  </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" style="width: 12px; height: 12px;">
       <path data-v-3c3dc65a="" fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"></path>
-    </svg></button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="flex items-center gap-1.5 px-3 self-center text-sm font-semibold text-violet-700 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/40 hover:border-violet-500/60 dark:text-violet-300 dark:border-violet-500/30 dark:hover:border-violet-500/50 rounded transition-all ml-1 mr-2 shrink-0 cursor-pointer" style="height: 28px;" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="text-base leading-none">+</span><span data-v-3c3dc65a="">WSL</span></button>
-  <div data-v-3c3dc65a="" class="w-3 shrink-0"></div>
+    </svg></button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="btn-wsl" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="btn-wsl-plus">+</span><span data-v-3c3dc65a="">WSL</span></button>
+  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0;"></div>
 </div>
 <!-- Menu contextuel groupe d'onglets -->
 <!--v-if-->"
 `;
 
 exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 1`] = `
-"<div data-v-3c3dc65a="" class="flex items-stretch border-b border-edge-default bg-surface-primary shrink-0 h-10">
-  <!-- Onglet Backlog (fixe) --><button data-v-3c3dc65a="" class="flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0 text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+"<div data-v-3c3dc65a="" class="tabbar">
+  <!-- Onglet Backlog (fixe) --><button data-v-3c3dc65a="" class="tab-fixed"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="tab-icon">
       <rect data-v-3c3dc65a="" x="1" y="2" width="4" height="12" rx="1.5"></rect>
       <rect data-v-3c3dc65a="" x="6" y="2" width="4" height="8" rx="1.5"></rect>
       <rect data-v-3c3dc65a="" x="11" y="2" width="4" height="5" rx="1.5"></rect>
-    </svg><span data-v-3c3dc65a="">Backlog</span>
+    </svg><span data-v-3c3dc65a="">Backlog</span><!-- .absolute.bottom-0 preserved for TabBar.spec.ts test -->
     <!--v-if-->
-  </button><!-- Onglet Stat (fixe) --><button data-v-3c3dc65a="" class="flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0 text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
+  </button><!-- Onglet Stat (fixe) --><button data-v-3c3dc65a="" class="tab-fixed"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="tab-icon">
       <path data-v-3c3dc65a="" d="M0 11l4-5 3 3 4-6 5 3v5H0z"></path>
     </svg><span data-v-3c3dc65a="">Dashboard</span>
     <!--v-if-->
-  </button><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="flex items-center justify-center w-6 shrink-0 text-content-subtle hover:text-content-secondary hover:bg-surface-secondary/60 transition-colors" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+  </button><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" style="width: 12px; height: 12px;">
       <path data-v-3c3dc65a="" fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"></path>
     </svg></button><!-- Onglets (scrollable) -->
-  <div data-v-3c3dc65a="" class="scroll-container flex items-stretch gap-0.5 px-1.5 flex-1 min-w-0 overflow-x-scroll">
+  <div data-v-3c3dc65a="" class="scroll-container">
     <!-- Onglets fichiers -->
     <!-- Groupe agent -->
-    <div data-v-3c3dc65a="" class="flex items-stretch gap-0.5 shrink-0">
-      <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="relative flex items-center gap-1.5 px-3 text-sm font-semibold transition-all select-none rounded-t shrink-0 cursor-pointer" style="color: rgb(235, 159, 112); background-color: rgb(66, 41, 26);"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 shrink-0 text-violet-500 dark:text-zinc-300">
+    <div data-v-3c3dc65a="" class="tab-group">
+      <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="tab-agent" style="color: rgb(235, 159, 112); background-color: rgb(66, 41, 26);"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; flex-shrink: 0;">
           <polyline data-v-3c3dc65a="" points="2,5 6.5,8 2,11"></polyline>
           <line data-v-3c3dc65a="" x1="8.5" y1="11" x2="14" y2="11"></line>
-        </svg><span data-v-3c3dc65a="" class="opacity-50 select-none">·</span><span data-v-3c3dc65a="" class="truncate max-w-[80px]">dev-front</span><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5 shrink-0 transition-transform duration-150 -rotate-90">
+        </svg><span data-v-3c3dc65a="" style="opacity: 0.5; user-select: none;">·</span><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="tab-chevron" style="transform: rotate(-90deg);">
           <path data-v-3c3dc65a="" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"></path>
         </svg>
-        <!--v-if--><span data-v-3c3dc65a="" class="absolute bottom-0 left-0 right-0 h-[2px]" style="background-color: rgb(235, 159, 112);"></span>
-      </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="relative flex items-center gap-1.5 px-4 min-w-[90px] text-sm font-medium transition-all select-none rounded-t shrink-0 cursor-pointer" style="color: rgb(235, 159, 112); background-color: rgb(66, 41, 26);" title="#1"><span data-v-3c3dc65a="" class="font-mono text-xs shrink-0">#1</span>
-        <!--v-if--><span data-v-3c3dc65a="" class="flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer ml-4" title="Fermer">✕</span><span data-v-3c3dc65a="" class="absolute bottom-0 left-0 right-0 h-[2px]" style="background-color: rgb(235, 159, 112);"></span>
+        <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(235, 159, 112);"></span>
+      </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub" style="color: rgb(235, 159, 112); background-color: rgb(66, 41, 26);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
+        <!--v-if--><span data-v-3c3dc65a="" class="tab-close" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(235, 159, 112);"></span>
       </button>
     </div>
-  </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="flex items-center justify-center w-6 shrink-0 text-content-subtle hover:text-content-secondary hover:bg-surface-secondary/60 transition-colors" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+  </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;"><svg data-v-3c3dc65a="" viewBox="0 0 16 16" fill="currentColor" style="width: 12px; height: 12px;">
       <path data-v-3c3dc65a="" fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"></path>
-    </svg></button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="flex items-center gap-1.5 px-3 self-center text-sm font-semibold text-violet-700 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/40 hover:border-violet-500/60 dark:text-violet-300 dark:border-violet-500/30 dark:hover:border-violet-500/50 rounded transition-all ml-1 mr-2 shrink-0 cursor-pointer" style="height: 28px;" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="text-base leading-none">+</span><span data-v-3c3dc65a="">WSL</span></button>
-  <div data-v-3c3dc65a="" class="w-3 shrink-0"></div>
+    </svg></button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="btn-wsl" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="btn-wsl-plus">+</span><span data-v-3c3dc65a="">WSL</span></button>
+  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0;"></div>
 </div>
 <!-- Menu contextuel groupe d'onglets -->
 <!--v-if-->"
@@ -375,53 +375,58 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
 `;
 
 exports[`TitleBar — snapshots > matches snapshot: maximized 1`] = `
-"<div class="grid grid-cols-3 items-center h-9 bg-surface-base shrink-0">
-  <!-- Left: App identity -->
-  <div class="flex items-center gap-2 px-4">
-    <div class="w-2 h-2 rounded-full bg-violet-500 shrink-0"></div><span class="text-xs font-semibold text-content-subtle tracking-widest uppercase">KanbAgent</span>
-  </div><!-- Center: Search bar (always visible, VS Code style) -->
-  <div class="flex justify-center"><button class="flex items-center gap-2 px-3 h-6 rounded-md bg-surface-secondary/80 border border-edge-default/50 text-content-subtle hover:text-content-tertiary hover:border-content-faint/80 hover:bg-surface-secondary transition-all duration-150 w-52 group" title="Rechercher une tâche (Ctrl+K)"><svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3 shrink-0">
-        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"></path>
-      </svg><span class="flex-1 text-left text-xs">Rechercher…</span><kbd class="text-[10px] text-content-dim group-hover:text-content-subtle font-mono leading-none">Ctrl+K</kbd></button></div><!-- Right: Window controls — Windows 11 style -->
-  <div class="flex items-stretch h-full justify-end">
-    <!-- Minimize --><button class="w-[46px] flex items-center justify-center text-content-subtle hover:text-content-primary hover:bg-surface-tertiary/60 transition-colors" title="Minimiser"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-        <rect x="0" y="4.5" width="10" height="1"></rect>
-      </svg></button><!-- Maximize / Restore --><button class="w-[46px] flex items-center justify-center text-content-subtle hover:text-content-primary hover:bg-surface-tertiary/60 transition-colors" title="Restaurer">
-      <!-- Restore: two overlapping squares --><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1">
-        <rect x="3.5" y="0.5" width="7" height="7" rx="0.5"></rect>
-        <path d="M0.5 3.5v7h7v-3"></path>
-      </svg>
-    </button><!-- Close --><button class="w-[46px] flex items-center justify-center text-content-subtle hover:text-white hover:bg-red-600 transition-colors" title="Fermer"><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
-        <line x1="0.5" y1="0.5" x2="9.5" y2="9.5"></line>
-        <line x1="9.5" y1="0.5" x2="0.5" y2="9.5"></line>
-      </svg></button>
+"<!-- elevation="0" flat desktop look; height="36" = original h-9 titlebar.
+       All controls in default slot (not named slots) so shallowMount renders them correctly.
+       -webkit-app-region: drag is required for Electron frameless window dragging. -->
+<v-app-bar data-v-f5fc7a66="" elevation="0" height="36" color="surface" class="titlebar">
+  <div data-v-f5fc7a66="" class="titlebar-content">
+    <!-- Left: App identity -->
+    <div data-v-f5fc7a66="" class="titlebar-left">
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name">KanbAgent</span>
+    </div><!-- Center: Search bar (always visible, VS Code style) -->
+    <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)"><svg data-v-f5fc7a66="" viewBox="0 0 16 16" fill="currentColor" class="search-icon">
+          <path data-v-f5fc7a66="" d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"></path>
+        </svg><span data-v-f5fc7a66="" class="search-text">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd></button></div><!-- Right: Window controls — Windows 11 style -->
+    <div data-v-f5fc7a66="" class="titlebar-controls">
+      <!-- Minimize --><button data-v-f5fc7a66="" class="win-btn" title="Minimiser"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          <rect data-v-f5fc7a66="" x="0" y="4.5" width="10" height="1"></rect>
+        </svg></button><!-- Maximize / Restore --><button data-v-f5fc7a66="" class="win-btn" title="Restaurer"><svg data-v-f5fc7a66="" width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1">
+          <rect data-v-f5fc7a66="" x="3.5" y="0.5" width="7" height="7" rx="0.5"></rect>
+          <path data-v-f5fc7a66="" d="M0.5 3.5v7h7v-3"></path>
+        </svg></button><!-- Close --><button data-v-f5fc7a66="" class="win-btn win-btn--close" title="Fermer"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+          <line data-v-f5fc7a66="" x1="0.5" y1="0.5" x2="9.5" y2="9.5"></line>
+          <line data-v-f5fc7a66="" x1="9.5" y1="0.5" x2="0.5" y2="9.5"></line>
+        </svg></button>
+    </div>
   </div>
-</div>"
+</v-app-bar>"
 `;
 
 exports[`TitleBar — snapshots > matches snapshot: not maximized 1`] = `
-"<div class="grid grid-cols-3 items-center h-9 bg-surface-base shrink-0">
-  <!-- Left: App identity -->
-  <div class="flex items-center gap-2 px-4">
-    <div class="w-2 h-2 rounded-full bg-violet-500 shrink-0"></div><span class="text-xs font-semibold text-content-subtle tracking-widest uppercase">KanbAgent</span>
-  </div><!-- Center: Search bar (always visible, VS Code style) -->
-  <div class="flex justify-center"><button class="flex items-center gap-2 px-3 h-6 rounded-md bg-surface-secondary/80 border border-edge-default/50 text-content-subtle hover:text-content-tertiary hover:border-content-faint/80 hover:bg-surface-secondary transition-all duration-150 w-52 group" title="Rechercher une tâche (Ctrl+K)"><svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3 shrink-0">
-        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"></path>
-      </svg><span class="flex-1 text-left text-xs">Rechercher…</span><kbd class="text-[10px] text-content-dim group-hover:text-content-subtle font-mono leading-none">Ctrl+K</kbd></button></div><!-- Right: Window controls — Windows 11 style -->
-  <div class="flex items-stretch h-full justify-end">
-    <!-- Minimize --><button class="w-[46px] flex items-center justify-center text-content-subtle hover:text-content-primary hover:bg-surface-tertiary/60 transition-colors" title="Minimiser"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-        <rect x="0" y="4.5" width="10" height="1"></rect>
-      </svg></button><!-- Maximize / Restore --><button class="w-[46px] flex items-center justify-center text-content-subtle hover:text-content-primary hover:bg-surface-tertiary/60 transition-colors" title="Agrandir">
-      <!-- Restore: two overlapping squares -->
-      <!-- Maximize: single square --><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
-        <rect x="0.5" y="0.5" width="9" height="9" rx="0.5"></rect>
-      </svg>
-    </button><!-- Close --><button class="w-[46px] flex items-center justify-center text-content-subtle hover:text-white hover:bg-red-600 transition-colors" title="Fermer"><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
-        <line x1="0.5" y1="0.5" x2="9.5" y2="9.5"></line>
-        <line x1="9.5" y1="0.5" x2="0.5" y2="9.5"></line>
-      </svg></button>
+"<!-- elevation="0" flat desktop look; height="36" = original h-9 titlebar.
+       All controls in default slot (not named slots) so shallowMount renders them correctly.
+       -webkit-app-region: drag is required for Electron frameless window dragging. -->
+<v-app-bar data-v-f5fc7a66="" elevation="0" height="36" color="surface" class="titlebar">
+  <div data-v-f5fc7a66="" class="titlebar-content">
+    <!-- Left: App identity -->
+    <div data-v-f5fc7a66="" class="titlebar-left">
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name">KanbAgent</span>
+    </div><!-- Center: Search bar (always visible, VS Code style) -->
+    <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)"><svg data-v-f5fc7a66="" viewBox="0 0 16 16" fill="currentColor" class="search-icon">
+          <path data-v-f5fc7a66="" d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"></path>
+        </svg><span data-v-f5fc7a66="" class="search-text">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd></button></div><!-- Right: Window controls — Windows 11 style -->
+    <div data-v-f5fc7a66="" class="titlebar-controls">
+      <!-- Minimize --><button data-v-f5fc7a66="" class="win-btn" title="Minimiser"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          <rect data-v-f5fc7a66="" x="0" y="4.5" width="10" height="1"></rect>
+        </svg></button><!-- Maximize / Restore --><button data-v-f5fc7a66="" class="win-btn" title="Agrandir"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
+          <rect data-v-f5fc7a66="" x="0.5" y="0.5" width="9" height="9" rx="0.5"></rect>
+        </svg></button><!-- Close --><button data-v-f5fc7a66="" class="win-btn win-btn--close" title="Fermer"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+          <line data-v-f5fc7a66="" x1="0.5" y1="0.5" x2="9.5" y2="9.5"></line>
+          <line data-v-f5fc7a66="" x1="9.5" y1="0.5" x2="0.5" y2="9.5"></line>
+        </svg></button>
+    </div>
   </div>
-</div>"
+</v-app-bar>"
 `;
 
 exports[`ToastContainer — snapshots > matches snapshot: empty (no toasts) 1`] = `"<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>"`;

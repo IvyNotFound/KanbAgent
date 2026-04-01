@@ -2,6 +2,7 @@
 import { ref, computed, defineAsyncComponent, onUnmounted } from 'vue'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
+import { useSettingsStore } from '@renderer/stores/settings'
 import TitleBar from '@renderer/components/TitleBar.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
 import BoardView from '@renderer/components/BoardView.vue'
@@ -28,6 +29,7 @@ import type { Task } from '@renderer/types'
 
 const store = useTasksStore()
 const tabsStore = useTabsStore()
+const settingsStore = useSettingsStore()
 const hookEventsStore = useHookEventsStore()
 const agentsStore = useAgentsStore()
 const projectStore = useProjectStore()
@@ -82,56 +84,55 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-surface-primary text-content-primary select-none">
+  <v-app :theme="settingsStore.theme">
     <TitleBar @open-search="isCommandPaletteOpen = true" />
-    <UpdateNotification />
-    <div class="flex flex-1 overflow-hidden">
-      <!-- Sidebar: only show when project is open -->
-      <Sidebar v-if="store.projectPath" />
-      <!-- Main content -->
-      <main
-        class="flex-1 flex flex-col overflow-hidden"
-        :class="{ 'items-center justify-center': !store.projectPath }"
-      >
+    <Sidebar v-if="store.projectPath" />
+    <v-main class="app-main">
+      <div class="main-wrap">
+        <UpdateNotification />
         <!-- No project: centered content -->
-        <div v-if="!store.projectPath" class="w-full max-w-3xl px-6">
-          <DbSelector />
+        <div v-if="!store.projectPath" class="no-project-center">
+          <div class="no-project-inner">
+            <DbSelector />
+          </div>
         </div>
         <!-- Project open -->
         <template v-else>
           <TabBar />
-          <!-- Backlog tab -->
-          <template v-if="tabsStore.activeTab.type === 'backlog'">
-            <BoardView class="flex-1 min-h-0" />
-          </template>
-          <!-- Explorer tab -->
-          <template v-else-if="tabsStore.activeTab.type === 'explorer'">
-            <ExplorerView class="flex-1" />
-          </template>
-          <!-- File tabs -->
-          <template v-else-if="tabsStore.activeTab.type === 'file'">
-            <FileView :key="tabsStore.activeTab.id" :file-path="tabsStore.activeTab.filePath!" :tab-id="tabsStore.activeTab.id" class="flex-1" />
-          </template>
-          <!-- Dashboard tab (sous-onglets analytiques) -->
-          <template v-else-if="tabsStore.activeTab.type === 'dashboard'">
-            <DashboardView class="flex-1" />
-          </template>
-          <!-- Timeline tab (vue gantt des tâches par agent) -->
-          <template v-else-if="tabsStore.activeTab.type === 'timeline'">
-            <TimelineView class="flex-1" />
-          </template>
-          <!-- Terminal tabs (keep mounted to preserve session, hide inactive) -->
-          <template v-for="tab in tabsStore.tabs.filter(t => t.type === 'terminal')" :key="tab.id">
-            <div
-              class="flex-1 overflow-hidden"
-              :style="{ display: tabsStore.activeTabId === tab.id ? 'flex' : 'none' }"
-            >
-              <StreamView :terminal-id="tab.id" class="flex-1" />
-            </div>
-          </template>
+          <div class="view-container">
+            <!-- Backlog tab -->
+            <template v-if="tabsStore.activeTab.type === 'backlog'">
+              <BoardView style="flex: 1; min-height: 0;" />
+            </template>
+            <!-- Explorer tab -->
+            <template v-else-if="tabsStore.activeTab.type === 'explorer'">
+              <ExplorerView style="flex: 1;" />
+            </template>
+            <!-- File tabs -->
+            <template v-else-if="tabsStore.activeTab.type === 'file'">
+              <FileView :key="tabsStore.activeTab.id" :file-path="tabsStore.activeTab.filePath!" :tab-id="tabsStore.activeTab.id" style="flex: 1;" />
+            </template>
+            <!-- Dashboard tab (sous-onglets analytiques) -->
+            <template v-else-if="tabsStore.activeTab.type === 'dashboard'">
+              <DashboardView style="flex: 1;" />
+            </template>
+            <!-- Timeline tab (vue gantt des tâches par agent) -->
+            <template v-else-if="tabsStore.activeTab.type === 'timeline'">
+              <TimelineView style="flex: 1;" />
+            </template>
+            <!-- Terminal tabs (keep mounted to preserve session, hide inactive) -->
+            <template v-for="tab in tabsStore.tabs.filter(t => t.type === 'terminal')" :key="tab.id">
+              <div
+                style="overflow: hidden;"
+                :style="{ display: tabsStore.activeTabId === tab.id ? 'flex' : 'none', flex: tabsStore.activeTabId === tab.id ? '1' : undefined }"
+              >
+                <StreamView :terminal-id="tab.id" style="flex: 1;" />
+              </div>
+            </template>
+          </div>
         </template>
-      </main>
-    </div>
+      </div>
+    </v-main>
     <TaskDetailModal />
     <ToastContainer />
     <ConfirmDialog />
@@ -143,5 +144,40 @@ defineExpose({
       @done="onWizardDone"
       @skip="store.closeWizard()"
     />
-  </div>
+  </v-app>
 </template>
+
+<style scoped>
+/* Force v-main wrap to be a flex column filling available space */
+.app-main :deep(.v-main__wrap) {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.main-wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+.no-project-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.no-project-inner {
+  width: 100%;
+  max-width: 48rem;
+  padding: 0 1.5rem;
+}
+.view-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+</style>

@@ -23,78 +23,182 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="grid grid-cols-3 items-center h-9 bg-surface-base shrink-0"
+  <!-- elevation="0" flat desktop look; height="36" = original h-9 titlebar.
+       All controls in default slot (not named slots) so shallowMount renders them correctly.
+       -webkit-app-region: drag is required for Electron frameless window dragging. -->
+  <v-app-bar
+    elevation="0"
+    :height="36"
+    color="surface"
+    class="titlebar"
     style="-webkit-app-region: drag"
   >
-    <!-- Left: App identity -->
-    <div class="flex items-center gap-2 px-4">
-      <div class="w-2 h-2 rounded-full bg-violet-500 shrink-0"></div>
-      <span class="text-xs font-semibold text-content-subtle tracking-widest uppercase">KanbAgent</span>
+    <div class="titlebar-content">
+      <!-- Left: App identity -->
+      <div class="titlebar-left">
+        <div class="titlebar-dot"></div>
+        <span class="titlebar-name">KanbAgent</span>
+      </div>
+
+      <!-- Center: Search bar (always visible, VS Code style) -->
+      <div class="titlebar-center">
+        <button
+          style="-webkit-app-region: no-drag"
+          class="search-btn"
+          :title="t('titleBar.searchTitle')"
+          @click="$emit('open-search')"
+        >
+          <svg viewBox="0 0 16 16" fill="currentColor" class="search-icon">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
+          </svg>
+          <span class="search-text">{{ t('titleBar.searchPlaceholder') }}</span>
+          <kbd class="search-kbd">Ctrl+K</kbd>
+        </button>
+      </div>
+
+      <!-- Right: Window controls — Windows 11 style -->
+      <div class="titlebar-controls" style="-webkit-app-region: no-drag">
+        <!-- Minimize -->
+        <button
+          style="-webkit-app-region: no-drag"
+          class="win-btn"
+          :title="t('titleBar.minimize')"
+          @click="api.windowMinimize()"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+            <rect x="0" y="4.5" width="10" height="1"/>
+          </svg>
+        </button>
+
+        <!-- Maximize / Restore -->
+        <button
+          style="-webkit-app-region: no-drag"
+          class="win-btn"
+          :title="isMaximized ? t('titleBar.restore') : t('titleBar.maximize')"
+          @click="api.windowMaximize()"
+        >
+          <svg v-if="isMaximized" width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3.5" y="0.5" width="7" height="7" rx="0.5"/>
+            <path d="M0.5 3.5v7h7v-3"/>
+          </svg>
+          <svg v-else width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="0.5" y="0.5" width="9" height="9" rx="0.5"/>
+          </svg>
+        </button>
+
+        <!-- Close -->
+        <button
+          style="-webkit-app-region: no-drag"
+          class="win-btn win-btn--close"
+          :title="t('common.close')"
+          @click="api.windowClose()"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+            <line x1="0.5" y1="0.5" x2="9.5" y2="9.5"/>
+            <line x1="9.5" y1="0.5" x2="0.5" y2="9.5"/>
+          </svg>
+        </button>
+      </div>
     </div>
-
-    <!-- Center: Search bar (always visible, VS Code style) -->
-    <div class="flex justify-center">
-      <button
-        style="-webkit-app-region: no-drag"
-        class="flex items-center gap-2 px-3 h-6 rounded-md bg-surface-secondary/80 border border-edge-default/50 text-content-subtle hover:text-content-tertiary hover:border-content-faint/80 hover:bg-surface-secondary transition-all duration-150 w-52 group"
-        :title="t('titleBar.searchTitle')"
-        @click="$emit('open-search')"
-      >
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3 shrink-0">
-          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
-        </svg>
-        <span class="flex-1 text-left text-xs">{{ t('titleBar.searchPlaceholder') }}</span>
-        <kbd class="text-[10px] text-content-dim group-hover:text-content-subtle font-mono leading-none">Ctrl+K</kbd>
-      </button>
-    </div>
-
-    <!-- Right: Window controls — Windows 11 style -->
-    <div class="flex items-stretch h-full justify-end">
-
-      <!-- Minimize -->
-      <button
-        style="-webkit-app-region: no-drag"
-        class="w-[46px] flex items-center justify-center text-content-subtle hover:text-content-primary hover:bg-surface-tertiary/60 transition-colors"
-        :title="t('titleBar.minimize')"
-        @click="api.windowMinimize()"
-      >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-          <rect x="0" y="4.5" width="10" height="1"/>
-        </svg>
-      </button>
-
-      <!-- Maximize / Restore -->
-      <button
-        style="-webkit-app-region: no-drag"
-        class="w-[46px] flex items-center justify-center text-content-subtle hover:text-content-primary hover:bg-surface-tertiary/60 transition-colors"
-        :title="isMaximized ? t('titleBar.restore') : t('titleBar.maximize')"
-        @click="api.windowMaximize()"
-      >
-        <!-- Restore: two overlapping squares -->
-        <svg v-if="isMaximized" width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1">
-          <rect x="3.5" y="0.5" width="7" height="7" rx="0.5"/>
-          <path d="M0.5 3.5v7h7v-3"/>
-        </svg>
-        <!-- Maximize: single square -->
-        <svg v-else width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
-          <rect x="0.5" y="0.5" width="9" height="9" rx="0.5"/>
-        </svg>
-      </button>
-
-      <!-- Close -->
-      <button
-        style="-webkit-app-region: no-drag"
-        class="w-[46px] flex items-center justify-center text-content-subtle hover:text-white hover:bg-red-600 transition-colors"
-        :title="t('common.close')"
-        @click="api.windowClose()"
-      >
-        <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
-          <line x1="0.5" y1="0.5" x2="9.5" y2="9.5"/>
-          <line x1="9.5" y1="0.5" x2="0.5" y2="9.5"/>
-        </svg>
-      </button>
-
-    </div>
-  </div>
+  </v-app-bar>
 </template>
+
+<style scoped>
+/* Scoped CSS justified: Electron -webkit-app-region requires precise layout control.
+   Override v-toolbar__content padding to use full width with the 3-column grid. */
+.titlebar :deep(.v-toolbar__content) {
+  padding: 0;
+  width: 100%;
+}
+.titlebar-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  height: 36px;
+  width: 100%;
+}
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 16px;
+}
+.titlebar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgb(var(--v-theme-primary));
+  flex-shrink: 0;
+}
+.titlebar-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.titlebar-center {
+  display: flex;
+  justify-content: center;
+}
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(var(--v-theme-on-surface), 0.06);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  transition: all 150ms;
+  width: 208px;
+  cursor: pointer;
+}
+.search-btn:hover {
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  border-color: rgba(var(--v-theme-on-surface), 0.2);
+  background: rgba(var(--v-theme-on-surface), 0.1);
+}
+.search-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+.search-text {
+  flex: 1;
+  text-align: left;
+  font-size: 12px;
+}
+.search-kbd {
+  font-size: 10px;
+  color: rgba(var(--v-theme-on-surface), 0.35);
+  font-family: monospace;
+  line-height: 1;
+}
+.titlebar-controls {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  justify-content: flex-end;
+}
+.win-btn {
+  width: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  transition: background 150ms, color 150ms;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.win-btn:hover {
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  background: rgba(var(--v-theme-on-surface), 0.1);
+}
+.win-btn--close:hover {
+  color: #fff;
+  background: #dc2626;
+}
+</style>
