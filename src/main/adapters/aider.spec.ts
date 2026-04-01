@@ -111,3 +111,40 @@ describe('aiderAdapter.buildCommand', () => {
     expect(spec.command).toBe('aider')
   })
 })
+
+// ── aiderAdapter.extractTokenUsage ───────────────────────────────────────────
+
+describe('aiderAdapter.extractTokenUsage', () => {
+  it('returns null for events with no text', () => {
+    expect(aiderAdapter.extractTokenUsage?.({ type: 'error', text: undefined })).toBeNull()
+  })
+
+  it('returns null for text events that do not match the token pattern', () => {
+    expect(aiderAdapter.extractTokenUsage?.({ type: 'text', text: 'some random output' })).toBeNull()
+  })
+
+  it('extracts tokensIn and tokensOut from "Tokens: X sent, Y received" line', () => {
+    const event = { type: 'text', text: 'Tokens: 1,234 sent, 567 received.' }
+    const result = aiderAdapter.extractTokenUsage?.(event)
+    expect(result?.tokensIn).toBe(1234)
+    expect(result?.tokensOut).toBe(567)
+  })
+
+  it('extracts tokens without thousands separator', () => {
+    const event = { type: 'text', text: 'Tokens: 100 sent, 200 received.' }
+    expect(aiderAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 100, tokensOut: 200 })
+  })
+
+  it('extracts costUsd when "Cost: $X session" is present', () => {
+    const event = { type: 'text', text: 'Tokens: 500 sent, 300 received. Cost: $0.0042 session, $0.0042 total.' }
+    const result = aiderAdapter.extractTokenUsage?.(event)
+    expect(result?.tokensIn).toBe(500)
+    expect(result?.tokensOut).toBe(300)
+    expect(result?.costUsd).toBeCloseTo(0.0042)
+  })
+
+  it('omits costUsd when cost section is absent', () => {
+    const event = { type: 'text', text: 'Tokens: 100 sent, 50 received.' }
+    expect(aiderAdapter.extractTokenUsage?.(event)?.costUsd).toBeUndefined()
+  })
+})

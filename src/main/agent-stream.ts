@@ -168,7 +168,7 @@ export function registerAgentStreamHandlers(): void {
 
     attachStreamHandlers({
       proc, id, wcId, adapter, worktreeInfo, spTempFile, settingsTempFile, scriptTempFile,
-      sessionId: opts.sessionId, projectPath: opts.projectPath, agentAdapters,
+      sessionId: opts.sessionId, projectPath: opts.projectPath, dbPath: opts.dbPath, agentAdapters,
     })
 
     return id

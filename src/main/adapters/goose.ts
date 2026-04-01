@@ -19,6 +19,7 @@ import type {
   SpawnSpec,
   SystemPromptResult,
   StreamEvent,
+  TokenCounts,
 } from '../../shared/cli-types'
 
 /** Validates custom goose binary names. */
@@ -64,6 +65,21 @@ export const gooseAdapter: CliAdapter = {
       return { type: 'text', text: line }
     } catch {
       return { type: 'text', text: line }
+    }
+  },
+
+  extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
+    // Goose ACP format — defensive: check both 'usage' and 'token_usage' field names
+    const raw = event as any
+    const usage = raw.usage ?? raw.token_usage
+    if (!usage) return null
+    try {
+      return {
+        tokensIn: (usage.input_tokens ?? usage.inputTokens ?? 0) as number,
+        tokensOut: (usage.output_tokens ?? usage.outputTokens ?? 0) as number,
+      }
+    } catch {
+      return null
     }
   },
 }

@@ -15,6 +15,7 @@ import type {
   SpawnSpec,
   SystemPromptResult,
   StreamEvent,
+  TokenCounts,
 } from '../../shared/cli-types'
 
 /** Validates custom codex binary names. */
@@ -65,6 +66,20 @@ export const codexAdapter: CliAdapter = {
     } catch {
       // Plain text line — wrap as assistant text event
       return { type: 'text', text: line }
+    }
+  },
+
+  extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
+    // Codex emits OpenAI-compatible JSON events; usage may appear in response.completed or similar
+    const usage = (event as any).usage
+    if (!usage) return null
+    try {
+      return {
+        tokensIn: (usage.input_tokens ?? usage.prompt_tokens ?? 0) as number,
+        tokensOut: (usage.output_tokens ?? usage.completion_tokens ?? 0) as number,
+      }
+    } catch {
+      return null
     }
   },
 

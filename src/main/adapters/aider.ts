@@ -18,6 +18,7 @@ import type {
   SpawnSpec,
   SystemPromptResult,
   StreamEvent,
+  TokenCounts,
 } from '../../shared/cli-types'
 
 /** Validates custom aider binary names. */
@@ -58,5 +59,23 @@ export const aiderAdapter: CliAdapter = {
     if (!line.trim()) return null
     // Aider output is plain text — wrap as assistant text event
     return { type: 'text', text: line }
+  },
+
+  extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
+    // Aider emits "Tokens: X sent, Y received. Cost: $Z session, ..." as a plain-text line
+    const text = event.text
+    if (!text) return null
+    try {
+      const m = text.match(/Tokens:\s*([\d,]+)\s*sent,\s*([\d,]+)\s*received/)
+      if (!m) return null
+      const costMatch = text.match(/Cost:\s*\$([0-9.]+)\s*session/)
+      return {
+        tokensIn: parseInt(m[1].replace(/,/g, ''), 10),
+        tokensOut: parseInt(m[2].replace(/,/g, ''), 10),
+        costUsd: costMatch ? parseFloat(costMatch[1]) : undefined,
+      }
+    } catch {
+      return null
+    }
   },
 }

@@ -115,6 +115,18 @@ export interface SystemPromptResult {
 }
 
 /**
+ * Token usage counts accumulated from a CLI stream session.
+ * Used by extractTokenUsage to aggregate usage across events.
+ */
+export interface TokenCounts {
+  tokensIn: number
+  tokensOut: number
+  cacheRead: number
+  cacheWrite: number
+  costUsd?: number
+}
+
+/**
  * A parsed event emitted from the CLI stdout stream.
  * Shape varies by CLI; Claude uses JSONL (ADR-009), others emit plain text lines.
  */
@@ -180,6 +192,17 @@ export interface CliAdapter {
    * Only implemented for CLIs that support session resume (currently Claude only).
    */
   extractConvId?(event: StreamEvent): string | null
+
+  /**
+   * Extract token usage from a stream event.
+   * Called on every non-null event returned by parseLine.
+   * Return null if this event carries no usage data.
+   * Counts are accumulated across all events in a session.
+   *
+   * Implementations should use `(event as any).<field>` for CLI-specific fields
+   * not present in the StreamEvent base type.
+   */
+  extractTokenUsage?(event: StreamEvent): Partial<TokenCounts> | null
 
   /**
    * Format a user message for delivery via proc.stdin.write().

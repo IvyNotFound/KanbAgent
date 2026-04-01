@@ -187,9 +187,10 @@ describe('opencodeAdapter.parseLine', () => {
     expect(event).toBeNull()
   })
 
-  it('returns null for type:step_finish (lifecycle event)', () => {
+  it('returns system:step_finish event for type:step_finish (for token accounting)', () => {
     const event = opencodeAdapter.parseLine('{"type":"step_finish","duration":100}')
-    expect(event).toBeNull()
+    expect(event?.type).toBe('system')
+    expect((event as any)?.subtype).toBe('step_finish')
   })
 
   it('returns null for type:step_finish with cost and tokens (v1.3.4+ full format)', () => {
@@ -276,3 +277,39 @@ describe('opencodeAdapter.singleShotStdin', () => {
     expect(opencodeAdapter.singleShotStdin).toBe(true)
   })
 })
+
+// ── opencodeAdapter.extractTokenUsage ────────────────────────────────────────
+
+describe('opencodeAdapter.extractTokenUsage', () => {
+  it('returns null for events with no usage field', () => {
+    expect(opencodeAdapter.extractTokenUsage?.({ type: 'text', text: 'hello' })).toBeNull()
+  })
+
+  it('extracts inputTokens / outputTokens (camelCase format)', () => {
+    const event = { type: 'system', subtype: 'step_finish', usage: { inputTokens: 100, outputTokens: 50 } } as any
+    expect(opencodeAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 100, tokensOut: 50 })
+  })
+
+  it('extracts input_tokens / output_tokens (snake_case format)', () => {
+    const event = { type: 'system', subtype: 'step_finish', usage: { input_tokens: 80, output_tokens: 40 } } as any
+    expect(opencodeAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 80, tokensOut: 40 })
+  })
+
+  it('extracts prompt_tokens / completion_tokens (OpenAI legacy format)', () => {
+    const event = { type: 'system', subtype: 'step_finish', usage: { prompt_tokens: 60, completion_tokens: 30 } } as any
+    expect(opencodeAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 60, tokensOut: 30 })
+  })
+
+  it('includes costUsd when present in usage', () => {
+    const event = { type: 'system', subtype: 'step_finish', usage: { input_tokens: 10, output_tokens: 5, cost_usd: 0.001 } } as any
+    const result = opencodeAdapter.extractTokenUsage?.(event)
+    expect(result?.costUsd).toBe(0.001)
+  })
+
+  it('omits costUsd when not a number', () => {
+    const event = { type: 'system', subtype: 'step_finish', usage: { input_tokens: 10, output_tokens: 5 } } as any
+    const result = opencodeAdapter.extractTokenUsage?.(event)
+    expect(result?.costUsd).toBeUndefined()
+  })
+})
+

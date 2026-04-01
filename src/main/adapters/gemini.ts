@@ -17,6 +17,7 @@ import type {
   SpawnSpec,
   SystemPromptResult,
   StreamEvent,
+  TokenCounts,
 } from '../../shared/cli-types'
 
 /** Validates custom gemini binary names. */
@@ -75,6 +76,24 @@ export const geminiAdapter: CliAdapter = {
     return null
   },
 
+  extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
+    // Only system:stats events (emitted from result:success) carry token data
+    if ((event as any).subtype !== 'stats') return null
+    const stats = (event as any).stats
+    if (!stats) return null
+    try {
+      const tokensIn = (stats.inputTokenCount ?? 0) as number
+      const tokensOut = (stats.outputTokenCount ?? 0) as number
+      // Fallback: older Gemini CLI versions only expose total_tokens
+      if (tokensIn === 0 && tokensOut === 0 && stats.total_tokens) {
+        return { tokensIn: 0, tokensOut: stats.total_tokens as number }
+      }
+      return { tokensIn, tokensOut }
+    } catch {
+      return null
+    }
+  },
+
   formatStdinMessage(text: string): string {
     // Gemini CLI interactive mode expects plain text input, not Claude JSONL format.
     return text + '\n'
@@ -104,7 +123,10 @@ export const geminiAdapter: CliAdapter = {
       }
 
       if (evType === 'result') {
-        if (parsed.status === 'success') return null  // lifecycle metadata, not displayed
+        if (parsed.status === 'success') {
+          // Return as system event so extractTokenUsage can access stats; not displayed by renderer
+          return { type: 'system', subtype: 'stats', stats: parsed.stats ?? null } as unknown as StreamEvent
+        }
         // Error result
         const errMsg = typeof parsed.error === 'string'
           ? parsed.error

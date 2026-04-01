@@ -323,6 +323,14 @@ const migrations: Migration[] = [
 
   // v30: add agents.preferred_model for CLI model selection (T1354)
   { version: 30, up: (db) => { runAddPreferredModelToAgentsMigration(db) } },
+
+  // v31: add sessions.cli_type for token telemetry on non-Claude CLIs (T1364)
+  { version: 31, up: (db) => {
+    const colResult = db.exec('PRAGMA table_info(sessions)')
+    if (colResult.length === 0) return
+    const cols = new Set(colResult[0].values.map((r: unknown[]) => r[1] as string))
+    if (!cols.has('cli_type')) db.run('ALTER TABLE sessions ADD COLUMN cli_type TEXT')
+  } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */

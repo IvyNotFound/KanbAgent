@@ -273,9 +273,12 @@ describe('geminiAdapter.parseLine', () => {
   })
 
   // result events
-  it('returns null for type:result status:success', () => {
+  it('returns system:stats event for type:result status:success (for token accounting)', () => {
     const line = JSON.stringify({ type: 'result', status: 'success', stats: { total_tokens: 100 } })
-    expect(geminiAdapter.parseLine(line)).toBeNull()
+    const result = geminiAdapter.parseLine(line)
+    expect(result?.type).toBe('system')
+    expect((result as any).subtype).toBe('stats')
+    expect((result as any).stats).toEqual({ total_tokens: 100 })
   })
 
   it('returns error event for type:result status:error with string error', () => {
@@ -303,5 +306,39 @@ describe('geminiAdapter.parseLine', () => {
       type: 'text',
       text: 'Loaded cached credentials.',
     })
+  })
+})
+
+// ── geminiAdapter.extractTokenUsage ──────────────────────────────────────────
+
+describe('geminiAdapter.extractTokenUsage', () => {
+  it('returns null for non-stats events', () => {
+    expect(geminiAdapter.extractTokenUsage?.({ type: 'text', text: 'hello' })).toBeNull()
+  })
+
+  it('returns null for system events without stats subtype', () => {
+    expect(geminiAdapter.extractTokenUsage?.({ type: 'system' })).toBeNull()
+  })
+
+  it('returns null when stats field is absent', () => {
+    const event = { type: 'system', subtype: 'stats', stats: null } as any
+    expect(geminiAdapter.extractTokenUsage?.(event)).toBeNull()
+  })
+
+  it('extracts inputTokenCount + outputTokenCount when available', () => {
+    const event = { type: 'system', subtype: 'stats', stats: { inputTokenCount: 120, outputTokenCount: 45 } } as any
+    expect(geminiAdapter.extractTokenUsage?.(event)).toEqual({ tokensIn: 120, tokensOut: 45 })
+  })
+
+  it('falls back to total_tokens as tokensOut when split counts are absent', () => {
+    const event = { type: 'system', subtype: 'stats', stats: { total_tokens: 200 } } as any
+    const result = geminiAdapter.extractTokenUsage?.(event)
+    expect(result?.tokensIn).toBe(0)
+    expect(result?.tokensOut).toBe(200)
+  })
+
+  it('returns zeroes when stats has no recognized count fields', () => {
+    const event = { type: 'system', subtype: 'stats', stats: {} } as any
+    expect(geminiAdapter.extractTokenUsage?.(event)).toEqual({ tokensIn: 0, tokensOut: 0 })
   })
 })

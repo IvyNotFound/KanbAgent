@@ -20,6 +20,7 @@ import type {
   SpawnSpec,
   SystemPromptResult,
   StreamEvent,
+  TokenCounts,
 } from '../../shared/cli-types'
 
 /** Validates custom opencode binary names. */
@@ -29,6 +30,22 @@ export const opencodeAdapter: CliAdapter = {
   cli: 'opencode',
   binaries: ['opencode'],
   singleShotStdin: true,
+
+  extractTokenUsage(event: StreamEvent): Partial<TokenCounts> | null {
+    // step_finish events may carry OpenAI-compatible usage data
+    const raw = event as any
+    const usage = raw.usage
+    if (!usage) return null
+    try {
+      return {
+        tokensIn: (usage.inputTokens ?? usage.input_tokens ?? usage.prompt_tokens ?? 0) as number,
+        tokensOut: (usage.outputTokens ?? usage.output_tokens ?? usage.completion_tokens ?? 0) as number,
+        costUsd: typeof usage.cost_usd === 'number' ? usage.cost_usd : undefined,
+      }
+    } catch {
+      return null
+    }
+  },
 
   formatStdinMessage(text: string): string {
     // opencode run reads stdin as plain text until EOF — not Claude's JSONL format.
@@ -105,7 +122,11 @@ export const opencodeAdapter: CliAdapter = {
           : line
         return { type: 'error', text: msg }
       }
-      // tool_use, step_start, step_finish — lifecycle metadata, not displayed
+      if (evType === 'step_finish') {
+        // May carry usage data — return as system event so extractTokenUsage can access it
+        return { type: 'system', subtype: 'step_finish', usage: (parsed.usage ?? null) } as unknown as StreamEvent
+      }
+      // tool_use, step_start, and other lifecycle metadata — not displayed
       return null
     } catch {
       // Non-JSON line (plain text or ANSI output) — surface as text

@@ -219,6 +219,20 @@ describe('codexAdapter', () => {
   it('does not implement extractConvId (no stable session ID)', () => {
     expect(codexAdapter.extractConvId).toBeUndefined()
   })
+
+  it('extractTokenUsage returns null when no usage field', () => {
+    expect(codexAdapter.extractTokenUsage?.({ type: 'text', text: 'hello' })).toBeNull()
+  })
+
+  it('extractTokenUsage extracts input_tokens + output_tokens', () => {
+    const event = { type: 'assistant', usage: { input_tokens: 80, output_tokens: 40 } } as any
+    expect(codexAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 80, tokensOut: 40 })
+  })
+
+  it('extractTokenUsage extracts prompt_tokens + completion_tokens (OpenAI legacy)', () => {
+    const event = { type: 'assistant', usage: { prompt_tokens: 60, completion_tokens: 30 } } as any
+    expect(codexAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 60, tokensOut: 30 })
+  })
 })
 
 // ── Gemini adapter ────────────────────────────────────────────────────────────
@@ -282,6 +296,25 @@ describe('gooseAdapter', () => {
 
   it('parseLine wraps text as { type: "text" }', () => {
     expect(gooseAdapter.parseLine('output')).toEqual({ type: 'text', text: 'output' })
+  })
+
+  it('extractTokenUsage returns null when no usage/token_usage field', () => {
+    expect(gooseAdapter.extractTokenUsage?.({ type: 'text', text: 'hello' })).toBeNull()
+  })
+
+  it('extractTokenUsage extracts from usage field (input_tokens / output_tokens)', () => {
+    const event = { type: 'assistant', usage: { input_tokens: 70, output_tokens: 35 } } as any
+    expect(gooseAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 70, tokensOut: 35 })
+  })
+
+  it('extractTokenUsage falls back to token_usage field', () => {
+    const event = { type: 'assistant', token_usage: { input_tokens: 50, output_tokens: 25 } } as any
+    expect(gooseAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 50, tokensOut: 25 })
+  })
+
+  it('extractTokenUsage accepts camelCase inputTokens / outputTokens', () => {
+    const event = { type: 'assistant', usage: { inputTokens: 100, outputTokens: 60 } } as any
+    expect(gooseAdapter.extractTokenUsage?.(event)).toMatchObject({ tokensIn: 100, tokensOut: 60 })
   })
 })
 

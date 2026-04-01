@@ -8,7 +8,7 @@ import { createInterface } from 'readline'
 import { unlinkSync } from 'fs'
 import { webContents } from 'electron'
 import type { ChildProcess } from 'child_process'
-import type { CliAdapter } from '../../shared/cli-types'
+import type { CliAdapter, TokenCounts } from '../../shared/cli-types'
 import type { WorktreeInfo } from '../worktree-manager'
 import { removeWorktree } from '../worktree-manager'
 import { MAX_STDERR_BUFFER_SIZE, logDebug } from '../agent-stream-helpers'
@@ -20,6 +20,7 @@ import {
   sendTerminalEvent,
   killAgent,
 } from '../agent-stream-registry'
+import { writeDb } from '../db'
 
 export interface StreamHandlerOpts {
   proc: ChildProcess
@@ -32,6 +33,7 @@ export interface StreamHandlerOpts {
   scriptTempFile: string | undefined
   sessionId: number | undefined
   projectPath: string | undefined
+  dbPath: string | undefined
   agentAdapters: Map<string, CliAdapter>
 }
 
@@ -47,11 +49,15 @@ export function attachStreamHandlers({
   scriptTempFile,
   sessionId,
   projectPath,
+  dbPath,
   agentAdapters,
 }: StreamHandlerOpts): void {
   let eventsReceived = 0
   let stderrBuffer = ''
   let stdoutErrorBuffer = '' // WSL errors go to stdout, not stderr
+
+  // Token accumulator for non-Claude CLIs (Claude uses hook server instead)
+  const tokenAccum: TokenCounts = { tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheWrite: 0 }
 
   // For non-Claude CLIs: forward stderr lines in real time so the user can see diagnostic info
   // (API key errors, config issues) without waiting for process close (T1248).
@@ -88,6 +94,22 @@ export function attachStreamHandlers({
     }
 
     eventsReceived++
+
+    // Accumulate token usage from adapters that support extractTokenUsage
+    if (adapter.cli !== 'claude' && adapter.extractTokenUsage) {
+      try {
+        const usage = adapter.extractTokenUsage(event)
+        if (usage) {
+          tokenAccum.tokensIn  += usage.tokensIn  ?? 0
+          tokenAccum.tokensOut += usage.tokensOut ?? 0
+          tokenAccum.cacheRead  += usage.cacheRead  ?? 0
+          tokenAccum.cacheWrite += usage.cacheWrite ?? 0
+          if (typeof usage.costUsd === 'number') {
+            tokenAccum.costUsd = (tokenAccum.costUsd ?? 0) + usage.costUsd
+          }
+        }
+      } catch { /* defensive — never break stream on accumulation error */ }
+    }
 
     const convId = adapter.extractConvId?.(event) ?? null
     if (convId) {
@@ -129,6 +151,25 @@ export function attachStreamHandlers({
     }
 
     logDebug(`close id=${id}: exitCode=${exitCode} eventsReceived=${eventsReceived} stderr=${stderrBuffer.slice(0, 200)} stdout_error=${stdoutErrorBuffer.slice(0, 200)}`)
+
+    // Persist cli_type and (for non-Claude CLIs) accumulated token counts to DB
+    if (dbPath && sessionId) {
+      const hasTokens = adapter.cli !== 'claude' && tokenAccum.tokensIn > 0
+      writeDb(dbPath, (db) => {
+        if (hasTokens) {
+          db.run(
+            `UPDATE sessions SET cli_type = ?, tokens_in = ?, tokens_out = ?,
+             tokens_cache_read = ?, tokens_cache_write = ?,
+             cost_usd = COALESCE(?, cost_usd) WHERE id = ?`,
+            [adapter.cli, tokenAccum.tokensIn, tokenAccum.tokensOut,
+             tokenAccum.cacheRead, tokenAccum.cacheWrite,
+             tokenAccum.costUsd ?? null, sessionId]
+          )
+        } else {
+          db.run(`UPDATE sessions SET cli_type = ? WHERE id = ?`, [adapter.cli, sessionId])
+        }
+      }).catch(err => console.error('[stream-handlers] session update error:', err))
+    }
 
     if (eventsReceived === 0) {
       const isAbnormalExit = exitCode === -1 || exitCode === 4294967295
