@@ -74,8 +74,22 @@ export const opencodeAdapter: CliAdapter = {
       const evType = parsed.type
 
       if (evType === 'text' || evType === 'reasoning') {
-        // Text and reasoning blocks — show as text output
-        return { type: 'text', text: typeof parsed.text === 'string' ? parsed.text : line }
+        // Text and reasoning blocks — show as text output.
+        // New format (v1.3+): text is wrapped in a part object: { type: 'text', part: { text: '...' } }
+        // Legacy format: { type: 'text', text: '...' }
+        const part = typeof parsed.part === 'object' && parsed.part !== null
+          ? parsed.part as Record<string, unknown>
+          : null
+        const text = typeof part?.text === 'string' ? part.text
+          : typeof parsed.text === 'string' ? parsed.text
+          : null
+        if (text === null) {
+          // Unknown structure — surface raw line rather than silently dropping content.
+          // Log to help diagnose future format changes.
+          console.warn('[opencode] parseLine: text event with unknown structure, surfacing raw line')
+          return { type: 'text', text: line }
+        }
+        return { type: 'text', text }
       }
       if (evType === 'error') {
         // Error events — handle both flat {message} and nested {error:{data:{message}}} formats (v1.2+)

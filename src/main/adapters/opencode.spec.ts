@@ -187,10 +187,35 @@ describe('opencodeAdapter.parseLine', () => {
     expect(event).toEqual({ type: 'text', text: 'some plain text output' })
   })
 
-  it('falls back to raw line for type:text event with missing text field', () => {
+  it('maps type:text event with part-wrapped format (v1.3+)', () => {
+    const event = opencodeAdapter.parseLine('{"type":"text","part":{"text":"hello from part"},"sessionID":"s1"}')
+    expect(event).toEqual({ type: 'text', text: 'hello from part' })
+  })
+
+  it('maps type:reasoning event with part-wrapped format (v1.3+)', () => {
+    const event = opencodeAdapter.parseLine('{"type":"reasoning","part":{"text":"thinking via part"},"sessionID":"s1"}')
+    expect(event).toEqual({ type: 'text', text: 'thinking via part' })
+  })
+
+  it('prefers part.text over flat text when both present', () => {
+    const event = opencodeAdapter.parseLine('{"type":"text","part":{"text":"from part"},"text":"from flat"}')
+    expect(event).toEqual({ type: 'text', text: 'from part' })
+  })
+
+  it('falls back to flat text when part is present but has no text field', () => {
+    const event = opencodeAdapter.parseLine('{"type":"text","part":{"other":"field"},"text":"flat fallback"}')
+    expect(event).toEqual({ type: 'text', text: 'flat fallback' })
+  })
+
+  it('falls back to raw line for type:text event with missing text field and warns', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const raw = '{"type":"text","other":"field"}'
     const event = opencodeAdapter.parseLine(raw)
     expect(event).toEqual({ type: 'text', text: raw })
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[opencode] parseLine: text event with unknown structure, surfacing raw line'
+    )
+    warnSpy.mockRestore()
   })
 
   it('maps type:error with nested error.data.message (opencode v1.2+ format)', () => {
