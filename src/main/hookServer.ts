@@ -26,7 +26,7 @@ import { parseTokensFromJSONLStream, type TokenCounts } from './hookServer-token
 
 // Re-exports for backward compatibility
 export { HOOK_PORT } from './hookServer-inject'
-export { injectHookSecret, detectWslGatewayIp, injectHookUrls, injectIntoWslDistros } from './hookServer-inject'
+export { injectHookSecret, detectWslGatewayIp, injectHookUrls, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks } from './hookServer-inject'
 export { getHookSecret } from './hookServer-inject'
 export { parseTokensFromJSONL, parseTokensFromJSONLStream } from './hookServer-tokens'
 export type { TokenCounts } from './hookServer-tokens'

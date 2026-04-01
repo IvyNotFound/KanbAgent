@@ -15,7 +15,7 @@ import type { Server } from 'http'
 import { registerIpcHandlers } from './ipc'
 import { restoreTrustedPaths } from './ipc-project'
 import { registerAgentStreamHandlers } from './agent-stream'
-import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros } from './hookServer'
+import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks, getHookSecret } from './hookServer'
 import { setupAutoUpdater, registerUpdaterIpc } from './updater'
 import { cleanupOrphanWorktreesAtStartup } from './worktree-cleanup'
 
@@ -191,6 +191,14 @@ app.whenReady().then(async () => {
   }
   // Inject into active WSL distros via UNC paths
   if (process.platform === 'win32') injectIntoWslDistros(wslIp).catch(() => {})
+  // Inject Gemini CLI lifecycle hooks
+  const listenIp = wslIp ?? '127.0.0.1'
+  const stubsDir = join(app.getPath('userData'), 'hooks')
+  const geminiSettings = join(app.getPath('home'), '.gemini', 'settings.json')
+  injectGeminiHooks(geminiSettings, listenIp, getHookSecret(), stubsDir).catch(() => {})
+  // Inject Codex CLI lifecycle hooks (WSL/Linux only — no-op on Windows native)
+  const codexHooks = join(app.getPath('home'), '.codex', 'hooks.json')
+  injectCodexHooks(codexHooks, listenIp, getHookSecret(), stubsDir).catch(() => {})
   const win = createWindow()
   setupAutoUpdater(win)
 })
