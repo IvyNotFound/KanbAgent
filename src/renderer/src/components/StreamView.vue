@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { useAgentsStore } from '@renderer/stores/agents'
 import { agentFg, agentBg, agentBorder, colorVersion } from '@renderer/utils/agentColor'
 import { useStreamEvents } from '@renderer/composables/useStreamEvents'
 import HookEventBar from './HookEventBar.vue'
@@ -29,6 +30,7 @@ const props = defineProps<{
 const tabsStore = useTabsStore()
 const tasksStore = useTasksStore()
 const settingsStore = useSettingsStore()
+const agentsStore = useAgentsStore()
 const { t } = useI18n()
 
 // Dynamic highlight.js theme — switches between github.css (light) and github-dark.css (T895)
@@ -182,6 +184,15 @@ onMounted(async () => {
     unsubConvId = window.electronAPI.onAgentConvId(id, (convId: string) => { sessionId.value = convId })
     unsubExit = window.electronAPI.onAgentExit(id, (_exitCode: number | null) => {
       if (isStreaming.value) { const e: StreamEvent = { type: 'result' }; assignEventId(e); events.value.push(e) }
+      // Auto-close for non-Claude CLIs — Claude uses Stop hook (App.vue / T1370)
+      const t = tabsStore.tabs.find(tb => tb.id === props.terminalId)
+      if (t && t.cli && t.cli !== 'claude') {
+        const agent = agentsStore.agents.find(a => a.name === t.agentName)
+        const isTaskCreator = t.agentName === 'task-creator' || agent?.type === 'task-creator'
+        if (!isTaskCreator) {
+          setTimeout(() => tabsStore.closeTab(props.terminalId), 3000)
+        }
+      }
     })
 
     if (tab.autoSend) {
