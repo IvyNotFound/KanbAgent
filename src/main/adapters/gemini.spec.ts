@@ -148,6 +148,55 @@ describe('geminiAdapter.buildCommand', () => {
     const pIdx = spec.args.indexOf('-p')
     expect(mIdx).toBeLessThan(pIdx)
   })
+
+  it('includes --resume <convId> when convId is provided', () => {
+    const spec = geminiAdapter.buildCommand({ convId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' })
+    const idx = spec.args.indexOf('--resume')
+    expect(idx).toBeGreaterThan(-1)
+    expect(spec.args[idx + 1]).toBe('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
+  })
+
+  it('--resume appears before --output-format in args when both convId and initialMessage provided', () => {
+    const spec = geminiAdapter.buildCommand({
+      convId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      initialMessage: 'continue',
+    })
+    const resumeIdx = spec.args.indexOf('--resume')
+    const fmtIdx = spec.args.indexOf('--output-format')
+    expect(resumeIdx).toBeGreaterThan(-1)
+    expect(fmtIdx).toBeGreaterThan(-1)
+    expect(resumeIdx).toBeLessThan(fmtIdx)
+  })
+
+  it('does not include --resume when convId is not provided', () => {
+    const spec = geminiAdapter.buildCommand({ initialMessage: 'hello' })
+    expect(spec.args).not.toContain('--resume')
+  })
+})
+
+// ── geminiAdapter.extractConvId ───────────────────────────────────────────────
+
+describe('geminiAdapter.extractConvId', () => {
+  it('returns session_id from system:init event', () => {
+    const uuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+    const event = { type: 'system' as const, subtype: 'init', session_id: uuid }
+    expect(geminiAdapter.extractConvId!(event)).toBe(uuid)
+  })
+
+  it('returns null for system:init without session_id', () => {
+    const event = { type: 'system' as const, subtype: 'init' }
+    expect(geminiAdapter.extractConvId!(event)).toBeNull()
+  })
+
+  it('returns null for non-init system events', () => {
+    const event = { type: 'system' as const, subtype: 'other', session_id: 'abc' }
+    expect(geminiAdapter.extractConvId!(event)).toBeNull()
+  })
+
+  it('returns null for non-system events', () => {
+    const event = { type: 'text' as const, text: 'hello' }
+    expect(geminiAdapter.extractConvId!(event)).toBeNull()
+  })
 })
 
 // ── geminiAdapter.singleShotStdin ─────────────────────────────────────────────
@@ -187,8 +236,17 @@ describe('geminiAdapter.parseLine', () => {
   })
 
   // init event
-  it('returns null for type:init (session metadata)', () => {
-    const line = JSON.stringify({ type: 'init', session_id: 'abc', model: 'gemini-3' })
+  it('returns system:init event for type:init with session_id', () => {
+    const line = JSON.stringify({ type: 'init', session_id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', model: 'gemini-3' })
+    expect(geminiAdapter.parseLine(line)).toEqual({
+      type: 'system',
+      subtype: 'init',
+      session_id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+    })
+  })
+
+  it('returns null for type:init without session_id', () => {
+    const line = JSON.stringify({ type: 'init', model: 'gemini-3' })
     expect(geminiAdapter.parseLine(line)).toBeNull()
   })
 

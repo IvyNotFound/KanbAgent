@@ -34,6 +34,10 @@ export const geminiAdapter: CliAdapter = {
 
     const args: string[] = []
 
+    if (opts.convId) {
+      args.push('--resume', opts.convId)
+    }
+
     if (opts.model) {
       args.push('-m', opts.model)
     }
@@ -60,6 +64,17 @@ export const geminiAdapter: CliAdapter = {
     }
   },
 
+  extractConvId(event: StreamEvent): string | null {
+    if (
+      event.type === 'system' &&
+      event.subtype === 'init' &&
+      typeof event.session_id === 'string'
+    ) {
+      return event.session_id
+    }
+    return null
+  },
+
   formatStdinMessage(text: string): string {
     // Gemini CLI interactive mode expects plain text input, not Claude JSONL format.
     return text + '\n'
@@ -71,7 +86,11 @@ export const geminiAdapter: CliAdapter = {
       const parsed = JSON.parse(line) as Record<string, unknown>
       const evType = parsed.type
 
-      if (evType === 'init') return null  // session metadata, not displayed
+      if (evType === 'init') {
+        // Emit system:init so extractConvId can capture the session UUID.
+        const sid = typeof parsed.session_id === 'string' ? parsed.session_id : undefined
+        return sid ? { type: 'system', subtype: 'init', session_id: sid } : null
+      }
 
       if (evType === 'message') {
         if (parsed.role === 'user') return null  // echo of user input, not displayed
