@@ -196,6 +196,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 .telemetry-header {
   flex-shrink: 0;
