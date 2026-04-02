@@ -200,7 +200,7 @@ function priorityColor(priority: string): string {
         <!-- Active agents -->
         <v-col cols="3">
           <v-card elevation="0" class="metric-card">
-            <div class="d-flex align-center ga-3 pa-4">
+            <v-card-text class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--cyan shrink-0">
                 <v-icon class="metric-svg" size="20" style="color: #22d3ee">mdi-account-group</v-icon>
               </div>
@@ -209,14 +209,14 @@ function priorityColor(priority: string): string {
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.activeAgents') }}</div>
                 <div class="metric-sublabel text-truncate">{{ t('dashboard.sessionsStarted') }}</div>
               </div>
-            </div>
+            </v-card-text>
           </v-card>
         </v-col>
 
         <!-- In-progress tasks -->
         <v-col cols="3">
           <v-card elevation="0" class="metric-card">
-            <div class="d-flex align-center ga-3 pa-4">
+            <v-card-text class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--amber shrink-0">
                 <v-icon class="metric-svg" size="20" style="color: #fbbf24">mdi-lightning-bolt</v-icon>
               </div>
@@ -225,14 +225,14 @@ function priorityColor(priority: string): string {
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.inProgress') }}</div>
                 <div class="metric-sublabel text-truncate">{{ t('dashboard.activeTasks') }}</div>
               </div>
-            </div>
+            </v-card-text>
           </v-card>
         </v-col>
 
         <!-- Todo tasks -->
         <v-col cols="3">
           <v-card elevation="0" class="metric-card">
-            <div class="d-flex align-center ga-3 pa-4">
+            <v-card-text class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--violet shrink-0">
                 <v-icon class="metric-svg" size="20" style="color: #a78bfa">mdi-clipboard-text-outline</v-icon>
               </div>
@@ -241,14 +241,14 @@ function priorityColor(priority: string): string {
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.todo') }}</div>
                 <div class="metric-sublabel text-truncate">{{ t('dashboard.pendingTasks') }}</div>
               </div>
-            </div>
+            </v-card-text>
           </v-card>
         </v-col>
 
         <!-- Sessions today -->
         <v-col cols="3">
           <v-card elevation="0" class="metric-card">
-            <div class="d-flex align-center ga-3 pa-4">
+            <v-card-text class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--emerald shrink-0">
                 <v-icon class="metric-svg" size="20" style="color: #34d399">mdi-calendar-today</v-icon>
               </div>
@@ -257,7 +257,7 @@ function priorityColor(priority: string): string {
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.today') }}</div>
                 <div class="metric-sublabel text-truncate">{{ t('dashboard.sessionsStarted') }}</div>
               </div>
-            </div>
+            </v-card-text>
           </v-card>
         </v-col>
 
@@ -275,85 +275,96 @@ function priorityColor(priority: string): string {
 
         <!-- Recent tasks -->
         <v-col cols="6">
-          <div class="section-card">
+          <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
               <span class="text-overline text-medium-emphasis">{{ t('dashboard.recentTasks') }}</span>
             </div>
-            <div class="section-list">
-              <div v-if="recentTasks.length === 0" class="d-flex align-center justify-center pa-8">
-                <span class="text-caption text-disabled font-italic">{{ t('dashboard.noTasks') }}</span>
-              </div>
-              <div
+            <v-list
+              v-if="recentTasks.length > 0"
+              density="compact"
+              bg-color="transparent"
+              class="pa-0 section-scroll"
+            >
+              <v-list-item
                 v-for="task in recentTasks"
                 :key="task.id"
-                class="task-row"
+                :ripple="true"
+                class="task-list-item"
                 @click="store.openTask(task)"
               >
-                <v-chip
-                  size="x-small"
-                  :color="statusColor(task.status)"
-                  variant="tonal"
-                  label
-                  class="shrink-0"
-                >{{ STATUT_LABEL[task.status] ?? task.status }}</v-chip>
-
-                <div class="task-meta">
-                  <p class="text-caption text-truncate">{{ task.title }}</p>
-                  <div class="d-flex align-center ga-1 mt-1">
-                    <span
-                      v-if="task.agent_name"
-                      class="text-caption font-weight-medium"
-                      :style="{ color: agentFg(task.agent_name) }"
-                    >{{ task.agent_name }}</span>
-                    <span
-                      v-if="task.priority && task.priority !== 'normal'"
-                      class="text-caption"
-                      :style="{ color: priorityColor(task.priority) }"
-                    >{{ task.priority }}</span>
+                <div class="d-flex align-start ga-2 py-1">
+                  <v-chip
+                    size="x-small"
+                    :color="statusColor(task.status)"
+                    variant="tonal"
+                    label
+                    class="shrink-0"
+                  >{{ STATUT_LABEL[task.status] ?? task.status }}</v-chip>
+                  <div class="task-meta-inner">
+                    <p class="text-caption text-truncate">{{ task.title }}</p>
+                    <div class="d-flex align-center ga-1 mt-1">
+                      <span
+                        v-if="task.agent_name"
+                        class="text-caption font-weight-medium"
+                        :style="{ color: agentFg(task.agent_name) }"
+                      >{{ task.agent_name }}</span>
+                      <span
+                        v-if="task.priority && task.priority !== 'normal'"
+                        class="text-caption"
+                        :style="{ color: priorityColor(task.priority) }"
+                      >{{ task.priority }}</span>
+                    </div>
                   </div>
+                  <span class="shrink-0 text-caption text-disabled tabular-nums ml-auto">
+                    {{ relativeTime(task.updated_at) }}
+                  </span>
                 </div>
-
-                <span class="shrink-0 text-caption text-disabled tabular-nums">
-                  {{ relativeTime(task.updated_at) }}
-                </span>
-              </div>
+              </v-list-item>
+            </v-list>
+            <div v-else class="d-flex align-center justify-center pa-8">
+              <span class="text-caption text-disabled font-italic">{{ t('dashboard.noTasks') }}</span>
             </div>
-          </div>
+          </v-card>
         </v-col>
 
         <!-- Recent activity -->
         <v-col cols="6">
-          <div class="section-card">
+          <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
               <span class="text-overline text-medium-emphasis">{{ t('dashboard.recentActivity') }}</span>
             </div>
-            <div class="section-list">
-              <div v-if="recentActivity.length === 0" class="d-flex align-center justify-center pa-8">
-                <span class="text-caption text-disabled font-italic">{{ t('dashboard.noActivity') }}</span>
-              </div>
-              <div
+            <v-list
+              v-if="recentActivity.length > 0"
+              density="compact"
+              bg-color="transparent"
+              class="pa-0 section-scroll"
+            >
+              <v-list-item
                 v-for="(entry, i) in recentActivity"
                 :key="i"
-                class="activity-row"
+                class="activity-list-item"
               >
-                <span
-                  v-if="entry.agent_name"
-                  class="shrink-0 text-caption font-weight-medium font-mono agent-label"
-                  :style="{ color: agentFg(entry.agent_name) }"
-                >{{ entry.agent_name }}</span>
-                <span v-else class="shrink-0 text-caption text-disabled agent-label">—</span>
-
-                <div class="task-meta">
-                  <p class="text-caption font-mono">{{ entry.action }}</p>
-                  <p v-if="entry.detail" class="text-caption text-medium-emphasis text-truncate mt-1">{{ entry.detail }}</p>
+                <div class="d-flex align-start ga-2 py-1">
+                  <span
+                    v-if="entry.agent_name"
+                    class="text-caption font-weight-medium font-mono agent-label shrink-0"
+                    :style="{ color: agentFg(entry.agent_name) }"
+                  >{{ entry.agent_name }}</span>
+                  <span v-else class="text-caption text-disabled agent-label shrink-0">—</span>
+                  <div class="task-meta-inner">
+                    <p class="text-caption font-mono">{{ entry.action }}</p>
+                    <p v-if="entry.detail" class="text-caption text-medium-emphasis text-truncate mt-1">{{ entry.detail }}</p>
+                  </div>
+                  <span class="shrink-0 text-caption text-disabled tabular-nums ml-auto">
+                    {{ relativeTime(entry.created_at) }}
+                  </span>
                 </div>
-
-                <span class="shrink-0 text-caption text-disabled tabular-nums">
-                  {{ relativeTime(entry.created_at) }}
-                </span>
-              </div>
+              </v-list-item>
+            </v-list>
+            <div v-else class="d-flex align-center justify-center pa-8">
+              <span class="text-caption text-disabled font-italic">{{ t('dashboard.noActivity') }}</span>
             </div>
-          </div>
+          </v-card>
         </v-col>
 
       </v-row>
@@ -364,12 +375,12 @@ function priorityColor(priority: string): string {
           <CodeTelemetryPanel :project-path="store.projectPath" />
         </v-col>
         <v-col cols="6">
-          <div class="section-card">
+          <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
               <span class="text-overline text-medium-emphasis">{{ t('dashboard.activity') }}</span>
             </div>
             <ActivityHeatmap v-if="store.dbPath" :db-path="store.dbPath" />
-          </div>
+          </v-card>
         </v-col>
       </v-row>
 
@@ -460,9 +471,6 @@ function priorityColor(priority: string): string {
 .section-card {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
   overflow: hidden;
   height: 100%;
 }
@@ -473,50 +481,37 @@ function priorityColor(priority: string): string {
   border-bottom: 1px solid var(--edge-default);
 }
 
-.section-list {
+.section-scroll {
   flex: 1;
   overflow-y: auto;
 }
 
-/* ── Task rows ── */
-.task-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px 16px;
+/* ── List item overrides ── */
+.task-list-item {
   border-bottom: 1px solid var(--edge-default);
   cursor: pointer;
-  transition: background-color 0.15s;
 }
 
-.task-row:last-child {
+.task-list-item:last-child {
   border-bottom: none;
 }
 
-.task-row:hover {
-  background-color: var(--surface-tertiary);
+.activity-list-item {
+  border-bottom: 1px solid var(--edge-default);
 }
 
-.task-meta {
+.activity-list-item:last-child {
+  border-bottom: none;
+}
+
+.task-meta-inner {
   flex: 1;
   min-width: 0;
 }
 
-/* ── Activity rows ── */
-.activity-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--edge-default);
-}
-
-.activity-row:last-child {
-  border-bottom: none;
-}
-
 .agent-label {
   margin-top: 2px;
+  white-space: nowrap;
 }
 
 /* ── Workload fallback ── */
