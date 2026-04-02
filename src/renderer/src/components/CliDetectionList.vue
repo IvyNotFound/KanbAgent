@@ -61,20 +61,8 @@ function isEnabled(cli: CliType): boolean {
         @click="emit('refresh')"
       >
         <!-- spinner while loading -->
-        <svg
-          v-if="loading"
-          class="cli-icon cli-icon--spin"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-        </svg>
-        <svg v-else viewBox="0 0 16 16" fill="currentColor" class="cli-icon">
-          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
-          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
-        </svg>
+        <v-progress-circular v-if="loading" class="cli-icon" indeterminate :size="14" :width="2" />
+        <v-icon v-else class="cli-icon" size="14">mdi-refresh</v-icon>
         {{ loading ? t('settings.cliRefreshing') : t('settings.cliRefresh') }}
       </button>
     </div>

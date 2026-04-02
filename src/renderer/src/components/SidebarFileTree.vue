@@ -101,15 +101,9 @@ defineExpose({ loadSidebarTree })
       @click="item.node.isDir ? toggleSidebarDir(item.node.path, item.node) : tabsStore.openFile(item.node.path, item.node.name)"
     >
       <!-- Icône dossier ouvert/fermé ou fichier -->
-      <svg v-if="item.node.isDir && isDirOpen(item.node.path)" viewBox="0 0 16 16" fill="currentColor" class="tree-icon tree-icon--open">
-        <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2H6a1 1 0 0 1 .8.4L7.5 3.5H13.5A1.5 1.5 0 0 1 15 5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12V3.5z"/>
-      </svg>
-      <svg v-else-if="item.node.isDir" viewBox="0 0 16 16" fill="currentColor" class="tree-icon tree-icon--closed">
-        <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
-      </svg>
-      <svg v-else viewBox="0 0 16 16" fill="currentColor" class="tree-icon tree-icon--file">
-        <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5.5 1.5v2a1 1 0 0 0 1 1h2L9.5 1.5z"/>
-      </svg>
+      <v-icon v-if="item.node.isDir && isDirOpen(item.node.path)" class="tree-icon tree-icon--open" size="14">mdi-folder-open</v-icon>
+      <v-icon v-else-if="item.node.isDir" class="tree-icon tree-icon--closed" size="14">mdi-folder</v-icon>
+      <v-icon v-else class="tree-icon tree-icon--file" size="14">mdi-file-outline</v-icon>
       <!-- Nom -->
       <span :class="['tree-name', item.node.isDir ? 'tree-name--dir' : 'tree-name--file']">{{ item.node.name }}</span>
     </button>

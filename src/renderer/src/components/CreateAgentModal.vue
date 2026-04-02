@@ -201,9 +201,7 @@ function handleKeydown(e: KeyboardEvent) {
         <div class="modal-header">
           <h2 class="text-body-1 font-weight-medium" style="color: var(--content-primary)">{{ isEditMode ? t('agent.editTitle') : t('agent.newTitle') }}</h2>
           <button class="btn-close" @click="emit('close')">
-            <svg viewBox="0 0 16 16" fill="currentColor" style="width: 14px; height: 14px;">
-              <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
-            </svg>
+            <v-icon size="14">mdi-close</v-icon>
           </button>
         </div>
 
@@ -334,9 +332,7 @@ function handleKeydown(e: KeyboardEvent) {
               class="prompt-toggle"
               @click="showPrompt = !showPrompt"
             >
-              <svg :class="['prompt-arrow', showPrompt ? 'prompt-arrow--open' : '']" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M6 3.5l5 4.5-5 4.5V3.5z"/>
-              </svg>
+              <v-icon :class="['prompt-arrow', showPrompt ? 'prompt-arrow--open' : '']" size="14">mdi-chevron-right</v-icon>
               System prompt {{ isEditMode ? '' : t('agent.systemPromptOptional') }}
             </button>
             <div v-if="showPrompt" class="d-flex flex-column ga-2 mt-2">

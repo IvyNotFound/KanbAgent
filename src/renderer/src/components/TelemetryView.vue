@@ -109,10 +109,7 @@ onMounted(scan)
         @click="scan"
       >
         <span v-if="loading" class="telem-rescan-loading">
-          <svg class="telem-spin" viewBox="0 0 24 24" fill="none">
-            <circle class="telem-spin-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="telem-spin-fill" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-          </svg>
+          <v-progress-circular class="telem-spin" indeterminate :size="16" :width="2" />
           {{ t('telemetry.scanning') }}
         </span>
         <span v-else>{{ t('telemetry.rescan') }}</span>
@@ -126,10 +123,7 @@ onMounted(scan)
 
     <!-- Loading state -->
     <div v-else-if="loading && !data" class="telem-state-center telem-muted telem-gap">
-      <svg class="telem-spin telem-spin-lg" viewBox="0 0 24 24" fill="none">
-        <circle class="telem-spin-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-        <path class="telem-spin-fill" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-      </svg>
+      <v-progress-circular class="telem-spin telem-spin-lg" indeterminate :size="32" :width="3" />
       {{ t('telemetry.scanningProject') }}
     </div>
 

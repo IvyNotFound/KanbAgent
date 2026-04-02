@@ -41,11 +41,8 @@ describe('CreateAgentModal', () => {
       },
     })
 
-    // Find the close button (SVG X icon)
-    const closeBtn = wrapper.findAll('button').find(b => {
-      const svg = b.find('svg')
-      return svg.exists() && !b.text().trim()
-    })
+    // Find the close button by class
+    const closeBtn = wrapper.find('button.btn-close')
     expect(closeBtn?.exists()).toBe(true)
     await closeBtn!.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)

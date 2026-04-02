@@ -25,12 +25,12 @@ const sections: Array<{ id: Section; labelKey: string }> = [
 ]
 
 const SECTION_ICONS: Record<Section, string> = {
-  appearance: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364-.707.707M6.343 17.657l-.707.707m12.728 0-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
-  automation: 'M13 10V3L4 14h7v7l9-11h-7z',
-  editor: 'M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z',
-  cli: 'm8 9 3 3-3 3m5 0h3M5 20h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z',
-  notifications: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6 6 0 0 0-9.33-5.002C8.28 6.32 8 6.965 8 7.636V11c0 .856-.315 1.637-.844 2.243L6 14.636V17h9zm0 0v1a3 3 0 0 1-6 0v-1h6z',
-  application: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+  appearance: 'mdi-white-balance-sunny',
+  automation: 'mdi-lightning-bolt',
+  editor: 'mdi-file-document-outline',
+  cli: 'mdi-console',
+  notifications: 'mdi-bell-outline',
+  application: 'mdi-information-outline',
 }
 
 const showExportConfirm = ref(false)
@@ -117,9 +117,7 @@ function handleKeydown(e: KeyboardEvent) {
             :title="t('settings.fermer')"
             @click="emit('close')"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" style="width: 16px; height: 16px;">
-              <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
-            </svg>
+            <v-icon size="16">mdi-close</v-icon>
           </button>
         </div>
 
@@ -136,9 +134,7 @@ function handleKeydown(e: KeyboardEvent) {
               :class="activeSection === s.id ? 'nav-btn--active' : ''"
               @click="activeSection = s.id"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="nav-icon" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path :d="SECTION_ICONS[s.id]" />
-              </svg>
+              <v-icon class="nav-icon" size="16">{{ SECTION_ICONS[s.id] }}</v-icon>
               {{ t(s.labelKey) }}
             </button>
           </nav>
@@ -317,10 +313,7 @@ function handleKeydown(e: KeyboardEvent) {
                   :disabled="exporting"
                   @click="showExportConfirm = true"
                 >
-                  <svg viewBox="0 0 16 16" fill="currentColor" style="width: 16px; height: 16px;">
-                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                  </svg>
+                  <v-icon size="16">mdi-download</v-icon>
                   {{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}
                 </button>
               </div>

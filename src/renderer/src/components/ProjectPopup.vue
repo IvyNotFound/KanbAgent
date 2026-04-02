@@ -83,9 +83,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
         <div class="popup-header">
           <div class="popup-header-left">
             <div class="popup-icon">
-              <svg viewBox="0 0 16 16" fill="currentColor" class="icon-sm">
-                <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z" />
-              </svg>
+              <v-icon class="icon-sm" size="16">mdi-folder-outline</v-icon>
             </div>
             <h2 class="popup-title">{{ t('project.activeTitle') }}</h2>
           </div>
@@ -94,9 +92,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
             :title="t('common.close')"
             @click="emit('close')"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="icon-xs">
-              <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z" />
-            </svg>
+            <v-icon class="icon-xs" size="14">mdi-close</v-icon>
           </button>
         </div>
 
@@ -131,9 +127,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
             class="btn-change"
             @click="handleChangeProject"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="icon-xs">
-              <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z" />
-            </svg>
+            <v-icon class="icon-xs" size="14">mdi-folder-outline</v-icon>
             {{ t('project.changeProject') }}
           </button>
           <button
@@ -141,9 +135,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
             class="btn-close-project"
             @click="handleCloseProject"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="icon-xs">
-              <path d="M4.354 4.646a.5.5 0 0 0-.708.708L7.293 8l-3.647 3.646a.5.5 0 0 0 .708.708L8 8.707l3.646 3.647a.5.5 0 0 0 .708-.708L8.707 8l3.647-3.646a.5.5 0 0 0-.708-.708L8 7.293 4.354 4.646z" />
-            </svg>
+            <v-icon class="icon-xs" size="14">mdi-close</v-icon>
             {{ t('project.close') }}
           </button>
           <p class="popup-version">v{{ appVersion }}</p>

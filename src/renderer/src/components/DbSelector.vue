@@ -92,10 +92,7 @@ async function create() {
     <div class="home-content">
       <!-- Logo -->
       <div class="logo-wrap">
-        <svg viewBox="0 0 24 24" fill="none" class="logo-icon">
-          <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7l-9-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <v-icon class="logo-icon" size="32">mdi-shield-check</v-icon>
       </div>
       <div class="home-titles">
         <h2 class="app-name">KanbAgent</h2>
@@ -107,9 +104,7 @@ async function create() {
         <!-- Ouvrir existant -->
         <button class="action-card" @click="store.selectProject()">
           <div class="action-icon-wrap">
-            <svg viewBox="0 0 20 20" fill="currentColor" class="action-icon">
-              <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
-            </svg>
+            <v-icon class="action-icon" size="20">mdi-folder-outline</v-icon>
           </div>
           <div>
             <p class="action-label">{{ t('dbSelector.open') }}</p>
@@ -120,9 +115,7 @@ async function create() {
         <!-- Créer nouveau -->
         <button class="action-card action-card--primary" @click="step = 'create'">
           <div class="action-icon-wrap action-icon-wrap--primary">
-            <svg viewBox="0 0 20 20" fill="currentColor" class="action-icon action-icon--primary">
-              <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
-            </svg>
+            <v-icon class="action-icon action-icon--primary" size="20">mdi-plus</v-icon>
           </div>
           <div>
             <p class="action-label action-label--primary">{{ t('dbSelector.createNew') }}</p>
@@ -170,9 +163,7 @@ async function create() {
       <!-- Header -->
       <div class="create-header">
         <button class="back-btn" @click="step = 'home'">
-          <svg viewBox="0 0 16 16" fill="currentColor" class="back-icon">
-            <path fill-rule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H13a1 1 0 110 2H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
-          </svg>
+          <v-icon class="back-icon" size="16">mdi-arrow-left</v-icon>
           {{ t('dbSelector.back') }}
         </button>
         <h2 class="create-title">{{ t('setup.newProject') }}</h2>
@@ -211,13 +202,8 @@ async function create() {
         :disabled="creating || loadingInstances || (availableInstances.length > 1 && !selectedInstance)"
         @click="create"
       >
-        <svg v-if="creating" class="btn-spinner" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-opacity="0.25"/>
-          <path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <svg v-else viewBox="0 0 20 20" fill="currentColor" class="btn-icon">
-          <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
-        </svg>
+        <v-progress-circular v-if="creating" class="btn-spinner" indeterminate :size="14" :width="2" />
+        <v-icon v-else class="btn-icon" size="18">mdi-folder-outline</v-icon>
         {{ creating ? t('setup.creating') : t('dbSelector.selectAndInit') }}
       </button>
 

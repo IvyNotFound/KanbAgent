@@ -270,13 +270,11 @@ onUnmounted(() => {
                   {{ t('taskDetail.commits') }}
                   <span class="meta-count">({{ gitCommits.length }})</span>
                 </p>
-                <svg
+                <v-icon
                   class="toggle-arrow"
                   :class="gitCommitsOpen ? 'toggle-arrow--open' : ''"
-                  viewBox="0 0 16 16" fill="currentColor"
-                >
-                  <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-                </svg>
+                  size="14"
+                >mdi-chevron-right</v-icon>
               </button>
               <div v-if="gitCommitsOpen" class="commits-content">
                 <GitCommitList

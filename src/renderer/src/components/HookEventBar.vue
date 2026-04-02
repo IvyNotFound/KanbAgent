@@ -58,10 +58,7 @@ function rowLabel(e: HookEvent): string {
     >
       <!-- Active tool spinner -->
       <div v-if="activeTool" class="active-tool">
-        <svg class="spinner" fill="none" viewBox="0 0 24 24">
-          <circle class="spinner-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
-          <path class="spinner-arc" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-        </svg>
+        <v-progress-circular class="spinner" indeterminate :size="16" :width="2" />
         <span class="tool-name-active" :class="toolColor(activeTool)">{{ activeTool }}</span>
         <span class="tool-in-progress">{{ t('hooks.inProgress') }}</span>
       </div>

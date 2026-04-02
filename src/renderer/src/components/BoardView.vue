@@ -150,18 +150,14 @@ const archivedGroupsSorted = computed(() => {
           :title="t('board.listView')"
           @click="treeMode = false"
         >
-          <svg class="toggle-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-          </svg>
+          <v-icon class="toggle-icon" size="18">mdi-view-list</v-icon>
         </button>
         <button
           :class="['toggle-btn', 'toggle-btn-separator', { active: treeMode }]"
           :title="t('board.treeView')"
           @click="treeMode = true"
         >
-          <svg class="toggle-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h4m0 0v10m0-10h14M7 12h6m0 0v5m0-5h4" />
-          </svg>
+          <v-icon class="toggle-icon" size="18">mdi-file-tree</v-icon>
         </button>
       </div>
 

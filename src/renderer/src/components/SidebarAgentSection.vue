@@ -209,16 +209,16 @@ async function duplicateAgent(agent: Agent): Promise<void> {
               @click="store.toggleAgentFilter(agent.id)"
             >
               <span class="agent-status">
-                <svg v-if="tabsStore.isAgentActive(agent.name)" class="status-spinner" viewBox="0 0 16 16" fill="none" :style="{ color: agentFg(agent.name) }"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-opacity="0.25"/><path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                <svg v-else-if="hasOpenTerminal(agent.name) && !tabsStore.isAgentActive(agent.name)" class="status-pulse" viewBox="0 0 14 14" fill="none" :style="{ color: agentFg(agent.name) }"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
+                <v-progress-circular v-if="tabsStore.isAgentActive(agent.name)" class="status-spinner" indeterminate :size="12" :width="2" :style="{ color: agentFg(agent.name) }" />
+                <v-icon v-else-if="hasOpenTerminal(agent.name) && !tabsStore.isAgentActive(agent.name)" class="status-pulse" size="12" :style="{ color: agentFg(agent.name) }">mdi-circle-medium</v-icon>
                 <span v-else class="status-dot" :style="{ backgroundColor: agentFg(agent.name) }" />
               </span>
               <span :class="['agent-name', isAgentSelected(agent.id) ? 'agent-name--active' : '']">{{ agent.name }}</span>
             </button>
             <div class="agent-actions">
-              <span class="drag-handle" :title="t('sidebar.move')"><svg viewBox="0 0 16 16" fill="currentColor" class="icon-xs"><path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg></span>
-              <button class="action-btn" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = agent"><svg viewBox="0 0 16 16" fill="currentColor" class="icon-sm"><path d="M9.5 1.5a2.121 2.121 0 0 1 3 3L4 13H1v-3L9.5 1.5z"/></svg></button>
-              <button class="action-btn action-btn--launch" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><svg viewBox="0 0 16 16" fill="currentColor" class="icon-sm"><path d="M3.5 2.635a.5.5 0 0 1 .752-.43l9 5.364a.5.5 0 0 1 0 .862l-9 5.365A.5.5 0 0 1 3.5 13.364V2.635z"/></svg></button>
+              <span class="drag-handle" :title="t('sidebar.move')"><v-icon size="12" class="icon-xs">mdi-drag</v-icon></span>
+              <button class="action-btn" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = agent"><v-icon size="12" class="icon-sm">mdi-pencil</v-icon></button>
+              <button class="action-btn action-btn--launch" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><v-icon size="12" class="icon-sm">mdi-play</v-icon></button>
             </div>
           </div>
         </div>
@@ -229,13 +229,13 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 
     <!-- Bouton nouveau groupe -->
     <button v-if="!creatingGroup" class="add-btn" @click="startCreateGroup">
-      <svg viewBox="0 0 16 16" fill="currentColor" class="icon-sm"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+      <v-icon size="12" class="icon-sm">mdi-plus</v-icon>
       {{ t('sidebar.newGroup') }}
     </button>
 
     <!-- Bouton ajouter agent -->
     <button class="add-btn add-btn--mt" @click="showCreateAgent = true">
-      <svg viewBox="0 0 16 16" fill="currentColor" class="icon-sm"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+      <v-icon size="12" class="icon-sm">mdi-plus</v-icon>
       {{ t('sidebar.addAgent') }}
     </button>
   </div>

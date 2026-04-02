@@ -112,11 +112,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       :class="['tab-fixed', store.activeTabId === 'backlog' && 'tab-fixed--active']"
       @click="store.setActive('backlog')"
     >
-      <svg viewBox="0 0 16 16" fill="currentColor" class="tab-icon">
-        <rect x="1"  y="2" width="4" height="12" rx="1.5"/>
-        <rect x="6"  y="2" width="4" height="8"  rx="1.5"/>
-        <rect x="11" y="2" width="4" height="5"  rx="1.5"/>
-      </svg>
+      <v-icon size="14">mdi-view-list</v-icon>
       <span>{{ t('sidebar.backlog') }}</span>
       <!-- .absolute.bottom-0 preserved for TabBar.spec.ts test -->
       <span
@@ -130,9 +126,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       :class="['tab-fixed', store.activeTabId === 'dashboard' && 'tab-fixed--active']"
       @click="store.setActive('dashboard')"
     >
-      <svg viewBox="0 0 16 16" fill="currentColor" class="tab-icon">
-        <path d="M0 11l4-5 3 3 4-6 5 3v5H0z"/>
-      </svg>
+      <v-icon size="14">mdi-chart-line</v-icon>
       <span>{{ t('sidebar.dashboard') }}</span>
       <span
         v-if="store.activeTabId === 'dashboard'"
@@ -146,9 +140,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       class="scroll-arrow"
       @click="scrollBy(-120)"
     >
-      <svg viewBox="0 0 16 16" fill="currentColor" style="width: 12px; height: 12px;">
-        <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
-      </svg>
+      <v-icon size="12">mdi-chevron-left</v-icon>
     </button>
 
     <!-- Onglets (scrollable) -->
@@ -168,9 +160,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
         @click="store.setActive(tab.id)"
         @mousedown="onMiddleClick($event, tab)"
       >
-        <svg viewBox="0 0 16 16" fill="currentColor" style="width: 14px; height: 14px; flex-shrink: 0; opacity: 0.5;">
-          <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5.5 1.5v2a1 1 0 0 0 1 1h2L9.5 1.5z"/>
-        </svg>
+        <v-icon size="14" style="flex-shrink: 0; opacity: 0.5;">mdi-file-outline</v-icon>
         <span class="tab-title-mono">{{ tab.title }}</span>
         <span v-if="tab.dirty" class="tab-dirty" :title="t('tabBar.unsaved')" />
         <span
@@ -198,20 +188,15 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
           @click="activateAgentGroup(group)"
           @contextmenu.prevent="openGroupMenu($event, group)"
         >
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; flex-shrink: 0;">
-            <polyline points="2,5 6.5,8 2,11"/>
-            <line x1="8.5" y1="11" x2="14" y2="11"/>
-          </svg>
+          <v-icon size="12" style="flex-shrink: 0;">mdi-console</v-icon>
           <span style="opacity: 0.5; user-select: none;">·</span>
           <span class="tab-agent-name">{{ group.agentName ?? '?' }}</span>
-          <svg
-            viewBox="0 0 16 16" fill="currentColor"
+          <v-icon
             class="tab-chevron"
             :style="isGroupCollapsed(group.agentName) ? {} : { transform: 'rotate(-90deg)' }"
+            size="10"
             @click.stop="toggleGroup(group.agentName)"
-          >
-            <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-          </svg>
+          >mdi-chevron-down</v-icon>
           <span
             v-if="isGroupCollapsed(group.agentName)"
             class="tab-group-count"
@@ -270,9 +255,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       class="scroll-arrow"
       @click="scrollBy(120)"
     >
-      <svg viewBox="0 0 16 16" fill="currentColor" style="width: 12px; height: 12px;">
-        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-      </svg>
+      <v-icon size="12">mdi-chevron-right</v-icon>
     </button>
 
     <!-- Bouton + WSL -->

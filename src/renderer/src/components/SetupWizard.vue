@@ -87,14 +87,10 @@ async function handleSetup() {
           class="wizard-icon d-flex align-center justify-center shrink-0"
           :class="hasCLAUDEmd ? 'wizard-icon--amber' : 'wizard-icon--violet'"
         >
-          <!-- DB missing icon -->
-          <svg v-if="hasCLAUDEmd" viewBox="0 0 20 20" fill="currentColor" class="wizard-svg" style="color: #fbbf24">
-            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
-          </svg>
+          <!-- DB missing icon — keep color inline as it differs per condition -->
+          <v-icon v-if="hasCLAUDEmd" class="wizard-svg" size="20" style="color: #fbbf24">mdi-alert</v-icon>
           <!-- New project icon -->
-          <svg v-else viewBox="0 0 20 20" fill="currentColor" class="wizard-svg" style="color: #a78bfa">
-            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
-          </svg>
+          <v-icon v-else class="wizard-svg" size="20" style="color: #a78bfa">mdi-folder-outline</v-icon>
         </div>
         <div class="header-text">
           <h2 class="text-subtitle-1 font-weight-semibold">
@@ -133,9 +129,7 @@ async function handleSetup() {
             <div class="d-flex flex-column ga-2">
               <!-- Always: create DB -->
               <div class="option-box d-flex align-start ga-3">
-                <svg viewBox="0 0 16 16" fill="currentColor" class="option-icon mt-1 shrink-0" style="color: #a78bfa">
-                  <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>
-                </svg>
+                <v-icon class="option-icon mt-1 shrink-0" size="16" style="color: #a78bfa">mdi-check</v-icon>
                 <div>
                   <p class="text-caption font-weight-medium text-medium-emphasis">{{ t('setup.createProjectDb', { projectDb: '.claude/project.db' }) }}</p>
                   <p class="text-caption text-disabled mt-1">{{ t('setup.createProjectDbDesc') }}</p>

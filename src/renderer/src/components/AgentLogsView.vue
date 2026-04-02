@@ -231,15 +231,11 @@ watch(() => props.initialAgentId, (v) => {
 
       <div v-if="totalPages > 1" class="al-pagination">
         <button class="al-page-btn" :disabled="currentPage === 1" :title="t('logs.prevPage')" @click="prevPage">
-          <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-            <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
-          </svg>
+          <v-icon size="12">mdi-chevron-left</v-icon>
         </button>
         <span class="al-page-info">{{ currentPage }} / {{ totalPages }}</span>
         <button class="al-page-btn" :disabled="currentPage >= totalPages" :title="t('logs.nextPage')" @click="nextPage">
-          <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-          </svg>
+          <v-icon size="12">mdi-chevron-right</v-icon>
         </button>
       </div>
       <span v-else class="al-count">{{ paginatedLogs.length }} / {{ totalCount }}</span>
@@ -250,10 +246,7 @@ watch(() => props.initialAgentId, (v) => {
         :title="t('logs.refresh')"
         @click="fetchLogs"
       >
-        <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
-          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-        </svg>
+        <v-icon size="14">mdi-refresh</v-icon>
       </button>
     </div>
 
@@ -262,10 +255,7 @@ watch(() => props.initialAgentId, (v) => {
 
       <!-- Empty state -->
       <div v-if="paginatedLogs.length === 0 && !loading" class="al-empty">
-        <svg viewBox="0 0 16 16" fill="currentColor" class="al-empty-icon">
-          <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
-          <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
-        </svg>
+        <v-icon class="al-empty-icon" size="24">mdi-file-document-outline</v-icon>
         <p class="al-empty-text">{{ t('logs.noLogs') }}</p>
       </div>
 
@@ -293,14 +283,12 @@ watch(() => props.initialAgentId, (v) => {
           >{{ log.agent_name }}</span>
           <span v-else class="al-agent-badge al-agent-badge--none">—</span>
           <span class="al-action">{{ log.action }}</span>
-          <svg
+          <v-icon
             v-if="log.detail || log.parsedFiles.length > 0"
             class="al-chevron"
             :class="isExpanded(log.id) ? 'al-chevron--open' : ''"
-            viewBox="0 0 16 16" fill="currentColor"
-          >
-            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-          </svg>
+            size="12"
+          >mdi-chevron-right</v-icon>
         </div>
 
         <!-- Expandable detail -->

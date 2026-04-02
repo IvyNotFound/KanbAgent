@@ -101,7 +101,7 @@ async function addPerimetre() {
                 :style="{ color: agentFg(p.name), backgroundColor: agentBg(p.name), borderColor: agentBorder(p.name) }"
                 :title="t('sidebar.nbAgents', agentCountByPerimetre.get(p.name) ?? 0, { named: { n: agentCountByPerimetre.get(p.name) ?? 0 } })"
               >
-                <svg viewBox="0 0 16 16" fill="currentColor" class="badge-icon"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+                <v-icon size="10" class="badge-icon">mdi-account</v-icon>
                 {{ agentCountByPerimetre.get(p.name) ?? 0 }}
               </span>
               <span
@@ -110,7 +110,7 @@ async function addPerimetre() {
                 :style="{ color: agentFg(p.name), backgroundColor: agentBg(p.name), borderColor: agentBorder(p.name) }"
                 :title="t('sidebar.nbActiveTasks', taskCountByPerimetre.get(p.name) ?? 0, { named: { n: taskCountByPerimetre.get(p.name) ?? 0 } })"
               >
-                <svg viewBox="0 0 16 16" fill="currentColor" class="badge-icon"><path d="M2.5 2a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1zm3 0a.5.5 0 0 0 0 1h8a.5.5 0 0 0 0-1h-8zm0 4a.5.5 0 0 0 0 1h8a.5.5 0 0 0 0-1h-8zm0 4a.5.5 0 0 0 0 1h8a.5.5 0 0 0 0-1h-8zm-3-4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1zm0 4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1z"/></svg>
+                <v-icon size="10" class="badge-icon">mdi-format-list-checks</v-icon>
                 {{ taskCountByPerimetre.get(p.name) ?? 0 }}
               </span>
             </div>
@@ -118,7 +118,7 @@ async function addPerimetre() {
           <p v-if="p.description" class="perimetre-desc">{{ p.description }}</p>
         </button>
         <button class="edit-btn" :title="t('sidebar.editPerimeter')" @click.stop="openEditPerimetre(p)">
-          <svg viewBox="0 0 16 16" fill="currentColor" class="icon-sm"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>
+          <v-icon size="12" class="icon-sm">mdi-pencil</v-icon>
         </button>
       </div>
     </div>
@@ -126,7 +126,7 @@ async function addPerimetre() {
     <div v-if="store.perimetresData.length === 0" class="no-perimeter-msg">{{ t('sidebar.noPerimeter') }}</div>
 
     <button class="add-btn" @click="addPerimetre">
-      <svg viewBox="0 0 16 16" fill="currentColor" class="icon-sm"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+      <v-icon size="12" class="icon-sm">mdi-plus</v-icon>
       {{ t('sidebar.addPerimeter') }}
     </button>
   </div>

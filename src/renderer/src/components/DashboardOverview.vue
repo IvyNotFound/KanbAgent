@@ -202,9 +202,7 @@ function priorityColor(priority: string): string {
           <v-card elevation="0" class="metric-card">
             <div class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--cyan shrink-0">
-                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #22d3ee">
-                  <path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM17 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 0 0-1.5-4.33A5 5 0 0 1 19 16v1h-6.07zM6 11a5 5 0 0 1 5 5v1H1v-1a5 5 0 0 1 5-5z"/>
-                </svg>
+                <v-icon class="metric-svg" size="20" style="color: #22d3ee">mdi-account-group</v-icon>
               </div>
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ activeAgentsCount }}</div>
@@ -220,9 +218,7 @@ function priorityColor(priority: string): string {
           <v-card elevation="0" class="metric-card">
             <div class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--amber shrink-0">
-                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #fbbf24">
-                  <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0 1 12 2v5h4a1 1 0 0 1 .82 1.573l-7 10A1 1 0 0 1 8 18v-5H4a1 1 0 0 1-.82-1.573l7-10a1 1 0 0 1 1.12-.38z" clip-rule="evenodd"/>
-                </svg>
+                <v-icon class="metric-svg" size="20" style="color: #fbbf24">mdi-lightning-bolt</v-icon>
               </div>
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ store.stats.in_progress }}</div>
@@ -238,10 +234,7 @@ function priorityColor(priority: string): string {
           <v-card elevation="0" class="metric-card">
             <div class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--violet shrink-0">
-                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #a78bfa">
-                  <path d="M9 2a1 1 0 0 0 0 2h2a1 1 0 1 0 0-2H9z"/>
-                  <path fill-rule="evenodd" d="M4 5a2 2 0 0 1 2-2 3 3 0 0 0 3 3h2a3 3 0 0 0 3-3 2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm3 4a1 1 0 0 0 0 2h.01a1 1 0 1 0 0-2H7zm3 0a1 1 0 0 0 0 2h3a1 1 0 1 0 0-2h-3zm-3 4a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H7zm3 0a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3z" clip-rule="evenodd"/>
-                </svg>
+                <v-icon class="metric-svg" size="20" style="color: #a78bfa">mdi-clipboard-text-outline</v-icon>
               </div>
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ store.stats.todo }}</div>
@@ -257,9 +250,7 @@ function priorityColor(priority: string): string {
           <v-card elevation="0" class="metric-card">
             <div class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--emerald shrink-0">
-                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #34d399">
-                  <path fill-rule="evenodd" d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1V3a1 1 0 1 0-2 0v1H7V3a1 1 0 0 0-1-1zm0 5a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H6z" clip-rule="evenodd"/>
-                </svg>
+                <v-icon class="metric-svg" size="20" style="color: #34d399">mdi-calendar-today</v-icon>
               </div>
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ sessionsTodayCount }}</div>
