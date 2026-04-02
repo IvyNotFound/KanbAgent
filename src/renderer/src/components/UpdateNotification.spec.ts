@@ -25,6 +25,15 @@ vi.mock('@renderer/composables/useUpdater', () => ({
   }),
 }))
 
+// vitest.config.ts uses isCustomElement: (tag) => tag.startsWith('v-'),
+// so all v-* tags are compiled as native custom elements in tests.
+// We must use DOM selectors ('v-banner', 'v-btn') rather than component stubs.
+function mountComponent() {
+  return mount(UpdateNotification, {
+    global: { plugins: [i18n] },
+  })
+}
+
 describe('UpdateNotification', () => {
   beforeEach(() => {
     mockStatus.value = 'idle'
@@ -35,19 +44,15 @@ describe('UpdateNotification', () => {
   })
 
   it('is not visible when status is idle', () => {
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
-    expect(wrapper.find('[class*="bg-violet-700"]').exists()).toBe(false)
+    const wrapper = mountComponent()
+    expect(wrapper.find('v-banner').exists()).toBe(false)
     wrapper.unmount()
   })
 
   it('shows content when status is available with version', async () => {
     mockStatus.value = 'available'
     mockInfo.value = { version: '1.2.3' }
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
+    const wrapper = mountComponent()
     const text = wrapper.text()
     expect(text).toContain('1.2.3')
     wrapper.unmount()
@@ -56,9 +61,7 @@ describe('UpdateNotification', () => {
   it('shows progress when status is downloading', () => {
     mockStatus.value = 'downloading'
     mockProgress.value = 45
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
+    const wrapper = mountComponent()
     const text = wrapper.text()
     expect(text).toContain('45')
     wrapper.unmount()
@@ -67,9 +70,7 @@ describe('UpdateNotification', () => {
   it('shows version when status is downloaded', () => {
     mockStatus.value = 'downloaded'
     mockInfo.value = { version: '2.0.0' }
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
+    const wrapper = mountComponent()
     expect(wrapper.text()).toContain('2.0.0')
     wrapper.unmount()
   })
@@ -77,29 +78,23 @@ describe('UpdateNotification', () => {
   it('shows error message when status is error', () => {
     mockStatus.value = 'error'
     mockErrorMessage.value = 'Network timeout'
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
+    const wrapper = mountComponent()
     expect(wrapper.text()).toContain('Network timeout')
     wrapper.unmount()
   })
 
   it('is not visible when status is up-to-date', () => {
     mockStatus.value = 'up-to-date'
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
-    expect(wrapper.find('[class*="bg-violet-700"]').exists()).toBe(false)
+    const wrapper = mountComponent()
+    expect(wrapper.find('v-banner').exists()).toBe(false)
     wrapper.unmount()
   })
 
   it('calls download when download button clicked (available)', async () => {
     mockStatus.value = 'available'
     mockInfo.value = { version: '1.0.0' }
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
-    await wrapper.find('button').trigger('click')
+    const wrapper = mountComponent()
+    await wrapper.find('v-btn').trigger('click')
     expect(mockDownload).toHaveBeenCalled()
     wrapper.unmount()
   })
@@ -107,10 +102,8 @@ describe('UpdateNotification', () => {
   it('calls install when restart button clicked (downloaded)', async () => {
     mockStatus.value = 'downloaded'
     mockInfo.value = { version: '1.0.0' }
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
-    const buttons = wrapper.findAll('button')
+    const wrapper = mountComponent()
+    const buttons = wrapper.findAll('v-btn')
     // First button is "restart"
     await buttons[0].trigger('click')
     expect(mockInstall).toHaveBeenCalled()
@@ -120,10 +113,8 @@ describe('UpdateNotification', () => {
   it('calls dismiss when later button clicked (downloaded)', async () => {
     mockStatus.value = 'downloaded'
     mockInfo.value = { version: '1.0.0' }
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
-    const buttons = wrapper.findAll('button')
+    const wrapper = mountComponent()
+    const buttons = wrapper.findAll('v-btn')
     // Second button is "later"
     await buttons[1].trigger('click')
     expect(mockDismiss).toHaveBeenCalled()
@@ -133,10 +124,8 @@ describe('UpdateNotification', () => {
   it('calls dismiss when close button clicked (error)', async () => {
     mockStatus.value = 'error'
     mockErrorMessage.value = 'Some error'
-    const wrapper = mount(UpdateNotification, {
-      global: { plugins: [i18n] },
-    })
-    await wrapper.find('button').trigger('click')
+    const wrapper = mountComponent()
+    await wrapper.find('v-btn').trigger('click')
     expect(mockDismiss).toHaveBeenCalled()
     wrapper.unmount()
   })
