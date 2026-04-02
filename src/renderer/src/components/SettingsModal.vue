@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSettingsStore } from '@renderer/stores/settings'
+import { useSettingsStore, type Language, type Theme } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
 import CliDetectionList from '@renderer/components/CliDetectionList.vue'
 import { useUpdater } from '@renderer/composables/useUpdater'
@@ -92,6 +92,13 @@ const availableDistros = computed(() => {
     .map(inst => ({ cli: inst.cli, distro: inst.distro, type: inst.type }))
 })
 
+const availableDistroItems = computed(() =>
+  availableDistros.value.map(inst => ({
+    title: `${inst.cli} — ${inst.distro === 'local' ? 'Local' : inst.distro + ' (WSL)'}`,
+    value: `${inst.cli}:${inst.distro}`,
+  }))
+)
+
 onMounted(async () => {
   await settingsStore.refreshCliDetection()
   if (store.dbPath) {
@@ -102,6 +109,11 @@ onMounted(async () => {
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close')
 }
+
+function onDefaultCliChange(v: string) {
+  const sep = v.indexOf(':')
+  settingsStore.setDefaultCliInstance(sep === -1 ? '' : v.slice(0, sep), sep === -1 ? v : v.slice(sep + 1))
+}
 </script>
 
 <template>
@@ -111,66 +123,74 @@ function handleKeydown(e: KeyboardEvent) {
         <!-- Header -->
         <div class="modal-header">
           <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary)">{{ t('settings.title') }}</h2>
-          <button
-            class="btn-close"
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
             :title="t('settings.fermer')"
+            data-testid="close-btn"
             @click="emit('close')"
-          >
-            <v-icon size="16">mdi-close</v-icon>
-          </button>
+          />
         </div>
 
         <!-- Body: sidebar + content panel -->
         <div class="d-flex flex-grow-1" style="min-height: 0;">
 
           <!-- Sidebar navigation -->
-          <nav class="settings-nav">
-            <button
+          <v-list
+            nav
+            density="compact"
+            class="pa-1"
+            style="width: 176px; flex-shrink: 0; border-right: 1px solid var(--edge-subtle);"
+          >
+            <v-list-item
               v-for="s in sections"
               :key="s.id"
+              :prepend-icon="SECTION_ICONS[s.id]"
+              :title="t(s.labelKey)"
+              :active="activeSection === s.id"
               :data-testid="`nav-${s.id}`"
-              class="nav-btn"
-              :class="activeSection === s.id ? 'nav-btn--active' : ''"
+              color="primary"
               @click="activeSection = s.id"
-            >
-              <v-icon class="nav-icon" size="16">{{ SECTION_ICONS[s.id] }}</v-icon>
-              {{ t(s.labelKey) }}
-            </button>
-          </nav>
+            />
+          </v-list>
 
           <!-- Content panel -->
           <div class="settings-content">
 
             <!-- Appearance: Language + Theme -->
             <template v-if="activeSection === 'appearance'">
-              <div class="settings-card">
+              <v-card variant="outlined" class="py-3 px-4">
                 <p class="settings-label">{{ t('settings.language') }}</p>
-                <select
-                  :value="settingsStore.language"
-                  class="form-select"
-                  @change="settingsStore.setLanguage(($event.target as HTMLSelectElement).value as import('@renderer/stores/settings').Language)"
-                >
-                  <option v-for="locale in availableLocales" :key="locale.code" :value="locale.code">{{ locale.label }}</option>
-                </select>
-              </div>
-              <div class="settings-card">
+                <v-select
+                  :model-value="settingsStore.language"
+                  :items="availableLocales"
+                  item-title="label"
+                  item-value="code"
+                  density="compact"
+                  hide-details
+                  data-testid="lang-select"
+                  @update:model-value="(v) => settingsStore.setLanguage(v as Language)"
+                />
+              </v-card>
+              <v-card variant="outlined" class="py-3 px-4">
                 <p class="settings-label">{{ t('settings.theme') }}</p>
-                <div class="d-flex ga-2">
-                  <button
-                    :class="['theme-btn', settingsStore.theme === 'dark' ? 'theme-btn--active' : '']"
-                    @click="settingsStore.setTheme('dark')"
-                  >{{ t('settings.dark') }}</button>
-                  <button
-                    :class="['theme-btn', settingsStore.theme === 'light' ? 'theme-btn--active' : '']"
-                    @click="settingsStore.setTheme('light')"
-                  >{{ t('settings.light') }}</button>
-                </div>
-              </div>
+                <v-btn-toggle
+                  :model-value="settingsStore.theme"
+                  mandatory
+                  density="compact"
+                  data-testid="theme-toggle"
+                  @update:model-value="(v) => settingsStore.setTheme(v as Theme)"
+                >
+                  <v-btn value="dark">{{ t('settings.dark') }}</v-btn>
+                  <v-btn value="light">{{ t('settings.light') }}</v-btn>
+                </v-btn-toggle>
+              </v-card>
             </template>
 
             <!-- Automation: Auto-launch + Auto-review -->
             <template v-else-if="activeSection === 'automation'">
-              <div class="settings-card">
+              <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4">
                   <div>
                     <p class="settings-label">{{ t('settings.autoLaunch') }}</p>
@@ -178,8 +198,8 @@ function handleKeydown(e: KeyboardEvent) {
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.autoLaunchAgentSessions" @update:model-value="settingsStore.setAutoLaunchAgentSessions(Boolean($event))" />
                 </div>
-              </div>
-              <div class="settings-card">
+              </v-card>
+              <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4 mb-2">
                   <div>
                     <p class="settings-label">{{ t('settings.autoReview') }}</p>
@@ -189,12 +209,19 @@ function handleKeydown(e: KeyboardEvent) {
                 </div>
                 <div v-if="settingsStore.autoReviewEnabled" class="d-flex align-center ga-2 mt-2">
                   <label class="settings-desc">{{ t('settings.autoReviewThreshold') }}</label>
-                  <input type="number" :value="settingsStore.autoReviewThreshold" min="3" max="100"
-                    class="form-input-small"
-                    @change="settingsStore.setAutoReviewThreshold(Number(($event.target as HTMLInputElement).value))" />
+                  <v-text-field
+                    type="number"
+                    :model-value="settingsStore.autoReviewThreshold"
+                    :min="3"
+                    :max="100"
+                    density="compact"
+                    hide-details
+                    style="width: 80px"
+                    @update:model-value="(v) => settingsStore.setAutoReviewThreshold(Number(v))"
+                  />
                 </div>
-              </div>
-              <div class="settings-card">
+              </v-card>
+              <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4">
                   <div>
                     <p class="settings-label">{{ t('settings.worktreeDefault') }}</p>
@@ -202,12 +229,12 @@ function handleKeydown(e: KeyboardEvent) {
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.worktreeDefault" @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, Boolean($event))" />
                 </div>
-              </div>
+              </v-card>
             </template>
 
             <!-- Editor: Max file lines -->
             <template v-else-if="activeSection === 'editor'">
-              <div class="settings-card">
+              <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4 mb-2">
                   <div>
                     <p class="settings-label">{{ t('settings.maxFileLinesEnabled') }}</p>
@@ -217,16 +244,24 @@ function handleKeydown(e: KeyboardEvent) {
                 </div>
                 <div v-if="settingsStore.maxFileLinesEnabled" class="d-flex align-center ga-2 mt-2">
                   <label class="settings-desc">{{ t('settings.maxFileLinesCount') }}</label>
-                  <input type="number" :value="settingsStore.maxFileLinesCount" min="50" max="10000"
-                    class="form-input-small form-input-small--wide"
-                    @change="settingsStore.setMaxFileLinesCount(Number(($event.target as HTMLInputElement).value))" />
+                  <v-text-field
+                    type="number"
+                    :model-value="settingsStore.maxFileLinesCount"
+                    :min="50"
+                    :max="10000"
+                    density="compact"
+                    hide-details
+                    style="width: 96px"
+                    data-testid="max-file-lines-count"
+                    @update:model-value="(v) => settingsStore.setMaxFileLinesCount(Number(v))"
+                  />
                 </div>
-              </div>
+              </v-card>
             </template>
 
             <!-- CLI & Agents -->
             <template v-else-if="activeSection === 'cli'">
-              <div class="settings-card">
+              <v-card variant="outlined" class="py-3 px-4">
                 <p class="settings-label">{{ t('settings.aiCodingAssistants') }}</p>
                 <p class="settings-desc mb-3">{{ t('settings.aiCodingAssistantsDesc') }}</p>
                 <CliDetectionList
@@ -236,36 +271,35 @@ function handleKeydown(e: KeyboardEvent) {
                   @refresh="settingsStore.refreshCliDetection()"
                   @toggle="settingsStore.toggleCli($event)"
                 />
-              </div>
-              <div class="settings-card">
+              </v-card>
+              <v-card variant="outlined" class="py-3 px-4">
                 <p class="settings-label">{{ t('settings.defaultCliInstance') }}</p>
                 <div v-if="availableDistros.length === 0" class="settings-desc">—</div>
-                <div v-else>
-                  <select
-                    class="form-select"
-                    :value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
-                    @change="(e) => { const v = (e.target as HTMLSelectElement).value; const sep = v.indexOf(':'); settingsStore.setDefaultCliInstance(sep === -1 ? '' : v.slice(0, sep), sep === -1 ? v : v.slice(sep + 1)) }"
-                  >
-                    <option v-for="inst in availableDistros" :key="`${inst.cli}:${inst.distro}`" :value="`${inst.cli}:${inst.distro}`">{{ inst.cli }} — {{ inst.distro === 'local' ? 'Local' : inst.distro + ' (WSL)' }}</option>
-                  </select>
-                </div>
-              </div>
-              <div class="settings-card">
+                <v-select
+                  v-else
+                  :model-value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
+                  :items="availableDistroItems"
+                  density="compact"
+                  hide-details
+                  @update:model-value="(v) => onDefaultCliChange(v as string)"
+                />
+              </v-card>
+              <v-card variant="outlined" class="py-3 px-4">
                 <p class="settings-label">{{ t('settings.opencodeDefaultModel') }}</p>
                 <p class="settings-desc mb-2">{{ t('settings.opencodeDefaultModelHint') }}</p>
-                <input
-                  type="text"
-                  :value="settingsStore.opencodeDefaultModel"
+                <v-text-field
+                  :model-value="settingsStore.opencodeDefaultModel"
                   placeholder="anthropic/claude-opus-4-5"
-                  class="form-input"
-                  @blur="store.dbPath && settingsStore.setOpencodeDefaultModel(store.dbPath, ($event.target as HTMLInputElement).value)"
+                  density="compact"
+                  hide-details
+                  @blur="(e: FocusEvent) => store.dbPath && settingsStore.setOpencodeDefaultModel(store.dbPath, (e.target as HTMLInputElement).value)"
                 />
-              </div>
+              </v-card>
             </template>
 
             <!-- Notifications -->
             <template v-else-if="activeSection === 'notifications'">
-              <div class="settings-card">
+              <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4">
                   <div>
                     <p class="settings-label">{{ t('settings.notifications') }}</p>
@@ -273,22 +307,23 @@ function handleKeydown(e: KeyboardEvent) {
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.notificationsEnabled" @update:model-value="settingsStore.setNotificationsEnabled(Boolean($event))" />
                 </div>
-              </div>
+              </v-card>
             </template>
 
             <!-- Application: Updates + About + Export + DB -->
             <template v-else-if="activeSection === 'application'">
-              <div class="settings-card">
+              <v-card variant="outlined" class="py-3 px-4">
                 <p class="settings-label mb-3">{{ t('settings.updates') }}</p>
                 <div class="d-flex align-center justify-space-between">
                   <span class="settings-desc">
                     {{ t('settings.version') }}: <span class="font-mono">{{ settingsStore.appInfo.version }}</span>
                   </span>
-                  <button
-                    class="btn-primary"
+                  <v-btn
+                    color="primary"
+                    size="small"
                     :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
                     @click="checkUpdaterNow"
-                  >{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}</button>
+                  >{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}</v-btn>
                 </div>
                 <div v-if="updaterStatus !== 'idle' && updaterStatus !== 'checking'" class="mt-2">
                   <span :class="['text-body-2 font-weight-medium', updaterStatus === 'available' || updaterStatus === 'downloaded' ? 'text-amber' : updaterStatus === 'up-to-date' ? 'text-emerald' : updaterStatus === 'error' ? 'text-red' : '']">
@@ -299,27 +334,26 @@ function handleKeydown(e: KeyboardEvent) {
                     <template v-else-if="updaterStatus === 'error'">{{ t('settings.updateError') }}</template>
                   </span>
                 </div>
-              </div>
-              <div class="settings-card">
+              </v-card>
+              <v-card variant="outlined" class="py-3 px-4">
                 <p class="settings-label mb-2">{{ t('settings.about') }}</p>
                 <p class="settings-desc">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
                 <p class="settings-desc mt-1">{{ t('settings.aboutDesc') }}</p>
-              </div>
-              <div v-if="store.dbPath" class="settings-card">
+              </v-card>
+              <v-card v-if="store.dbPath" variant="outlined" class="py-3 px-4">
                 <p class="settings-label mb-3">{{ t('settings.exportData') }}</p>
-                <button
-                  class="btn-primary btn-icon"
+                <v-btn
+                  color="primary"
+                  size="small"
+                  prepend-icon="mdi-download"
                   :disabled="exporting"
                   @click="showExportConfirm = true"
-                >
-                  <v-icon size="16">mdi-download</v-icon>
-                  {{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}
-                </button>
-              </div>
-              <div v-if="store.dbPath" class="settings-card">
+                >{{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}</v-btn>
+              </v-card>
+              <v-card v-if="store.dbPath" variant="outlined" class="py-3 px-4">
                 <p class="settings-label mb-2">{{ t('settings.database') }}</p>
                 <p class="settings-desc font-mono" style="word-break: break-all;">{{ store.dbPath }}</p>
-              </div>
+              </v-card>
             </template>
 
           </div>
@@ -334,14 +368,8 @@ function handleKeydown(e: KeyboardEvent) {
       <p class="text-body-2 mb-2" style="color: var(--content-muted)">{{ t('settings.exportConfirmMsg') }}</p>
       <p class="text-caption mb-4" style="color: #f59e0b;">{{ t('settings.exportConfirmWarn') }}</p>
       <div class="d-flex ga-2 justify-end">
-        <button
-          class="btn-ghost"
-          @click="showExportConfirm = false"
-        >{{ t('settings.exportCancel') }}</button>
-        <button
-          class="btn-primary"
-          @click="exportZip"
-        >{{ t('settings.exportConfirm') }}</button>
+        <v-btn variant="text" @click="showExportConfirm = false">{{ t('settings.exportCancel') }}</v-btn>
+        <v-btn color="primary" @click="exportZip">{{ t('settings.exportConfirm') }}</v-btn>
       </div>
     </v-card>
   </v-dialog>
@@ -358,67 +386,6 @@ function handleKeydown(e: KeyboardEvent) {
   flex-shrink: 0;
 }
 
-/* Close button */
-.btn-close {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: none;
-  background: none;
-  color: var(--content-subtle);
-  cursor: pointer;
-  transition: all 150ms;
-}
-.btn-close:hover {
-  color: var(--content-secondary);
-  background: var(--surface-secondary);
-}
-
-/* Sidebar nav */
-.settings-nav {
-  width: 176px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--edge-subtle);
-  padding: 8px 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  background: none;
-  font-size: 14px;
-  color: var(--content-muted);
-  cursor: pointer;
-  transition: all 150ms;
-  text-align: left;
-  margin: 0 4px;
-  box-sizing: border-box;
-}
-.nav-btn:hover {
-  background: var(--surface-secondary);
-  color: var(--content-secondary);
-}
-.nav-btn--active {
-  background: rgba(124, 58, 237, 0.2);
-  color: #c4b5fd;
-  font-weight: 500;
-}
-.nav-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
 /* Content panel */
 .settings-content {
   flex: 1;
@@ -429,13 +396,7 @@ function handleKeydown(e: KeyboardEvent) {
   gap: 16px;
 }
 
-/* Settings card */
-.settings-card {
-  background: var(--surface-base);
-  border: 1px solid var(--edge-subtle);
-  border-radius: 8px;
-  padding: 12px 16px;
-}
+/* Settings labels and descriptions */
 .settings-label {
   font-size: 11px;
   font-weight: 500;
@@ -447,117 +408,6 @@ function handleKeydown(e: KeyboardEvent) {
 .settings-desc {
   font-size: 12px;
   color: var(--content-faint);
-}
-
-/* Form elements */
-.form-select {
-  width: 100%;
-  background: var(--surface-secondary);
-  color: var(--content-primary);
-  border: 1px solid var(--edge-subtle);
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 14px;
-  outline: none;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-.form-select:focus {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 1px #8b5cf6;
-}
-.form-input {
-  width: 100%;
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 14px;
-  color: var(--content-primary);
-  outline: none;
-  transition: border-color 150ms;
-  box-sizing: border-box;
-}
-.form-input:focus {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 1px #8b5cf6;
-}
-.form-input-small {
-  width: 64px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 14px;
-  color: var(--content-primary);
-  text-align: center;
-  outline: none;
-  transition: border-color 150ms;
-}
-.form-input-small--wide {
-  width: 80px;
-}
-.form-input-small:focus {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 1px #8b5cf6;
-}
-
-/* Theme buttons */
-.theme-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  border: none;
-  background: var(--surface-secondary);
-  color: var(--content-muted);
-  cursor: pointer;
-  transition: all 150ms;
-}
-.theme-btn:hover {
-  background: var(--surface-tertiary);
-}
-.theme-btn--active {
-  background: #7c3aed;
-  color: white;
-}
-
-/* Buttons */
-.btn-primary {
-  padding: 6px 12px;
-  font-size: 14px;
-  background: #7c3aed;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 150ms;
-}
-.btn-primary:hover:not(:disabled) {
-  background: #6d28d9;
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.btn-icon {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.btn-ghost {
-  padding: 6px 12px;
-  font-size: 14px;
-  background: var(--surface-secondary);
-  color: var(--content-primary);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 150ms;
-}
-.btn-ghost:hover {
-  background: var(--surface-tertiary);
 }
 
 /* Typography utilities */
