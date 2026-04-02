@@ -99,19 +99,19 @@ onMounted(scan)
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-auto bg-surface-base text-content-primary p-6 gap-6">
+  <div class="telemetry-view">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-content-primary">{{ t('telemetry.title') }}</h2>
+    <div class="telem-header">
+      <h2 class="telem-title">{{ t('telemetry.title') }}</h2>
       <button
-        class="px-4 py-1.5 rounded bg-surface-tertiary hover:bg-surface-secondary text-sm text-content-secondary transition-colors disabled:opacity-50"
+        class="telem-rescan-btn"
         :disabled="loading || !store.projectPath"
         @click="scan"
       >
-        <span v-if="loading" class="flex items-center gap-2">
-          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        <span v-if="loading" class="telem-rescan-loading">
+          <svg class="telem-spin" viewBox="0 0 24 24" fill="none">
+            <circle class="telem-spin-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="telem-spin-fill" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
           </svg>
           {{ t('telemetry.scanning') }}
         </span>
@@ -120,162 +120,329 @@ onMounted(scan)
     </div>
 
     <!-- No project guard -->
-    <div v-if="!store.projectPath" class="flex-1 flex items-center justify-center text-content-subtle text-sm">
+    <div v-if="!store.projectPath" class="telem-state-center telem-subtle">
       {{ t('telemetry.noProject') }}
     </div>
 
     <!-- Loading state -->
-    <div v-else-if="loading && !data" class="flex-1 flex items-center justify-center text-content-muted text-sm gap-3">
-      <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+    <div v-else-if="loading && !data" class="telem-state-center telem-muted telem-gap">
+      <svg class="telem-spin telem-spin-lg" viewBox="0 0 24 24" fill="none">
+        <circle class="telem-spin-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="telem-spin-fill" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
       </svg>
       {{ t('telemetry.scanningProject') }}
     </div>
 
     <!-- Error state -->
-    <div v-else-if="error" class="flex-1 flex items-center justify-center text-red-400 text-sm">
+    <div v-else-if="error" class="telem-state-center telem-error">
       {{ error }}
     </div>
 
     <!-- Data -->
     <template v-else-if="data">
       <!-- Stat cards -->
-      <div class="grid grid-cols-3 gap-4" :class="hasAdvancedMetrics ? 'lg:grid-cols-5' : ''">
-        <div class="bg-surface-secondary rounded-lg p-4 flex flex-col gap-1 border border-edge-default">
-          <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.totalLines') }}</span>
-          <span class="text-2xl font-bold text-content-primary">{{ formatLines(data.totalLines) }}</span>
+      <div class="telem-stat-grid" :class="hasAdvancedMetrics ? 'telem-stat-grid--wide' : ''">
+        <div class="telem-stat-card">
+          <span class="telem-stat-label">{{ t('telemetry.totalLines') }}</span>
+          <span class="telem-stat-value">{{ formatLines(data.totalLines) }}</span>
         </div>
-        <div v-if="hasAdvancedMetrics" class="bg-surface-secondary rounded-lg p-4 flex flex-col gap-1 border border-edge-default">
-          <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.realCode') }}</span>
-          <span class="text-2xl font-bold text-content-primary">{{ formatLines(data.totalCodeLines ?? 0) }}</span>
+        <div v-if="hasAdvancedMetrics" class="telem-stat-card">
+          <span class="telem-stat-label">{{ t('telemetry.realCode') }}</span>
+          <span class="telem-stat-value">{{ formatLines(data.totalCodeLines ?? 0) }}</span>
         </div>
-        <div class="bg-surface-secondary rounded-lg p-4 flex flex-col gap-1 border border-edge-default">
-          <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.totalFiles') }}</span>
-          <span class="text-2xl font-bold text-content-primary">{{ data.totalFiles.toLocaleString() }}</span>
+        <div class="telem-stat-card">
+          <span class="telem-stat-label">{{ t('telemetry.totalFiles') }}</span>
+          <span class="telem-stat-value">{{ data.totalFiles.toLocaleString() }}</span>
         </div>
-        <div v-if="hasAdvancedMetrics" class="bg-surface-secondary rounded-lg p-4 flex flex-col gap-1 border border-edge-default">
-          <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.testFiles') }}</span>
-          <span class="text-2xl font-bold text-content-primary">{{ (data.totalTestFiles ?? 0).toLocaleString() }}</span>
+        <div v-if="hasAdvancedMetrics" class="telem-stat-card">
+          <span class="telem-stat-label">{{ t('telemetry.testFiles') }}</span>
+          <span class="telem-stat-value">{{ (data.totalTestFiles ?? 0).toLocaleString() }}</span>
         </div>
-        <div class="bg-surface-secondary rounded-lg p-4 flex flex-col gap-1 border border-edge-default">
-          <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.languages') }}</span>
-          <span class="text-2xl font-bold text-content-primary">{{ data.languages.length }}</span>
+        <div class="telem-stat-card">
+          <span class="telem-stat-label">{{ t('telemetry.languages') }}</span>
+          <span class="telem-stat-value">{{ data.languages.length }}</span>
         </div>
       </div>
 
       <!-- Language bar (GitHub-style) -->
-      <div class="flex flex-col gap-2">
-        <span class="text-sm font-medium text-content-tertiary">{{ t('telemetry.languageBreakdown') }}</span>
-        <div class="flex h-3 rounded-full overflow-hidden w-full">
+      <div class="telem-section">
+        <span class="telem-section-label">{{ t('telemetry.languageBreakdown') }}</span>
+        <div class="telem-lang-bar">
           <div
             v-for="lang in data.languages"
             :key="lang.name"
             :style="{ width: lang.percent + '%', backgroundColor: lang.color }"
             :title="`${lang.name} — ${lang.percent.toFixed(1)}%`"
-            class="transition-all"
+            class="telem-lang-segment"
           />
         </div>
-        <!-- Legend -->
-        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+        <div class="telem-lang-legend">
           <div
             v-for="lang in data.languages"
             :key="lang.name"
-            class="flex items-center gap-1.5 text-xs text-content-muted"
+            class="telem-lang-legend-item"
           >
-            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: lang.color }" />
+            <span class="telem-dot" :style="{ backgroundColor: lang.color }" />
             {{ lang.name }}
-            <span class="text-content-subtle">{{ lang.percent.toFixed(1) }}%</span>
+            <span class="telem-subtle">{{ lang.percent.toFixed(1) }}%</span>
           </div>
         </div>
       </div>
 
       <!-- Source / Test bar -->
-      <div v-if="hasAdvancedMetrics" class="flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-content-tertiary">{{ t('telemetry.sourceVsTests') }}</span>
-          <span class="text-xs text-amber-500 font-medium">{{ testPercent.toFixed(1) }}% tests</span>
+      <div v-if="hasAdvancedMetrics" class="telem-section">
+        <div class="telem-section-header">
+          <span class="telem-section-label">{{ t('telemetry.sourceVsTests') }}</span>
+          <span class="telem-test-pct">{{ testPercent.toFixed(1) }}% tests</span>
         </div>
-        <div class="flex h-3 rounded-full overflow-hidden w-full">
+        <div class="telem-lang-bar">
           <div
-            class="transition-all"
+            class="telem-lang-segment"
             :style="{ width: sourcePercent + '%', backgroundColor: '#22c55e' }"
             :title="`Source — ${sourcePercent.toFixed(1)}%`"
           />
           <div
-            class="transition-all"
+            class="telem-lang-segment"
             :style="{ width: testPercent + '%', backgroundColor: '#f59e0b' }"
             :title="`Tests — ${testPercent.toFixed(1)}%`"
           />
         </div>
-        <div class="flex gap-4 text-xs text-content-muted">
-          <span class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-green-500" />
+        <div class="telem-legend-row">
+          <span class="telem-legend-item">
+            <span class="telem-dot" style="background:#22c55e;" />
             {{ t('telemetry.sourceLabel', { percent: sourcePercent.toFixed(1) }) }}
           </span>
-          <span class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-amber-500" />
+          <span class="telem-legend-item">
+            <span class="telem-dot" style="background:#f59e0b;" />
             {{ t('telemetry.testsLabel', { percent: testPercent.toFixed(1) }) }}
           </span>
         </div>
       </div>
 
       <!-- Code quality section -->
-      <div v-if="hasAdvancedMetrics" class="flex flex-col gap-2">
-        <span class="text-sm font-medium text-content-tertiary">{{ t('telemetry.codeQuality') }}</span>
-        <div class="grid grid-cols-3 gap-3">
-          <div class="bg-surface-secondary rounded-lg p-3 flex flex-col gap-0.5 border border-edge-default">
-            <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.percentRealCode') }}</span>
-            <span class="text-xl font-bold text-green-400">{{ codePercent.toFixed(1) }}%</span>
+      <div v-if="hasAdvancedMetrics" class="telem-section">
+        <span class="telem-section-label">{{ t('telemetry.codeQuality') }}</span>
+        <div class="telem-quality-grid">
+          <div class="telem-stat-card">
+            <span class="telem-stat-label">{{ t('telemetry.percentRealCode') }}</span>
+            <span class="telem-stat-value telem-value--green">{{ codePercent.toFixed(1) }}%</span>
           </div>
-          <div class="bg-surface-secondary rounded-lg p-3 flex flex-col gap-0.5 border border-edge-default">
-            <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.percentComments') }}</span>
-            <span class="text-xl font-bold text-blue-400">{{ commentPercent.toFixed(1) }}%</span>
+          <div class="telem-stat-card">
+            <span class="telem-stat-label">{{ t('telemetry.percentComments') }}</span>
+            <span class="telem-stat-value telem-value--blue">{{ commentPercent.toFixed(1) }}%</span>
           </div>
-          <div class="bg-surface-secondary rounded-lg p-3 flex flex-col gap-0.5 border border-edge-default">
-            <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('telemetry.percentBlank') }}</span>
-            <span class="text-xl font-bold text-content-muted">{{ blankPercent.toFixed(1) }}%</span>
+          <div class="telem-stat-card">
+            <span class="telem-stat-label">{{ t('telemetry.percentBlank') }}</span>
+            <span class="telem-stat-value telem-muted">{{ blankPercent.toFixed(1) }}%</span>
           </div>
         </div>
       </div>
 
       <!-- Detailed table -->
-      <div class="bg-surface-secondary rounded-lg border border-edge-default overflow-x-auto">
-        <table class="w-full text-sm">
+      <div class="telem-table-wrap">
+        <table class="telem-table">
           <thead>
-            <tr class="border-b border-edge-default text-content-muted text-xs uppercase tracking-wide">
-              <th class="text-left px-4 py-2.5">{{ t('telemetry.colLanguage') }}</th>
-              <th class="text-right px-4 py-2.5">{{ t('telemetry.colLines') }}</th>
-              <th v-if="hasLangAdvanced" class="text-right px-4 py-2.5">{{ t('telemetry.colSource') }}</th>
-              <th v-if="hasLangAdvanced" class="text-right px-4 py-2.5">{{ t('telemetry.colTests') }}</th>
-              <th class="text-right px-4 py-2.5">{{ t('telemetry.colFiles') }}</th>
-              <th class="text-right px-4 py-2.5">%</th>
+            <tr class="telem-thead-row">
+              <th class="telem-th telem-th--left">{{ t('telemetry.colLanguage') }}</th>
+              <th class="telem-th telem-th--right">{{ t('telemetry.colLines') }}</th>
+              <th v-if="hasLangAdvanced" class="telem-th telem-th--right">{{ t('telemetry.colSource') }}</th>
+              <th v-if="hasLangAdvanced" class="telem-th telem-th--right">{{ t('telemetry.colTests') }}</th>
+              <th class="telem-th telem-th--right">{{ t('telemetry.colFiles') }}</th>
+              <th class="telem-th telem-th--right">%</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="lang in data.languages"
               :key="lang.name"
-              class="border-b border-edge-default/50 last:border-0 hover:bg-surface-tertiary/30 transition-colors"
+              class="telem-tbody-row"
             >
-              <td class="px-4 py-2 flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: lang.color }" />
-                <span class="text-content-secondary">{{ lang.name }}</span>
+              <td class="telem-td telem-td--lang">
+                <span class="telem-dot" :style="{ backgroundColor: lang.color }" />
+                <span class="telem-td-text">{{ lang.name }}</span>
               </td>
-              <td class="px-4 py-2 text-right text-content-tertiary tabular-nums">{{ lang.lines.toLocaleString() }}</td>
-              <td v-if="hasLangAdvanced" class="px-4 py-2 text-right text-green-400/80 tabular-nums">{{ (lang.sourceLines ?? 0).toLocaleString() }}</td>
-              <td v-if="hasLangAdvanced" class="px-4 py-2 text-right text-amber-400/80 tabular-nums">{{ (lang.testLines ?? 0).toLocaleString() }}</td>
-              <td class="px-4 py-2 text-right text-content-tertiary tabular-nums">{{ lang.files.toLocaleString() }}</td>
-              <td class="px-4 py-2 text-right text-content-muted tabular-nums">{{ lang.percent.toFixed(1) }}%</td>
+              <td class="telem-td telem-td--num telem-tertiary">{{ lang.lines.toLocaleString() }}</td>
+              <td v-if="hasLangAdvanced" class="telem-td telem-td--num telem-value--green-soft">{{ (lang.sourceLines ?? 0).toLocaleString() }}</td>
+              <td v-if="hasLangAdvanced" class="telem-td telem-td--num telem-value--amber-soft">{{ (lang.testLines ?? 0).toLocaleString() }}</td>
+              <td class="telem-td telem-td--num telem-tertiary">{{ lang.files.toLocaleString() }}</td>
+              <td class="telem-td telem-td--num telem-muted">{{ lang.percent.toFixed(1) }}%</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Footer -->
-      <p class="text-xs text-content-subtle">
+      <p class="telem-footer">
         {{ t('telemetry.scannedAt', { date: formatDate(data.scannedAt) }) }}
       </p>
     </template>
   </div>
 </template>
+
+<style scoped>
+.telemetry-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+  background-color: var(--surface-base);
+  color: var(--content-primary);
+  padding: 24px;
+  gap: 24px;
+}
+
+.telem-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.telem-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--content-primary);
+  margin: 0;
+}
+.telem-rescan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: var(--surface-tertiary);
+  color: var(--content-secondary);
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.telem-rescan-btn:hover:not(:disabled) { background: var(--surface-secondary); }
+.telem-rescan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.telem-rescan-loading { display: flex; align-items: center; gap: 8px; }
+
+.telem-spin { animation: telemSpin 1s linear infinite; }
+.telem-spin-track { opacity: 0.25; }
+.telem-spin-fill { opacity: 0.75; }
+.telem-spin { width: 16px; height: 16px; }
+.telem-spin-lg { width: 20px; height: 20px; }
+@keyframes telemSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.telem-state-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  gap: 12px;
+}
+.telem-subtle { color: var(--content-subtle); }
+.telem-muted { color: var(--content-muted); }
+.telem-tertiary { color: var(--content-tertiary); }
+.telem-error { color: #f87171; }
+.telem-gap { gap: 12px; }
+
+/* stat cards */
+.telem-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.telem-stat-grid--wide { grid-template-columns: repeat(5, 1fr); }
+.telem-stat-card {
+  background: var(--surface-secondary);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--edge-default);
+}
+.telem-stat-label {
+  font-size: 11px;
+  color: var(--content-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.telem-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--content-primary);
+}
+.telem-value--green { color: #4ade80; }
+.telem-value--blue { color: #60a5fa; }
+.telem-value--green-soft { color: rgba(74, 222, 128, 0.8); }
+.telem-value--amber-soft { color: rgba(251, 191, 36, 0.8); }
+
+/* sections */
+.telem-section { display: flex; flex-direction: column; gap: 8px; }
+.telem-section-header { display: flex; align-items: center; justify-content: space-between; }
+.telem-section-label { font-size: 14px; font-weight: 500; color: var(--content-tertiary); }
+.telem-test-pct { font-size: 12px; color: #f59e0b; font-weight: 500; }
+
+/* language bar */
+.telem-lang-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 9999px;
+  overflow: hidden;
+  width: 100%;
+}
+.telem-lang-segment { transition: width 0.3s; }
+.telem-lang-legend {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 16px;
+  row-gap: 4px;
+  margin-top: 4px;
+}
+.telem-lang-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--content-muted);
+}
+.telem-legend-row { display: flex; gap: 16px; font-size: 12px; color: var(--content-muted); }
+.telem-legend-item { display: flex; align-items: center; gap: 6px; }
+.telem-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* quality grid */
+.telem-quality-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+/* table */
+.telem-table-wrap {
+  background: var(--surface-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--edge-default);
+  overflow-x: auto;
+}
+.telem-table { width: 100%; font-size: 14px; border-collapse: collapse; }
+.telem-thead-row {
+  border-bottom: 1px solid var(--edge-default);
+  color: var(--content-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.telem-th { padding: 10px 16px; font-weight: 600; }
+.telem-th--left { text-align: left; }
+.telem-th--right { text-align: right; }
+.telem-tbody-row {
+  border-bottom: 1px solid rgba(63, 63, 70, 0.5);
+  transition: background 0.15s;
+}
+.telem-tbody-row:last-child { border-bottom: none; }
+.telem-tbody-row:hover { background: rgba(63, 63, 70, 0.3); }
+.telem-td { padding: 8px 16px; }
+.telem-td--lang { display: flex; align-items: center; gap: 8px; }
+.telem-td--num { text-align: right; font-variant-numeric: tabular-nums; }
+.telem-td-text { color: var(--content-secondary); }
+
+.telem-footer { font-size: 12px; color: var(--content-subtle); }
+</style>

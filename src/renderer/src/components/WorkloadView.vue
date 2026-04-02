@@ -49,33 +49,30 @@ const maxEffort = computed(() =>
 </script>
 
 <template>
-  <div class="flex flex-col rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
+  <div class="wl-view">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
-      <h2 class="text-sm font-semibold text-content-secondary">{{ t('workload.title') }}</h2>
-      <button
-        class="text-xs text-content-subtle hover:text-content-secondary transition-colors"
-        @click="store.refresh()"
-      >{{ t('common.refresh') }}</button>
+    <div class="wl-header">
+      <h2 class="wl-title">{{ t('workload.title') }}</h2>
+      <button class="wl-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</button>
     </div>
 
     <!-- Loading -->
-    <div v-if="store.loading" class="flex items-center justify-center py-8">
-      <p class="text-sm text-content-faint animate-pulse">{{ t('common.loading') }}</p>
+    <div v-if="store.loading" class="wl-state-center">
+      <p class="wl-loading">{{ t('common.loading') }}</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="rows.length === 0" class="flex items-center justify-center py-8">
-      <p class="text-sm text-content-faint italic">{{ t('workload.noAgents') }}</p>
+    <div v-else-if="rows.length === 0" class="wl-state-center">
+      <p class="wl-empty">{{ t('workload.noAgents') }}</p>
     </div>
 
     <!-- Table -->
-    <div v-else class="px-5 py-4 space-y-3">
+    <div v-else class="wl-table">
       <!-- Column headers -->
-      <div class="grid grid-cols-[minmax(120px,1fr)_60px_60px_minmax(0,2fr)_minmax(0,1fr)] gap-3 text-[10px] font-semibold uppercase tracking-wider text-content-faint pb-1 border-b border-edge-subtle">
+      <div class="wl-cols wl-cols-head">
         <span>{{ t('workload.agent') }}</span>
-        <span class="text-right">{{ t('workload.tasks') }}</span>
-        <span class="text-right">{{ t('workload.effort') }}</span>
+        <span class="wl-right">{{ t('workload.tasks') }}</span>
+        <span class="wl-right">{{ t('workload.effort') }}</span>
         <span>{{ t('workload.bar') }}</span>
         <span>{{ t('workload.current') }}</span>
       </div>
@@ -84,39 +81,113 @@ const maxEffort = computed(() =>
       <div
         v-for="row in rows"
         :key="row.agentId"
-        class="grid grid-cols-[minmax(120px,1fr)_60px_60px_minmax(0,2fr)_minmax(0,1fr)] gap-3 items-center"
+        class="wl-cols wl-cols-row"
       >
-        <!-- Agent name -->
-        <span
-          class="text-xs font-mono font-semibold truncate"
-          :style="{ color: agentFg(row.agentName) }"
-        >{{ row.agentName }}</span>
-
-        <!-- Task count -->
-        <span class="text-xs text-content-tertiary text-right font-mono">{{ row.taskCount }}</span>
-
-        <!-- Total effort -->
-        <span class="text-xs text-content-tertiary text-right font-mono">{{ row.totalEffort }}</span>
-
-        <!-- Effort bar -->
-        <div class="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+        <span class="wl-agent-name" :style="{ color: agentFg(row.agentName) }">{{ row.agentName }}</span>
+        <span class="wl-num wl-right">{{ row.taskCount }}</span>
+        <span class="wl-num wl-right">{{ row.totalEffort }}</span>
+        <div class="wl-bar-bg">
           <div
-            class="h-full rounded-full transition-all duration-500"
+            class="wl-bar-fill"
             :style="{
               width: maxEffort > 0 ? (row.totalEffort / maxEffort * 100) + '%' : '0%',
               backgroundColor: agentFg(row.agentName)
             }"
-          ></div>
+          />
         </div>
-
-        <!-- Current in_progress task -->
         <span
           v-if="row.currentTask"
-          class="text-[10px] text-content-faint truncate"
+          class="wl-current"
           :title="row.currentTask"
         >{{ row.currentTask }}</span>
-        <span v-else class="text-[10px] text-content-faint opacity-40">—</span>
+        <span v-else class="wl-current wl-dash">—</span>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.wl-view {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+  overflow: hidden;
+}
+.wl-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+  background: var(--surface-base);
+}
+.wl-title { font-size: 14px; font-weight: 600; color: var(--content-secondary); margin: 0; }
+.wl-refresh-btn {
+  font-size: 12px;
+  color: var(--content-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.wl-refresh-btn:hover { color: var(--content-secondary); }
+.wl-state-center { display: flex; align-items: center; justify-content: center; padding: 32px; }
+.wl-loading { font-size: 14px; color: var(--content-faint); animation: wlPulse 1.5s ease-in-out infinite; }
+.wl-empty { font-size: 14px; color: var(--content-faint); font-style: italic; }
+@keyframes wlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.wl-table { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.wl-cols {
+  display: grid;
+  grid-template-columns: minmax(120px,1fr) 60px 60px minmax(0,2fr) minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+}
+.wl-cols-head {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--content-faint);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--edge-subtle);
+  align-items: end;
+}
+.wl-cols-row { }
+.wl-right { text-align: right; }
+.wl-agent-name {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-num {
+  font-size: 12px;
+  color: var(--content-tertiary);
+  font-family: ui-monospace, monospace;
+}
+.wl-bar-bg {
+  height: 8px;
+  background: var(--surface-tertiary);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.wl-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s;
+}
+.wl-current {
+  font-size: 10px;
+  color: var(--content-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-dash { opacity: 0.4; }
+</style>

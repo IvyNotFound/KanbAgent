@@ -71,29 +71,25 @@ onMounted(loadTree)
 </script>
 
 <template>
-  <div class="flex-1 flex overflow-hidden">
+  <div class="ex-view">
     <!-- Tree panel -->
-    <div class="w-64 shrink-0 border-r border-edge-subtle overflow-y-auto flex flex-col">
-      <div class="flex items-center justify-between px-3 py-2.5 border-b border-edge-subtle shrink-0">
-        <span class="text-xs font-semibold text-content-subtle uppercase tracking-wider">{{ t('explorer.files') }}</span>
-        <button
-          class="w-5 h-5 flex items-center justify-center rounded text-content-subtle hover:text-content-tertiary hover:bg-surface-secondary transition-colors"
-          :title="t('common.refresh')"
-          @click="loadTree"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
+    <div class="ex-tree">
+      <div class="ex-tree-header">
+        <span class="ex-tree-label">{{ t('explorer.files') }}</span>
+        <button class="ex-tree-refresh" :title="t('common.refresh')" @click="loadTree">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
             <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
             <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
           </svg>
         </button>
       </div>
-      <div v-if="loadingTree" class="flex-1 flex items-center justify-center">
-        <span class="text-xs text-content-faint animate-pulse">{{ t('explorer.loading') }}</span>
+      <div v-if="loadingTree" class="ex-state-center">
+        <span class="ex-loading">{{ t('explorer.loading') }}</span>
       </div>
-      <div v-else-if="!store.projectPath" class="flex-1 flex items-center justify-center px-4">
-        <span class="text-xs text-content-faint text-center">{{ t('common.noProject') }}</span>
+      <div v-else-if="!store.projectPath" class="ex-state-center ex-padded">
+        <span class="ex-faint ex-center">{{ t('common.noProject') }}</span>
       </div>
-      <div v-else class="flex-1 py-0.5 select-none">
+      <div v-else class="ex-tree-nodes">
         <FileTreeNode
           v-for="node in tree"
           :key="node.path"
@@ -107,32 +103,116 @@ onMounted(loadTree)
     </div>
 
     <!-- Content panel -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <div class="flex items-center gap-3 px-4 py-2.5 border-b border-edge-subtle shrink-0 min-h-[41px]">
-        <span v-if="selectedPath" class="text-xs font-mono text-content-tertiary truncate">{{ selectedName }}</span>
-        <span v-else class="text-xs text-content-faint">{{ t('explorer.selectFile') }}</span>
-        <span v-if="fileContent" class="ml-auto text-xs text-content-faint shrink-0">
-          {{ lineCount(fileContent) }} {{ t('explorer.lines') }}
-        </span>
+    <div class="ex-content">
+      <div class="ex-content-header">
+        <span v-if="selectedPath" class="ex-content-filename">{{ selectedName }}</span>
+        <span v-else class="ex-faint">{{ t('explorer.selectFile') }}</span>
+        <span v-if="fileContent" class="ex-line-count">{{ lineCount(fileContent) }} {{ t('explorer.lines') }}</span>
       </div>
-      <div class="flex-1 overflow-auto">
-        <div v-if="loadingFile" class="flex items-center justify-center h-full">
-          <span class="text-xs text-content-faint animate-pulse">{{ t('explorer.reading') }}</span>
+      <div class="ex-content-body">
+        <div v-if="loadingFile" class="ex-state-center">
+          <span class="ex-loading">{{ t('explorer.reading') }}</span>
         </div>
-        <div v-else-if="fileError" class="flex items-center justify-center h-full px-8">
-          <span class="text-xs text-content-subtle italic text-center">{{ fileError }}</span>
+        <div v-else-if="fileError" class="ex-state-center ex-padded">
+          <span class="ex-subtle ex-center ex-italic">{{ fileError }}</span>
         </div>
-        <pre
-          v-else-if="fileContent"
-          class="text-xs font-mono text-content-tertiary leading-relaxed p-4 whitespace-pre-wrap break-words"
-        >{{ fileContent }}</pre>
-        <div v-else class="flex items-center justify-center h-full">
-          <span class="text-xs text-content-dim">—</span>
+        <pre v-else-if="fileContent" class="ex-pre">{{ fileContent }}</pre>
+        <div v-else class="ex-state-center">
+          <span class="ex-dim">—</span>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.ex-view { flex: 1; display: flex; overflow: hidden; }
+
+.ex-tree {
+  width: 256px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--edge-subtle);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.ex-tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.ex-tree-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--content-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ex-tree-refresh {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--content-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.ex-tree-refresh:hover { color: var(--content-tertiary); background: var(--surface-secondary); }
+.ex-tree-nodes { flex: 1; padding: 2px 0; user-select: none; }
+
+.ex-state-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+.ex-padded { padding: 16px; }
+.ex-loading { font-size: 12px; color: var(--content-faint); animation: exPulse 1.5s ease-in-out infinite; }
+@keyframes exPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.ex-faint { font-size: 12px; color: var(--content-faint); }
+.ex-subtle { font-size: 12px; color: var(--content-subtle); }
+.ex-dim { font-size: 12px; color: var(--content-dim); }
+.ex-center { text-align: center; }
+.ex-italic { font-style: italic; }
+
+.ex-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ex-content-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+  min-height: 41px;
+}
+.ex-content-filename {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  color: var(--content-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ex-line-count { margin-left: auto; font-size: 12px; color: var(--content-faint); flex-shrink: 0; }
+.ex-content-body { flex: 1; overflow: auto; }
+.ex-pre {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  color: var(--content-tertiary);
+  line-height: 1.625;
+  padding: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  margin: 0;
+}
+</style>
 
 <script lang="ts">
 // Sub-component: recursive file tree node — VS Code-style rendering

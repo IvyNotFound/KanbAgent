@@ -189,43 +189,37 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base overflow-hidden">
+  <div class="oc-view">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-2.5 border-b border-edge-subtle">
-      <div class="flex items-center gap-3">
-        <h2 class="text-xl font-semibold text-content-primary">{{ t('orgchart.agentsTitle') }}</h2>
-        <span v-if="loading" class="text-[10px] text-content-faint animate-pulse">•••</span>
+    <div class="oc-header">
+      <div class="oc-header-left">
+        <h2 class="oc-title">{{ t('orgchart.agentsTitle') }}</h2>
+        <span v-if="loading" class="oc-loading">•••</span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="oc-header-right">
         <!-- Legend -->
-        <div class="hidden sm:flex items-center gap-3 mr-3">
-          <span v-for="(color, key) in DOT_COLORS" :key="key" class="flex items-center gap-1 text-[10px] text-content-faint">
-            <span class="w-2 h-2 rounded-full inline-block" :style="{ background: color }"></span>
+        <div class="oc-legend">
+          <span v-for="(color, key) in DOT_COLORS" :key="key" class="oc-legend-item">
+            <span class="oc-legend-dot" :style="{ background: color }"></span>
             <span>{{ key === 'cyan' ? t('orgchart.status.active') : key === 'green' ? t('orgchart.status.todo') : key === 'yellow' ? t('orgchart.status.idle') : key === 'red' ? t('orgchart.status.blocked') : t('orgchart.status.inactive') }}</span>
           </span>
         </div>
-        <button
-          class="px-2.5 py-1 text-xs bg-surface-secondary hover:bg-surface-tertiary text-content-muted rounded transition-colors"
-          @click="fitView"
-        >Fit</button>
-        <button
-          class="px-2.5 py-1 text-xs text-content-subtle hover:text-content-secondary transition-colors"
-          @click="fetchData"
-        >&#8635;</button>
+        <button class="oc-btn" @click="fitView">Fit</button>
+        <button class="oc-btn oc-btn--text" @click="fetchData">&#8635;</button>
       </div>
     </div>
 
     <!-- Empty state -->
-    <div v-if="!loading && agents.length === 0" class="flex items-center justify-center flex-1">
-      <p class="text-sm text-content-faint italic">{{ t('orgchart.noAgents') }}</p>
+    <div v-if="!loading && agents.length === 0" class="oc-empty">
+      <p class="oc-empty-text">{{ t('orgchart.noAgents') }}</p>
     </div>
 
     <!-- SVG Canvas -->
     <svg
       v-else
       ref="svgEl"
-      class="flex-1 w-full"
-      :class="dragging ? 'cursor-grabbing' : 'cursor-grab'"
+      class="oc-svg"
+      :class="dragging ? 'oc-svg--grabbing' : 'oc-svg--grab'"
       @wheel.passive="onWheel"
       @mousedown="onMouseDown"
     >
@@ -306,3 +300,52 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
     </svg>
   </div>
 </template>
+
+<style scoped>
+.oc-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  overflow: hidden;
+}
+.oc-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.oc-header-left { display: flex; align-items: center; gap: 12px; }
+.oc-title { font-size: 20px; font-weight: 600; color: var(--content-primary); margin: 0; }
+.oc-loading { font-size: 10px; color: var(--content-faint); animation: ocPulse 1.5s ease-in-out infinite; }
+@keyframes ocPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.oc-header-right { display: flex; align-items: center; gap: 8px; }
+.oc-legend { display: flex; align-items: center; gap: 12px; margin-right: 12px; }
+.oc-legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--content-faint); }
+.oc-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.oc-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--surface-secondary);
+  color: var(--content-muted);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.oc-btn:hover { background: var(--surface-tertiary); }
+.oc-btn--text { background: none; }
+.oc-btn--text:hover { background: none; color: var(--content-secondary); }
+.oc-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+.oc-empty-text { font-size: 14px; color: var(--content-faint); font-style: italic; }
+.oc-svg { flex: 1; width: 100%; }
+.oc-svg--grab { cursor: grab; }
+.oc-svg--grabbing { cursor: grabbing; }
+</style>

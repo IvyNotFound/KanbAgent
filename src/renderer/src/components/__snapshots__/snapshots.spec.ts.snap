@@ -75,57 +75,57 @@ exports[`ContextMenu — snapshots > matches snapshot: simple items (no separato
 
 exports[`DbSelector — snapshots > matches snapshot: home screen (no project selected) 1`] = `
 "<!-- Accueil -->
-<div class="h-full flex items-center justify-center">
-  <div class="text-center space-y-6 max-w-sm px-6">
+<div data-v-2585d2c8="" class="screen-center">
+  <div data-v-2585d2c8="" class="home-content">
     <!-- Logo -->
-    <div class="w-14 h-14 rounded-2xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center mx-auto"><svg viewBox="0 0 24 24" fill="none" class="w-7 h-7 text-violet-400">
-        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7l-9-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
-        <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    <div data-v-2585d2c8="" class="logo-wrap"><svg data-v-2585d2c8="" viewBox="0 0 24 24" fill="none" class="logo-icon">
+        <path data-v-2585d2c8="" d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7l-9-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+        <path data-v-2585d2c8="" d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg></div>
-    <div>
-      <h2 class="text-xl font-semibold text-content-primary mb-1">KanbAgent</h2>
-      <p class="text-sm text-content-subtle">Visualisez les tâches de vos agents en temps réel.</p>
+    <div data-v-2585d2c8="" class="home-titles">
+      <h2 data-v-2585d2c8="" class="app-name">KanbAgent</h2>
+      <p data-v-2585d2c8="" class="app-tagline">Visualisez les tâches de vos agents en temps réel.</p>
     </div><!-- 2 options -->
-    <div class="grid grid-cols-2 gap-3">
-      <!-- Ouvrir existant --><button class="flex flex-col items-center gap-2 px-4 py-5 rounded-xl border border-edge-default hover:border-content-subtle bg-surface-secondary/40 hover:bg-surface-secondary transition-all group">
-        <div class="w-9 h-9 rounded-lg bg-surface-tertiary group-hover:bg-content-faint flex items-center justify-center transition-colors"><svg viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-content-tertiary">
-            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+    <div data-v-2585d2c8="" class="action-grid">
+      <!-- Ouvrir existant --><button data-v-2585d2c8="" class="action-card">
+        <div data-v-2585d2c8="" class="action-icon-wrap"><svg data-v-2585d2c8="" viewBox="0 0 20 20" fill="currentColor" class="action-icon">
+            <path data-v-2585d2c8="" d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
           </svg></div>
-        <div>
-          <p class="text-sm font-medium text-content-secondary">Ouvrir</p>
-          <p class="text-xs text-content-subtle mt-0.5">Projet existant</p>
+        <div data-v-2585d2c8="">
+          <p data-v-2585d2c8="" class="action-label">Ouvrir</p>
+          <p data-v-2585d2c8="" class="action-sublabel">Projet existant</p>
         </div>
-      </button><!-- Créer nouveau --><button class="flex flex-col items-center gap-2 px-4 py-5 rounded-xl border border-violet-500/30 hover:border-violet-500/60 bg-violet-500/5 hover:bg-violet-500/10 transition-all group">
-        <div class="w-9 h-9 rounded-lg bg-violet-500/20 group-hover:bg-violet-500/30 flex items-center justify-center transition-colors"><svg viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-violet-400">
-            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+      </button><!-- Créer nouveau --><button data-v-2585d2c8="" class="action-card action-card--primary">
+        <div data-v-2585d2c8="" class="action-icon-wrap action-icon-wrap--primary"><svg data-v-2585d2c8="" viewBox="0 0 20 20" fill="currentColor" class="action-icon action-icon--primary">
+            <path data-v-2585d2c8="" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
           </svg></div>
-        <div>
-          <p class="text-sm font-medium text-violet-600 dark:text-violet-300">Créer</p>
-          <p class="text-xs text-content-subtle mt-0.5">Nouveau projet</p>
+        <div data-v-2585d2c8="">
+          <p data-v-2585d2c8="" class="action-label action-label--primary">Créer</p>
+          <p data-v-2585d2c8="" class="action-sublabel">Nouveau projet</p>
         </div>
       </button>
     </div>
     <!--v-if-->
     <!-- Language selector -->
-    <div class="flex justify-center"><select aria-label="Language" class="bg-transparent text-content-subtle text-xs border-none focus:outline-none cursor-pointer" value="fr">
-        <option value="fr">Français</option>
-        <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="pt">Português</option>
-        <option value="pt-BR">Português (Brasil)</option>
-        <option value="de">Deutsch</option>
-        <option value="no">Norsk</option>
-        <option value="it">Italiano</option>
-        <option value="ar">العربية</option>
-        <option value="ru">Русский</option>
-        <option value="pl">Polski</option>
-        <option value="sv">Svenska</option>
-        <option value="fi">Suomi</option>
-        <option value="da">Dansk</option>
-        <option value="tr">Türkçe</option>
-        <option value="zh-CN">中文（简体）</option>
-        <option value="ko">한국어</option>
-        <option value="ja">日本語</option>
+    <div data-v-2585d2c8="" class="lang-row"><select data-v-2585d2c8="" aria-label="Language" class="lang-select" value="fr">
+        <option value="fr" data-v-2585d2c8="">Français</option>
+        <option value="en" data-v-2585d2c8="">English</option>
+        <option value="es" data-v-2585d2c8="">Español</option>
+        <option value="pt" data-v-2585d2c8="">Português</option>
+        <option value="pt-BR" data-v-2585d2c8="">Português (Brasil)</option>
+        <option value="de" data-v-2585d2c8="">Deutsch</option>
+        <option value="no" data-v-2585d2c8="">Norsk</option>
+        <option value="it" data-v-2585d2c8="">Italiano</option>
+        <option value="ar" data-v-2585d2c8="">العربية</option>
+        <option value="ru" data-v-2585d2c8="">Русский</option>
+        <option value="pl" data-v-2585d2c8="">Polski</option>
+        <option value="sv" data-v-2585d2c8="">Svenska</option>
+        <option value="fi" data-v-2585d2c8="">Suomi</option>
+        <option value="da" data-v-2585d2c8="">Dansk</option>
+        <option value="tr" data-v-2585d2c8="">Türkçe</option>
+        <option value="zh-CN" data-v-2585d2c8="">中文（简体）</option>
+        <option value="ko" data-v-2585d2c8="">한국어</option>
+        <option value="ja" data-v-2585d2c8="">日本語</option>
       </select></div>
   </div>
 </div>"
@@ -133,56 +133,56 @@ exports[`DbSelector — snapshots > matches snapshot: home screen (no project se
 
 exports[`DbSelector — snapshots > matches snapshot: home screen with error 1`] = `
 "<!-- Accueil -->
-<div class="h-full flex items-center justify-center">
-  <div class="text-center space-y-6 max-w-sm px-6">
+<div data-v-2585d2c8="" class="screen-center">
+  <div data-v-2585d2c8="" class="home-content">
     <!-- Logo -->
-    <div class="w-14 h-14 rounded-2xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center mx-auto"><svg viewBox="0 0 24 24" fill="none" class="w-7 h-7 text-violet-400">
-        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7l-9-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
-        <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    <div data-v-2585d2c8="" class="logo-wrap"><svg data-v-2585d2c8="" viewBox="0 0 24 24" fill="none" class="logo-icon">
+        <path data-v-2585d2c8="" d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7l-9-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+        <path data-v-2585d2c8="" d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg></div>
-    <div>
-      <h2 class="text-xl font-semibold text-content-primary mb-1">KanbAgent</h2>
-      <p class="text-sm text-content-subtle">Visualisez les tâches de vos agents en temps réel.</p>
+    <div data-v-2585d2c8="" class="home-titles">
+      <h2 data-v-2585d2c8="" class="app-name">KanbAgent</h2>
+      <p data-v-2585d2c8="" class="app-tagline">Visualisez les tâches de vos agents en temps réel.</p>
     </div><!-- 2 options -->
-    <div class="grid grid-cols-2 gap-3">
-      <!-- Ouvrir existant --><button class="flex flex-col items-center gap-2 px-4 py-5 rounded-xl border border-edge-default hover:border-content-subtle bg-surface-secondary/40 hover:bg-surface-secondary transition-all group">
-        <div class="w-9 h-9 rounded-lg bg-surface-tertiary group-hover:bg-content-faint flex items-center justify-center transition-colors"><svg viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-content-tertiary">
-            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+    <div data-v-2585d2c8="" class="action-grid">
+      <!-- Ouvrir existant --><button data-v-2585d2c8="" class="action-card">
+        <div data-v-2585d2c8="" class="action-icon-wrap"><svg data-v-2585d2c8="" viewBox="0 0 20 20" fill="currentColor" class="action-icon">
+            <path data-v-2585d2c8="" d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
           </svg></div>
-        <div>
-          <p class="text-sm font-medium text-content-secondary">Ouvrir</p>
-          <p class="text-xs text-content-subtle mt-0.5">Projet existant</p>
+        <div data-v-2585d2c8="">
+          <p data-v-2585d2c8="" class="action-label">Ouvrir</p>
+          <p data-v-2585d2c8="" class="action-sublabel">Projet existant</p>
         </div>
-      </button><!-- Créer nouveau --><button class="flex flex-col items-center gap-2 px-4 py-5 rounded-xl border border-violet-500/30 hover:border-violet-500/60 bg-violet-500/5 hover:bg-violet-500/10 transition-all group">
-        <div class="w-9 h-9 rounded-lg bg-violet-500/20 group-hover:bg-violet-500/30 flex items-center justify-center transition-colors"><svg viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-violet-400">
-            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+      </button><!-- Créer nouveau --><button data-v-2585d2c8="" class="action-card action-card--primary">
+        <div data-v-2585d2c8="" class="action-icon-wrap action-icon-wrap--primary"><svg data-v-2585d2c8="" viewBox="0 0 20 20" fill="currentColor" class="action-icon action-icon--primary">
+            <path data-v-2585d2c8="" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
           </svg></div>
-        <div>
-          <p class="text-sm font-medium text-violet-600 dark:text-violet-300">Créer</p>
-          <p class="text-xs text-content-subtle mt-0.5">Nouveau projet</p>
+        <div data-v-2585d2c8="">
+          <p data-v-2585d2c8="" class="action-label action-label--primary">Créer</p>
+          <p data-v-2585d2c8="" class="action-sublabel">Nouveau projet</p>
         </div>
       </button>
     </div>
-    <p class="text-xs text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800/50 rounded px-3 py-2">DB not found</p><!-- Language selector -->
-    <div class="flex justify-center"><select aria-label="Language" class="bg-transparent text-content-subtle text-xs border-none focus:outline-none cursor-pointer" value="fr">
-        <option value="fr">Français</option>
-        <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="pt">Português</option>
-        <option value="pt-BR">Português (Brasil)</option>
-        <option value="de">Deutsch</option>
-        <option value="no">Norsk</option>
-        <option value="it">Italiano</option>
-        <option value="ar">العربية</option>
-        <option value="ru">Русский</option>
-        <option value="pl">Polski</option>
-        <option value="sv">Svenska</option>
-        <option value="fi">Suomi</option>
-        <option value="da">Dansk</option>
-        <option value="tr">Türkçe</option>
-        <option value="zh-CN">中文（简体）</option>
-        <option value="ko">한국어</option>
-        <option value="ja">日本語</option>
+    <p data-v-2585d2c8="" class="error-msg">DB not found</p><!-- Language selector -->
+    <div data-v-2585d2c8="" class="lang-row"><select data-v-2585d2c8="" aria-label="Language" class="lang-select" value="fr">
+        <option value="fr" data-v-2585d2c8="">Français</option>
+        <option value="en" data-v-2585d2c8="">English</option>
+        <option value="es" data-v-2585d2c8="">Español</option>
+        <option value="pt" data-v-2585d2c8="">Português</option>
+        <option value="pt-BR" data-v-2585d2c8="">Português (Brasil)</option>
+        <option value="de" data-v-2585d2c8="">Deutsch</option>
+        <option value="no" data-v-2585d2c8="">Norsk</option>
+        <option value="it" data-v-2585d2c8="">Italiano</option>
+        <option value="ar" data-v-2585d2c8="">العربية</option>
+        <option value="ru" data-v-2585d2c8="">Русский</option>
+        <option value="pl" data-v-2585d2c8="">Polski</option>
+        <option value="sv" data-v-2585d2c8="">Svenska</option>
+        <option value="fi" data-v-2585d2c8="">Suomi</option>
+        <option value="da" data-v-2585d2c8="">Dansk</option>
+        <option value="tr" data-v-2585d2c8="">Türkçe</option>
+        <option value="zh-CN" data-v-2585d2c8="">中文（简体）</option>
+        <option value="ko" data-v-2585d2c8="">한국어</option>
+        <option value="ja" data-v-2585d2c8="">日本語</option>
       </select></div>
   </div>
 </div>"

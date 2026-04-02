@@ -170,10 +170,10 @@ function barWidth(task: TimelineTask): string {
 
 function statusColorClass(status: string): string {
   switch (status) {
-    case 'in_progress': return 'bg-blue-500'
-    case 'done': return 'bg-green-600'
-    case 'archived': return 'bg-zinc-600'
-    default: return 'bg-zinc-500'
+    case 'in_progress': return 'tl-bg-progress'
+    case 'done': return 'tl-bg-done'
+    case 'archived': return 'tl-bg-archived'
+    default: return 'tl-bg-todo'
   }
 }
 
@@ -226,17 +226,14 @@ const legendItems = computed(() => [
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary overflow-hidden" @mousemove="moveTooltip">
+  <div class="tl-view" @mousemove="moveTooltip">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
-      <h2 class="text-sm font-semibold text-content-secondary">{{ t('timeline.title') }}</h2>
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-content-muted">{{ t('timeline.period') }}</span>
-          <select
-            v-model="daysBack"
-            class="text-xs bg-surface-base border border-edge-subtle rounded px-2 py-1 text-content-primary focus:outline-none cursor-pointer"
-          >
+    <div class="tl-header">
+      <h2 class="tl-title">{{ t('timeline.title') }}</h2>
+      <div class="tl-header-controls">
+        <div class="tl-period">
+          <span class="tl-muted-xs">{{ t('timeline.period') }}</span>
+          <select v-model="daysBack" class="tl-select">
             <option :value="7">7j</option>
             <option :value="14">14j</option>
             <option :value="30">30j</option>
@@ -244,61 +241,44 @@ const legendItems = computed(() => [
             <option :value="90">90j</option>
           </select>
         </div>
-        <button
-          class="text-xs text-content-muted hover:text-content-primary transition-colors px-2 py-1 rounded border border-edge-subtle disabled:opacity-50"
-          :disabled="loading"
-          @click="fetchTasks"
-        >
+        <button class="tl-refresh-btn" :disabled="loading" @click="fetchTasks">
           {{ loading ? t('common.loading') : t('common.refresh') }}
         </button>
       </div>
     </div>
 
     <!-- Agent filter chips -->
-    <div
-      v-if="allAgents.length > 0"
-      class="shrink-0 flex items-center gap-2 px-5 py-2 border-b border-edge-subtle flex-wrap"
-    >
-      <span class="text-xs text-content-muted shrink-0">{{ t('timeline.filterAgents') }}</span>
+    <div v-if="allAgents.length > 0" class="tl-filters">
+      <span class="tl-muted-xs tl-shrink">{{ t('timeline.filterAgents') }}</span>
       <button
         v-for="name in allAgents"
         :key="name"
-        class="text-xs px-2 py-0.5 rounded-full border transition-colors"
+        class="tl-chip"
+        :class="isAgentSelected(name) ? '' : 'tl-chip--inactive'"
         :style="isAgentSelected(name) ? { color: agentFg(name), background: agentBg(name), borderColor: agentBorder(name) } : {}"
-        :class="isAgentSelected(name) ? '' : 'border-edge-subtle text-content-muted hover:border-edge-strong'"
         @click="toggleAgent(name)"
-      >
-        {{ name }}
-      </button>
+      >{{ name }}</button>
       <button
         v-if="selectedAgents.length > 0"
-        class="text-xs text-content-muted hover:text-content-primary ml-1 transition-colors"
+        class="tl-clear-btn"
         @click="selectedAgents = []"
-      >
-        {{ t('timeline.clearFilter') }}
-      </button>
+      >{{ t('timeline.clearFilter') }}</button>
     </div>
 
     <!-- Timeline body -->
-    <div class="flex-1 overflow-auto">
-      <div v-if="loading" class="flex items-center justify-center h-32 text-content-muted text-sm">
-        {{ t('common.loading') }}
-      </div>
-      <div v-else-if="error" class="flex items-center justify-center h-32 text-red-400 text-sm">
-        {{ error }}
-      </div>
-      <div v-else-if="groups.length === 0" class="flex items-center justify-center h-32 text-content-muted text-sm">
-        {{ t('timeline.noData') }}
-      </div>
-      <div v-else class="min-w-[700px]">
+    <div class="tl-body">
+      <div v-if="loading" class="tl-state-center tl-muted-sm">{{ t('common.loading') }}</div>
+      <div v-else-if="error" class="tl-state-center tl-error">{{ error }}</div>
+      <div v-else-if="groups.length === 0" class="tl-state-center tl-muted-sm">{{ t('timeline.noData') }}</div>
+      <div v-else class="tl-canvas">
         <!-- Time axis -->
-        <div class="flex border-b border-edge-subtle">
-          <div class="w-36 shrink-0" />
-          <div class="flex-1 relative h-8">
+        <div class="tl-axis">
+          <div class="tl-axis-spacer" />
+          <div class="tl-axis-ticks">
             <span
               v-for="tick in axisTicks"
               :key="tick.pct"
-              class="absolute text-xs text-content-muted -translate-x-1/2 top-1/2 -translate-y-1/2 whitespace-nowrap"
+              class="tl-tick"
               :style="{ left: tick.pct + '%' }"
             >{{ tick.label }}</span>
           </div>
@@ -308,23 +288,17 @@ const legendItems = computed(() => [
         <div
           v-for="group in groups"
           :key="group.name"
-          class="flex items-stretch border-b border-edge-subtle/40 hover:bg-surface-secondary/50 transition-colors"
+          class="tl-row"
         >
-          <!-- Agent label -->
-          <div class="w-36 shrink-0 flex items-center px-3 py-2 border-r border-edge-subtle/40">
-            <span
-              class="text-xs font-medium truncate"
-              :style="{ color: agentFg(group.name) }"
-            >{{ group.name }}</span>
+          <div class="tl-row-label">
+            <span class="tl-agent-name" :style="{ color: agentFg(group.name) }">{{ group.name }}</span>
           </div>
-
-          <!-- Bars -->
-          <div class="flex-1 relative" style="min-height: 40px;">
+          <div class="tl-row-bars">
             <div
               v-for="task in group.tasks"
               :key="task.id"
-              class="absolute top-2 h-6 rounded cursor-pointer hover:opacity-80 transition-opacity"
-              :class="[statusColorClass(task.status), task.status === 'in_progress' ? 'animate-pulse' : '']"
+              class="tl-bar"
+              :class="[statusColorClass(task.status), task.status === 'in_progress' ? 'tl-bar--pulse' : '']"
               :style="{ left: barLeft(task), width: barWidth(task), minWidth: '4px' }"
               @mouseenter="showTooltip($event, task)"
               @mouseleave="hideTooltip"
@@ -333,15 +307,11 @@ const legendItems = computed(() => [
         </div>
 
         <!-- Legend -->
-        <div class="flex items-center gap-4 px-5 py-3 border-t border-edge-subtle">
-          <span class="text-xs text-content-muted">{{ t('timeline.legend') }}</span>
-          <div
-            v-for="item in legendItems"
-            :key="item.status"
-            class="flex items-center gap-1.5"
-          >
-            <div class="w-3 h-3 rounded-sm" :class="statusColorClass(item.status)" />
-            <span class="text-xs text-content-muted">{{ item.label }}</span>
+        <div class="tl-legend">
+          <span class="tl-muted-xs">{{ t('timeline.legend') }}</span>
+          <div v-for="item in legendItems" :key="item.status" class="tl-legend-item">
+            <div class="tl-legend-dot" :class="statusColorClass(item.status)" />
+            <span class="tl-muted-xs">{{ item.label }}</span>
           </div>
         </div>
       </div>
@@ -351,30 +321,194 @@ const legendItems = computed(() => [
     <Teleport to="body">
       <div
         v-if="tooltipTask"
-        class="fixed z-50 bg-surface-primary border border-edge-default rounded-lg shadow-xl p-3 text-xs pointer-events-none"
-        :style="{ left: (tooltipX + 14) + 'px', top: (tooltipY - 14) + 'px', maxWidth: '280px' }"
+        class="tl-tooltip"
+        :style="{ left: (tooltipX + 14) + 'px', top: (tooltipY - 14) + 'px' }"
       >
-        <div class="font-semibold text-content-primary mb-1.5 leading-snug">{{ tooltipTask.title }}</div>
-        <div class="space-y-0.5 text-content-muted">
+        <div class="tl-tooltip-title">{{ tooltipTask.title }}</div>
+        <div class="tl-tooltip-body">
           <div>
             {{ t('timeline.tooltipStatus') }}:
-            <span
-              :class="{
-                'text-blue-400': tooltipTask.status === 'in_progress',
-                'text-green-400': tooltipTask.status === 'done',
-                'text-content-tertiary': tooltipTask.status === 'todo',
-              }"
-            >{{ tooltipTask.status }}</span>
+            <span :class="{
+              'tl-status-progress': tooltipTask.status === 'in_progress',
+              'tl-status-done': tooltipTask.status === 'done',
+              'tl-status-todo': tooltipTask.status === 'todo',
+            }">{{ tooltipTask.status }}</span>
           </div>
           <div>{{ t('timeline.tooltipStart') }}: {{ formatDate(tooltipTask.started_at ?? tooltipTask.created_at) }}</div>
-          <div v-if="tooltipTask.completed_at">
-            {{ t('timeline.tooltipEnd') }}: {{ formatDate(tooltipTask.completed_at) }}
-          </div>
+          <div v-if="tooltipTask.completed_at">{{ t('timeline.tooltipEnd') }}: {{ formatDate(tooltipTask.completed_at) }}</div>
           <div>{{ t('timeline.tooltipDuration') }}: {{ taskDurationLabel(tooltipTask) }}</div>
           <div>{{ t('timeline.tooltipEffort') }}: {{ effortLabel(tooltipTask.effort) }}</div>
-          <div class="text-content-faint mt-0.5">#{{ tooltipTask.id }}</div>
+          <div class="tl-tooltip-id">#{{ tooltipTask.id }}</div>
         </div>
       </div>
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.tl-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-primary, var(--surface-base));
+  overflow: hidden;
+}
+.tl-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+  background: var(--surface-base);
+}
+.tl-title { font-size: 14px; font-weight: 600; color: var(--content-secondary); margin: 0; }
+.tl-header-controls { display: flex; align-items: center; gap: 12px; }
+.tl-period { display: flex; align-items: center; gap: 6px; }
+.tl-muted-xs { font-size: 12px; color: var(--content-muted); }
+.tl-muted-sm { font-size: 14px; color: var(--content-muted); }
+.tl-select {
+  font-size: 12px;
+  background: var(--surface-base);
+  border: 1px solid var(--edge-subtle);
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: var(--content-primary);
+  cursor: pointer;
+  outline: none;
+}
+.tl-refresh-btn {
+  font-size: 12px;
+  color: var(--content-muted);
+  background: none;
+  border: 1px solid var(--edge-subtle);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.tl-refresh-btn:hover:not(:disabled) { color: var(--content-primary); }
+.tl-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tl-filters {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-wrap: wrap;
+}
+.tl-shrink { flex-shrink: 0; }
+.tl-chip {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.tl-chip--inactive { border-color: var(--edge-subtle); color: var(--content-muted); }
+.tl-chip--inactive:hover { border-color: var(--edge-default); }
+.tl-clear-btn {
+  font-size: 12px;
+  color: var(--content-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: color 0.15s;
+}
+.tl-clear-btn:hover { color: var(--content-primary); }
+
+.tl-body { flex: 1; overflow: auto; }
+.tl-state-center { display: flex; align-items: center; justify-content: center; height: 128px; }
+.tl-error { color: #f87171; font-size: 14px; }
+
+.tl-canvas { min-width: 700px; }
+.tl-axis {
+  display: flex;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.tl-axis-spacer { width: 144px; flex-shrink: 0; }
+.tl-axis-ticks { flex: 1; position: relative; height: 32px; }
+.tl-tick {
+  position: absolute;
+  font-size: 12px;
+  color: var(--content-muted);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  white-space: nowrap;
+}
+
+.tl-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(39,39,42,0.4);
+  transition: background 0.15s;
+}
+.tl-row:hover { background: rgba(39,39,42,0.5); }
+.tl-row-label {
+  width: 144px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-right: 1px solid rgba(39,39,42,0.4);
+}
+.tl-agent-name {
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-row-bars { flex: 1; position: relative; min-height: 40px; }
+.tl-bar {
+  position: absolute;
+  top: 8px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.tl-bar:hover { opacity: 0.8; }
+.tl-bar--pulse { animation: tlPulse 2s ease-in-out infinite; }
+@keyframes tlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* status colors */
+.tl-bg-progress { background: #3b82f6; }
+.tl-bg-done     { background: #16a34a; }
+.tl-bg-archived { background: #52525b; }
+.tl-bg-todo     { background: #71717a; }
+
+.tl-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--edge-subtle);
+}
+.tl-legend-item { display: flex; align-items: center; gap: 6px; }
+.tl-legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+/* tooltip */
+.tl-tooltip {
+  position: fixed;
+  z-index: 50;
+  background: var(--surface-primary, var(--surface-base));
+  border: 1px solid var(--edge-default);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  padding: 12px;
+  font-size: 12px;
+  pointer-events: none;
+  max-width: 280px;
+}
+.tl-tooltip-title { font-weight: 600; color: var(--content-primary); margin-bottom: 6px; line-height: 1.4; }
+.tl-tooltip-body { color: var(--content-muted); display: flex; flex-direction: column; gap: 2px; }
+.tl-tooltip-id { color: var(--content-faint); margin-top: 2px; }
+.tl-status-progress { color: #60a5fa; }
+.tl-status-done { color: #4ade80; }
+.tl-status-todo { color: var(--content-tertiary); }
+</style>

@@ -44,68 +44,47 @@ function relativeTime(ts: number): string {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden bg-surface-base">
+  <div class="he-view">
     <!-- Header -->
-    <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-b border-edge-default">
-      <h2 class="text-xl font-semibold text-content-primary">{{ t('sidebar.hooks') }}</h2>
+    <div class="he-header">
+      <h2 class="he-title">{{ t('sidebar.hooks') }}</h2>
     </div>
     <!-- Filters bar -->
-    <div class="flex items-center gap-2 px-6 py-2 border-b border-edge-default shrink-0 flex-wrap">
-      <span class="text-xs text-content-muted uppercase tracking-wide mr-1">{{ t('hooks.filters') }}</span>
+    <div class="he-filters">
+      <span class="he-filter-label">{{ t('hooks.filters') }}</span>
       <button
         v-for="eventType in ALL_TYPES"
         :key="eventType"
-        class="text-[11px] font-mono px-2 py-0.5 rounded border transition-colors"
-        :class="filterTypes.includes(eventType)
-          ? 'border-amber-500 text-amber-300 bg-amber-950/40'
-          : 'border-edge-subtle text-content-subtle hover:text-content-secondary hover:border-edge-default'"
+        class="he-chip"
+        :class="filterTypes.includes(eventType) ? 'he-chip--active' : 'he-chip--inactive'"
         @click="toggleType(eventType)"
       >
         {{ EVENT_ICON[eventType] }} {{ eventType }}
       </button>
-      <div class="flex-1" />
-      <span class="text-[11px] text-content-faint font-mono tabular-nums">
-        {{ filtered.length }} event{{ filtered.length !== 1 ? 's' : '' }}
-      </span>
+      <div class="he-spacer" />
+      <span class="he-count">{{ filtered.length }} event{{ filtered.length !== 1 ? 's' : '' }}</span>
     </div>
 
     <!-- Event list -->
-    <div
-      class="flex-1 overflow-y-auto px-6 py-2 space-y-0.5"
-    >
-      <div
-        v-if="filtered.length === 0"
-        class="flex items-center justify-center h-full text-content-faint text-xs italic"
-      >
-        {{ t('hooks.noEvents') }}
-      </div>
+    <div class="he-list">
+      <div v-if="filtered.length === 0" class="he-empty">{{ t('hooks.noEvents') }}</div>
       <div
         v-for="e in filtered"
         :key="e.id"
-        class="flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-surface-secondary/40 transition-colors"
+        class="he-event"
         @click="selectedEvent = e"
       >
-        <!-- Event icon -->
-        <span class="text-[11px] text-content-faint font-mono shrink-0 w-4 text-center">
-          {{ eventIcon(e.event) }}
-        </span>
-        <!-- Event type / tool name -->
+        <span class="he-event-icon">{{ eventIcon(e.event) }}</span>
         <span
-          class="text-[11px] font-mono shrink-0"
+          class="he-event-type"
           :class="['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event)
             ? toolColor(toolName(e.payload))
             : eventColor(e.event)"
         >
           {{ ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event) ? toolName(e.payload) : e.event }}
         </span>
-        <!-- Session ID short -->
-        <span class="text-[10px] text-content-faint font-mono truncate flex-1">
-          {{ e.sessionId ? e.sessionId.slice(0, 8) : '—' }}
-        </span>
-        <!-- Relative timestamp -->
-        <span class="text-[10px] text-content-faint font-mono tabular-nums shrink-0">
-          {{ relativeTime(e.ts) }}
-        </span>
+        <span class="he-session-id">{{ e.sessionId ? e.sessionId.slice(0, 8) : '—' }}</span>
+        <span class="he-time">{{ relativeTime(e.ts) }}</span>
       </div>
     </div>
   </div>
@@ -119,3 +98,114 @@ function relativeTime(ts: number): string {
     />
   </Teleport>
 </template>
+
+<style scoped>
+.he-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--surface-base);
+}
+.he-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--edge-default);
+}
+.he-title { font-size: 20px; font-weight: 600; color: var(--content-primary); margin: 0; }
+
+.he-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--edge-default);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.he-filter-label {
+  font-size: 12px;
+  color: var(--content-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+}
+.he-chip {
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.he-chip--active {
+  border-color: #f59e0b;
+  color: #fcd34d;
+  background: rgba(120, 53, 15, 0.4);
+}
+.he-chip--inactive {
+  border-color: var(--edge-subtle);
+  color: var(--content-subtle);
+}
+.he-chip--inactive:hover {
+  color: var(--content-secondary);
+  border-color: var(--edge-default);
+}
+.he-spacer { flex: 1; }
+.he-count {
+  font-size: 11px;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.he-list { flex: 1; overflow-y: auto; padding: 8px 24px; display: flex; flex-direction: column; gap: 2px; }
+.he-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--content-faint);
+  font-size: 12px;
+  font-style: italic;
+}
+.he-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.he-event:hover { background: rgba(39,39,42,0.4); }
+.he-event-icon {
+  font-size: 11px;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+.he-event-type { font-size: 11px; font-family: ui-monospace, monospace; flex-shrink: 0; }
+.he-session-id {
+  font-size: 10px;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.he-time {
+  font-size: 10px;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+</style>

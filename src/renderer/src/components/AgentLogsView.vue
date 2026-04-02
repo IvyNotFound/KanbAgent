@@ -135,11 +135,12 @@ function absoluteTime(dateStr: string): string {
 }
 
 // ── Level styling ─────────────────────────────────────────────────────────
-const levelConfig: Record<string, { label: string; text: string; bg: string; dot: string }> = {
-  info:  { label: 'info',  text: 'text-sky-700 dark:text-sky-400',       bg: 'bg-sky-100 dark:bg-sky-950/60',       dot: 'bg-sky-500 dark:bg-sky-400' },
-  warn:  { label: 'warn',  text: 'text-amber-700 dark:text-amber-400',   bg: 'bg-amber-100 dark:bg-amber-950/60',   dot: 'bg-amber-500 dark:bg-amber-400' },
-  error: { label: 'error', text: 'text-red-700 dark:text-red-400',       bg: 'bg-red-100 dark:bg-red-950/60',       dot: 'bg-red-500 dark:bg-red-400' },
-  debug: { label: 'debug', text: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-950/60', dot: 'bg-violet-500 dark:bg-violet-400' },
+// Using scoped CSS class names instead of Tailwind utilities
+const levelConfig: Record<string, { label: string; cls: string }> = {
+  info:  { label: 'info',  cls: 'al-level--info'  },
+  warn:  { label: 'warn',  cls: 'al-level--warn'  },
+  error: { label: 'error', cls: 'al-level--error' },
+  debug: { label: 'debug', cls: 'al-level--debug' },
 }
 
 function levelCfg(niveau: string) {
@@ -147,11 +148,11 @@ function levelCfg(niveau: string) {
 }
 
 const filterLevelConfig: Record<string, string> = {
-  all:   'text-content-tertiary bg-surface-secondary ring-edge-default',
-  info:  'text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-950/60 ring-sky-300 dark:ring-sky-800',
-  warn:  'text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 ring-amber-300 dark:ring-amber-800',
-  error: 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/60 ring-red-300 dark:ring-red-800',
-  debug: 'text-violet-700 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/60 ring-violet-300 dark:ring-violet-800',
+  all:   'al-filter--all',
+  info:  'al-filter--info',
+  warn:  'al-filter--warn',
+  error: 'al-filter--error',
+  debug: 'al-filter--debug',
 }
 
 function resetFilters(): void {
@@ -193,195 +194,123 @@ watch(() => props.initialAgentId, (v) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base min-h-0">
+  <div class="al-view">
 
-    <!-- ── Titre ──────────────────────────────────────────────────────────── -->
-    <div class="shrink-0 flex items-center px-6 py-3 border-b border-edge-default">
-      <h2 class="text-xl font-semibold text-content-primary">{{ t('tokenStats.logsTab') }}</h2>
+    <!-- ── Title ──────────────────────────────────────────────────────────── -->
+    <div class="al-title-bar">
+      <h2 class="al-title">{{ t('tokenStats.logsTab') }}</h2>
     </div>
 
-    <!-- ── Barre de filtres ──────────────────────────────────────────────── -->
-    <div class="shrink-0 flex items-center gap-2 px-6 py-2.5 border-b border-edge-default bg-surface-base">
-
-      <!-- Filtres niveau -->
-      <div class="flex items-center gap-1">
+    <!-- ── Filter bar ──────────────────────────────────────────────────── -->
+    <div class="al-filter-bar">
+      <div class="al-level-btns">
         <button
           v-for="lvl in levels"
           :key="lvl"
-          :class="[
-            'px-2 py-0.5 rounded text-xs font-mono font-medium ring-1 transition-all',
-            filterLevel === lvl
-              ? filterLevelConfig[lvl]
-              : 'text-content-subtle bg-transparent ring-transparent hover:text-content-tertiary hover:ring-edge-default'
-          ]"
+          class="al-level-btn"
+          :class="filterLevel === lvl ? filterLevelConfig[lvl] : 'al-level-btn--inactive'"
           @click="filterLevel = lvl"
         >{{ lvl }}</button>
       </div>
 
-      <!-- Séparateur -->
-      <div class="w-px h-4 bg-surface-secondary mx-1" />
+      <div class="al-sep" />
 
-      <!-- Filtre agent -->
-      <select
-        v-model.number="filterAgentId"
-        class="bg-surface-secondary border border-edge-default rounded px-2 py-0.5 text-xs font-mono text-content-tertiary outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
-      >
+      <select v-model.number="filterAgentId" class="al-agent-select">
         <option :value="null">{{ t('logs.allAgents') }}</option>
-        <option
-          v-for="[id, name] in uniqueAgents"
-          :key="id"
-          :value="id"
-        >{{ name }}</option>
+        <option v-for="[id, name] in uniqueAgents" :key="id" :value="id">{{ name }}</option>
       </select>
 
-      <!-- Reset filters -->
       <button
         v-if="filterLevel !== 'all' || filterAgentId !== null"
-        class="px-2 py-0.5 rounded text-xs font-mono text-content-subtle bg-transparent ring-1 ring-edge-default hover:text-content-secondary hover:ring-violet-500 transition-all"
+        class="al-reset-btn"
         :title="t('logs.resetFilters')"
         @click="resetFilters"
       >{{ t('logs.reset') }}</button>
 
-      <!-- Spacer -->
-      <div class="flex-1" />
+      <div class="al-spacer" />
 
-      <!-- Pagination controls -->
-      <div v-if="totalPages > 1" class="flex items-center gap-2">
-        <button
-          class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          :disabled="currentPage === 1"
-          :title="t('logs.prevPage')"
-          @click="prevPage"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+      <div v-if="totalPages > 1" class="al-pagination">
+        <button class="al-page-btn" :disabled="currentPage === 1" :title="t('logs.prevPage')" @click="prevPage">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
             <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
           </svg>
         </button>
-        <span class="text-[11px] text-content-faint font-mono">
-          {{ currentPage }} / {{ totalPages }}
-        </span>
-        <button
-          class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          :disabled="currentPage >= totalPages"
-          :title="t('logs.nextPage')"
-          @click="nextPage"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
+        <span class="al-page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <button class="al-page-btn" :disabled="currentPage >= totalPages" :title="t('logs.nextPage')" @click="nextPage">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
             <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
           </svg>
         </button>
       </div>
+      <span v-else class="al-count">{{ paginatedLogs.length }} / {{ totalCount }}</span>
 
-      <!-- Compteur + refresh -->
-      <span v-else class="text-[11px] text-content-faint font-mono">
-        {{ paginatedLogs.length }} / {{ totalCount }}
-      </span>
       <button
-        class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors"
-        :class="{ 'animate-spin': loading }"
+        class="al-refresh-btn"
+        :class="{ 'al-refresh-btn--spinning': loading }"
         :title="t('logs.refresh')"
         @click="fetchLogs"
       >
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
           <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
           <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
         </svg>
       </button>
     </div>
 
-    <!-- ── Liste logs ────────────────────────────────────────────────────── -->
-    <div class="flex-1 overflow-y-auto min-h-0" style="contain: strict;">
+    <!-- ── Log list ────────────────────────────────────────────────────── -->
+    <div class="al-list">
 
       <!-- Empty state -->
-      <div
-        v-if="paginatedLogs.length === 0 && !loading"
-        class="flex flex-col items-center justify-center h-full gap-2"
-      >
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-8 h-8 text-content-dim">
+      <div v-if="paginatedLogs.length === 0 && !loading" class="al-empty">
+        <svg viewBox="0 0 16 16" fill="currentColor" class="al-empty-icon">
           <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
           <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
         </svg>
-        <p class="text-sm text-content-faint">{{ t('logs.noLogs') }}</p>
+        <p class="al-empty-text">{{ t('logs.noLogs') }}</p>
       </div>
 
       <!-- Log rows -->
       <div
         v-for="log in enrichedLogs"
         :key="log.id"
-        :class="[
-          'group border-b border-edge-default/50 transition-colors',
-          log.detail || log.parsedFiles.length > 0 ? 'cursor-pointer hover:bg-surface-secondary/40' : ''
-        ]"
+        class="al-row"
+        :class="log.detail || log.parsedFiles.length > 0 ? 'al-row--clickable' : ''"
         @click="(log.detail || log.parsedFiles.length > 0) && toggleExpand(log.id)"
       >
-        <!-- Ligne principale -->
-        <div class="flex items-center gap-3 px-6 py-2.5 min-w-0">
-
-          <!-- Dot niveau -->
-          <span
-            :class="['shrink-0 w-2 h-2 rounded-full', levelCfg(log.level).dot]"
-          />
-
-          <!-- Badge niveau -->
-          <span
-            :class="[
-              'shrink-0 text-xs font-mono font-semibold px-1.5 py-0.5 rounded',
-              levelCfg(log.level).text,
-              levelCfg(log.level).bg
-            ]"
-          >{{ levelCfg(log.level).label }}</span>
-
-          <!-- Timestamp -->
-          <span
-            class="shrink-0 text-xs text-content-subtle font-mono w-14 text-right tabular-nums"
-            :title="absoluteTime(log.created_at)"
-          >{{ formatTime(log.created_at) }}</span>
-
-          <!-- Agent badge -->
+        <!-- Main line -->
+        <div class="al-row-main">
+          <span class="al-dot" :class="levelCfg(log.level).cls" />
+          <span class="al-badge" :class="levelCfg(log.level).cls">{{ levelCfg(log.level).label }}</span>
+          <span class="al-time" :title="absoluteTime(log.created_at)">{{ formatTime(log.created_at) }}</span>
           <span
             v-if="log.agent_name"
-            class="shrink-0 text-xs font-mono px-1.5 py-0.5 rounded font-medium"
+            class="al-agent-badge"
             :style="{
               color: agentFg(log.agent_name),
               backgroundColor: agentBg(log.agent_name),
               boxShadow: `0 0 0 1px ${agentBorder(log.agent_name)}`
             }"
           >{{ log.agent_name }}</span>
-          <span v-else class="shrink-0 text-xs font-mono text-content-dim px-1.5 py-0.5">—</span>
-
-          <!-- Action -->
-          <span class="text-sm font-semibold text-content-secondary truncate min-w-0">{{ log.action }}</span>
-
-          <!-- Chevron si détail existe -->
+          <span v-else class="al-agent-badge al-agent-badge--none">—</span>
+          <span class="al-action">{{ log.action }}</span>
           <svg
             v-if="log.detail || log.parsedFiles.length > 0"
-            :class="[
-              'shrink-0 w-3 h-3 text-content-faint transition-transform ml-auto',
-              isExpanded(log.id) ? 'rotate-90' : ''
-            ]"
+            class="al-chevron"
+            :class="isExpanded(log.id) ? 'al-chevron--open' : ''"
             viewBox="0 0 16 16" fill="currentColor"
           >
             <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
           </svg>
         </div>
 
-        <!-- Détail pliable -->
-        <div
-          v-if="isExpanded(log.id)"
-          class="px-6 pb-2.5 pt-0 ml-[18px] flex flex-col gap-1.5"
-        >
-          <!-- Texte detail -->
-          <p
-            v-if="log.detail"
-            class="text-sm text-content-tertiary leading-relaxed whitespace-pre-wrap break-words"
-          >{{ log.detail }}</p>
-
-          <!-- Fichiers -->
-          <div v-if="log.parsedFiles.length > 0" class="flex flex-wrap gap-1 mt-0.5">
+        <!-- Expandable detail -->
+        <div v-if="isExpanded(log.id)" class="al-detail">
+          <p v-if="log.detail" class="al-detail-text">{{ log.detail }}</p>
+          <div v-if="log.parsedFiles.length > 0" class="al-files">
             <span
               v-for="f in log.parsedFiles"
               :key="f"
-              class="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-secondary text-content-subtle border border-edge-default/50"
+              class="al-file-badge"
             >{{ f.split('/').pop() }}</span>
           </div>
         </div>
@@ -390,3 +319,238 @@ watch(() => props.initialAgentId, (v) => {
 
   </div>
 </template>
+
+<style scoped>
+.al-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  min-height: 0;
+}
+.al-title-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--edge-default);
+}
+.al-title { font-size: 20px; font-weight: 600; color: var(--content-primary); margin: 0; }
+
+/* filter bar */
+.al-filter-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--edge-default);
+  background: var(--surface-base);
+}
+.al-level-btns { display: flex; align-items: center; gap: 4px; }
+.al-level-btn {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  font-weight: 500;
+  box-shadow: 0 0 0 1px transparent;
+  transition: all 0.15s;
+  border: none;
+  cursor: pointer;
+}
+.al-level-btn--inactive {
+  color: var(--content-subtle);
+  background: transparent;
+  box-shadow: none;
+}
+.al-level-btn--inactive:hover {
+  color: var(--content-tertiary);
+  box-shadow: 0 0 0 1px var(--edge-default);
+}
+/* active filter states */
+.al-filter--all   { color: var(--content-tertiary); background: var(--surface-secondary); box-shadow: 0 0 0 1px var(--edge-default); }
+.al-filter--info  { color: #38bdf8; background: rgba(12,74,110,0.6);  box-shadow: 0 0 0 1px #0c4a6e; }
+.al-filter--warn  { color: #fbbf24; background: rgba(78,52,6,0.6);    box-shadow: 0 0 0 1px #78350f; }
+.al-filter--error { color: #f87171; background: rgba(69,10,10,0.6);   box-shadow: 0 0 0 1px #7f1d1d; }
+.al-filter--debug { color: #c4b5fd; background: rgba(46,16,101,0.6);  box-shadow: 0 0 0 1px #4c1d95; }
+
+.al-sep { width: 1px; height: 16px; background: var(--surface-secondary); margin: 0 4px; }
+.al-agent-select {
+  background: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  color: var(--content-tertiary);
+  outline: none;
+  cursor: pointer;
+}
+.al-reset-btn {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  color: var(--content-subtle);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--edge-default);
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, box-shadow 0.15s;
+}
+.al-reset-btn:hover { color: var(--content-secondary); box-shadow: 0 0 0 1px #6d28d9; }
+.al-spacer { flex: 1; }
+.al-pagination { display: flex; align-items: center; gap: 8px; }
+.al-page-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--content-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.al-page-btn:hover:not(:disabled) { color: var(--content-secondary); background: var(--surface-secondary); }
+.al-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.al-page-info { font-size: 11px; color: var(--content-faint); font-family: ui-monospace, monospace; }
+.al-count { font-size: 11px; color: var(--content-faint); font-family: ui-monospace, monospace; }
+.al-refresh-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--content-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.al-refresh-btn:hover { color: var(--content-secondary); background: var(--surface-secondary); }
+.al-refresh-btn--spinning { animation: alSpin 1s linear infinite; }
+@keyframes alSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* log list */
+.al-list { flex: 1; overflow-y: auto; min-height: 0; contain: strict; }
+.al-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+}
+.al-empty-icon { width: 32px; height: 32px; color: var(--content-dim); }
+.al-empty-text { font-size: 14px; color: var(--content-faint); }
+
+/* log rows */
+.al-row {
+  border-bottom: 1px solid rgba(63,63,70,0.5);
+  transition: background 0.15s;
+}
+.al-row--clickable { cursor: pointer; }
+.al-row--clickable:hover { background: rgba(39,39,42,0.4); }
+
+.al-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  min-width: 0;
+}
+
+/* level badge + dot using combined class */
+.al-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.al-badge {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+/* dot colors */
+.al-level--info.al-dot  { background: #38bdf8; }
+.al-level--warn.al-dot  { background: #fbbf24; }
+.al-level--error.al-dot { background: #f87171; }
+.al-level--debug.al-dot { background: #c4b5fd; }
+/* badge colors */
+.al-level--info.al-badge  { color: #38bdf8; background: rgba(12,74,110,0.6); }
+.al-level--warn.al-badge  { color: #fbbf24; background: rgba(78,52,6,0.6); }
+.al-level--error.al-badge { color: #f87171; background: rgba(69,10,10,0.6); }
+.al-level--debug.al-badge { color: #c4b5fd; background: rgba(46,16,101,0.6); }
+
+.al-time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--content-subtle);
+  font-family: ui-monospace, monospace;
+  width: 56px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.al-agent-badge {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.al-agent-badge--none { color: var(--content-dim); }
+.al-action {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--content-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.al-chevron {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--content-faint);
+  transition: transform 0.15s;
+  margin-left: auto;
+}
+.al-chevron--open { transform: rotate(90deg); }
+
+.al-detail {
+  padding: 0 24px 10px;
+  margin-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.al-detail-text {
+  font-size: 14px;
+  color: var(--content-tertiary);
+  line-height: 1.625;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  margin: 0;
+}
+.al-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.al-file-badge {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-secondary);
+  color: var(--content-subtle);
+  border: 1px solid rgba(63,63,70,0.5);
+}
+</style>

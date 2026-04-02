@@ -236,15 +236,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base text-content-primary font-mono text-sm">
+  <div class="stream-view">
     <!-- Agent color accent header bar (T680) -->
-    <div v-if="agentName" class="h-0.5 w-full shrink-0" :style="{ background: accentFg }" />
+    <div v-if="agentName" class="stream-accent-bar" :style="{ background: accentFg }" />
 
     <!-- Messages scroll area -->
-    <div ref="scrollContainer" class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3">
+    <div ref="scrollContainer" class="stream-scroll">
       <div
         v-if="displayEvents.length === 0 && !isStreaming"
-        class="flex items-center justify-center h-full text-content-subtle text-xs"
+        class="stream-empty"
         data-testid="empty-state"
       >
         {{ t('stream.waitingMessages') }}
@@ -254,19 +254,19 @@ onUnmounted(() => {
         <!-- system:init -->
         <div
           v-if="event.type === 'system' && event.subtype === 'init'"
-          class="text-content-subtle text-xs italic"
+          class="block-system-init"
           data-testid="block-system-init"
         >
           {{ t('stream.sessionStarted') }}
-          <span v-if="event.session_id" class="ml-1 font-mono">· {{ event.session_id.slice(0, 8) }}…</span>
+          <span v-if="event.session_id" class="init-session-id">· {{ event.session_id.slice(0, 8) }}…</span>
           <template v-if="sessionContextMap.get(event._id!)">
             <button
-              class="ml-2 text-content-faint hover:text-content-muted transition-colors not-italic"
+              class="init-ctx-btn"
               @click="toggleCollapsed(`init-ctx-${event._id}`, true)"
             >{{ (collapsed[`init-ctx-${event._id}`] ?? true) ? '▶ ' + t('stream.ctx') : '▼ ' + t('stream.ctx') }}</button>
             <div
               v-show="!(collapsed[`init-ctx-${event._id}`] ?? true)"
-              class="mt-1 ml-4 not-italic text-content-faint whitespace-pre-wrap font-mono text-xs"
+              class="init-ctx-body"
             >{{ sessionContextMap.get(event._id!) }}</div>
           </template>
         </div>
@@ -274,25 +274,25 @@ onUnmounted(() => {
         <!-- error:spawn / error:exit -->
         <div
           v-if="event.type === 'error:spawn' || event.type === 'error:exit'"
-          class="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg px-4 py-3 text-red-300 text-xs font-mono"
+          class="block-error"
           data-testid="block-error"
         >
-          <span class="shrink-0 text-red-400">⚠</span>
-          <div class="select-text cursor-text">
-            <span class="font-semibold text-red-400">{{ event.type }}</span>
-            <span class="ml-2 whitespace-pre-wrap">{{ event.error }}</span>
-            <pre v-if="event.stderr" class="mt-2 text-red-200 text-xs whitespace-pre-wrap">{{ event.stderr }}</pre>
+          <span class="error-icon">⚠</span>
+          <div class="error-body">
+            <span class="error-type">{{ event.type }}</span>
+            <span class="error-text">{{ event.error }}</span>
+            <pre v-if="event.stderr" class="error-stderr">{{ event.stderr }}</pre>
           </div>
         </div>
 
         <!-- user bubble — right-aligned (T603) -->
         <div
           v-if="event.type === 'user' && event.message"
-          class="flex justify-end"
+          class="block-user"
           data-testid="block-user"
         >
           <div
-            class="bg-surface-secondary border rounded-lg px-4 py-3 max-w-[80%] whitespace-pre-wrap break-words text-sm text-content-primary leading-relaxed select-text cursor-text"
+            class="user-bubble"
             :style="{ borderColor: accentBorder }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
@@ -307,7 +307,7 @@ onUnmounted(() => {
             <!-- text block — Markdown + DOMPurify (T678), agent color bg (T720) -->
             <div
               v-if="block.type === 'text'"
-              class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed select-text cursor-text"
+              class="stream-markdown block-text"
               :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
               data-testid="block-text"
               v-html="block._html ?? ''"
@@ -331,19 +331,19 @@ onUnmounted(() => {
         <!-- result footer — cost / duration / turns -->
         <div
           v-if="event.type === 'result'"
-          class="flex flex-wrap gap-4 text-xs text-content-subtle border-t border-edge-subtle pt-2"
+          class="block-result"
           data-testid="block-result"
         >
           <span v-if="event.num_turns !== undefined">{{ t('stream.turns', event.num_turns, { named: { n: event.num_turns } }) }}</span>
           <span v-if="event.cost_usd !== undefined">${{ event.cost_usd.toFixed(4) }}</span>
           <span v-if="event.duration_ms !== undefined">{{ (event.duration_ms / 1000).toFixed(1) }}s</span>
-          <span v-if="event.session_id" class="ml-auto font-mono text-content-faint">{{ event.session_id.slice(0, 8) }}…</span>
+          <span v-if="event.session_id" class="result-session-id">{{ event.session_id.slice(0, 8) }}…</span>
         </div>
 
         <!-- text block — plain text output from non-Claude CLIs (T1197) -->
         <div
           v-if="event.type === 'text'"
-          class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed select-text cursor-text"
+          class="stream-markdown block-text"
           :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
           data-testid="block-text-raw"
           v-html="event._html ?? event.text ?? ''"
@@ -352,31 +352,31 @@ onUnmounted(() => {
         <!-- error block — error events from non-Claude CLIs (T1197) -->
         <div
           v-if="event.type === 'error'"
-          class="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg px-4 py-3 text-red-300 text-xs font-mono"
+          class="block-error"
           data-testid="block-error-raw"
         >
-          <span class="shrink-0 text-red-400">⚠</span>
-          <span class="whitespace-pre-wrap select-text cursor-text">{{ event.text }}</span>
+          <span class="error-icon">⚠</span>
+          <span class="error-body-inline">{{ event.text }}</span>
         </div>
       </template>
 
       <!-- Streaming indicator — thinking preview (T731) or generic dots -->
       <div
         v-if="isStreaming"
-        class="flex items-center gap-2 text-xs min-w-0"
+        class="streaming-indicator"
         :style="{ color: accentFg }"
         data-testid="streaming-indicator"
       >
-        <span class="inline-flex gap-0.5 shrink-0">
-          <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" :style="{ backgroundColor: accentFg }" />
-          <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" :style="{ backgroundColor: accentFg }" />
-          <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" :style="{ backgroundColor: accentFg }" />
+        <span class="bounce-dots">
+          <span class="bounce-dot" :style="{ backgroundColor: accentFg }" />
+          <span class="bounce-dot bounce-dot--d1" :style="{ backgroundColor: accentFg }" />
+          <span class="bounce-dot bounce-dot--d2" :style="{ backgroundColor: accentFg }" />
         </span>
-        <span v-if="activeThinkingText" class="flex items-center gap-1 min-w-0">
-          <span class="shrink-0 font-medium" data-testid="thinking-label">{{ t('stream.thinking') }}</span>
-          <span class="truncate italic opacity-75 text-content-muted" data-testid="thinking-preview">{{ activeThinkingText.slice(-120) }}</span>
+        <span v-if="activeThinkingText" class="thinking-text">
+          <span class="thinking-label" data-testid="thinking-label">{{ t('stream.thinking') }}</span>
+          <span class="thinking-preview" data-testid="thinking-preview">{{ activeThinkingText.slice(-120) }}</span>
         </span>
-        <span v-else class="opacity-75">{{ t('stream.streaming') }}</span>
+        <span v-else class="streaming-label">{{ t('stream.streaming') }}</span>
       </div>
     </div>
 
@@ -395,3 +395,202 @@ onUnmounted(() => {
     />
   </div>
 </template>
+
+<style scoped>
+.stream-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--surface-base);
+  color: var(--content-primary);
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 14px;
+}
+
+.stream-accent-bar {
+  height: 2px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.stream-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stream-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--content-subtle);
+  font-size: 12px;
+}
+
+/* system:init */
+.block-system-init {
+  color: var(--content-subtle);
+  font-size: 12px;
+  font-style: italic;
+}
+.init-session-id {
+  margin-left: 4px;
+  font-family: ui-monospace, monospace;
+}
+.init-ctx-btn {
+  margin-left: 8px;
+  font-style: normal;
+  color: var(--content-faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  transition: color 0.15s;
+}
+.init-ctx-btn:hover { color: var(--content-muted); }
+.init-ctx-body {
+  margin-top: 4px;
+  margin-left: 16px;
+  font-style: normal;
+  color: var(--content-faint);
+  white-space: pre-wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+/* error blocks */
+.block-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #450a0a;
+  border: 1px solid #991b1b;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #fca5a5;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+}
+.error-icon {
+  flex-shrink: 0;
+  color: #f87171;
+}
+.error-body {
+  user-select: text;
+  cursor: text;
+}
+.error-type {
+  font-weight: 600;
+  color: #f87171;
+}
+.error-text {
+  margin-left: 8px;
+  white-space: pre-wrap;
+}
+.error-stderr {
+  margin-top: 8px;
+  color: #fecaca;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.error-body-inline {
+  white-space: pre-wrap;
+  user-select: text;
+  cursor: text;
+}
+
+/* user bubble */
+.block-user {
+  display: flex;
+  justify-content: flex-end;
+}
+.user-bubble {
+  background: var(--surface-secondary);
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 12px 16px;
+  max-width: 80%;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-size: 14px;
+  color: var(--content-primary);
+  line-height: 1.625;
+  user-select: text;
+  cursor: text;
+}
+
+/* assistant text block */
+.block-text {
+  border-radius: 8px;
+  padding: 12px 16px;
+  border: 1px solid;
+  border-left-width: 4px;
+  line-height: 1.625;
+  user-select: text;
+  cursor: text;
+}
+
+/* result footer */
+.block-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--content-subtle);
+  border-top: 1px solid var(--edge-subtle);
+  padding-top: 8px;
+}
+.result-session-id {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+  color: var(--content-faint);
+}
+
+/* streaming indicator */
+.streaming-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 0;
+}
+.bounce-dots {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.bounce-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: streamBounce 1s infinite;
+}
+.bounce-dot--d1 { animation-delay: 150ms; }
+.bounce-dot--d2 { animation-delay: 300ms; }
+@keyframes streamBounce {
+  0%, 100% { transform: translateY(0); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+  50% { transform: translateY(-4px); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+}
+.thinking-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.thinking-label { flex-shrink: 0; font-weight: 500; }
+.thinking-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  opacity: 0.75;
+  color: var(--content-muted);
+}
+.streaming-label { opacity: 0.75; }
+</style>

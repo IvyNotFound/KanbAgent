@@ -15,20 +15,18 @@ const {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base min-h-0">
+  <div class="ts-view">
 
     <!-- ── Period selector ────────────────────────────────────────────── -->
-    <div class="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
-      <h2 class="text-xl font-semibold text-content-primary mr-2">{{ t('tokenStats.title') }}</h2>
-      <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('tokenStats.period.label') }}</span>
-      <div class="flex gap-1">
+    <div class="ts-period-bar">
+      <h2 class="ts-title">{{ t('tokenStats.title') }}</h2>
+      <span class="ts-period-label">{{ t('tokenStats.period.label') }}</span>
+      <div class="ts-period-btns">
         <button
           v-for="period in PERIODS"
           :key="period.key"
-          class="px-2.5 py-0.5 rounded-full text-[11px] border transition-colors"
-          :class="selectedPeriod === period.key
-            ? 'bg-accent-primary border-accent-primary text-white'
-            : 'bg-surface-secondary border-edge-default text-content-secondary hover:border-accent-primary hover:text-content-primary'"
+          class="ts-period-btn"
+          :class="selectedPeriod === period.key ? 'ts-period-btn--active' : ''"
           @click="selectedPeriod = period.key"
         >
           {{ t(period.labelKey) }}
@@ -37,95 +35,76 @@ const {
     </div>
 
     <!-- ── Summary cards ──────────────────────────────────────────────── -->
-    <div class="shrink-0 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 px-4 py-2 border-b border-edge-subtle bg-surface-base">
-
-      <!-- Period total tokens -->
-      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.total') }}</span>
-        <span class="text-base font-bold text-content-primary tabular-nums">{{ formatNumber(globalStats.total) }}</span>
-        <div class="flex gap-1.5 text-[10px] font-mono text-content-subtle">
-          <span class="text-emerald-600 dark:text-emerald-400">↓ {{ formatNumber(globalStats.tokens_in) }}</span>
-          <span class="text-sky-600 dark:text-sky-400">↑ {{ formatNumber(globalStats.tokens_out) }}</span>
+    <div class="ts-cards-row">
+      <div class="ts-card">
+        <span class="ts-card-label">{{ t('tokenStats.total') }}</span>
+        <span class="ts-card-value">{{ formatNumber(globalStats.total) }}</span>
+        <div class="ts-card-sub ts-mono">
+          <span class="ts-in">↓ {{ formatNumber(globalStats.tokens_in) }}</span>
+          <span class="ts-out">↑ {{ formatNumber(globalStats.tokens_out) }}</span>
         </div>
       </div>
 
-      <!-- Sessions count -->
-      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.sessions') }}</span>
-        <span class="text-base font-bold text-content-primary tabular-nums">{{ globalStats.session_count }}</span>
-        <div class="text-[10px] text-content-subtle truncate">
+      <div class="ts-card">
+        <span class="ts-card-label">{{ t('tokenStats.sessions') }}</span>
+        <span class="ts-card-value">{{ globalStats.session_count }}</span>
+        <div class="ts-card-sub">
           {{ t('tokenStats.avgPerSession') }} {{ formatNumber(avgPerSession) }}
         </div>
       </div>
 
-      <!-- Cache tokens -->
-      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cache') }}</span>
-        <span class="text-base font-bold text-content-primary tabular-nums">{{ formatNumber(globalStats.tokens_cache_read + globalStats.tokens_cache_write) }}</span>
-        <div class="flex gap-1.5 text-[10px] font-mono text-content-subtle">
-          <span class="text-amber-600 dark:text-amber-400">R {{ formatNumber(globalStats.tokens_cache_read) }}</span>
-          <span class="text-violet-600 dark:text-violet-400">W {{ formatNumber(globalStats.tokens_cache_write) }}</span>
+      <div class="ts-card">
+        <span class="ts-card-label">{{ t('tokenStats.cache') }}</span>
+        <span class="ts-card-value">{{ formatNumber(globalStats.tokens_cache_read + globalStats.tokens_cache_write) }}</span>
+        <div class="ts-card-sub ts-mono">
+          <span class="ts-amber">R {{ formatNumber(globalStats.tokens_cache_read) }}</span>
+          <span class="ts-violet">W {{ formatNumber(globalStats.tokens_cache_write) }}</span>
         </div>
       </div>
 
-      <!-- Cache hit rate (T635) -->
-      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cacheHit') }}</span>
-        <span class="text-base font-bold tabular-nums" :class="cacheHitColor">{{ cacheHitRate }}%</span>
-        <div class="text-[10px] text-content-subtle truncate">
-          {{ t('tokenStats.cacheHitLabel') }}
-        </div>
+      <div class="ts-card">
+        <span class="ts-card-label">{{ t('tokenStats.cacheHit') }}</span>
+        <span class="ts-card-value ts-tabnum" :class="cacheHitColor">{{ cacheHitRate }}%</span>
+        <div class="ts-card-sub">{{ t('tokenStats.cacheHitLabel') }}</div>
       </div>
 
-      <!-- Estimated cost (T635) -->
-      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.cost') }}</span>
-        <span class="text-base font-bold text-content-primary tabular-nums">{{ formatCost(estimatedCost) }}</span>
-        <div class="text-[10px] text-content-faint truncate">
-          {{ t('tokenStats.costNote') }}
-        </div>
+      <div class="ts-card">
+        <span class="ts-card-label">{{ t('tokenStats.cost') }}</span>
+        <span class="ts-card-value">{{ formatCost(estimatedCost) }}</span>
+        <div class="ts-card-sub ts-faint">{{ t('tokenStats.costNote') }}</div>
       </div>
 
-      <!-- Output ratio -->
-      <div class="flex flex-col gap-1 p-3 rounded-lg bg-surface-secondary border border-edge-default">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint truncate">{{ t('tokenStats.ratio') }}</span>
-        <span class="text-base font-bold text-content-primary tabular-nums">
+      <div class="ts-card">
+        <span class="ts-card-label">{{ t('tokenStats.ratio') }}</span>
+        <span class="ts-card-value">
           {{ globalStats.total > 0 ? Math.round((globalStats.tokens_out / Math.max(globalStats.total, 1)) * 100) : 0 }}%
         </span>
-        <div class="text-[10px] text-content-subtle truncate">
-          <span class="text-sky-600 dark:text-sky-400">{{ t('tokenStats.outputRatio') }}</span>
+        <div class="ts-card-sub">
+          <span class="ts-out">{{ t('tokenStats.outputRatio') }}</span>
         </div>
       </div>
     </div>
 
     <!-- ── Sparkline 30 days ─────────────────────────────────────────── -->
-    <div class="shrink-0 px-4 py-2 border-b border-edge-subtle bg-surface-base">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('tokenStats.evolution') }}</span>
+    <div class="ts-spark-wrap">
+      <div class="ts-spark-header">
+        <span class="ts-mini-label">{{ t('tokenStats.evolution') }}</span>
       </div>
-      <div class="flex items-end gap-1 h-[60px]">
+      <div class="ts-spark-bars">
         <div
           v-for="(bar, i) in sparkBars"
           :key="bar.day"
-          class="relative flex-1 flex flex-col justify-end cursor-default group"
+          class="ts-spark-col"
           @mouseenter="hoveredSparkBar = i"
           @mouseleave="hoveredSparkBar = null"
         >
           <div
-            class="w-full rounded-t transition-colors"
-            :class="hoveredSparkBar === i
-              ? 'bg-accent-primary'
-              : 'bg-emerald-600/50 dark:bg-emerald-500/40'"
+            class="ts-spark-bar"
+            :class="hoveredSparkBar === i ? 'ts-spark-bar--hovered' : ''"
             :style="{ height: sparkBarHeight(bar.total) + 'px' }"
           />
-          <div
-            v-if="bar.total === 0"
-            class="w-full h-[2px] rounded bg-edge-subtle"
-          />
-          <div
-            v-if="hoveredSparkBar === i"
-            class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded text-[10px] whitespace-nowrap bg-surface-tooltip text-content-primary border border-edge-default shadow-lg pointer-events-none"
-          >
+          <div v-if="bar.total === 0" class="ts-spark-zero" />
+          <div v-if="hoveredSparkBar === i" class="ts-spark-tooltip">
             {{ bar.label }} : {{ formatNumber(bar.total) }}
           </div>
         </div>
@@ -133,47 +112,40 @@ const {
     </div>
 
     <!-- ── Content (scrollable) ───────────────────────────────────────── -->
-    <div class="flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-4">
+    <div class="ts-content">
 
       <!-- Cost analytics section (T769) -->
       <CostStatsSection :db-path="store.dbPath" :period="costPeriod" />
 
       <!-- Per-agent table with bars -->
       <section>
-        <h3 class="text-[11px] uppercase tracking-wider text-content-faint mb-2">{{ t('tokenStats.perAgent') }}</h3>
+        <h3 class="ts-section-title">{{ t('tokenStats.perAgent') }}</h3>
 
-        <div v-if="agentRows.length === 0" class="text-sm text-content-faint py-4 text-center">
-          {{ t('tokenStats.noData') }}
-        </div>
+        <div v-if="agentRows.length === 0" class="ts-empty">{{ t('tokenStats.noData') }}</div>
 
-        <div v-else class="space-y-1.5">
+        <div v-else class="ts-agent-rows">
           <div
             v-for="row in agentRows"
             :key="row.agent_id"
-            class="flex items-center gap-3 group"
+            class="ts-agent-row"
           >
             <span
               v-if="row.agent_name"
-              class="shrink-0 w-32 text-[11px] font-mono px-1.5 py-0.5 rounded font-medium truncate text-right"
+              class="ts-agent-name"
               :style="agentStyles.get(row.agent_name)"
               :title="row.agent_name"
             >{{ row.agent_name }}</span>
-            <span v-else class="shrink-0 w-32 text-[11px] font-mono text-content-dim text-right">—</span>
+            <span v-else class="ts-agent-name ts-dim">—</span>
 
-            <div class="flex-1 h-5 bg-surface-secondary rounded overflow-hidden relative">
-              <div
-                class="h-full rounded bg-gradient-to-r from-emerald-600/60 to-sky-600/60 transition-all duration-300"
-                :style="{ width: barWidth(row.total) }"
-              />
-              <span class="absolute inset-0 flex items-center px-2 text-[10px] font-mono text-content-secondary">
-                {{ formatNumber(row.total) }}
-              </span>
+            <div class="ts-bar-wrap">
+              <div class="ts-bar-fill" :style="{ width: barWidth(row.total) }" />
+              <span class="ts-bar-label ts-mono">{{ formatNumber(row.total) }}</span>
             </div>
 
-            <div class="shrink-0 flex gap-2 text-[10px] font-mono text-content-subtle w-40 justify-end">
-              <span class="text-emerald-600 dark:text-emerald-400">↓{{ formatNumber(row.tokens_in) }}</span>
-              <span class="text-sky-600 dark:text-sky-400">↑{{ formatNumber(row.tokens_out) }}</span>
-              <span class="text-content-faint">{{ row.session_count }}s</span>
+            <div class="ts-agent-totals ts-mono">
+              <span class="ts-in">↓{{ formatNumber(row.tokens_in) }}</span>
+              <span class="ts-out">↑{{ formatNumber(row.tokens_out) }}</span>
+              <span class="ts-faint">{{ row.session_count }}s</span>
             </div>
           </div>
         </div>
@@ -181,46 +153,44 @@ const {
 
       <!-- Per-session table -->
       <section>
-        <h3 class="text-[11px] uppercase tracking-wider text-content-faint mb-2">{{ t('tokenStats.perSession') }}</h3>
+        <h3 class="ts-section-title">{{ t('tokenStats.perSession') }}</h3>
 
-        <div v-if="sessionRows.length === 0" class="text-sm text-content-faint py-4 text-center">
-          {{ t('tokenStats.noData') }}
-        </div>
+        <div v-if="sessionRows.length === 0" class="ts-empty">{{ t('tokenStats.noData') }}</div>
 
-        <table v-else class="w-full text-[11px]">
+        <table v-else class="ts-table">
           <thead>
-            <tr class="text-content-faint text-left border-b border-edge-subtle">
-              <th class="py-1.5 px-2 font-medium">ID</th>
-              <th class="py-1.5 px-2 font-medium">{{ t('tokenStats.agent') }}</th>
-              <th class="py-1.5 px-2 font-medium">{{ t('tokenStats.date') }}</th>
-              <th class="py-1.5 px-2 font-medium text-right text-emerald-600 dark:text-emerald-400">↓ In</th>
-              <th class="py-1.5 px-2 font-medium text-right text-sky-600 dark:text-sky-400">↑ Out</th>
-              <th class="py-1.5 px-2 font-medium text-right">Total</th>
-              <th class="py-1.5 px-2 font-medium text-right">{{ t('tokenStats.cost') }}</th>
+            <tr class="ts-thead-row">
+              <th class="ts-th">ID</th>
+              <th class="ts-th">{{ t('tokenStats.agent') }}</th>
+              <th class="ts-th">{{ t('tokenStats.date') }}</th>
+              <th class="ts-th ts-th--right ts-in">↓ In</th>
+              <th class="ts-th ts-th--right ts-out">↑ Out</th>
+              <th class="ts-th ts-th--right">Total</th>
+              <th class="ts-th ts-th--right">{{ t('tokenStats.cost') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="s in sessionRows"
               :key="s.id"
-              class="border-b border-edge-subtle/40 hover:bg-surface-secondary/40 transition-colors"
+              class="ts-tbody-row"
             >
-              <td class="py-1.5 px-2 text-content-faint">#{{ s.id }}</td>
-              <td class="py-1.5 px-2">
+              <td class="ts-td ts-faint">#{{ s.id }}</td>
+              <td class="ts-td">
                 <span
                   v-if="s.agent_name"
-                  class="px-1.5 py-0.5 rounded font-medium"
+                  class="ts-agent-badge"
                   :style="agentStyles.get(s.agent_name)"
                 >{{ s.agent_name }}</span>
-                <span v-else class="text-content-dim">—</span>
+                <span v-else class="ts-dim">—</span>
               </td>
-              <td class="py-1.5 px-2 text-content-subtle">{{ formatDate(s.started_at) }}</td>
-              <td class="py-1.5 px-2 text-right text-emerald-600 dark:text-emerald-400 tabular-nums font-mono">{{ formatNumber(s.tokens_in) }}</td>
-              <td class="py-1.5 px-2 text-right text-sky-600 dark:text-sky-400 tabular-nums font-mono">{{ formatNumber(s.tokens_out) }}</td>
-              <td class="py-1.5 px-2 text-right text-content-secondary font-semibold tabular-nums font-mono">{{ formatNumber(s.total) }}</td>
+              <td class="ts-td ts-subtle">{{ formatDate(s.started_at) }}</td>
+              <td class="ts-td ts-td--right ts-in ts-tabnum ts-mono">{{ formatNumber(s.tokens_in) }}</td>
+              <td class="ts-td ts-td--right ts-out ts-tabnum ts-mono">{{ formatNumber(s.tokens_out) }}</td>
+              <td class="ts-td ts-td--right ts-secondary ts-semibold ts-tabnum ts-mono">{{ formatNumber(s.total) }}</td>
               <td
-                class="py-1.5 px-2 text-right tabular-nums font-mono"
-                :class="estimateSessionCost(s) !== null ? 'text-violet-600 dark:text-violet-400' : 'text-content-faint'"
+                class="ts-td ts-td--right ts-tabnum ts-mono"
+                :class="estimateSessionCost(s) !== null ? 'ts-violet' : 'ts-faint'"
                 :title="estimateSessionCost(s) === null ? `Cost estimation not available for ${s.cli_type ?? 'unknown'} sessions` : undefined"
               >
                 {{ estimateSessionCost(s) !== null ? formatCost(estimateSessionCost(s)!) : '—' }}
@@ -232,14 +202,14 @@ const {
     </div>
 
     <!-- Refresh button -->
-    <div class="shrink-0 flex items-center justify-end px-4 py-2 border-t border-edge-subtle bg-surface-base">
+    <div class="ts-footer">
       <button
-        class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors"
-        :class="{ 'animate-spin': loading }"
+        class="ts-refresh-btn"
+        :class="{ 'ts-refresh-btn--spinning': loading }"
         :title="t('logs.refresh')"
         @click="refresh"
       >
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
           <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
           <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
         </svg>
@@ -247,3 +217,254 @@ const {
     </div>
   </div>
 </template>
+
+<style scoped>
+.ts-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--surface-base);
+  min-height: 0;
+}
+
+/* period selector */
+.ts-period-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 8px;
+}
+.ts-title { font-size: 20px; font-weight: 600; color: var(--content-primary); margin: 0 8px 0 0; }
+.ts-period-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--content-faint); }
+.ts-period-btns { display: flex; gap: 4px; }
+.ts-period-btn {
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  border: 1px solid var(--edge-default);
+  background: var(--surface-secondary);
+  color: var(--content-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.ts-period-btn:hover { border-color: #6d28d9; color: var(--content-primary); }
+.ts-period-btn--active { background: #6d28d9; border-color: #6d28d9; color: #fff; }
+
+/* summary cards */
+.ts-cards-row {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  background: var(--surface-base);
+}
+.ts-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+}
+.ts-card-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--content-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-card-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--content-primary);
+  font-variant-numeric: tabular-nums;
+}
+.ts-card-sub {
+  font-size: 10px;
+  color: var(--content-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  gap: 6px;
+}
+
+/* color helpers */
+.ts-in  { color: #34d399; }
+.ts-out { color: #38bdf8; }
+.ts-amber  { color: #fbbf24; }
+.ts-violet { color: #a78bfa; }
+.ts-faint  { color: var(--content-faint); }
+.ts-subtle { color: var(--content-subtle); }
+.ts-secondary { color: var(--content-secondary); }
+.ts-dim { color: var(--content-dim); }
+.ts-mono { font-family: ui-monospace, monospace; }
+.ts-tabnum { font-variant-numeric: tabular-nums; }
+.ts-semibold { font-weight: 600; }
+.ts-mini-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--content-faint); }
+
+/* sparkline */
+.ts-spark-wrap {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  background: var(--surface-base);
+}
+.ts-spark-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.ts-spark-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 60px;
+}
+.ts-spark-col {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  cursor: default;
+}
+.ts-spark-bar {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  background: rgba(52, 211, 153, 0.4);
+  transition: background 0.15s;
+}
+.ts-spark-bar--hovered { background: #6d28d9; }
+.ts-spark-zero { width: 100%; height: 2px; border-radius: 2px; background: var(--edge-subtle); }
+.ts-spark-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  background: var(--surface-secondary);
+  color: var(--content-primary);
+  border: 1px solid var(--edge-default);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+
+/* scrollable content */
+.ts-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ts-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--content-faint);
+  margin: 0 0 8px;
+}
+.ts-empty { font-size: 14px; color: var(--content-faint); padding: 16px 0; text-align: center; }
+
+/* agent bar rows */
+.ts-agent-rows { display: flex; flex-direction: column; gap: 6px; }
+.ts-agent-row { display: flex; align-items: center; gap: 12px; }
+.ts-agent-name {
+  flex-shrink: 0;
+  width: 128px;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+.ts-bar-wrap {
+  flex: 1;
+  height: 20px;
+  background: var(--surface-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.ts-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(to right, rgba(52,211,153,0.6), rgba(56,189,248,0.6));
+  transition: width 0.3s;
+}
+.ts-bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 10px;
+  color: var(--content-secondary);
+}
+.ts-agent-totals {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  width: 160px;
+  justify-content: flex-end;
+}
+
+/* session table */
+.ts-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+.ts-thead-row {
+  color: var(--content-faint);
+  text-align: left;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.ts-th { padding: 6px 8px; font-weight: 500; }
+.ts-th--right { text-align: right; }
+.ts-tbody-row {
+  border-bottom: 1px solid rgba(39, 39, 42, 0.4);
+  transition: background 0.15s;
+}
+.ts-tbody-row:hover { background: rgba(39, 39, 42, 0.4); }
+.ts-td { padding: 6px 8px; }
+.ts-td--right { text-align: right; }
+.ts-agent-badge { padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+
+/* footer */
+.ts-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  border-top: 1px solid var(--edge-subtle);
+  background: var(--surface-base);
+}
+.ts-refresh-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--content-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.ts-refresh-btn:hover { color: var(--content-secondary); background: var(--surface-secondary); }
+.ts-refresh-btn--spinning { animation: tspin 1s linear infinite; }
+@keyframes tspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>

@@ -217,7 +217,7 @@ describe('StreamView', () => {
     const block = wrapper.find('[data-testid="block-user"]')
     expect(block.exists()).toBe(true)
     expect(block.text()).toContain('coucou')
-    expect(block.classes()).toContain('justify-end')
+    expect(block.classes()).toContain('block-user')
   })
 
   it('suppresses empty user bubbles from autonomous Claude reasoning (T679)', async () => {
@@ -248,7 +248,7 @@ describe('StreamView', () => {
     const userBlocks = wrapper.findAll('[data-testid="block-user"]')
     expect(userBlocks.length).toBe(1)
     expect(userBlocks[0].text()).toContain('Mon prompt initial')
-    expect(userBlocks[0].classes()).toContain('justify-end')
+    expect(userBlocks[0].classes()).toContain('block-user')
   })
 
   it('does not display user bubble when autoSend is null (T607)', async () => {
@@ -299,7 +299,7 @@ describe('StreamView', () => {
     const userBlock = wrapper.find('[data-testid="block-user"]')
     expect(userBlock.exists()).toBe(true)
     expect(userBlock.text()).toContain('Bonjour Claude')
-    expect(userBlock.classes()).toContain('justify-end')
+    expect(userBlock.classes()).toContain('block-user')
   })
 
   it('stop-button is absent when agent is not streaming (T683)', async () => {

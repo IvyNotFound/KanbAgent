@@ -78,107 +78,73 @@ function onAgentClick(row: TopologyRow): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base overflow-hidden">
+  <div class="tp-view">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle">
-      <h2 class="text-xl font-semibold text-content-primary">{{ t('topology.title') }}</h2>
-      <button
-        class="text-xs text-content-subtle hover:text-content-secondary transition-colors"
-        @click="store.refresh()"
-      >{{ t('common.refresh') }}</button>
+    <div class="tp-header">
+      <h2 class="tp-title">{{ t('topology.title') }}</h2>
+      <button class="tp-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</button>
     </div>
 
     <!-- Loading -->
-    <div v-if="store.loading && rows.length === 0" class="flex items-center justify-center flex-1 py-12">
-      <p class="text-sm text-content-faint animate-pulse">{{ t('common.loading') }}</p>
+    <div v-if="store.loading && rows.length === 0" class="tp-state-center">
+      <p class="tp-loading">{{ t('common.loading') }}</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!store.loading && rows.length === 0" class="flex items-center justify-center flex-1 py-12">
-      <p class="text-sm text-content-faint italic">{{ t('topology.noAgents') }}</p>
+    <div v-else-if="!store.loading && rows.length === 0" class="tp-state-center">
+      <p class="tp-empty">{{ t('topology.noAgents') }}</p>
     </div>
 
     <!-- Columns by perimeter -->
-    <div v-else class="flex-1 min-h-0 overflow-y-auto">
-      <div class="flex gap-4 p-4 min-h-full">
+    <div v-else class="tp-scroll">
+      <div class="tp-columns">
         <div
           v-for="[perimetre, perimAgents] in grouped"
           :key="perimetre"
-          class="flex flex-col flex-1 min-w-[180px] max-w-xs"
+          class="tp-column"
         >
           <!-- Column header -->
-          <div class="mb-3 flex items-center gap-2">
+          <div class="tp-col-header">
             <span
               v-if="perimetre !== '__global__'"
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono border"
+              class="tp-scope-badge"
               :style="{ color: agentFg(perimetre), backgroundColor: agentBg(perimetre), borderColor: agentBorder(perimetre) }"
             >{{ perimetre }}</span>
-            <span
-              v-else
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono border text-content-subtle bg-surface-secondary border-edge-default"
-            >{{ t('topology.global') }}</span>
-            <span class="text-[10px] text-content-faint font-mono">{{ perimAgents.length }}</span>
+            <span v-else class="tp-scope-badge tp-scope-badge--global">{{ t('topology.global') }}</span>
+            <span class="tp-col-count">{{ perimAgents.length }}</span>
           </div>
 
           <!-- Agent cards -->
-          <div class="flex flex-col gap-2">
+          <div class="tp-cards">
             <button
               v-for="agent in perimAgents"
               :key="agent.id"
-              class="w-full text-left rounded-lg border px-3 py-2.5 transition-colors hover:border-edge-default group"
+              class="tp-card"
               :class="[
-                agentStatus(agent) === 'active'
-                  ? 'bg-emerald-500/5 border-emerald-500/30 hover:bg-emerald-500/10'
-                  : agentStatus(agent) === 'blocked'
-                    ? 'bg-orange-500/5 border-orange-500/30 hover:bg-orange-500/10'
-                    : 'bg-surface-secondary border-edge-subtle'
+                agentStatus(agent) === 'active'  ? 'tp-card--active'  :
+                agentStatus(agent) === 'blocked' ? 'tp-card--blocked' : 'tp-card--idle'
               ]"
               :title="t('topology.filterByAgent', { name: agent.name })"
               @click="onAgentClick(agent)"
             >
-              <!-- Agent name + status badge -->
-              <div class="flex items-center justify-between gap-2 mb-1">
-                <span
-                  class="text-xs font-mono font-semibold truncate"
-                  :style="{ color: agentFg(agent.name) }"
-                >{{ agent.name }}</span>
-                <!-- Status badge -->
-                <span
-                  class="shrink-0 inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
-                  :class="[
-                    agentStatus(agent) === 'active'
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : agentStatus(agent) === 'blocked'
-                        ? 'bg-orange-500/20 text-orange-400'
-                        : 'bg-surface-tertiary text-content-faint'
-                  ]"
-                >
-                  <span
-                    class="w-1.5 h-1.5 rounded-full"
-                    :class="[
-                      agentStatus(agent) === 'active' ? 'bg-emerald-400' :
-                      agentStatus(agent) === 'blocked' ? 'bg-orange-400' : 'bg-content-faint'
-                    ]"
-                  ></span>
+              <div class="tp-card-top">
+                <span class="tp-agent-name" :style="{ color: agentFg(agent.name) }">{{ agent.name }}</span>
+                <span class="tp-status-badge" :class="[
+                  agentStatus(agent) === 'active'  ? 'tp-badge--active'  :
+                  agentStatus(agent) === 'blocked' ? 'tp-badge--blocked' : 'tp-badge--idle'
+                ]">
+                  <span class="tp-status-dot" :class="[
+                    agentStatus(agent) === 'active'  ? 'tp-dot--active'  :
+                    agentStatus(agent) === 'blocked' ? 'tp-dot--blocked' : 'tp-dot--idle'
+                  ]"></span>
                   {{ t(`topology.status.${agentStatus(agent)}`) }}
                 </span>
               </div>
-
-              <!-- Agent type -->
-              <p class="text-[10px] text-content-faint font-mono truncate">{{ agent.type }}</p>
-
-              <!-- Current task (if active) -->
-              <p
-                v-if="agent.current_task"
-                class="mt-1 text-[10px] text-content-subtle truncate"
-                :title="agent.current_task"
-              >{{ agent.current_task }}</p>
-
-              <!-- Session tokens (if active) -->
-              <p
-                v-if="agent.session_tokens != null && agent.session_tokens > 0"
-                class="mt-0.5 text-[10px] text-content-faint font-mono tabular-nums"
-              >{{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}</p>
+              <p class="tp-agent-type">{{ agent.type }}</p>
+              <p v-if="agent.current_task" class="tp-task" :title="agent.current_task">{{ agent.current_task }}</p>
+              <p v-if="agent.session_tokens != null && agent.session_tokens > 0" class="tp-tokens">
+                {{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}
+              </p>
             </button>
           </div>
         </div>
@@ -186,3 +152,108 @@ function onAgentClick(row: TopologyRow): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+.tp-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  overflow: hidden;
+}
+.tp-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.tp-title { font-size: 20px; font-weight: 600; color: var(--content-primary); margin: 0; }
+.tp-refresh-btn {
+  font-size: 12px;
+  color: var(--content-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.tp-refresh-btn:hover { color: var(--content-secondary); }
+.tp-state-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 48px;
+}
+.tp-loading { font-size: 14px; color: var(--content-faint); animation: tpPulse 1.5s ease-in-out infinite; }
+.tp-empty { font-size: 14px; color: var(--content-faint); font-style: italic; }
+@keyframes tpPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.tp-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.tp-columns { display: flex; gap: 16px; padding: 16px; min-height: 100%; }
+.tp-column { display: flex; flex-direction: column; flex: 1; min-width: 180px; max-width: 320px; }
+.tp-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.tp-scope-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  border: 1px solid;
+}
+.tp-scope-badge--global {
+  color: var(--content-subtle);
+  background: var(--surface-secondary);
+  border-color: var(--edge-default);
+}
+.tp-col-count { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; }
+
+.tp-cards { display: flex; flex-direction: column; gap: 8px; }
+.tp-card {
+  width: 100%;
+  text-align: left;
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tp-card--active  { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.3); }
+.tp-card--active:hover  { background: rgba(16,185,129,0.10); }
+.tp-card--blocked { background: rgba(249,115,22,0.05); border-color: rgba(249,115,22,0.3); }
+.tp-card--blocked:hover { background: rgba(249,115,22,0.10); }
+.tp-card--idle    { background: var(--surface-secondary); border-color: var(--edge-subtle); }
+.tp-card--idle:hover    { border-color: var(--edge-default); }
+
+.tp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.tp-agent-name {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-status-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  padding: 2px 6px;
+  border-radius: 9999px;
+}
+.tp-badge--active  { background: rgba(16,185,129,0.2); color: #34d399; }
+.tp-badge--blocked { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tp-badge--idle    { background: var(--surface-tertiary); color: var(--content-faint); }
+.tp-status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.tp-dot--active  { background: #34d399; }
+.tp-dot--blocked { background: #fb923c; }
+.tp-dot--idle    { background: var(--content-faint); }
+.tp-agent-type { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; }
+.tp-task { font-size: 10px; color: var(--content-subtle); margin: 4px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-tokens { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; margin: 2px 0 0; }
+</style>
