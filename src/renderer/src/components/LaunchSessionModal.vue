@@ -197,7 +197,7 @@ async function launch() {
           :style="{ borderLeftColor: agentFg(agent.name), borderLeftWidth: '3px' }"
         >
           <div>
-            <p class="section-label mb-1">{{ t('launch.title') }}</p>
+            <p class="section-label mb-1 text-overline">{{ t('launch.title') }}</p>
             <p class="agent-title" :style="{ color: agentFg(agent.name) }">
               {{ agent.name }}
             </p>
@@ -221,7 +221,7 @@ async function launch() {
 
           <!-- Unified instance list: all CLIs × all environments (Windows, WSL distros, local) -->
           <div>
-            <p class="section-title mb-2">{{ t('launch.instance') }}</p>
+            <p class="section-title mb-2 text-body-2">{{ t('launch.instance') }}</p>
 
             <div v-if="loading" class="text-body-2 text-medium-emphasis">{{ t('common.loading') }}</div>
 
@@ -276,7 +276,7 @@ async function launch() {
             leave-to-class="expand-leave-to"
           >
             <div v-if="caps.convResume && lastConvId">
-              <p class="section-title mb-2">{{ t('launch.prevSession') }}</p>
+              <p class="section-title mb-2 text-body-2">{{ t('launch.prevSession') }}</p>
               <v-switch
                 v-model="useResume"
                 data-testid="switch-resume"
@@ -286,7 +286,7 @@ async function launch() {
                 :label="t('launch.resume', { resume: '--resume' })"
                 class="launch-switch"
               />
-              <p class="field-hint mt-1">{{ t('launch.resumeNote') }}</p>
+              <p class="field-hint mt-1 text-overline">{{ t('launch.resumeNote') }}</p>
             </div>
           </Transition>
 
@@ -300,7 +300,7 @@ async function launch() {
             leave-to-class="expand-leave-to"
           >
             <div v-if="caps.thinkingMode">
-              <p class="section-title mb-2">{{ t('launch.thinkingMode') }}</p>
+              <p class="section-title mb-2 text-body-2">{{ t('launch.thinkingMode') }}</p>
               <v-btn-toggle
                 v-model="thinkingMode"
                 density="compact"
@@ -327,7 +327,7 @@ async function launch() {
                   {{ t('launch.disabled') }}
                 </v-btn>
               </v-btn-toggle>
-              <p class="field-hint mt-1">
+              <p class="field-hint mt-1 text-overline">
                 {{ t('launch.thinkingNote') }}
               </p>
             </div>
@@ -351,7 +351,7 @@ async function launch() {
             />
             <div class="d-flex align-center ga-2 mt-2">
               <v-icon size="12" style="color: var(--content-faint); flex-shrink: 0;">mdi-information-outline</v-icon>
-              <span class="field-hint" style="margin-top: 0;">{{ t('launch.promptNote') }}</span>
+              <span class="field-hint text-overline" style="margin-top: 0;">{{ t('launch.promptNote') }}</span>
             </div>
           </div>
 
@@ -366,11 +366,11 @@ async function launch() {
               :label="t('launch.multiInstance')"
               class="launch-switch"
             />
-            <p class="field-hint mt-1">{{ t('launch.multiInstanceNote') }}</p>
-            <p class="field-hint" style="font-style: italic;">
+            <p class="field-hint mt-1 text-overline">{{ t('launch.multiInstanceNote') }}</p>
+            <p class="field-hint text-overline" style="font-style: italic;">
               {{ t('launch.worktreeSource', { source: worktreeSource === 'global' ? t('launch.worktreeSourceGlobal') : worktreeSource === 'agent' ? t('launch.worktreeSourceAgent') : t('launch.worktreeSourceManual') }) }}
             </p>
-            <p v-if="worktreeError" class="field-hint field-hint--error">
+            <p v-if="worktreeError" class="field-hint field-hint--error text-overline">
               {{ t('launch.multiInstanceError', { error: worktreeError }) }}
             </p>
           </div>
@@ -378,7 +378,7 @@ async function launch() {
 
         <!-- Footer -->
         <div class="modal-footer">
-          <p v-if="!loading && allAvailableInstances.length === 0" data-testid="no-instance-warning" class="no-instance-warning">
+          <p v-if="!loading && allAvailableInstances.length === 0" data-testid="no-instance-warning" class="no-instance-warning text-caption">
             {{ noInstanceText }}
           </p>
           <div class="d-flex align-center justify-space-between ga-2">
@@ -449,7 +449,6 @@ async function launch() {
 
 /* Header typography */
 .section-label {
-  font-size: 10px;
   font-weight: 600;
   color: var(--content-subtle);
   text-transform: uppercase;
@@ -461,12 +460,10 @@ async function launch() {
   font-weight: 600;
 }
 .section-title {
-  font-size: 14px;
   font-weight: 500;
   color: var(--content-secondary);
 }
 .field-hint {
-  font-size: 10px;
   color: var(--content-faint);
   margin-top: 4px;
 }
@@ -542,7 +539,6 @@ async function launch() {
 }
 
 .no-instance-warning {
-  font-size: 12px;
   color: #f59e0b;
   text-align: right;
 }

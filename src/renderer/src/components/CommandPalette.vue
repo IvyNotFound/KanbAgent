@@ -158,7 +158,7 @@ function effortColor(effort: number): string {
           <div class="d-flex align-center ga-2 flex-shrink-0">
             <button
               v-if="hasFilters"
-              class="btn-reset"
+              class="btn-reset text-caption"
               @click="clearFilters"
             >{{ t('commandPalette.resetFilters') }}</button>
             <kbd class="palette-kbd">ESC</kbd>
@@ -169,7 +169,7 @@ function effortColor(effort: number): string {
         <div class="palette-filters">
           <!-- Statut chips -->
           <div class="d-flex align-center ga-2 flex-wrap">
-            <span class="filter-label">{{ t('commandPalette.status') }}</span>
+            <span class="filter-label text-overline">{{ t('commandPalette.status') }}</span>
             <v-chip-group
               :model-value="filterStatut ?? undefined"
               @update:model-value="filterStatut = $event ?? null"
@@ -193,7 +193,7 @@ function effortColor(effort: number): string {
           <div v-if="tasksStore.agents.length > 0 || tasksStore.perimetresData.length > 0" class="d-flex align-center ga-3 flex-wrap">
             <!-- Agents -->
             <div v-if="tasksStore.agents.length > 0" class="d-flex align-center ga-2 flex-wrap">
-              <span class="filter-label">{{ t('commandPalette.agent') }}</span>
+              <span class="filter-label text-overline">{{ t('commandPalette.agent') }}</span>
               <v-chip-group
                 :model-value="filterAgentId ?? undefined"
                 @update:model-value="filterAgentId = $event != null ? Number($event) : null"
@@ -216,7 +216,7 @@ function effortColor(effort: number): string {
 
             <!-- Périmètres -->
             <div v-if="tasksStore.perimetresData.length > 0" class="d-flex align-center ga-2 flex-wrap">
-              <span class="filter-label">{{ t('commandPalette.perimeter') }}</span>
+              <span class="filter-label text-overline">{{ t('commandPalette.perimeter') }}</span>
               <v-chip-group
                 :model-value="filterPerimetre ?? undefined"
                 @update:model-value="filterPerimetre = $event ?? null"
@@ -250,7 +250,7 @@ function effortColor(effort: number): string {
 
           <template v-else>
             <div class="palette-count">
-              <p class="filter-label">
+              <p class="filter-label text-overline">
                 {{ filteredTasks.length }} {{ t('commandPalette.tasks', filteredTasks.length) }}
               </p>
             </div>
@@ -274,7 +274,7 @@ function effortColor(effort: number): string {
               <div style="min-width: 0;">
                 <div class="d-flex align-center ga-2">
                   <span class="task-id">#{{ task.id }}</span>
-                  <span class="task-title">{{ task.title }}</span>
+                  <span class="task-title text-body-2">{{ task.title }}</span>
                 </div>
                 <div class="d-flex align-center ga-2 mt-1">
                   <span
@@ -305,9 +305,9 @@ function effortColor(effort: number): string {
 
         <!-- Footer -->
         <div class="palette-footer">
-          <span class="palette-hint"><kbd class="palette-kbd">↑↓</kbd> {{ t('commandPalette.navigate') }}</span>
-          <span class="palette-hint"><kbd class="palette-kbd">↵</kbd> {{ t('commandPalette.open') }}</span>
-          <span class="palette-hint" style="margin-left: auto;"><kbd class="palette-kbd">Ctrl+K</kbd> toggle</span>
+          <span class="palette-hint text-caption"><kbd class="palette-kbd">↑↓</kbd> {{ t('commandPalette.navigate') }}</span>
+          <span class="palette-hint text-caption"><kbd class="palette-kbd">↵</kbd> {{ t('commandPalette.open') }}</span>
+          <span class="palette-hint text-caption" style="margin-left: auto;"><kbd class="palette-kbd">Ctrl+K</kbd> toggle</span>
         </div>
 
       </div>
@@ -366,7 +366,6 @@ function effortColor(effort: number): string {
   gap: 4px;
 }
 .filter-label {
-  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -441,7 +440,6 @@ function effortColor(effort: number): string {
   flex-shrink: 0;
 }
 .task-title {
-  font-size: 14px;
   font-weight: 500;
   color: var(--content-primary);
   overflow: hidden;
@@ -476,7 +474,6 @@ function effortColor(effort: number): string {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
   color: var(--content-faint);
 }
 .palette-kbd {
@@ -489,7 +486,6 @@ function effortColor(effort: number): string {
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
 }
 .btn-reset {
-  font-size: 12px;
   color: #c4b5fd;
   background: none;
   border: none;

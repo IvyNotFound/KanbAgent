@@ -229,11 +229,11 @@ const legendItems = computed(() => [
   <div class="tl-view" @mousemove="moveTooltip">
     <!-- Header -->
     <div class="tl-header py-3 px-5">
-      <h2 class="tl-title">{{ t('timeline.title') }}</h2>
+      <h2 class="tl-title text-body-2">{{ t('timeline.title') }}</h2>
       <div class="tl-header-controls ga-3">
         <div class="tl-period">
-          <span class="tl-muted-xs">{{ t('timeline.period') }}</span>
-          <select v-model="daysBack" class="tl-select py-1 px-2">
+          <span class="tl-muted-xs text-caption">{{ t('timeline.period') }}</span>
+          <select v-model="daysBack" class="tl-select py-1 px-2 text-caption">
             <option :value="7">7j</option>
             <option :value="14">14j</option>
             <option :value="30">30j</option>
@@ -241,7 +241,7 @@ const legendItems = computed(() => [
             <option :value="90">90j</option>
           </select>
         </div>
-        <button class="tl-refresh-btn py-1 px-2" :disabled="loading" @click="fetchTasks">
+        <button class="tl-refresh-btn py-1 px-2 text-caption" :disabled="loading" @click="fetchTasks">
           {{ loading ? t('common.loading') : t('common.refresh') }}
         </button>
       </div>
@@ -249,27 +249,27 @@ const legendItems = computed(() => [
 
     <!-- Agent filter chips -->
     <div v-if="allAgents.length > 0" class="tl-filters ga-2 py-2 px-5">
-      <span class="tl-muted-xs tl-shrink">{{ t('timeline.filterAgents') }}</span>
+      <span class="tl-muted-xs tl-shrink text-caption">{{ t('timeline.filterAgents') }}</span>
       <button
         v-for="name in allAgents"
         :key="name"
-        class="tl-chip"
+        class="tl-chip text-caption"
         :class="isAgentSelected(name) ? '' : 'tl-chip--inactive'"
         :style="isAgentSelected(name) ? { color: agentFg(name), background: agentBg(name), borderColor: agentBorder(name) } : {}"
         @click="toggleAgent(name)"
       >{{ name }}</button>
       <button
         v-if="selectedAgents.length > 0"
-        class="tl-clear-btn ml-1"
+        class="tl-clear-btn ml-1 text-caption"
         @click="selectedAgents = []"
       >{{ t('timeline.clearFilter') }}</button>
     </div>
 
     <!-- Timeline body -->
     <div class="tl-body">
-      <div v-if="loading" class="tl-state-center tl-muted-sm">{{ t('common.loading') }}</div>
-      <div v-else-if="error" class="tl-state-center tl-error">{{ error }}</div>
-      <div v-else-if="groups.length === 0" class="tl-state-center tl-muted-sm">{{ t('timeline.noData') }}</div>
+      <div v-if="loading" class="tl-state-center tl-muted-sm text-body-2">{{ t('common.loading') }}</div>
+      <div v-else-if="error" class="tl-state-center tl-error text-body-2">{{ error }}</div>
+      <div v-else-if="groups.length === 0" class="tl-state-center tl-muted-sm text-body-2">{{ t('timeline.noData') }}</div>
       <div v-else class="tl-canvas">
         <!-- Time axis -->
         <div class="tl-axis">
@@ -278,7 +278,7 @@ const legendItems = computed(() => [
             <span
               v-for="tick in axisTicks"
               :key="tick.pct"
-              class="tl-tick"
+              class="tl-tick text-caption"
               :style="{ left: tick.pct + '%' }"
             >{{ tick.label }}</span>
           </div>
@@ -291,7 +291,7 @@ const legendItems = computed(() => [
           class="tl-row"
         >
           <div class="tl-row-label py-2 px-3">
-            <span class="tl-agent-name" :style="{ color: agentFg(group.name) }">{{ group.name }}</span>
+            <span class="tl-agent-name text-caption" :style="{ color: agentFg(group.name) }">{{ group.name }}</span>
           </div>
           <div class="tl-row-bars">
             <div
@@ -308,10 +308,10 @@ const legendItems = computed(() => [
 
         <!-- Legend -->
         <div class="tl-legend ga-4 py-3 px-5">
-          <span class="tl-muted-xs">{{ t('timeline.legend') }}</span>
+          <span class="tl-muted-xs text-caption">{{ t('timeline.legend') }}</span>
           <div v-for="item in legendItems" :key="item.status" class="tl-legend-item">
             <div class="tl-legend-dot" :class="statusColorClass(item.status)" />
-            <span class="tl-muted-xs">{{ item.label }}</span>
+            <span class="tl-muted-xs text-caption">{{ item.label }}</span>
           </div>
         </div>
       </div>
@@ -321,7 +321,7 @@ const legendItems = computed(() => [
     <Teleport to="body">
       <div
         v-if="tooltipTask"
-        class="tl-tooltip elevation-4 pa-3"
+        class="tl-tooltip elevation-4 pa-3 text-caption"
         :style="{ left: (tooltipX + 14) + 'px', top: (tooltipY - 14) + 'px' }"
       >
         <div class="tl-tooltip-title">{{ tooltipTask.title }}</div>
@@ -361,13 +361,12 @@ const legendItems = computed(() => [
   border-bottom: 1px solid var(--edge-subtle);
   background: var(--surface-base);
 }
-.tl-title { font-size: 14px; font-weight: 600; color: var(--content-secondary); margin: 0; }
-.tl-header-controls { display: flex; align-items: center; }
+.tl-title { font-weight: 600; color: var(--content-secondary); margin: 0; }
+.tl-header-controls { display: flex; align-items: center; gap: 12px; }
 .tl-period { display: flex; align-items: center; gap: 6px; }
-.tl-muted-xs { font-size: 12px; color: var(--content-muted); }
-.tl-muted-sm { font-size: 14px; color: var(--content-muted); }
+.tl-muted-xs { color: var(--content-muted); }
+.tl-muted-sm { color: var(--content-muted); }
 .tl-select {
-  font-size: 12px;
   background: var(--surface-base);
   border: 1px solid var(--edge-subtle);
   border-radius: 4px;
@@ -376,7 +375,6 @@ const legendItems = computed(() => [
   outline: none;
 }
 .tl-refresh-btn {
-  font-size: 12px;
   color: var(--content-muted);
   background: none;
   border: 1px solid var(--edge-subtle);
@@ -396,7 +394,6 @@ const legendItems = computed(() => [
 }
 .tl-shrink { flex-shrink: 0; }
 .tl-chip {
-  font-size: 12px;
   padding: 2px 8px;
   border-radius: 9999px;
   border: 1px solid;
@@ -406,7 +403,6 @@ const legendItems = computed(() => [
 .tl-chip--inactive { border-color: var(--edge-subtle); color: var(--content-muted); }
 .tl-chip--inactive:hover { border-color: var(--edge-default); }
 .tl-clear-btn {
-  font-size: 12px;
   color: var(--content-muted);
   background: none;
   border: none;
@@ -417,7 +413,7 @@ const legendItems = computed(() => [
 
 .tl-body { flex: 1; overflow: auto; }
 .tl-state-center { display: flex; align-items: center; justify-content: center; height: 128px; }
-.tl-error { color: #f87171; font-size: 14px; }
+.tl-error { color: #f87171; }
 
 .tl-canvas { min-width: 700px; }
 .tl-axis {
@@ -428,7 +424,6 @@ const legendItems = computed(() => [
 .tl-axis-ticks { flex: 1; position: relative; height: 32px; }
 .tl-tick {
   position: absolute;
-  font-size: 12px;
   color: var(--content-muted);
   transform: translate(-50%, -50%);
   top: 50%;
@@ -450,7 +445,6 @@ const legendItems = computed(() => [
   border-right: 1px solid rgba(39,39,42,0.4);
 }
 .tl-agent-name {
-  font-size: 12px;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -490,7 +484,6 @@ const legendItems = computed(() => [
   background: var(--surface-primary, var(--surface-base));
   border: 1px solid var(--edge-default);
   border-radius: 8px;
-  font-size: 12px;
   pointer-events: none;
   max-width: 280px;
 }

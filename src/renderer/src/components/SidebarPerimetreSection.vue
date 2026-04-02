@@ -82,7 +82,7 @@ async function addPerimetre() {
 <template>
   <div class="perimetre-section py-3 px-4 ga-1">
     <div v-if="store.selectedPerimetre !== null" class="reset-row mb-2">
-      <button class="reset-btn" @click="store.selectedPerimetre = null">{{ t('sidebar.reset') }}</button>
+      <button class="reset-btn text-caption" @click="store.selectedPerimetre = null">{{ t('sidebar.reset') }}</button>
     </div>
 
     <div v-for="p in store.perimetresData" :key="p.id" class="perimetre-item">
@@ -115,7 +115,7 @@ async function addPerimetre() {
               </span>
             </div>
           </div>
-          <p v-if="p.description" class="perimetre-desc">{{ p.description }}</p>
+          <p v-if="p.description" class="perimetre-desc text-overline">{{ p.description }}</p>
         </button>
         <button class="edit-btn" :title="t('sidebar.editPerimeter')" @click.stop="openEditPerimetre(p)">
           <v-icon size="12" class="icon-sm">mdi-pencil</v-icon>
@@ -123,9 +123,9 @@ async function addPerimetre() {
       </div>
     </div>
 
-    <div v-if="store.perimetresData.length === 0" class="no-perimeter-msg pa-2">{{ t('sidebar.noPerimeter') }}</div>
+    <div v-if="store.perimetresData.length === 0" class="no-perimeter-msg pa-2 text-body-2">{{ t('sidebar.noPerimeter') }}</div>
 
-    <button class="add-btn ga-2 pa-2 mt-2" @click="addPerimetre">
+    <button class="add-btn ga-2 pa-2 mt-2 text-caption" @click="addPerimetre">
       <v-icon size="12" class="icon-sm">mdi-plus</v-icon>
       {{ t('sidebar.addPerimeter') }}
     </button>
@@ -135,18 +135,18 @@ async function addPerimetre() {
   <Teleport to="body">
     <div v-if="editPerimetre" class="modal-backdrop" @click.self="editPerimetre = null">
       <div class="modal-card elevation-8 pa-5 ga-3">
-        <p class="modal-title">{{ t('sidebar.editPerimeter') }}</p>
+        <p class="modal-title text-body-2">{{ t('sidebar.editPerimeter') }}</p>
         <div class="modal-field ga-1">
-          <label class="modal-label">{{ t('sidebar.name') }}</label>
+          <label class="modal-label text-caption">{{ t('sidebar.name') }}</label>
           <input v-model="editPerimetreName" class="modal-input" :placeholder="t('sidebar.namePlaceholder')" @keydown.esc="editPerimetre = null" />
         </div>
         <div class="modal-field ga-1">
-          <label class="modal-label">{{ t('sidebar.description') }}</label>
+          <label class="modal-label text-caption">{{ t('sidebar.description') }}</label>
           <input v-model="editPerimetreDesc" class="modal-input modal-input--secondary" :placeholder="t('sidebar.descriptionPlaceholder')" @keydown.enter="savePerimetre" @keydown.esc="editPerimetre = null" />
         </div>
         <div class="modal-actions ga-2">
-          <button class="modal-btn modal-btn--cancel" @click="editPerimetre = null">{{ t('common.cancel') }}</button>
-          <button class="modal-btn modal-btn--save" :disabled="savingPerimetre || !editPerimetreName.trim()" @click="savePerimetre">{{ savingPerimetre ? t('common.saving') : t('common.save') }}</button>
+          <button class="modal-btn modal-btn--cancel text-caption" @click="editPerimetre = null">{{ t('common.cancel') }}</button>
+          <button class="modal-btn modal-btn--save text-caption" :disabled="savingPerimetre || !editPerimetreName.trim()" @click="savePerimetre">{{ savingPerimetre ? t('common.saving') : t('common.save') }}</button>
         </div>
       </div>
     </div>
@@ -166,7 +166,6 @@ async function addPerimetre() {
   justify-content: flex-end;
 }
 .reset-btn {
-  font-size: 0.75rem;
   color: rgb(var(--v-theme-primary));
   background: none;
   border: none;
@@ -229,7 +228,6 @@ async function addPerimetre() {
   flex-shrink: 0;
 }
 .perimetre-desc {
-  font-size: 0.625rem;
   color: var(--content-faint);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -257,14 +255,12 @@ async function addPerimetre() {
 .edit-btn:hover { color: var(--content-secondary); background: var(--surface-tertiary); }
 .perimetre-item:hover .edit-btn { opacity: 1; }
 .no-perimeter-msg {
-  font-size: 0.875rem;
   color: var(--content-faint);
 }
 .add-btn {
   display: flex;
   align-items: center;
   border-radius: 6px;
-  font-size: 0.75rem;
   color: var(--content-faint);
   transition: all 150ms;
   width: 100%;
@@ -294,7 +290,6 @@ async function addPerimetre() {
   flex-direction: column;
 }
 .modal-title {
-  font-size: 0.875rem;
   font-weight: 600;
   color: var(--content-secondary);
 }
@@ -303,7 +298,6 @@ async function addPerimetre() {
   flex-direction: column;
 }
 .modal-label {
-  font-size: 0.75rem;
   color: var(--content-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -329,7 +323,6 @@ async function addPerimetre() {
 }
 .modal-btn {
   padding: 6px 12px;
-  font-size: 0.75rem;
   border-radius: 6px;
   cursor: pointer;
   border: none;

@@ -41,11 +41,11 @@ function relativeTime(ts: number): string {
   <div class="he-view">
     <!-- Header -->
     <div class="he-header">
-      <h2 class="he-title">{{ t('sidebar.hooks') }}</h2>
+      <h2 class="he-title text-h6">{{ t('sidebar.hooks') }}</h2>
     </div>
     <!-- Filters bar -->
     <div class="he-filters">
-      <span class="he-filter-label">{{ t('hooks.filters') }}</span>
+      <span class="he-filter-label text-caption">{{ t('hooks.filters') }}</span>
       <v-chip-group v-model="filterTypes" multiple column>
         <v-chip
           v-for="eventType in ALL_TYPES"
@@ -63,7 +63,7 @@ function relativeTime(ts: number): string {
 
     <!-- Event list -->
     <div class="he-list">
-      <div v-if="filtered.length === 0" class="he-empty">{{ t('hooks.noEvents') }}</div>
+      <div v-if="filtered.length === 0" class="he-empty text-caption">{{ t('hooks.noEvents') }}</div>
       <div
         v-for="e in filtered"
         :key="e.id"
@@ -111,7 +111,7 @@ function relativeTime(ts: number): string {
   padding: 12px 24px;
   border-bottom: 1px solid var(--edge-default);
 }
-.he-title { font-size: 20px; font-weight: 600; color: var(--content-primary); margin: 0; }
+.he-title { font-weight: 600; color: var(--content-primary); margin: 0; }
 
 .he-filters {
   display: flex;
@@ -123,7 +123,6 @@ function relativeTime(ts: number): string {
   flex-wrap: wrap;
 }
 .he-filter-label {
-  font-size: 12px;
   color: var(--content-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -148,7 +147,6 @@ function relativeTime(ts: number): string {
   justify-content: center;
   height: 100%;
   color: var(--content-faint);
-  font-size: 12px;
   font-style: italic;
 }
 .he-event {

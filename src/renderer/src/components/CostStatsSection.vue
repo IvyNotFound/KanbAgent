@@ -216,14 +216,14 @@ const hoveredBar = ref<number | null>(null)
   <section class="cost-section ga-3">
 <!-- Header + period selector -->
     <div v-if="!props.period" class="cost-header">
-      <h3 class="cost-title">
+      <h3 class="cost-title text-overline">
         {{ t('costStats.title') }}
       </h3>
       <div class="cost-period-btns ga-1">
         <button
           v-for="p in PERIODS"
           :key="p.key"
-          class="cost-period-btn"
+          class="cost-period-btn text-overline"
           :class="{ 'cost-period-btn--active': selectedPeriod === p.key }"
           @click="selectedPeriod = p.key"
         >
@@ -233,12 +233,12 @@ const hoveredBar = ref<number | null>(null)
     </div>
 
     <!-- Loading state -->
-    <div v-if="loading && rows.length === 0" class="cost-state pa-4">
+    <div v-if="loading && rows.length === 0" class="cost-state pa-4 text-caption">
       {{ t('costStats.loading') }}
     </div>
 
     <!-- No data state -->
-    <div v-else-if="hasData === false" class="cost-state pa-4">
+    <div v-else-if="hasData === false" class="cost-state pa-4 text-caption">
       {{ t('costStats.noData') }}
     </div>
 
@@ -246,22 +246,22 @@ const hoveredBar = ref<number | null>(null)
 <!-- Global summary row -->
       <div class="cost-summary-grid ga-2">
         <div class="cost-summary-card">
-          <span class="cost-summary-label">{{ t('costStats.totalCost') }}</span>
-          <span class="cost-summary-value">{{ formatCost(globalCost) }}</span>
+          <span class="cost-summary-label text-overline">{{ t('costStats.totalCost') }}</span>
+          <span class="cost-summary-value text-body-2">{{ formatCost(globalCost) }}</span>
         </div>
         <div class="cost-summary-card">
-          <span class="cost-summary-label">{{ t('costStats.sessions') }}</span>
-          <span class="cost-summary-value">{{ globalSessions }}</span>
+          <span class="cost-summary-label text-overline">{{ t('costStats.sessions') }}</span>
+          <span class="cost-summary-value text-body-2">{{ globalSessions }}</span>
         </div>
         <div class="cost-summary-card">
-          <span class="cost-summary-label">{{ t('costStats.turns') }}</span>
-          <span class="cost-summary-value">{{ globalTurns }}</span>
+          <span class="cost-summary-label text-overline">{{ t('costStats.turns') }}</span>
+          <span class="cost-summary-value text-body-2">{{ globalTurns }}</span>
         </div>
       </div>
 
       <!-- Cost sparkline (last 7 periods) -->
       <div v-if="sparkPeriods.length > 1" class="cost-sparkline-section ga-1">
-        <span class="cost-section-label">{{ t('costStats.trend') }}</span>
+        <span class="cost-section-label text-overline">{{ t('costStats.trend') }}</span>
         <div class="cost-sparkline ga-1">
           <div
             v-for="(bar, i) in sparkPeriods"
@@ -278,7 +278,7 @@ const hoveredBar = ref<number | null>(null)
             <div v-if="bar.cost === 0" class="cost-spark-zero" />
             <div
               v-if="hoveredBar === i"
-              class="cost-spark-tooltip elevation-2 py-1 px-2"
+              class="cost-spark-tooltip elevation-2 py-1 px-2 text-overline"
             >
               {{ bar.label }} : {{ formatCost(bar.cost) }}
             </div>
@@ -288,7 +288,7 @@ const hoveredBar = ref<number | null>(null)
 
       <!-- Per-agent cost table -->
       <div class="cost-agent-table">
-        <span class="cost-section-label">{{ t('costStats.perAgent') }}</span>
+        <span class="cost-section-label text-overline">{{ t('costStats.perAgent') }}</span>
 
         <div
           v-for="row in byAgent"
@@ -339,7 +339,6 @@ const hoveredBar = ref<number | null>(null)
   justify-content: space-between;
 }
 .cost-title {
-  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--content-faint);
@@ -352,7 +351,6 @@ const hoveredBar = ref<number | null>(null)
 .cost-period-btn {
   padding: 2px 8px;
   border-radius: 9999px;
-  font-size: 11px;
   border: 1px solid var(--edge-default);
   background: var(--surface-secondary);
   color: var(--content-secondary);
@@ -369,7 +367,6 @@ const hoveredBar = ref<number | null>(null)
   color: white;
 }
 .cost-state {
-  font-size: 13px;
   color: var(--content-faint);
   text-align: center;
 }
@@ -388,20 +385,17 @@ const hoveredBar = ref<number | null>(null)
   border: 1px solid var(--edge-default);
 }
 .cost-summary-label {
-  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--content-faint);
 }
 .cost-summary-value {
-  font-size: 15px;
   font-weight: 700;
   color: var(--content-primary);
   font-variant-numeric: tabular-nums;
 }
 /* Section label */
 .cost-section-label {
-  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--content-faint);
@@ -445,7 +439,6 @@ const hoveredBar = ref<number | null>(null)
   transform: translateX(-50%);
   z-index: 10;
   border-radius: 4px;
-  font-size: 10px;
   white-space: nowrap;
   background: var(--surface-secondary);
   color: var(--content-primary);

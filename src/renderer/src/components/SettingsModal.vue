@@ -161,7 +161,7 @@ function onDefaultCliChange(v: string) {
             <!-- Appearance: Language + Theme -->
             <template v-if="activeSection === 'appearance'">
               <v-card variant="outlined" class="py-3 px-4">
-                <p class="settings-label">{{ t('settings.language') }}</p>
+                <p class="settings-label text-overline">{{ t('settings.language') }}</p>
                 <v-select
                   :model-value="settingsStore.language"
                   :items="availableLocales"
@@ -174,7 +174,7 @@ function onDefaultCliChange(v: string) {
                 />
               </v-card>
               <v-card variant="outlined" class="py-3 px-4">
-                <p class="settings-label">{{ t('settings.theme') }}</p>
+                <p class="settings-label text-overline">{{ t('settings.theme') }}</p>
                 <v-btn-toggle
                   :model-value="settingsStore.theme"
                   mandatory
@@ -193,8 +193,8 @@ function onDefaultCliChange(v: string) {
               <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4">
                   <div>
-                    <p class="settings-label">{{ t('settings.autoLaunch') }}</p>
-                    <p class="settings-desc">{{ t('settings.autoLaunchDesc') }}</p>
+                    <p class="settings-label text-overline">{{ t('settings.autoLaunch') }}</p>
+                    <p class="settings-desc text-caption">{{ t('settings.autoLaunchDesc') }}</p>
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.autoLaunchAgentSessions" @update:model-value="settingsStore.setAutoLaunchAgentSessions(Boolean($event))" />
                 </div>
@@ -202,13 +202,13 @@ function onDefaultCliChange(v: string) {
               <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4 mb-2">
                   <div>
-                    <p class="settings-label">{{ t('settings.autoReview') }}</p>
-                    <p class="settings-desc">{{ t('settings.autoReviewDesc') }}</p>
+                    <p class="settings-label text-overline">{{ t('settings.autoReview') }}</p>
+                    <p class="settings-desc text-caption">{{ t('settings.autoReviewDesc') }}</p>
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.autoReviewEnabled" @update:model-value="settingsStore.setAutoReviewEnabled(Boolean($event))" />
                 </div>
                 <div v-if="settingsStore.autoReviewEnabled" class="d-flex align-center ga-2 mt-2">
-                  <label class="settings-desc">{{ t('settings.autoReviewThreshold') }}</label>
+                  <label class="settings-desc text-caption">{{ t('settings.autoReviewThreshold') }}</label>
                   <v-text-field
                     type="number"
                     :model-value="settingsStore.autoReviewThreshold"
@@ -224,8 +224,8 @@ function onDefaultCliChange(v: string) {
               <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4">
                   <div>
-                    <p class="settings-label">{{ t('settings.worktreeDefault') }}</p>
-                    <p class="settings-desc">{{ t('settings.worktreeDefaultDesc') }}</p>
+                    <p class="settings-label text-overline">{{ t('settings.worktreeDefault') }}</p>
+                    <p class="settings-desc text-caption">{{ t('settings.worktreeDefaultDesc') }}</p>
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.worktreeDefault" @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, Boolean($event))" />
                 </div>
@@ -237,13 +237,13 @@ function onDefaultCliChange(v: string) {
               <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4 mb-2">
                   <div>
-                    <p class="settings-label">{{ t('settings.maxFileLinesEnabled') }}</p>
-                    <p class="settings-desc">{{ t('settings.maxFileLinesEnabledDesc') }}</p>
+                    <p class="settings-label text-overline">{{ t('settings.maxFileLinesEnabled') }}</p>
+                    <p class="settings-desc text-caption">{{ t('settings.maxFileLinesEnabledDesc') }}</p>
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.maxFileLinesEnabled" @update:model-value="settingsStore.setMaxFileLinesEnabled(Boolean($event))" />
                 </div>
                 <div v-if="settingsStore.maxFileLinesEnabled" class="d-flex align-center ga-2 mt-2">
-                  <label class="settings-desc">{{ t('settings.maxFileLinesCount') }}</label>
+                  <label class="settings-desc text-caption">{{ t('settings.maxFileLinesCount') }}</label>
                   <v-text-field
                     type="number"
                     :model-value="settingsStore.maxFileLinesCount"
@@ -262,8 +262,8 @@ function onDefaultCliChange(v: string) {
             <!-- CLI & Agents -->
             <template v-else-if="activeSection === 'cli'">
               <v-card variant="outlined" class="py-3 px-4">
-                <p class="settings-label">{{ t('settings.aiCodingAssistants') }}</p>
-                <p class="settings-desc mb-3">{{ t('settings.aiCodingAssistantsDesc') }}</p>
+                <p class="settings-label text-overline">{{ t('settings.aiCodingAssistants') }}</p>
+                <p class="settings-desc mb-3 text-caption">{{ t('settings.aiCodingAssistantsDesc') }}</p>
                 <CliDetectionList
                   :instances="settingsStore.allCliInstances"
                   :enabled="settingsStore.enabledClis"
@@ -273,8 +273,8 @@ function onDefaultCliChange(v: string) {
                 />
               </v-card>
               <v-card variant="outlined" class="py-3 px-4">
-                <p class="settings-label">{{ t('settings.defaultCliInstance') }}</p>
-                <div v-if="availableDistros.length === 0" class="settings-desc">—</div>
+                <p class="settings-label text-overline">{{ t('settings.defaultCliInstance') }}</p>
+                <div v-if="availableDistros.length === 0" class="settings-desc text-caption">—</div>
                 <v-select
                   v-else
                   :model-value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
@@ -285,8 +285,8 @@ function onDefaultCliChange(v: string) {
                 />
               </v-card>
               <v-card variant="outlined" class="py-3 px-4">
-                <p class="settings-label">{{ t('settings.opencodeDefaultModel') }}</p>
-                <p class="settings-desc mb-2">{{ t('settings.opencodeDefaultModelHint') }}</p>
+                <p class="settings-label text-overline">{{ t('settings.opencodeDefaultModel') }}</p>
+                <p class="settings-desc mb-2 text-caption">{{ t('settings.opencodeDefaultModelHint') }}</p>
                 <v-text-field
                   :model-value="settingsStore.opencodeDefaultModel"
                   placeholder="anthropic/claude-opus-4-5"
@@ -302,8 +302,8 @@ function onDefaultCliChange(v: string) {
               <v-card variant="outlined" class="py-3 px-4">
                 <div class="d-flex align-center justify-space-between ga-4">
                   <div>
-                    <p class="settings-label">{{ t('settings.notifications') }}</p>
-                    <p class="settings-desc">{{ t('settings.notificationsDesc') }}</p>
+                    <p class="settings-label text-overline">{{ t('settings.notifications') }}</p>
+                    <p class="settings-desc text-caption">{{ t('settings.notificationsDesc') }}</p>
                   </div>
                   <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.notificationsEnabled" @update:model-value="settingsStore.setNotificationsEnabled(Boolean($event))" />
                 </div>
@@ -313,9 +313,9 @@ function onDefaultCliChange(v: string) {
             <!-- Application: Updates + About + Export + DB -->
             <template v-else-if="activeSection === 'application'">
               <v-card variant="outlined" class="py-3 px-4">
-                <p class="settings-label mb-3">{{ t('settings.updates') }}</p>
+                <p class="settings-label mb-3 text-overline">{{ t('settings.updates') }}</p>
                 <div class="d-flex align-center justify-space-between">
-                  <span class="settings-desc">
+                  <span class="settings-desc text-caption">
                     {{ t('settings.version') }}: <span class="font-mono">{{ settingsStore.appInfo.version }}</span>
                   </span>
                   <v-btn
@@ -336,12 +336,12 @@ function onDefaultCliChange(v: string) {
                 </div>
               </v-card>
               <v-card variant="outlined" class="py-3 px-4">
-                <p class="settings-label mb-2">{{ t('settings.about') }}</p>
-                <p class="settings-desc">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
-                <p class="settings-desc mt-1">{{ t('settings.aboutDesc') }}</p>
+                <p class="settings-label mb-2 text-overline">{{ t('settings.about') }}</p>
+                <p class="settings-desc text-caption">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
+                <p class="settings-desc mt-1 text-caption">{{ t('settings.aboutDesc') }}</p>
               </v-card>
               <v-card v-if="store.dbPath" variant="outlined" class="py-3 px-4">
-                <p class="settings-label mb-3">{{ t('settings.exportData') }}</p>
+                <p class="settings-label mb-3 text-overline">{{ t('settings.exportData') }}</p>
                 <v-btn
                   color="primary"
                   size="small"
@@ -351,8 +351,8 @@ function onDefaultCliChange(v: string) {
                 >{{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}</v-btn>
               </v-card>
               <v-card v-if="store.dbPath" variant="outlined" class="py-3 px-4">
-                <p class="settings-label mb-2">{{ t('settings.database') }}</p>
-                <p class="settings-desc font-mono" style="word-break: break-all;">{{ store.dbPath }}</p>
+                <p class="settings-label mb-2 text-overline">{{ t('settings.database') }}</p>
+                <p class="settings-desc font-mono text-caption" style="word-break: break-all;">{{ store.dbPath }}</p>
               </v-card>
             </template>
 
@@ -398,7 +398,6 @@ function onDefaultCliChange(v: string) {
 
 /* Settings labels and descriptions */
 .settings-label {
-  font-size: 11px;
   font-weight: 500;
   color: var(--content-subtle);
   text-transform: uppercase;
@@ -406,7 +405,6 @@ function onDefaultCliChange(v: string) {
   margin-bottom: 8px;
 }
 .settings-desc {
-  font-size: 12px;
   color: var(--content-faint);
 }
 
