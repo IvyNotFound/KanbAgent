@@ -88,85 +88,153 @@ function tooltip(day: DayBars): string {
 </script>
 
 <template>
-  <div class="flex flex-col h-full min-h-0 px-4 py-3 gap-3 overflow-y-auto rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
-    <h3 class="shrink-0 text-xs font-semibold text-content-secondary">
-      {{ t('sessionActivityChart.title') }}
-    </h3>
-
-    <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center flex-1">
-      <span class="text-xs text-content-faint animate-pulse">{{ t('sessionActivityChart.loading') }}</span>
+  <v-card elevation="0" class="chart-card">
+    <div class="chart-header">
+      <h3 class="text-caption font-weight-semibold text-medium-emphasis">
+        {{ t('sessionActivityChart.title') }}
+      </h3>
     </div>
+    <v-divider />
+    <div class="chart-body">
 
-    <!-- Empty state -->
-    <div v-else-if="isEmpty" class="flex items-center justify-center flex-1">
-      <p class="text-xs text-content-faint italic">{{ t('sessionActivityChart.empty') }}</p>
+      <!-- Loading -->
+      <div v-if="loading" class="d-flex align-center justify-center flex-1">
+        <span class="text-caption text-disabled">{{ t('sessionActivityChart.loading') }}</span>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="isEmpty" class="d-flex align-center justify-center flex-1">
+        <p class="text-caption text-disabled font-italic">{{ t('sessionActivityChart.empty') }}</p>
+      </div>
+
+      <!-- Chart -->
+      <template v-else>
+        <!-- Bar area -->
+        <div class="bars-container" :style="{ height: `${CHART_H}px` }">
+          <div
+            v-for="day in grouped"
+            :key="day.date"
+            class="bar-col"
+            :title="tooltip(day)"
+          >
+            <div v-if="day.completed > 0" class="bar bar-completed" :style="{ height: segH(day.completed) }" />
+            <div v-if="day.started > 0"   class="bar bar-started"   :style="{ height: segH(day.started) }" />
+            <div v-if="day.blocked > 0"   class="bar bar-blocked"   :style="{ height: segH(day.blocked) }" />
+            <div v-if="day.total === 0"   class="bar bar-empty" style="height: 4px" />
+          </div>
+        </div>
+
+        <!-- Date labels -->
+        <div class="bars-container date-labels">
+          <div
+            v-for="(day, idx) in grouped"
+            :key="day.date"
+            class="bar-col text-center font-mono"
+            :class="(idx % 2 === 0 || idx === 13) ? 'date-visible' : 'date-hidden'"
+          >
+            {{ shortDate(day.date) }}
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="d-flex align-center ga-4 flex-wrap">
+          <div class="d-flex align-center ga-2">
+            <span class="legend-dot legend-dot--completed" />
+            <span class="text-caption text-medium-emphasis">{{ t('status.completed') }}</span>
+          </div>
+          <div class="d-flex align-center ga-2">
+            <span class="legend-dot legend-dot--started" />
+            <span class="text-caption text-medium-emphasis">{{ t('status.started') }}</span>
+          </div>
+          <div class="d-flex align-center ga-2">
+            <span class="legend-dot legend-dot--blocked" />
+            <span class="text-caption text-medium-emphasis">{{ t('status.blocked') }}</span>
+          </div>
+          <span class="ml-auto text-caption text-disabled font-mono">
+            {{ t('sessionActivityChart.maxPerDay', { n: maxTotal }) }}
+          </span>
+        </div>
+      </template>
+
     </div>
-
-    <!-- Chart -->
-    <template v-else>
-      <!-- Bar area -->
-      <div class="flex items-end gap-[3px] shrink-0" :style="{ height: `${CHART_H}px` }">
-        <div
-          v-for="day in grouped"
-          :key="day.date"
-          class="flex flex-col-reverse flex-1 gap-[1px] cursor-default"
-          :title="tooltip(day)"
-        >
-          <div
-            v-if="day.completed > 0"
-            class="w-full rounded-sm bg-emerald-500 dark:bg-emerald-600 transition-all"
-            :style="{ height: segH(day.completed) }"
-          />
-          <div
-            v-if="day.started > 0"
-            class="w-full rounded-sm bg-zinc-400 dark:bg-zinc-500 transition-all"
-            :style="{ height: segH(day.started) }"
-          />
-          <div
-            v-if="day.blocked > 0"
-            class="w-full rounded-sm bg-red-500 dark:bg-red-600 transition-all"
-            :style="{ height: segH(day.blocked) }"
-          />
-          <!-- Empty spacer for days with no data -->
-          <div
-            v-if="day.total === 0"
-            class="w-full rounded-sm bg-surface-secondary"
-            style="height: 4px"
-          />
-        </div>
-      </div>
-
-      <!-- Date labels -->
-      <div class="flex gap-[3px] shrink-0">
-        <div
-          v-for="(day, idx) in grouped"
-          :key="day.date"
-          class="flex-1 text-center font-mono"
-          :class="(idx % 2 === 0 || idx === 13) ? 'text-[10px] text-content-faint' : 'text-transparent'"
-        >
-          {{ shortDate(day.date) }}
-        </div>
-      </div>
-
-      <!-- Legend -->
-      <div class="flex items-center gap-4 shrink-0 flex-wrap">
-        <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 rounded-sm bg-emerald-500 dark:bg-emerald-600" />
-          <span class="text-[11px] text-content-tertiary">{{ t('status.completed') }}</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 rounded-sm bg-zinc-400 dark:bg-zinc-500" />
-          <span class="text-[11px] text-content-tertiary">{{ t('status.started') }}</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 rounded-sm bg-red-500 dark:bg-red-600" />
-          <span class="text-[11px] text-content-tertiary">{{ t('status.blocked') }}</span>
-        </div>
-        <span class="ml-auto text-[11px] text-content-tertiary font-mono">
-          {{ t('sessionActivityChart.maxPerDay', { n: maxTotal }) }}
-        </span>
-      </div>
-    </template>
-  </div>
+  </v-card>
 </template>
+
+<style scoped>
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border: 1px solid var(--edge-default);
+  overflow: hidden;
+  background: var(--surface-secondary) !important;
+}
+
+.chart-header {
+  flex-shrink: 0;
+  padding: 12px 16px 8px;
+}
+
+.chart-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 12px;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.bars-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column-reverse;
+  flex: 1;
+  gap: 1px;
+  cursor: default;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 2px;
+  transition: height 0.2s;
+}
+
+.bar-completed { background-color: #10b981; } /* emerald-500 */
+.bar-started   { background-color: #71717a; } /* zinc-500 */
+.bar-blocked   { background-color: #ef4444; } /* red-500 */
+.bar-empty     { background-color: var(--surface-tertiary); }
+
+.date-labels {
+  height: auto !important;
+  align-items: flex-start;
+}
+
+.date-visible {
+  font-size: 10px;
+  color: var(--content-faint);
+}
+
+.date-hidden {
+  color: transparent;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-dot--completed { background-color: #10b981; }
+.legend-dot--started   { background-color: #71717a; }
+.legend-dot--blocked   { background-color: #ef4444; }
+</style>

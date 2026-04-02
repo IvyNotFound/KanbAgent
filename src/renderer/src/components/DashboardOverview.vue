@@ -161,107 +161,116 @@ const STATUT_LABEL = computed<Record<string, string>>(() => ({
   archived: t('status.archived'),
 }))
 
-const STATUT_CLASSES: Record<string, string> = {
-  todo: 'bg-zinc-600/30 text-zinc-400 border-zinc-600/40',
-  in_progress: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-  done: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  archived: 'bg-zinc-700/30 text-zinc-500 border-zinc-700/40',
+function statusColor(status: string): string {
+  const map: Record<string, string> = {
+    todo: 'default',
+    in_progress: 'info',
+    done: 'success',
+    archived: 'default',
+  }
+  return map[status] ?? 'default'
 }
 
-const PRIORITY_CLASSES: Record<string, string> = {
-  low: 'text-zinc-500',
-  normal: 'text-zinc-400',
-  high: 'text-amber-400',
-  critical: 'text-red-400',
+function priorityColor(priority: string): string {
+  const map: Record<string, string> = {
+    low: '#71717a',      // zinc-500
+    high: '#fbbf24',     // amber-400
+    critical: '#f87171', // red-400
+  }
+  return map[priority] ?? '#a1a1aa'
 }
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-auto bg-surface-base text-content-primary p-6 gap-6">
+  <div class="overview-root">
 
     <!-- Title -->
-    <h2 class="text-xl font-semibold text-content-primary shrink-0">{{ t('dashboard.overview') }}</h2>
+    <h2 class="text-h6 font-weight-medium mb-2 shrink-0">{{ t('dashboard.overview') }}</h2>
 
     <!-- No project state -->
-    <div v-if="!store.dbPath" class="flex items-center justify-center h-40">
-      <p class="text-sm text-content-faint italic">{{ t('common.noProject') }}</p>
+    <div v-if="!store.dbPath" class="d-flex align-center justify-center" style="height: 160px;">
+      <p class="text-body-2 text-medium-emphasis font-italic">{{ t('common.noProject') }}</p>
     </div>
 
     <template v-else>
 
-      <!-- ── 4 Metric Cards ──────────────────────────────────────────────── -->
-      <div class="grid grid-cols-4 gap-4">
+      <!-- ── 4 Metric Cards ─────────────────────────────────────────────── -->
+      <v-row dense class="mb-2">
 
-        <!-- Agents actifs -->
-        <div class="flex items-center gap-3 p-4 rounded-lg bg-surface-secondary border border-edge-default hover:border-edge-subtle transition-colors">
-          <div class="shrink-0 w-8 h-8 rounded-md bg-cyan-500/15 flex items-center justify-center">
-            <!-- users icon -->
-            <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM17 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 0 0-1.5-4.33A5 5 0 0 1 19 16v1h-6.07zM6 11a5 5 0 0 1 5 5v1H1v-1a5 5 0 0 1 5-5z"/>
-            </svg>
-          </div>
-          <div class="min-w-0">
-            <div class="text-xl font-bold text-content-primary tabular-nums leading-tight">
-              {{ activeAgentsCount }}
+        <!-- Active agents -->
+        <v-col cols="3">
+          <v-card elevation="0" class="metric-card">
+            <div class="d-flex align-center ga-3 pa-4">
+              <div class="metric-icon metric-icon--cyan shrink-0">
+                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #22d3ee">
+                  <path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM17 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 0 0-1.5-4.33A5 5 0 0 1 19 16v1h-6.07zM6 11a5 5 0 0 1 5 5v1H1v-1a5 5 0 0 1 5-5z"/>
+                </svg>
+              </div>
+              <div class="metric-values">
+                <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ activeAgentsCount }}</div>
+                <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.activeAgents') }}</div>
+                <div class="metric-sublabel text-truncate">{{ t('dashboard.sessionsStarted') }}</div>
+              </div>
             </div>
-            <div class="text-xs text-content-secondary truncate">{{ t('dashboard.activeAgents') }}</div>
-            <div class="text-[11px] text-content-tertiary truncate">{{ t('dashboard.sessionsStarted') }}</div>
-          </div>
-        </div>
+          </v-card>
+        </v-col>
 
-        <!-- Tâches in_progress -->
-        <div class="flex items-center gap-3 p-4 rounded-lg bg-surface-secondary border border-edge-default hover:border-edge-subtle transition-colors">
-          <div class="shrink-0 w-8 h-8 rounded-md bg-amber-500/15 flex items-center justify-center">
-            <!-- lightning icon -->
-            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0 1 12 2v5h4a1 1 0 0 1 .82 1.573l-7 10A1 1 0 0 1 8 18v-5H4a1 1 0 0 1-.82-1.573l7-10a1 1 0 0 1 1.12-.38z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div class="min-w-0">
-            <div class="text-xl font-bold text-content-primary tabular-nums leading-tight">
-              {{ store.stats.in_progress }}
+        <!-- In-progress tasks -->
+        <v-col cols="3">
+          <v-card elevation="0" class="metric-card">
+            <div class="d-flex align-center ga-3 pa-4">
+              <div class="metric-icon metric-icon--amber shrink-0">
+                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #fbbf24">
+                  <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0 1 12 2v5h4a1 1 0 0 1 .82 1.573l-7 10A1 1 0 0 1 8 18v-5H4a1 1 0 0 1-.82-1.573l7-10a1 1 0 0 1 1.12-.38z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div class="metric-values">
+                <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ store.stats.in_progress }}</div>
+                <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.inProgress') }}</div>
+                <div class="metric-sublabel text-truncate">{{ t('dashboard.activeTasks') }}</div>
+              </div>
             </div>
-            <div class="text-xs text-content-secondary truncate">{{ t('dashboard.inProgress') }}</div>
-            <div class="text-[11px] text-content-tertiary truncate">{{ t('dashboard.activeTasks') }}</div>
-          </div>
-        </div>
+          </v-card>
+        </v-col>
 
-        <!-- Tâches todo -->
-        <div class="flex items-center gap-3 p-4 rounded-lg bg-surface-secondary border border-edge-default hover:border-edge-subtle transition-colors">
-          <div class="shrink-0 w-8 h-8 rounded-md bg-violet-500/15 flex items-center justify-center">
-            <!-- clipboard icon -->
-            <svg class="w-4 h-4 text-violet-400" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M9 2a1 1 0 0 0 0 2h2a1 1 0 1 0 0-2H9z"/>
-              <path fill-rule="evenodd" d="M4 5a2 2 0 0 1 2-2 3 3 0 0 0 3 3h2a3 3 0 0 0 3-3 2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm3 4a1 1 0 0 0 0 2h.01a1 1 0 1 0 0-2H7zm3 0a1 1 0 0 0 0 2h3a1 1 0 1 0 0-2h-3zm-3 4a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H7zm3 0a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div class="min-w-0">
-            <div class="text-xl font-bold text-content-primary tabular-nums leading-tight">
-              {{ store.stats.todo }}
+        <!-- Todo tasks -->
+        <v-col cols="3">
+          <v-card elevation="0" class="metric-card">
+            <div class="d-flex align-center ga-3 pa-4">
+              <div class="metric-icon metric-icon--violet shrink-0">
+                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #a78bfa">
+                  <path d="M9 2a1 1 0 0 0 0 2h2a1 1 0 1 0 0-2H9z"/>
+                  <path fill-rule="evenodd" d="M4 5a2 2 0 0 1 2-2 3 3 0 0 0 3 3h2a3 3 0 0 0 3-3 2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm3 4a1 1 0 0 0 0 2h.01a1 1 0 1 0 0-2H7zm3 0a1 1 0 0 0 0 2h3a1 1 0 1 0 0-2h-3zm-3 4a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H7zm3 0a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2h-3z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div class="metric-values">
+                <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ store.stats.todo }}</div>
+                <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.todo') }}</div>
+                <div class="metric-sublabel text-truncate">{{ t('dashboard.pendingTasks') }}</div>
+              </div>
             </div>
-            <div class="text-xs text-content-secondary truncate">{{ t('dashboard.todo') }}</div>
-            <div class="text-[11px] text-content-tertiary truncate">{{ t('dashboard.pendingTasks') }}</div>
-          </div>
-        </div>
+          </v-card>
+        </v-col>
 
-        <!-- Sessions aujourd'hui -->
-        <div class="flex items-center gap-3 p-4 rounded-lg bg-surface-secondary border border-edge-default hover:border-edge-subtle transition-colors">
-          <div class="shrink-0 w-8 h-8 rounded-md bg-emerald-500/15 flex items-center justify-center">
-            <!-- calendar icon -->
-            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1V3a1 1 0 1 0-2 0v1H7V3a1 1 0 0 0-1-1zm0 5a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H6z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div class="min-w-0">
-            <div class="text-xl font-bold text-content-primary tabular-nums leading-tight">
-              {{ sessionsTodayCount }}
+        <!-- Sessions today -->
+        <v-col cols="3">
+          <v-card elevation="0" class="metric-card">
+            <div class="d-flex align-center ga-3 pa-4">
+              <div class="metric-icon metric-icon--emerald shrink-0">
+                <svg class="metric-svg" viewBox="0 0 20 20" fill="currentColor" style="color: #34d399">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1V3a1 1 0 1 0-2 0v1H7V3a1 1 0 0 0-1-1zm0 5a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H6z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div class="metric-values">
+                <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ sessionsTodayCount }}</div>
+                <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.today') }}</div>
+                <div class="metric-sublabel text-truncate">{{ t('dashboard.sessionsStarted') }}</div>
+              </div>
             </div>
-            <div class="text-xs text-content-secondary truncate">{{ t('dashboard.today') }}</div>
-            <div class="text-[11px] text-content-tertiary truncate">{{ t('dashboard.sessionsStarted') }}</div>
-          </div>
-        </div>
+          </v-card>
+        </v-col>
 
-      </div>
+      </v-row>
 
       <!-- ── Token telemetry (full width) ──────────────────────────────── -->
       <TokenTelemetryPanel
@@ -270,125 +279,258 @@ const PRIORITY_CLASSES: Record<string, string> = {
         :stats-all="statsAll"
       />
 
-      <!-- ── 2 Sections ──────────────────────────────────────────────────── -->
-      <div class="grid grid-cols-2 gap-4">
+      <!-- ── Recent tasks + activity ────────────────────────────────────── -->
+      <v-row>
 
-        <!-- Tâches récentes -->
-        <div class="flex flex-col rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
-          <div class="shrink-0 px-4 py-2.5 border-b border-edge-default">
-            <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('dashboard.recentTasks') }}</span>
-          </div>
-          <div class="flex-1 overflow-y-auto">
-            <div
-              v-if="recentTasks.length === 0"
-              class="flex items-center justify-center py-8"
-            >
-              <span class="text-xs text-content-faint italic">{{ t('dashboard.noTasks') }}</span>
+        <!-- Recent tasks -->
+        <v-col cols="6">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="text-overline text-medium-emphasis">{{ t('dashboard.recentTasks') }}</span>
             </div>
-            <div
-              v-for="task in recentTasks"
-              :key="task.id"
-              class="flex items-start gap-2 px-4 py-2 border-b border-edge-default/50 last:border-0 hover:bg-surface-tertiary/30 cursor-pointer transition-colors"
-              @click="store.openTask(task)"
-            >
-              <!-- Statut badge -->
-              <span
-                class="shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium border"
-                :class="STATUT_CLASSES[task.status] ?? STATUT_CLASSES.todo"
-              >{{ STATUT_LABEL[task.status] ?? task.status }}</span>
+            <div class="section-list">
+              <div v-if="recentTasks.length === 0" class="d-flex align-center justify-center pa-8">
+                <span class="text-caption text-disabled font-italic">{{ t('dashboard.noTasks') }}</span>
+              </div>
+              <div
+                v-for="task in recentTasks"
+                :key="task.id"
+                class="task-row"
+                @click="store.openTask(task)"
+              >
+                <v-chip
+                  size="x-small"
+                  :color="statusColor(task.status)"
+                  variant="tonal"
+                  label
+                  class="shrink-0"
+                >{{ STATUT_LABEL[task.status] ?? task.status }}</v-chip>
 
-              <!-- Title + meta -->
-              <div class="flex-1 min-w-0">
-                <p class="text-xs text-content-primary truncate leading-tight">{{ task.title }}</p>
-                <div class="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    v-if="task.agent_name"
-                    class="text-[11px] font-medium truncate"
-                    :style="{ color: agentFg(task.agent_name) }"
-                  >{{ task.agent_name }}</span>
-                  <span v-if="task.priority && task.priority !== 'normal'" class="text-[11px]" :class="PRIORITY_CLASSES[task.priority]">{{ task.priority }}</span>
+                <div class="task-meta">
+                  <p class="text-caption text-truncate">{{ task.title }}</p>
+                  <div class="d-flex align-center ga-1 mt-1">
+                    <span
+                      v-if="task.agent_name"
+                      class="text-caption font-weight-medium"
+                      :style="{ color: agentFg(task.agent_name) }"
+                    >{{ task.agent_name }}</span>
+                    <span
+                      v-if="task.priority && task.priority !== 'normal'"
+                      class="text-caption"
+                      :style="{ color: priorityColor(task.priority) }"
+                    >{{ task.priority }}</span>
+                  </div>
                 </div>
+
+                <span class="shrink-0 text-caption text-disabled tabular-nums">
+                  {{ relativeTime(task.updated_at) }}
+                </span>
               </div>
-
-              <!-- Time -->
-              <span class="shrink-0 text-[11px] text-content-faint tabular-nums">
-                {{ relativeTime(task.updated_at) }}
-              </span>
             </div>
           </div>
-        </div>
+        </v-col>
 
-        <!-- Activité récente -->
-        <div class="flex flex-col rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
-          <div class="shrink-0 px-4 py-2.5 border-b border-edge-default">
-            <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('dashboard.recentActivity') }}</span>
-          </div>
-          <div class="flex-1 overflow-y-auto">
-            <div
-              v-if="recentActivity.length === 0"
-              class="flex items-center justify-center py-8"
-            >
-              <span class="text-xs text-content-faint italic">{{ t('dashboard.noActivity') }}</span>
+        <!-- Recent activity -->
+        <v-col cols="6">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="text-overline text-medium-emphasis">{{ t('dashboard.recentActivity') }}</span>
             </div>
-            <div
-              v-for="(entry, i) in recentActivity"
-              :key="i"
-              class="flex items-start gap-2 px-4 py-2 border-b border-edge-default/50 last:border-0"
-            >
-              <!-- Agent badge -->
-              <span
-                v-if="entry.agent_name"
-                class="shrink-0 text-[11px] font-medium font-mono mt-0.5"
-                :style="{ color: agentFg(entry.agent_name) }"
-              >{{ entry.agent_name }}</span>
-              <span v-else class="shrink-0 text-[11px] text-content-faint mt-0.5">—</span>
-
-              <!-- Action + detail -->
-              <div class="flex-1 min-w-0">
-                <p class="text-xs text-content-primary font-mono">{{ entry.action }}</p>
-                <p v-if="entry.detail" class="text-[11px] text-content-secondary truncate mt-0.5">{{ entry.detail }}</p>
+            <div class="section-list">
+              <div v-if="recentActivity.length === 0" class="d-flex align-center justify-center pa-8">
+                <span class="text-caption text-disabled font-italic">{{ t('dashboard.noActivity') }}</span>
               </div>
+              <div
+                v-for="(entry, i) in recentActivity"
+                :key="i"
+                class="activity-row"
+              >
+                <span
+                  v-if="entry.agent_name"
+                  class="shrink-0 text-caption font-weight-medium font-mono agent-label"
+                  :style="{ color: agentFg(entry.agent_name) }"
+                >{{ entry.agent_name }}</span>
+                <span v-else class="shrink-0 text-caption text-disabled agent-label">—</span>
 
-              <!-- Time -->
-              <span class="shrink-0 text-[11px] text-content-faint tabular-nums">
-                {{ relativeTime(entry.created_at) }}
-              </span>
+                <div class="task-meta">
+                  <p class="text-caption font-mono">{{ entry.action }}</p>
+                  <p v-if="entry.detail" class="text-caption text-medium-emphasis text-truncate mt-1">{{ entry.detail }}</p>
+                </div>
+
+                <span class="shrink-0 text-caption text-disabled tabular-nums">
+                  {{ relativeTime(entry.created_at) }}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        </v-col>
 
-      </div>
+      </v-row>
 
-      <!-- ── Code telemetry + Heatmap (2 columns) ────────────────────── -->
-      <div class="grid grid-cols-2 gap-4">
-        <CodeTelemetryPanel :project-path="store.projectPath" />
-        <div class="rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
-          <div class="shrink-0 px-4 py-2.5 border-b border-edge-default">
-            <span class="text-xs text-content-muted uppercase tracking-wide">{{ t('dashboard.activity') }}</span>
+      <!-- ── Code telemetry + Heatmap ───────────────────────────────────── -->
+      <v-row>
+        <v-col cols="6">
+          <CodeTelemetryPanel :project-path="store.projectPath" />
+        </v-col>
+        <v-col cols="6">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="text-overline text-medium-emphasis">{{ t('dashboard.activity') }}</span>
+            </div>
+            <ActivityHeatmap v-if="store.dbPath" :db-path="store.dbPath" />
           </div>
-          <ActivityHeatmap v-if="store.dbPath" :db-path="store.dbPath" />
-        </div>
-      </div>
+        </v-col>
+      </v-row>
 
-      <!-- ── Charts 14d (2 columns) ────────────────────────────────────── -->
-      <div class="grid grid-cols-2 gap-4">
-        <SessionActivityChart class="min-h-[200px]" />
-        <SuccessRateChart class="min-h-[200px]" />
-      </div>
+      <!-- ── Charts 14d ────────────────────────────────────────────────── -->
+      <v-row>
+        <v-col cols="6" style="min-height: 200px;">
+          <SessionActivityChart />
+        </v-col>
+        <v-col cols="6" style="min-height: 200px;">
+          <SuccessRateChart />
+        </v-col>
+      </v-row>
 
-      <!-- ── Quality (full width) ───────────────────────────────────────── -->
+      <!-- ── Quality (full width) ──────────────────────────────────────── -->
       <AgentQualityPanel />
 
-      <!-- ── Workload (full width, lazy) ───────────────────────────────── -->
+      <!-- ── Workload (full width, lazy) ──────────────────────────────── -->
       <Suspense>
         <WorkloadView />
         <template #fallback>
-          <div class="flex items-center justify-center py-8 rounded-lg bg-surface-secondary border border-edge-default">
-            <p class="text-sm text-content-faint animate-pulse">{{ t('common.loading') }}</p>
-          </div>
+          <v-card elevation="0" class="workload-fallback d-flex align-center justify-center pa-8">
+            <p class="text-body-2 text-medium-emphasis">{{ t('common.loading') }}</p>
+          </v-card>
         </template>
       </Suspense>
 
     </template>
   </div>
 </template>
+
+<style scoped>
+.overview-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+  padding: 24px;
+  gap: 16px;
+  background: var(--surface-base);
+  color: var(--content-primary);
+}
+
+/* ── Metric cards ── */
+.metric-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-secondary) !important;
+  transition: border-color 0.15s;
+}
+
+.metric-card:hover {
+  border-color: var(--edge-subtle) !important;
+}
+
+.metric-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-icon--cyan    { background-color: rgba(6,   182, 212, 0.15); }
+.metric-icon--amber   { background-color: rgba(245, 158, 11,  0.15); }
+.metric-icon--violet  { background-color: rgba(139, 92,  246, 0.15); }
+.metric-icon--emerald { background-color: rgba(16,  185, 129, 0.15); }
+
+.metric-svg {
+  width: 16px;
+  height: 16px;
+}
+
+.metric-values {
+  min-width: 0;
+}
+
+.metric-sublabel {
+  font-size: 11px;
+  color: var(--content-tertiary);
+}
+
+.lh-tight {
+  line-height: 1.2;
+}
+
+/* ── Section cards (recent tasks / activity / heatmap) ── */
+.section-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+  overflow: hidden;
+  height: 100%;
+}
+
+.section-header {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--edge-default);
+}
+
+.section-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Task rows ── */
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--edge-default);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.task-row:last-child {
+  border-bottom: none;
+}
+
+.task-row:hover {
+  background-color: var(--surface-tertiary);
+}
+
+.task-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Activity rows ── */
+.activity-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--edge-default);
+}
+
+.activity-row:last-child {
+  border-bottom: none;
+}
+
+.agent-label {
+  margin-top: 2px;
+}
+
+/* ── Workload fallback ── */
+.workload-fallback {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-secondary) !important;
+}
+</style>

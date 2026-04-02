@@ -27,12 +27,9 @@ describe('SetupWizard', () => {
       global: { plugins: [i18n] },
     })
 
-    const skipBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('ignorer') || text.includes('passer') || text.includes('skip')
-    })
-    expect(skipBtn).toBeDefined()
-    await skipBtn!.trigger('click')
+    const skipBtn = wrapper.find('[data-testid="btn-skip"]')
+    expect(skipBtn.exists()).toBe(true)
+    await skipBtn.trigger('click')
     expect(wrapper.emitted('skip')).toBeTruthy()
   })
 
@@ -43,13 +40,9 @@ describe('SetupWizard', () => {
       global: { plugins: [i18n] },
     })
 
-    // Find the init/create button
-    const initBtn = wrapper.findAll('button').find(b => {
-      const style = b.attributes('class') || ''
-      return style.includes('bg-violet-600')
-    })
-    expect(initBtn).toBeDefined()
-    await initBtn!.trigger('click')
+    const actionBtn = wrapper.find('[data-testid="btn-action"]')
+    expect(actionBtn.exists()).toBe(true)
+    await actionBtn.trigger('click')
     await flushPromises()
     expect(api.createProjectDb).toHaveBeenCalledWith('/p')
   })
@@ -63,12 +56,9 @@ describe('SetupWizard', () => {
       global: { plugins: [i18n] },
     })
 
-    const initBtn = wrapper.findAll('button').find(b => {
-      const cls = b.attributes('class') || ''
-      return cls.includes('bg-violet-600')
-    })
-    expect(initBtn).toBeDefined()
-    await initBtn!.trigger('click')
+    const actionBtn = wrapper.find('[data-testid="btn-action"]')
+    expect(actionBtn.exists()).toBe(true)
+    await actionBtn.trigger('click')
     await flushPromises()
     expect(wrapper.emitted('done')).toBeTruthy()
     expect(wrapper.emitted('done')![0]).toEqual([{ projectPath: '/p', dbPath: '/p/.claude/project.db' }])
@@ -83,12 +73,9 @@ describe('SetupWizard', () => {
       global: { plugins: [i18n] },
     })
 
-    const initBtn = wrapper.findAll('button').find(b => {
-      const cls = b.attributes('class') || ''
-      return cls.includes('bg-violet-600')
-    })
-    expect(initBtn).toBeDefined()
-    await initBtn!.trigger('click')
+    const actionBtn = wrapper.find('[data-testid="btn-action"]')
+    expect(actionBtn.exists()).toBe(true)
+    await actionBtn.trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('Permission denied')
   })

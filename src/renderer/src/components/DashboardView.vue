@@ -72,92 +72,123 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary min-h-0">
+  <div class="dashboard-view">
 
-    <!-- Sub-tab bar using Vuetify v-tabs -->
+    <!-- Sub-tab bar -->
     <v-tabs
       v-model="activeSubTab"
       density="compact"
-      class="shrink-0 border-b border-edge-subtle"
+      class="dashboard-tabs"
       show-arrows
     >
       <v-tab
         v-for="tab in subTabs"
         :key="tab.id"
         :value="tab.id"
-        class="text-xs font-semibold"
+        class="text-caption font-weight-medium"
       >{{ tab.label }}</v-tab>
     </v-tabs>
 
     <!-- Overview -->
-    <DashboardOverview v-if="activeSubTab === 'overview'" class="flex-1 min-h-0" />
+    <DashboardOverview v-if="activeSubTab === 'overview'" class="tab-content" />
 
     <!-- Token Stats -->
-    <TokenStatsView v-show="activeSubTab === 'tokenStats'" class="flex-1 min-h-0" />
+    <TokenStatsView v-show="activeSubTab === 'tokenStats'" class="tab-content" />
 
     <!-- Git -->
-    <div v-if="activeSubTab === 'git'" class="flex flex-col flex-1 min-h-0 bg-surface-base">
+    <div v-if="activeSubTab === 'git'" class="tab-content git-panel">
       <!-- Toolbar -->
-      <div class="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-edge-subtle">
-        <h2 class="text-xl font-semibold text-content-primary">Git</h2>
-        <button
-          class="flex items-center gap-1 px-2 py-1 text-xs text-content-muted hover:text-content-primary rounded transition-colors disabled:opacity-40"
-          :disabled="gitLoading"
+      <div class="git-toolbar d-flex align-center justify-space-between px-4">
+        <span class="text-subtitle-2 font-weight-bold">Git</span>
+        <v-btn
+          variant="text"
+          size="small"
+          density="compact"
+          :loading="gitLoading"
+          prepend-icon="mdi-refresh"
           @click="fetchGitCommits"
         >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5" :class="{ 'animate-spin': gitLoading }">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-          </svg>
           {{ t('common.refresh') }}
-        </button>
+        </v-btn>
       </div>
       <!-- Loading -->
-      <div v-if="gitLoading" class="flex items-center justify-center flex-1 py-8">
-        <p class="text-xs text-content-faint animate-pulse">{{ t('common.loading') }}</p>
+      <div v-if="gitLoading" class="d-flex align-center justify-center flex-1 pa-8">
+        <p class="text-caption text-medium-emphasis">{{ t('common.loading') }}</p>
       </div>
       <!-- Error states -->
-      <div v-else-if="gitError" class="flex flex-col items-center justify-center flex-1 py-8 gap-3">
-        <p class="text-xs text-content-faint italic">
+      <div v-else-if="gitError" class="d-flex flex-column align-center justify-center flex-1 pa-8 ga-3">
+        <p class="text-caption text-medium-emphasis font-italic">
           <template v-if="gitError === 'no-project'">{{ t('common.noProject') }}</template>
           <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
           <template v-else>{{ t('dashboard.gitError') }}</template>
         </p>
-        <button
+        <v-btn
           v-if="gitError === 'error'"
-          class="px-3 py-1 text-xs bg-surface-secondary hover:bg-surface-tertiary text-content-muted rounded transition-colors"
+          variant="tonal"
+          size="small"
           @click="fetchGitCommits"
         >
           {{ t('common.retry') }}
-        </button>
+        </v-btn>
       </div>
       <!-- Commit list -->
       <GitCommitList
         v-else
         :commits="gitCommits"
-        class="flex-1 min-h-0"
+        class="flex-1"
         @open-task="(id) => { const task = store.tasks.find(x => x.id === id); if (task) store.openTask(task) }"
       />
     </div>
 
     <!-- Hooks -->
-    <HookEventsView v-if="activeSubTab === 'hooks'" class="flex-1 min-h-0" />
+    <HookEventsView v-if="activeSubTab === 'hooks'" class="tab-content" />
 
     <!-- Tools -->
-    <ToolStatsPanel v-if="activeSubTab === 'tools'" class="flex-1 min-h-0" />
+    <ToolStatsPanel v-if="activeSubTab === 'tools'" class="tab-content" />
 
     <!-- Topology -->
-    <TopologyView v-if="activeSubTab === 'topology'" class="flex-1 min-h-0" />
+    <TopologyView v-if="activeSubTab === 'topology'" class="tab-content" />
 
     <!-- OrgChart -->
-    <OrgChartView v-if="activeSubTab === 'orgchart'" class="flex-1 min-h-0" />
+    <OrgChartView v-if="activeSubTab === 'orgchart'" class="tab-content" />
 
     <!-- Logs -->
-    <AgentLogsView v-if="activeSubTab === 'logs'" class="flex-1 min-h-0" />
+    <AgentLogsView v-if="activeSubTab === 'logs'" class="tab-content" />
 
     <!-- Telemetry -->
-    <TelemetryView v-if="activeSubTab === 'telemetry'" class="flex-1 min-h-0" />
+    <TelemetryView v-if="activeSubTab === 'telemetry'" class="tab-content" />
 
   </div>
 </template>
 
+<style scoped>
+.dashboard-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-primary);
+}
+
+.dashboard-tabs {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.git-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-base);
+}
+
+.git-toolbar {
+  flex-shrink: 0;
+  height: 44px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+</style>
