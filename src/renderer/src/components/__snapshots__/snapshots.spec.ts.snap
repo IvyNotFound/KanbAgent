@@ -60,20 +60,16 @@ exports[`ConfirmDialog — snapshots > matches snapshot: info dialog 1`] = `
 `;
 
 exports[`ContextMenu — snapshots > matches snapshot: items with separator 1`] = `
-"<div data-v-927d44d2="" to="body">
-  <div data-v-927d44d2="" class="context-overlay">
-    <div data-v-927d44d2="" class="context-menu elevation-8" style="left: 50px; top: 80px;"><button data-v-927d44d2="" class="menu-item">Edit</button><button data-v-927d44d2="" class="menu-item">Add subgroup</button>
-      <div data-v-927d44d2="" class="separator"></div><button data-v-927d44d2="" class="menu-item">Delete</button>
-    </div>
+"<div class="v-menu-stub" model-value="true" target="50,80" close-on-content-click="false">
+  <div class="v-list-stub" density="compact" min-width="188"><button>Edit</button><button>Add subgroup</button>
+    <hr class="v-divider-stub"><button>Delete</button>
   </div>
 </div>"
 `;
 
 exports[`ContextMenu — snapshots > matches snapshot: simple items (no separator) 1`] = `
-"<div data-v-927d44d2="" to="body">
-  <div data-v-927d44d2="" class="context-overlay">
-    <div data-v-927d44d2="" class="context-menu elevation-8" style="left: 100px; top: 200px;"><button data-v-927d44d2="" class="menu-item">Rename</button><button data-v-927d44d2="" class="menu-item">Delete</button></div>
-  </div>
+"<div class="v-menu-stub" model-value="true" target="100,200" close-on-content-click="false">
+  <div class="v-list-stub" density="compact" min-width="188"><button>Rename</button><button>Delete</button></div>
 </div>"
 `;
 

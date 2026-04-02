@@ -278,7 +278,15 @@ describe('TitleBar — snapshots', () => {
 import ContextMenu from '@renderer/components/ContextMenu.vue'
 
 describe('ContextMenu — snapshots', () => {
-  const teleportStub = { Teleport: { template: '<div><slot /></div>' } }
+  const vuetifyStubs = {
+    VMenu: { template: '<div class="v-menu-stub"><slot /></div>' },
+    VList: { template: '<div class="v-list-stub"><slot /></div>' },
+    VListItem: {
+      template: '<button>{{ title }}</button>',
+      props: ['title'],
+    },
+    VDivider: { template: '<hr class="v-divider-stub" />' },
+  }
 
   it('matches snapshot: simple items (no separator)', () => {
     const wrapper = shallowMount(ContextMenu, {
@@ -290,7 +298,7 @@ describe('ContextMenu — snapshots', () => {
           { label: 'Delete', action: () => {} },
         ],
       },
-      global: { stubs: teleportStub },
+      global: { stubs: vuetifyStubs },
     })
     expect(wrapper.html()).toMatchSnapshot()
   })
@@ -307,7 +315,7 @@ describe('ContextMenu — snapshots', () => {
           { label: 'Delete', action: () => {} },
         ],
       },
-      global: { stubs: teleportStub },
+      global: { stubs: vuetifyStubs },
     })
     expect(wrapper.html()).toMatchSnapshot()
   })
