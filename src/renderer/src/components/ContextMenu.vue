@@ -54,7 +54,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 .context-overlay {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 1500;
 }
 
 .context-menu {

@@ -1,74 +1,78 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<span style="color: rgb(49, 29, 165); background-color: rgb(227, 224, 246); border-color: rgb(182, 174, 224);" title="review-master" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border font-mono max-w-[120px]"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span><span class="truncate">review-master</span></span>"`;
+exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<span data-v-0937c3c8="" style="color: rgb(49, 29, 165); background-color: rgb(227, 224, 246); border-color: rgb(182, 174, 224);" title="review-master" class="agent-badge"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></span>"`;
 
-exports[`AgentBadge — snapshots > matches snapshot: inactive badge 1`] = `"<span style="color: rgb(165, 131, 29); background-color: rgb(246, 240, 224); border-color: rgb(224, 211, 174);" title="dev-front-vuejs" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border font-mono max-w-[120px]"><!--v-if--><span class="truncate">dev-front-vuejs</span></span>"`;
+exports[`AgentBadge — snapshots > matches snapshot: inactive badge 1`] = `"<span data-v-0937c3c8="" style="color: rgb(165, 131, 29); background-color: rgb(246, 240, 224); border-color: rgb(224, 211, 174);" title="dev-front-vuejs" class="agent-badge"><!--v-if--><span data-v-0937c3c8="" class="badge-name">dev-front-vuejs</span></span>"`;
 
 exports[`ConfirmDialog — snapshots > matches snapshot: danger dialog 1`] = `
-"<v-dialog model-value="true" max-width="420" persistent="">
-  <v-card role="alertdialog" aria-modal="true" aria-label="Delete agent?">
+"<v-dialog data-v-ba1b5c38="" model-value="true" max-width="420" persistent="">
+  <v-card data-v-ba1b5c38="" role="alertdialog" aria-modal="true" aria-label="Delete agent?">
     <!-- Header with icon -->
-    <div class="flex items-start gap-3 px-5 pt-5 pb-3">
-      <!-- Icon -->
-      <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-red-500/15">
-        <!-- Danger icon --><svg viewBox="0 0 16 16" fill="currentColor" class="w-4.5 h-4.5 text-red-400">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
-          <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"></path>
-        </svg>
+    <v-card-text data-v-ba1b5c38="" class="pa-5 pb-3">
+      <div data-v-ba1b5c38="" class="d-flex align-start ga-3">
+        <!-- Icon wrapper -->
+        <div data-v-ba1b5c38="" class="icon-wrapper d-flex align-center justify-center icon-danger">
+          <!-- Danger icon --><svg data-v-ba1b5c38="" viewBox="0 0 16 16" fill="currentColor" class="icon-svg icon-svg--danger">
+            <path data-v-ba1b5c38="" d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+            <path data-v-ba1b5c38="" d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"></path>
+          </svg>
+        </div>
+        <div data-v-ba1b5c38="" class="flex-grow-1 content-text">
+          <h3 data-v-ba1b5c38="" class="text-subtitle-2 font-weight-medium">Delete agent?</h3>
+          <p data-v-ba1b5c38="" class="text-body-2 text-medium-emphasis mt-2">This action is irreversible.</p>
+          <!--v-if-->
+        </div>
       </div>
-      <div class="flex-1 min-w-0">
-        <h3 class="text-sm font-semibold text-content-primary leading-tight">Delete agent?</h3>
-        <p class="text-sm text-content-secondary mt-1.5 leading-relaxed">This action is irreversible.</p>
-        <!--v-if-->
-      </div>
-    </div><!-- Actions -->
-    <v-card-actions class="px-5 py-4 border-t border-edge-subtle">
-      <v-spacer></v-spacer><button class="px-4 py-2 text-sm text-content-muted hover:text-content-secondary hover:bg-surface-secondary rounded-lg transition-colors">Cancel</button><button class="px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-transparent bg-red-600 hover:bg-red-500 text-white focus:ring-red-500">Delete</button>
+    </v-card-text><!-- Actions -->
+    <v-card-actions data-v-ba1b5c38="" class="px-5 py-4 actions-border">
+      <v-spacer data-v-ba1b5c38=""></v-spacer><button data-v-ba1b5c38="" class="btn-cancel">Cancel</button><button data-v-ba1b5c38="" class="btn-confirm btn-confirm--danger">Delete</button>
     </v-card-actions>
   </v-card>
 </v-dialog>"
 `;
 
 exports[`ConfirmDialog — snapshots > matches snapshot: info dialog 1`] = `
-"<v-dialog model-value="true" max-width="420" persistent="">
-  <v-card role="alertdialog" aria-modal="true" aria-label="Confirm action?">
+"<v-dialog data-v-ba1b5c38="" model-value="true" max-width="420" persistent="">
+  <v-card data-v-ba1b5c38="" role="alertdialog" aria-modal="true" aria-label="Confirm action?">
     <!-- Header with icon -->
-    <div class="flex items-start gap-3 px-5 pt-5 pb-3">
-      <!-- Icon -->
-      <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-blue-500/15">
-        <!-- Danger icon -->
-        <!-- Info icon --><svg viewBox="0 0 16 16" fill="currentColor" class="w-4.5 h-4.5 text-blue-400">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
-          <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path>
-        </svg>
+    <v-card-text data-v-ba1b5c38="" class="pa-5 pb-3">
+      <div data-v-ba1b5c38="" class="d-flex align-start ga-3">
+        <!-- Icon wrapper -->
+        <div data-v-ba1b5c38="" class="icon-wrapper d-flex align-center justify-center icon-info">
+          <!-- Danger icon -->
+          <!-- Info icon --><svg data-v-ba1b5c38="" viewBox="0 0 16 16" fill="currentColor" class="icon-svg icon-svg--info">
+            <path data-v-ba1b5c38="" d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+            <path data-v-ba1b5c38="" d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path>
+          </svg>
+        </div>
+        <div data-v-ba1b5c38="" class="flex-grow-1 content-text">
+          <h3 data-v-ba1b5c38="" class="text-subtitle-2 font-weight-medium">Confirm action?</h3>
+          <p data-v-ba1b5c38="" class="text-body-2 text-medium-emphasis mt-2">Do you want to proceed?</p>
+          <!--v-if-->
+        </div>
       </div>
-      <div class="flex-1 min-w-0">
-        <h3 class="text-sm font-semibold text-content-primary leading-tight">Confirm action?</h3>
-        <p class="text-sm text-content-secondary mt-1.5 leading-relaxed">Do you want to proceed?</p>
-        <!--v-if-->
-      </div>
-    </div><!-- Actions -->
-    <v-card-actions class="px-5 py-4 border-t border-edge-subtle">
-      <v-spacer></v-spacer><button class="px-4 py-2 text-sm text-content-muted hover:text-content-secondary hover:bg-surface-secondary rounded-lg transition-colors">Cancel</button><button class="px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-transparent bg-blue-600 hover:bg-blue-500 text-white focus:ring-blue-500">OK</button>
+    </v-card-text><!-- Actions -->
+    <v-card-actions data-v-ba1b5c38="" class="px-5 py-4 actions-border">
+      <v-spacer data-v-ba1b5c38=""></v-spacer><button data-v-ba1b5c38="" class="btn-cancel">Cancel</button><button data-v-ba1b5c38="" class="btn-confirm btn-confirm--info">OK</button>
     </v-card-actions>
   </v-card>
 </v-dialog>"
 `;
 
 exports[`ContextMenu — snapshots > matches snapshot: items with separator 1`] = `
-"<div to="body">
-  <div class="fixed inset-0 z-[200]">
-    <div class="absolute bg-surface-primary border border-edge-default rounded-lg shadow-2xl py-1 min-w-[188px]" style="left: 50px; top: 80px;"><button class="w-full flex items-center px-3 py-1.5 text-sm text-left text-content-tertiary hover:bg-surface-secondary hover:text-content-primary transition-colors">Edit</button><button class="w-full flex items-center px-3 py-1.5 text-sm text-left text-content-tertiary hover:bg-surface-secondary hover:text-content-primary transition-colors">Add subgroup</button>
-      <div class="my-1 border-t border-edge-subtle"></div><button class="w-full flex items-center px-3 py-1.5 text-sm text-left text-content-tertiary hover:bg-surface-secondary hover:text-content-primary transition-colors">Delete</button>
+"<div data-v-927d44d2="" to="body">
+  <div data-v-927d44d2="" class="context-overlay">
+    <div data-v-927d44d2="" class="context-menu" style="left: 50px; top: 80px;"><button data-v-927d44d2="" class="menu-item">Edit</button><button data-v-927d44d2="" class="menu-item">Add subgroup</button>
+      <div data-v-927d44d2="" class="separator"></div><button data-v-927d44d2="" class="menu-item">Delete</button>
     </div>
   </div>
 </div>"
 `;
 
 exports[`ContextMenu — snapshots > matches snapshot: simple items (no separator) 1`] = `
-"<div to="body">
-  <div class="fixed inset-0 z-[200]">
-    <div class="absolute bg-surface-primary border border-edge-default rounded-lg shadow-2xl py-1 min-w-[188px]" style="left: 100px; top: 200px;"><button class="w-full flex items-center px-3 py-1.5 text-sm text-left text-content-tertiary hover:bg-surface-secondary hover:text-content-primary transition-colors">Rename</button><button class="w-full flex items-center px-3 py-1.5 text-sm text-left text-content-tertiary hover:bg-surface-secondary hover:text-content-primary transition-colors">Delete</button></div>
+"<div data-v-927d44d2="" to="body">
+  <div data-v-927d44d2="" class="context-overlay">
+    <div data-v-927d44d2="" class="context-menu" style="left: 100px; top: 200px;"><button data-v-927d44d2="" class="menu-item">Rename</button><button data-v-927d44d2="" class="menu-item">Delete</button></div>
   </div>
 </div>"
 `;
@@ -431,15 +435,15 @@ exports[`TitleBar — snapshots > matches snapshot: not maximized 1`] = `
 
 exports[`ToastContainer — snapshots > matches snapshot: empty (no toasts) 1`] = `
 "<!-- MD3: fixed bottom-right, stacked toasts with elevation shadow -->
-<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>"
+<div data-v-1a1a9880="" class="toast-container"></div>"
 `;
 
 exports[`ToastContainer — snapshots > matches snapshot: three toast types (error, warn, info) 1`] = `
 "<!-- MD3: fixed bottom-right, stacked toasts with elevation shadow -->
-<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
-  <div class="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-sm shadow-lg pointer-events-auto bg-red-100 dark:bg-red-900/90 border-red-300 dark:border-red-700/60 text-red-800 dark:text-red-200"><span class="shrink-0 text-xs font-mono mt-0.5">✕</span><span class="flex-1 leading-relaxed break-words min-w-0">Connection failed</span><button class="shrink-0 text-xs opacity-50 hover:opacity-100 transition-opacity mt-0.5">✕</button></div>
-  <div class="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-sm shadow-lg pointer-events-auto bg-amber-100 dark:bg-amber-900/90 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-200"><span class="shrink-0 text-xs font-mono mt-0.5">⚠</span><span class="flex-1 leading-relaxed break-words min-w-0">Slow response detected</span><button class="shrink-0 text-xs opacity-50 hover:opacity-100 transition-opacity mt-0.5">✕</button></div>
-  <div class="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-sm shadow-lg pointer-events-auto bg-surface-secondary/90 border-edge-default text-content-secondary"><span class="shrink-0 text-xs font-mono mt-0.5">ℹ</span><span class="flex-1 leading-relaxed break-words min-w-0">Changes saved</span><button class="shrink-0 text-xs opacity-50 hover:opacity-100 transition-opacity mt-0.5">✕</button></div>
+<div data-v-1a1a9880="" class="toast-container">
+  <div data-v-1a1a9880="" class="toast-item toast-error"><span data-v-1a1a9880="" class="toast-icon">✕</span><span data-v-1a1a9880="" class="toast-message">Connection failed</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
+  <div data-v-1a1a9880="" class="toast-item toast-warn"><span data-v-1a1a9880="" class="toast-icon">⚠</span><span data-v-1a1a9880="" class="toast-message">Slow response detected</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
+  <div data-v-1a1a9880="" class="toast-item toast-info"><span data-v-1a1a9880="" class="toast-icon">ℹ</span><span data-v-1a1a9880="" class="toast-message">Changes saved</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
 </div>"
 `;
 
