@@ -118,26 +118,9 @@ exports[`DbSelector — snapshots > matches snapshot: home screen (no project se
     </div>
     <!--v-if-->
     <!-- Language selector -->
-    <div data-v-2585d2c8="" class="lang-row"><select data-v-2585d2c8="" aria-label="Language" class="lang-select text-caption" value="fr">
-        <option value="fr" data-v-2585d2c8="">Français</option>
-        <option value="en" data-v-2585d2c8="">English</option>
-        <option value="es" data-v-2585d2c8="">Español</option>
-        <option value="pt" data-v-2585d2c8="">Português</option>
-        <option value="pt-BR" data-v-2585d2c8="">Português (Brasil)</option>
-        <option value="de" data-v-2585d2c8="">Deutsch</option>
-        <option value="no" data-v-2585d2c8="">Norsk</option>
-        <option value="it" data-v-2585d2c8="">Italiano</option>
-        <option value="ar" data-v-2585d2c8="">العربية</option>
-        <option value="ru" data-v-2585d2c8="">Русский</option>
-        <option value="pl" data-v-2585d2c8="">Polski</option>
-        <option value="sv" data-v-2585d2c8="">Svenska</option>
-        <option value="fi" data-v-2585d2c8="">Suomi</option>
-        <option value="da" data-v-2585d2c8="">Dansk</option>
-        <option value="tr" data-v-2585d2c8="">Türkçe</option>
-        <option value="zh-CN" data-v-2585d2c8="">中文（简体）</option>
-        <option value="ko" data-v-2585d2c8="">한국어</option>
-        <option value="ja" data-v-2585d2c8="">日本語</option>
-      </select></div>
+    <div data-v-2585d2c8="" class="lang-row">
+      <v-select data-v-2585d2c8="" model-value="fr" items="[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]" item-title="label" item-value="code" density="compact" variant="outlined" hide-details="" aria-label="Language" style="max-width: 220px;"></v-select>
+    </div>
   </div>
 </div>"
 `;
@@ -176,26 +159,9 @@ exports[`DbSelector — snapshots > matches snapshot: home screen with error 1`]
       </v-btn>
     </div>
     <p data-v-2585d2c8="" class="error-msg py-2 px-3 text-caption">DB not found</p><!-- Language selector -->
-    <div data-v-2585d2c8="" class="lang-row"><select data-v-2585d2c8="" aria-label="Language" class="lang-select text-caption" value="fr">
-        <option value="fr" data-v-2585d2c8="">Français</option>
-        <option value="en" data-v-2585d2c8="">English</option>
-        <option value="es" data-v-2585d2c8="">Español</option>
-        <option value="pt" data-v-2585d2c8="">Português</option>
-        <option value="pt-BR" data-v-2585d2c8="">Português (Brasil)</option>
-        <option value="de" data-v-2585d2c8="">Deutsch</option>
-        <option value="no" data-v-2585d2c8="">Norsk</option>
-        <option value="it" data-v-2585d2c8="">Italiano</option>
-        <option value="ar" data-v-2585d2c8="">العربية</option>
-        <option value="ru" data-v-2585d2c8="">Русский</option>
-        <option value="pl" data-v-2585d2c8="">Polski</option>
-        <option value="sv" data-v-2585d2c8="">Svenska</option>
-        <option value="fi" data-v-2585d2c8="">Suomi</option>
-        <option value="da" data-v-2585d2c8="">Dansk</option>
-        <option value="tr" data-v-2585d2c8="">Türkçe</option>
-        <option value="zh-CN" data-v-2585d2c8="">中文（简体）</option>
-        <option value="ko" data-v-2585d2c8="">한국어</option>
-        <option value="ja" data-v-2585d2c8="">日本語</option>
-      </select></div>
+    <div data-v-2585d2c8="" class="lang-row">
+      <v-select data-v-2585d2c8="" model-value="fr" items="[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]" item-title="label" item-value="code" density="compact" variant="outlined" hide-details="" aria-label="Language" style="max-width: 220px;"></v-select>
+    </div>
   </div>
 </div>"
 `;

@@ -19,6 +19,27 @@ function setLocale(lang: Language) {
   settingsStore.setLanguage(lang)
 }
 
+const langItems = [
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'pt', label: 'Português' },
+  { code: 'pt-BR', label: 'Português (Brasil)' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'no', label: 'Norsk' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'sv', label: 'Svenska' },
+  { code: 'fi', label: 'Suomi' },
+  { code: 'da', label: 'Dansk' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'zh-CN', label: '中文（简体）' },
+  { code: 'ko', label: '한국어' },
+  { code: 'ja', label: '日本語' },
+]
+
 const step = ref<'home' | 'create'>('home')
 const selectedInstance = ref<CliInstance | null>(null)
 const loadingInstances = ref(false)
@@ -128,31 +149,18 @@ async function create() {
 
       <!-- Language selector -->
       <div class="lang-row">
-        <select
-          :value="locale"
-          @change="setLocale(($event.target as HTMLSelectElement).value as Language)"
+        <v-select
+          :model-value="locale"
+          :items="langItems"
+          item-title="label"
+          item-value="code"
+          density="compact"
+          variant="outlined"
+          hide-details
           aria-label="Language"
-          class="lang-select text-caption"
-        >
-          <option value="fr">Français</option>
-          <option value="en">English</option>
-          <option value="es">Español</option>
-          <option value="pt">Português</option>
-          <option value="pt-BR">Português (Brasil)</option>
-          <option value="de">Deutsch</option>
-          <option value="no">Norsk</option>
-          <option value="it">Italiano</option>
-          <option value="ar">العربية</option>
-          <option value="ru">Русский</option>
-          <option value="pl">Polski</option>
-          <option value="sv">Svenska</option>
-          <option value="fi">Suomi</option>
-          <option value="da">Dansk</option>
-          <option value="tr">Türkçe</option>
-          <option value="zh-CN">中文（简体）</option>
-          <option value="ko">한국어</option>
-          <option value="ja">日本語</option>
-        </select>
+          style="max-width: 220px"
+          @update:model-value="setLocale"
+        />
       </div>
     </div>
   </div>
@@ -311,13 +319,6 @@ async function create() {
   border-radius: 4px;
 }
 .lang-row { display: flex; justify-content: center; }
-.lang-select {
-  background: transparent;
-  color: var(--content-subtle);
-  border: none;
-  outline: none;
-  cursor: pointer;
-}
 
 /* Create project screen */
 .create-content {
