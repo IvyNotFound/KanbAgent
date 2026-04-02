@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { mount, shallowMount, flushPromises } from '@vue/test-utils'
+import { shallowMount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import AgentEditModal from '@renderer/components/AgentEditModal.vue'
 import i18n from '@renderer/plugins/i18n'
@@ -38,9 +38,10 @@ describe('AgentEditModal', () => {
         stubs: teleportStub,
       },
     })
-    const input = wrapper.find('input')
-    expect(input.exists()).toBe(true)
-    expect((input.element as HTMLInputElement).value).toBe('dev-front')
+    // v-text-field is a custom element — v-model is not reflected as HTML attribute.
+    // Verify that the name reactive state is initialized from the agent prop.
+    expect(wrapper.find('v-text-field').exists()).toBe(true)
+    expect((wrapper.vm as any).name).toBe('dev-front')
   })
 
   it('renders thinking mode buttons', () => {
@@ -53,8 +54,9 @@ describe('AgentEditModal', () => {
         stubs: teleportStub,
       },
     })
-    const buttons = wrapper.findAll('button')
-    const autoBtn = buttons.find(b => b.text().trim().toLowerCase() === 'auto')
+    // v-btn elements are custom elements in test context (isCustomElement: tag => tag.startsWith('v-'))
+    const vBtns = wrapper.findAll('v-btn')
+    const autoBtn = vBtns.find(b => b.text().trim().toLowerCase() === 'auto')
     expect(autoBtn?.exists()).toBe(true)
   })
 
@@ -68,9 +70,10 @@ describe('AgentEditModal', () => {
         stubs: teleportStub,
       },
     })
-    const textarea = wrapper.find('textarea')
-    expect(textarea.exists()).toBe(true)
-    expect((textarea.element as HTMLTextAreaElement).value).toBe('Bash,Edit,Read')
+    // v-textarea is a custom element — v-model is not reflected as HTML attribute.
+    // Verify that allowedTools reactive state is initialized from the agent prop.
+    expect(wrapper.find('v-textarea').exists()).toBe(true)
+    expect((wrapper.vm as any).allowedTools).toBe('Bash,Edit,Read')
   })
 
   it('emits close when backdrop is clicked', async () => {
@@ -88,7 +91,7 @@ describe('AgentEditModal', () => {
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
-  it('emits close when close button ✕ is clicked', async () => {
+  it('emits close when close button is clicked', async () => {
     const wrapper = shallowMount(AgentEditModal, {
       props: { agent },
       global: {
@@ -98,9 +101,9 @@ describe('AgentEditModal', () => {
         stubs: teleportStub,
       },
     })
-    const closeBtn = wrapper.findAll('button').find(b => b.text().includes('✕'))
-    expect(closeBtn?.exists()).toBe(true)
-    await closeBtn!.trigger('click')
+    const closeBtn = wrapper.find('[data-testid="btn-close"]')
+    expect(closeBtn.exists()).toBe(true)
+    await closeBtn.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
@@ -118,13 +121,9 @@ describe('AgentEditModal', () => {
     })
     await flushPromises()
 
-    // Click the save button
-    const saveBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('save') || text.includes('enregistrer') || text.includes('sauvegarder')
-    })
-    expect(saveBtn?.exists()).toBe(true)
-    await saveBtn!.trigger('click')
+    const saveBtn = wrapper.find('[data-testid="btn-save"]')
+    expect(saveBtn.exists()).toBe(true)
+    await saveBtn.trigger('click')
     await flushPromises()
     expect(api.updateAgent).toHaveBeenCalledWith('/p/.claude/db', 7, expect.objectContaining({
       name: 'dev-front',
@@ -150,14 +149,10 @@ describe('AgentEditModal', () => {
     })
     await flushPromises()
 
-    const saveBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('save') || text.includes('enregistrer') || text.includes('sauvegarder')
-    })
-    expect(saveBtn?.exists()).toBe(true)
-    await saveBtn!.trigger('click')
+    const saveBtn = wrapper.find('[data-testid="btn-save"]')
+    expect(saveBtn.exists()).toBe(true)
+    await saveBtn.trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('DB locked')
   })
-
 })
