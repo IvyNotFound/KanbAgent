@@ -45,7 +45,7 @@ function relativeTime(ts: number): string {
     </div>
     <!-- Filters bar -->
     <div class="he-filters">
-      <span class="he-filter-label text-caption">{{ t('hooks.filters') }}</span>
+      <span class="he-filter-label text-overline text-medium-emphasis">{{ t('hooks.filters') }}</span>
       <v-chip-group v-model="filterTypes" multiple column>
         <v-chip
           v-for="eventType in ALL_TYPES"
@@ -124,8 +124,6 @@ function relativeTime(ts: number): string {
 }
 .he-filter-label {
   color: var(--content-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   margin-right: 4px;
 }
 .he-chip-item :deep(.v-chip__content) {
