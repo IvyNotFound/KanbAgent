@@ -138,23 +138,23 @@ onMounted(scan)
     <template v-else-if="data">
       <!-- Stat cards -->
       <div class="telem-stat-grid ga-4" :class="hasAdvancedMetrics ? 'telem-stat-grid--wide' : ''">
-        <div class="telem-stat-card">
+        <div class="telem-stat-card pa-3 ga-1">
           <span class="telem-stat-label text-overline">{{ t('telemetry.totalLines') }}</span>
           <span class="telem-stat-value text-h5">{{ formatLines(data.totalLines) }}</span>
         </div>
-        <div v-if="hasAdvancedMetrics" class="telem-stat-card">
+        <div v-if="hasAdvancedMetrics" class="telem-stat-card pa-3 ga-1">
           <span class="telem-stat-label text-overline">{{ t('telemetry.realCode') }}</span>
           <span class="telem-stat-value text-h5">{{ formatLines(data.totalCodeLines ?? 0) }}</span>
         </div>
-        <div class="telem-stat-card">
+        <div class="telem-stat-card pa-3 ga-1">
           <span class="telem-stat-label text-overline">{{ t('telemetry.totalFiles') }}</span>
           <span class="telem-stat-value text-h5">{{ data.totalFiles.toLocaleString() }}</span>
         </div>
-        <div v-if="hasAdvancedMetrics" class="telem-stat-card">
+        <div v-if="hasAdvancedMetrics" class="telem-stat-card pa-3 ga-1">
           <span class="telem-stat-label text-overline">{{ t('telemetry.testFiles') }}</span>
           <span class="telem-stat-value text-h5">{{ (data.totalTestFiles ?? 0).toLocaleString() }}</span>
         </div>
-        <div class="telem-stat-card">
+        <div class="telem-stat-card pa-3 ga-1">
           <span class="telem-stat-label text-overline">{{ t('telemetry.languages') }}</span>
           <span class="telem-stat-value text-h5">{{ data.languages.length }}</span>
         </div>
