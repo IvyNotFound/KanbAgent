@@ -198,7 +198,7 @@ const maxCount = computed(() => Math.max(...Array.from(dayCountMap.value.values(
   flex-wrap: wrap;
 }
 .heatmap-filter-btn {
-  font-size: 11px !important;
+  font-size: 0.75rem !important; /* text-caption — monospace retained for filter button style */
   font-family: ui-monospace, monospace !important;
   border: 1px solid var(--edge-subtle) !important;
   color: var(--content-subtle) !important;

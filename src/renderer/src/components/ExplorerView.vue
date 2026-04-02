@@ -178,7 +178,7 @@ onMounted(loadTree)
   min-height: 41px;
 }
 .ex-content-filename {
-  font-size: 12px;
+  font-size: 12px; /* monospace filename — code path exception */
   font-family: ui-monospace, monospace;
   color: var(--content-tertiary);
   overflow: hidden;
@@ -189,7 +189,7 @@ onMounted(loadTree)
 }
 .ex-content-body { flex: 1; overflow: auto; }
 .ex-pre {
-  font-size: 12px;
+  font-size: 12px; /* monospace code preview — exception */
   font-family: ui-monospace, monospace;
   color: var(--content-tertiary);
   line-height: 1.625;

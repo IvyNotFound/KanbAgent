@@ -342,7 +342,7 @@ function effortColor(effort: number): string {
   flex: 1;
 }
 .palette-text-field :deep(.v-field__input) {
-  font-size: 14px;
+  font-size: 0.875rem; /* text-body-2 equivalent — :deep Vuetify override, class not applicable */
   min-height: 0;
   padding-top: 8px;
   padding-bottom: 8px;
@@ -368,7 +368,7 @@ function effortColor(effort: number): string {
 }
 .filter-chip--mono :deep(.v-chip__content) {
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  font-size: 12px;
+  font-size: 0.75rem; /* text-caption equivalent — :deep Vuetify override */
 }
 /* Soften chip borders on dark background — selected chips override via inline :style */
 .palette-filters :deep(.v-chip--variant-outlined) {
@@ -440,7 +440,7 @@ function effortColor(effort: number): string {
 
 /* Task item content */
 .task-id {
-  font-size: 12px;
+  font-size: 0.75rem; /* text-caption */
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
   color: var(--content-faint);
   flex-shrink: 0;
@@ -453,14 +453,14 @@ function effortColor(effort: number): string {
   white-space: nowrap;
 }
 .task-agent {
-  font-size: 11px;
+  font-size: 0.75rem; /* text-caption */
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .task-scope {
-  font-size: 10px;
+  font-size: 10px; /* micro-label — no exact MD3 equivalent, kept as documented exception */
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
   padding: 4px;
   border-radius: 3px;
@@ -484,7 +484,7 @@ function effortColor(effort: number): string {
 }
 .palette-kbd {
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: 0.75rem; /* text-caption */
   background: var(--surface-secondary);
   color: var(--content-subtle);
   border-radius: 4px;

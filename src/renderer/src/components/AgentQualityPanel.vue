@@ -237,7 +237,7 @@ watch(() => store.dbPath, fetchQuality)
   font-weight: 600;
 }
 .quality-rate-value {
-  font-size: 18px;
+  font-size: 18px; /* display metric — above MD3 type scale, kept intentionally */
   font-family: ui-monospace, monospace;
   font-weight: 700;
 }
@@ -269,7 +269,7 @@ watch(() => store.dbPath, fetchQuality)
 .quality-data-row { padding: 2px 0; }
 .quality-col-right { text-align: right; }
 .quality-agent-name {
-  font-size: 12px;
+  font-size: 0.75rem; /* text-caption */
   font-family: ui-monospace, monospace;
   font-weight: 600;
   overflow: hidden;
@@ -277,7 +277,7 @@ watch(() => store.dbPath, fetchQuality)
   white-space: nowrap;
 }
 .quality-col-mono {
-  font-size: 12px;
+  font-size: 0.75rem; /* text-caption */
   font-family: ui-monospace, monospace;
 }
 .quality-col-muted { color: var(--content-tertiary); }
