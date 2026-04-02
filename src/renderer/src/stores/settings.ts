@@ -13,6 +13,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import i18n from '../plugins/i18n'
 import { setDarkMode } from '../utils/agentColor'
+import { vuetifyThemeName } from '../plugins/vuetifyTheme'
 import type { CliType, CliInstance } from '@shared/cli-types'
 
 export type Theme = 'dark' | 'light'
@@ -83,19 +84,15 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Applies a theme to the document root element.
-   * Adds/removes the 'dark' CSS class used by Tailwind.
+   * Applies a theme via Vuetify's theme system.
+   * Vuetify updates --v-theme-* CSS vars and data-v-theme attribute automatically.
    *
    * @param t - The theme to apply ('dark' | 'light')
    * @returns {void}
    */
   function applyTheme(t: Theme) {
     const dark = t === 'dark'
-    if (dark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    vuetifyThemeName.value = t
     setDarkMode(dark)
   }
 
