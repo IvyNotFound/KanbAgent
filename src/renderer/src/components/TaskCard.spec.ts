@@ -243,7 +243,7 @@ describe('TaskCard — multi-agents', () => {
     await flushPromises()
 
     // No avatars rendered — AgentBadge fallback is shown
-    const avatarDivs = wrapper.findAll('div.rounded-full')
+    const avatarDivs = wrapper.findAll('div.avatar')
     expect(avatarDivs.length).toBe(0)
     const badge = wrapper.findComponent({ name: 'AgentBadge' })
     expect(badge.exists()).toBe(true)
@@ -266,9 +266,9 @@ describe('TaskCard — multi-agents', () => {
     })
     await nextTick()
 
-    const avatarDivs = wrapper.findAll('div.rounded-full')
+    const avatarDivs = wrapper.findAll('div.avatar')
     expect(avatarDivs.length).toBe(2)
-    const overflowBadge = wrapper.findAll('div.rounded-full').find(d => d.text().startsWith('+'))
+    const overflowBadge = wrapper.findAll('div.avatar').find(d => d.text().startsWith('+'))
     expect(overflowBadge).toBeUndefined()
   })
 
@@ -290,7 +290,7 @@ describe('TaskCard — multi-agents', () => {
     })
     await nextTick()
 
-    const allRounded = wrapper.findAll('div.rounded-full')
+    const allRounded = wrapper.findAll('div.avatar')
     expect(allRounded.length).toBe(3)
     const overflowBadge = allRounded.find(d => d.text().startsWith('+'))
     expect(overflowBadge).toBeUndefined()
@@ -315,7 +315,7 @@ describe('TaskCard — multi-agents', () => {
     })
     await nextTick()
 
-    const allRounded = wrapper.findAll('div.rounded-full')
+    const allRounded = wrapper.findAll('div.avatar')
     expect(allRounded.length).toBe(4)
     const overflowBadge = allRounded.find(d => d.text().trim() === '+1')
     expect(overflowBadge).toBeDefined()

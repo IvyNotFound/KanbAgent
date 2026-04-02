@@ -96,16 +96,16 @@ const staleTooltip = computed(() => {
 })
 
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
-const EFFORT_BADGE: Record<number, string> = {
-  1: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  2: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  3: 'bg-red-500/20 text-red-400 border-red-500/30',
+const EFFORT_CLASS: Record<number, string> = {
+  1: 'badge-effort-1',
+  2: 'badge-effort-2',
+  3: 'badge-effort-3',
 }
 
-const PRIORITY_BADGE: Record<string, string> = {
-  critical: 'bg-red-500/20 text-red-400 border-red-500/30',
-  high:     'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  normal:   'bg-surface-tertiary text-content-muted border-edge-default',
+const PRIORITY_CLASS: Record<string, string> = {
+  critical: 'badge-priority-critical',
+  high:     'badge-priority-high',
+  normal:   'badge-priority-normal',
   low:      '',
 }
 const PRIORITY_LABEL: Record<string, string> = {
@@ -118,45 +118,45 @@ const PRIORITY_LABEL: Record<string, string> = {
 
 <template>
   <div
-    class="bg-surface-secondary border border-edge-default rounded-lg p-3 hover:border-content-faint transition-colors cursor-pointer min-h-[120px] flex flex-col"
+    class="task-card"
     :draggable="task.status === 'todo' || task.status === 'in_progress'"
     @click="store.openTask(task)"
     @dragstart="onDragStart"
     @contextmenu="onContextMenu"
   >
     <!-- Top row: title + effort/priority -->
-    <div class="flex items-start justify-between gap-2 mb-2">
-      <div class="flex items-start gap-1.5 flex-1 min-w-0">
+    <div class="card-top">
+      <div class="card-title-area">
         <span
           v-if="task.status === 'in_progress'"
-          class="mt-1 shrink-0 w-2 h-2 rounded-full bg-cyan-400 animate-pulse"
+          class="card-pulse"
           :title="t('task.running')"
           :aria-label="t('task.running')"
         />
-        <p class="text-sm text-content-primary font-medium leading-snug min-w-0 break-words">{{ task.title }}</p>
+        <p class="card-title">{{ task.title }}</p>
       </div>
-      <div class="flex items-center gap-1 shrink-0">
+      <div class="card-badge-row">
         <span
           v-if="isStaleTask"
-          class="text-xs font-bold px-1.5 py-0.5 rounded font-mono border bg-orange-500/20 text-orange-400 border-orange-500/30"
+          class="badge badge-stale"
           :title="staleTooltip"
         >⚠</span>
         <span
           v-if="task.priority && task.priority !== 'normal' && task.priority !== 'low'"
-          :class="['text-xs font-bold px-1.5 py-0.5 rounded font-mono border', PRIORITY_BADGE[task.priority]]"
+          :class="['badge', PRIORITY_CLASS[task.priority]]"
         >{{ PRIORITY_LABEL[task.priority] }}</span>
         <span
           v-if="task.effort"
-          :class="['text-xs font-bold px-1.5 py-0.5 rounded font-mono border', EFFORT_BADGE[task.effort]]"
+          :class="['badge', EFFORT_CLASS[task.effort]]"
         >{{ EFFORT_LABEL[task.effort] }}</span>
       </div>
     </div>
 
     <!-- Badges: perimeter + agent avatars -->
-    <div v-if="task.scope || task.agent_name || assigneeAvatars.length > 0" class="flex flex-wrap gap-1 mb-2">
+    <div v-if="task.scope || task.agent_name || assigneeAvatars.length > 0" class="card-meta">
       <span
         v-if="task.scope"
-        class="text-xs px-1.5 py-0.5 rounded font-mono border"
+        class="badge-scope"
         :style="{
           color: perimeterFg(task.scope),
           backgroundColor: perimeterBg(task.scope),
@@ -164,17 +164,17 @@ const PRIORITY_LABEL: Record<string, string> = {
         }"
       >{{ task.scope }}</span>
       <!-- Multi-agent avatars (≤3 + overflow badge) -->
-      <div v-if="assigneeAvatars.length > 0" class="flex items-center gap-0.5">
+      <div v-if="assigneeAvatars.length > 0" class="card-avatars">
         <div
           v-for="av in visibleAvatars"
           :key="av.agent_id"
-          class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold border"
+          class="avatar"
           :style="{ color: agentFg(av.agent_name), backgroundColor: agentBg(av.agent_name), borderColor: agentBorder(av.agent_name) }"
           :title="av.agent_name"
         >{{ av.agent_name.slice(0, 2).toUpperCase() }}</div>
         <div
           v-if="overflowCount > 0"
-          class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-surface-tertiary text-content-muted border border-edge-default"
+          class="avatar avatar-overflow"
         >+{{ overflowCount }}</div>
       </div>
       <!-- Fallback: single agent badge when no task_agents rows -->
@@ -182,16 +182,16 @@ const PRIORITY_LABEL: Record<string, string> = {
     </div>
 
     <!-- Footer: dates left, #id right -->
-    <div :class="['flex items-end justify-between gap-2 mt-auto pt-2', (task.scope || task.agent_name) && 'border-t border-edge-default/50']">
-      <div class="flex flex-col gap-0.5">
-        <p class="text-xs text-content-subtle">
-          <span class="text-content-muted">{{ t('taskDetail.created') }}</span> {{ formattedCreatedAt }}
+    <div :class="['card-footer', { 'card-footer-bordered': task.scope || task.agent_name }]">
+      <div class="card-dates">
+        <p class="card-date">
+          <span class="date-label">{{ t('taskDetail.created') }}</span> {{ formattedCreatedAt }}
         </p>
-        <p class="text-xs text-content-subtle">
-          <span class="text-content-muted">{{ t('taskDetail.updated') }}</span> {{ formattedUpdatedAt }}
+        <p class="card-date">
+          <span class="date-label">{{ t('taskDetail.updated') }}</span> {{ formattedUpdatedAt }}
         </p>
       </div>
-      <span class="text-xs text-content-faint font-mono shrink-0">#{{ task.id }}</span>
+      <span class="card-id">#{{ task.id }}</span>
     </div>
   </div>
 
@@ -203,3 +203,169 @@ const PRIORITY_LABEL: Record<string, string> = {
     @close="contextMenu = null"
   />
 </template>
+
+<style scoped>
+.task-card {
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 150ms;
+}
+.task-card:hover {
+  border-color: var(--content-faint);
+}
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.card-title-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.card-pulse {
+  margin-top: 4px;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22d3ee; /* cyan-400 */
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  display: inline-block;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.card-title {
+  font-size: 0.875rem;
+  color: var(--content-primary);
+  font-weight: 500;
+  line-height: 1.35;
+  min-width: 0;
+  word-break: break-word;
+}
+.card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+/* Base badge */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  border: 1px solid transparent;
+}
+.badge-stale {
+  background-color: rgba(249, 115, 22, 0.2);
+  color: #fb923c; /* orange-400 */
+  border-color: rgba(249, 115, 22, 0.3);
+}
+.badge-effort-1 {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399; /* emerald-400 */
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.badge-effort-2 {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24; /* amber-400 */
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.badge-effort-3 {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171; /* red-400 */
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.badge-priority-critical {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.badge-priority-high {
+  background-color: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.3);
+}
+.badge-priority-normal {
+  background-color: var(--surface-tertiary);
+  color: var(--content-muted);
+  border-color: var(--edge-default);
+}
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.badge-scope {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  border: 1px solid transparent;
+}
+.card-avatars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.avatar-overflow {
+  background-color: var(--surface-tertiary);
+  color: var(--content-muted);
+  border-color: var(--edge-default);
+}
+.card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.card-footer-bordered {
+  border-top: 1px solid color-mix(in srgb, var(--edge-default) 50%, transparent);
+}
+.card-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.card-date {
+  font-size: 0.75rem;
+  color: var(--content-subtle);
+}
+.date-label {
+  color: var(--content-muted);
+}
+.card-id {
+  font-size: 0.75rem;
+  color: var(--content-faint);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  flex-shrink: 0;
+}
+</style>

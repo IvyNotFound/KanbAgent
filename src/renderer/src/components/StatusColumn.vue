@@ -10,7 +10,7 @@ const props = defineProps<{
   title: string
   statut: string
   tasks: Task[]
-  accentClass: string
+  accentColor: string
   /** Whether the tree view is active. Controlled externally so all columns share the same mode. */
   treeMode?: boolean
 }>()
@@ -50,30 +50,101 @@ function onDrop(e: DragEvent): void {
 
 <template>
   <div
-    :class="[
-      'flex flex-col flex-1 min-w-0 bg-surface-primary/50 rounded-xl border transition-colors',
-      isDragOver ? 'border-emerald-500/60 bg-emerald-500/5' : 'border-edge-subtle'
-    ]"
+    :class="['column-wrap', { 'drag-over': isDragOver }]"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
     @drop="onDrop"
   >
-    <div class="flex items-center justify-between px-3 py-2.5 border-b border-edge-subtle">
-      <div class="flex items-center gap-2">
-        <div :class="['w-2 h-2 rounded-full', accentClass]"></div>
-        <span class="text-xs font-semibold text-content-tertiary uppercase tracking-wider">{{ title }}</span>
+    <div class="column-header">
+      <div class="column-title-row">
+        <div class="column-accent" :style="{ backgroundColor: accentColor }"></div>
+        <span class="column-title">{{ title }}</span>
       </div>
-      <span class="text-xs text-content-subtle bg-surface-secondary px-1.5 py-0.5 rounded">{{ tasks.length }}</span>
+      <span class="column-count">{{ tasks.length }}</span>
     </div>
     <!-- List mode -->
-    <div v-if="!treeMode" class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0" style="contain: content;">
+    <div v-if="!treeMode" class="column-body" style="contain: content;">
       <TaskCard v-for="task in tasks" :key="task.id" :task="task" />
-      <div v-if="tasks.length === 0" class="text-xs text-content-faint text-center py-8">{{ t('statusColumn.noTasks') }}</div>
+      <div v-if="tasks.length === 0" class="column-empty">{{ t('statusColumn.noTasks') }}</div>
     </div>
     <!-- Tree mode -->
-    <div v-else class="flex-1 overflow-y-auto p-2 min-h-0 flex flex-col gap-0.5" style="contain: content;">
+    <div v-else class="column-body-tree" style="contain: content;">
       <TaskTreeNode v-for="root in treeRoots" :key="root.id" :node="root" />
-      <div v-if="treeRoots.length === 0" class="text-xs text-content-faint text-center py-8">{{ t('statusColumn.noTasks') }}</div>
+      <div v-if="treeRoots.length === 0" class="column-empty">{{ t('statusColumn.noTasks') }}</div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.column-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background-color: color-mix(in srgb, var(--surface-primary) 50%, transparent);
+  border-radius: 12px;
+  border: 1px solid var(--edge-subtle);
+  transition: border-color 150ms, background-color 150ms;
+}
+.column-wrap.drag-over {
+  border-color: rgba(16, 185, 129, 0.6);
+  background-color: rgba(16, 185, 129, 0.05);
+}
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.column-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.column-accent {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.column-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--content-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.column-count {
+  font-size: 0.75rem;
+  color: var(--content-subtle);
+  background-color: var(--surface-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.column-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+.column-body-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.column-empty {
+  font-size: 0.75rem;
+  color: var(--content-faint);
+  text-align: center;
+  padding: 32px 0;
+}
+</style>

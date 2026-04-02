@@ -189,42 +189,42 @@ exports[`DbSelector — snapshots > matches snapshot: home screen with error 1`]
 `;
 
 exports[`StatusColumn — snapshots > matches snapshot: column with 2 tasks 1`] = `
-"<div class="flex flex-col flex-1 min-w-0 bg-surface-primary/50 rounded-xl border transition-colors border-edge-subtle">
-  <div class="flex items-center justify-between px-3 py-2.5 border-b border-edge-subtle">
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-slate-400"></div><span class="text-xs font-semibold text-content-tertiary uppercase tracking-wider">Todo</span>
-    </div><span class="text-xs text-content-subtle bg-surface-secondary px-1.5 py-0.5 rounded">2</span>
+"<div data-v-b539d429="" class="column-wrap">
+  <div data-v-b539d429="" class="column-header">
+    <div data-v-b539d429="" class="column-title-row">
+      <div data-v-b539d429="" class="column-accent" style="background-color: rgb(148, 163, 184);"></div><span data-v-b539d429="" class="column-title">Todo</span>
+    </div><span data-v-b539d429="" class="column-count">2</span>
   </div><!-- List mode -->
-  <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0" style="contain: content;">
-    <task-card-stub task="[object Object]"></task-card-stub>
-    <task-card-stub task="[object Object]"></task-card-stub>
+  <div data-v-b539d429="" class="column-body" style="contain: content;">
+    <task-card-stub data-v-b539d429="" task="[object Object]"></task-card-stub>
+    <task-card-stub data-v-b539d429="" task="[object Object]"></task-card-stub>
     <!--v-if-->
   </div>
 </div>"
 `;
 
 exports[`StatusColumn — snapshots > matches snapshot: empty column 1`] = `
-"<div class="flex flex-col flex-1 min-w-0 bg-surface-primary/50 rounded-xl border transition-colors border-edge-subtle">
-  <div class="flex items-center justify-between px-3 py-2.5 border-b border-edge-subtle">
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-slate-400"></div><span class="text-xs font-semibold text-content-tertiary uppercase tracking-wider">Todo</span>
-    </div><span class="text-xs text-content-subtle bg-surface-secondary px-1.5 py-0.5 rounded">0</span>
+"<div data-v-b539d429="" class="column-wrap">
+  <div data-v-b539d429="" class="column-header">
+    <div data-v-b539d429="" class="column-title-row">
+      <div data-v-b539d429="" class="column-accent" style="background-color: rgb(148, 163, 184);"></div><span data-v-b539d429="" class="column-title">Todo</span>
+    </div><span data-v-b539d429="" class="column-count">0</span>
   </div><!-- List mode -->
-  <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0" style="contain: content;">
-    <div class="text-xs text-content-faint text-center py-8">Aucune tâche</div>
+  <div data-v-b539d429="" class="column-body" style="contain: content;">
+    <div data-v-b539d429="" class="column-empty">Aucune tâche</div>
   </div>
 </div>"
 `;
 
 exports[`StatusColumn — snapshots > matches snapshot: in_progress column (drop target) 1`] = `
-"<div class="flex flex-col flex-1 min-w-0 bg-surface-primary/50 rounded-xl border transition-colors border-edge-subtle">
-  <div class="flex items-center justify-between px-3 py-2.5 border-b border-edge-subtle">
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-cyan-400"></div><span class="text-xs font-semibold text-content-tertiary uppercase tracking-wider">In Progress</span>
-    </div><span class="text-xs text-content-subtle bg-surface-secondary px-1.5 py-0.5 rounded">1</span>
+"<div data-v-b539d429="" class="column-wrap">
+  <div data-v-b539d429="" class="column-header">
+    <div data-v-b539d429="" class="column-title-row">
+      <div data-v-b539d429="" class="column-accent" style="background-color: rgb(34, 211, 238);"></div><span data-v-b539d429="" class="column-title">In Progress</span>
+    </div><span data-v-b539d429="" class="column-count">1</span>
   </div><!-- List mode -->
-  <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0" style="contain: content;">
-    <task-card-stub task="[object Object]"></task-card-stub>
+  <div data-v-b539d429="" class="column-body" style="contain: content;">
+    <task-card-stub data-v-b539d429="" task="[object Object]"></task-card-stub>
     <!--v-if-->
   </div>
 </div>"
@@ -297,39 +297,39 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
 `;
 
 exports[`TaskCard — snapshots > matches snapshot: critical in_progress task with all badges 1`] = `
-"<div class="bg-surface-secondary border border-edge-default rounded-lg p-3 hover:border-content-faint transition-colors cursor-pointer min-h-[120px] flex flex-col" draggable="true">
+"<div data-v-8da3d041="" class="task-card" draggable="true">
   <!-- Top row: title + effort/priority -->
-  <div class="flex items-start justify-between gap-2 mb-2">
-    <div class="flex items-start gap-1.5 flex-1 min-w-0"><span class="mt-1 shrink-0 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" title="Tâche en cours d'exécution" aria-label="Tâche en cours d'exécution"></span>
-      <p class="text-sm text-content-primary font-medium leading-snug min-w-0 break-words">Urgent Fix</p>
+  <div data-v-8da3d041="" class="card-top">
+    <div data-v-8da3d041="" class="card-title-area"><span data-v-8da3d041="" class="card-pulse" title="Tâche en cours d'exécution" aria-label="Tâche en cours d'exécution"></span>
+      <p data-v-8da3d041="" class="card-title">Urgent Fix</p>
     </div>
-    <div class="flex items-center gap-1 shrink-0">
-      <!--v-if--><span class="text-xs font-bold px-1.5 py-0.5 rounded font-mono border bg-red-500/20 text-red-400 border-red-500/30">!!</span><span class="text-xs font-bold px-1.5 py-0.5 rounded font-mono border bg-red-500/20 text-red-400 border-red-500/30">L</span>
+    <div data-v-8da3d041="" class="card-badge-row">
+      <!--v-if--><span data-v-8da3d041="" class="badge badge-priority-critical">!!</span><span data-v-8da3d041="" class="badge badge-effort-3">L</span>
     </div>
   </div><!-- Badges: perimeter + agent avatars -->
-  <div class="flex flex-wrap gap-1 mb-2"><span class="text-xs px-1.5 py-0.5 rounded font-mono border" style="color: rgb(123, 197, 234); background-color: rgb(24, 43, 52); border-color: rgb(43, 77, 94);">back-electron</span><!-- Multi-agent avatars (≤3 + overflow badge) -->
+  <div data-v-8da3d041="" class="card-meta"><span data-v-8da3d041="" class="badge-scope" style="color: rgb(123, 197, 234); background-color: rgb(24, 43, 52); border-color: rgb(43, 77, 94);">back-electron</span><!-- Multi-agent avatars (≤3 + overflow badge) -->
     <!-- Fallback: single agent badge when no task_agents rows -->
-    <agent-badge-stub name="dev-back" active="false"></agent-badge-stub>
+    <agent-badge-stub data-v-8da3d041="" name="dev-back" active="false"></agent-badge-stub>
   </div><!-- Footer: dates left, #id right -->
-  <div class="flex items-end justify-between gap-2 mt-auto pt-2 border-t border-edge-default/50">
-    <div class="flex flex-col gap-0.5">
-      <p class="text-xs text-content-subtle"><span class="text-content-muted">Créé</span> 01/01/26 00:00</p>
-      <p class="text-xs text-content-subtle"><span class="text-content-muted">Modifié</span> 01/01/26 00:00</p>
-    </div><span class="text-xs text-content-faint font-mono shrink-0">#42</span>
+  <div data-v-8da3d041="" class="card-footer card-footer-bordered">
+    <div data-v-8da3d041="" class="card-dates">
+      <p data-v-8da3d041="" class="card-date"><span data-v-8da3d041="" class="date-label">Créé</span> 01/01/26 00:00</p>
+      <p data-v-8da3d041="" class="card-date"><span data-v-8da3d041="" class="date-label">Modifié</span> 01/01/26 00:00</p>
+    </div><span data-v-8da3d041="" class="card-id">#42</span>
   </div>
 </div>
 <!--v-if-->"
 `;
 
 exports[`TaskCard — snapshots > matches snapshot: done task without agent or perimetre 1`] = `
-"<div class="bg-surface-secondary border border-edge-default rounded-lg p-3 hover:border-content-faint transition-colors cursor-pointer min-h-[120px] flex flex-col" draggable="false">
+"<div data-v-8da3d041="" class="task-card" draggable="false">
   <!-- Top row: title + effort/priority -->
-  <div class="flex items-start justify-between gap-2 mb-2">
-    <div class="flex items-start gap-1.5 flex-1 min-w-0">
+  <div data-v-8da3d041="" class="card-top">
+    <div data-v-8da3d041="" class="card-title-area">
       <!--v-if-->
-      <p class="text-sm text-content-primary font-medium leading-snug min-w-0 break-words">Completed Task</p>
+      <p data-v-8da3d041="" class="card-title">Completed Task</p>
     </div>
-    <div class="flex items-center gap-1 shrink-0">
+    <div data-v-8da3d041="" class="card-badge-row">
       <!--v-if-->
       <!--v-if-->
       <!--v-if-->
@@ -337,38 +337,38 @@ exports[`TaskCard — snapshots > matches snapshot: done task without agent or p
   </div><!-- Badges: perimeter + agent avatars -->
   <!--v-if-->
   <!-- Footer: dates left, #id right -->
-  <div class="flex items-end justify-between gap-2 mt-auto pt-2">
-    <div class="flex flex-col gap-0.5">
-      <p class="text-xs text-content-subtle"><span class="text-content-muted">Créé</span> 01/01/26 00:00</p>
-      <p class="text-xs text-content-subtle"><span class="text-content-muted">Modifié</span> 01/01/26 00:00</p>
-    </div><span class="text-xs text-content-faint font-mono shrink-0">#99</span>
+  <div data-v-8da3d041="" class="card-footer">
+    <div data-v-8da3d041="" class="card-dates">
+      <p data-v-8da3d041="" class="card-date"><span data-v-8da3d041="" class="date-label">Créé</span> 01/01/26 00:00</p>
+      <p data-v-8da3d041="" class="card-date"><span data-v-8da3d041="" class="date-label">Modifié</span> 01/01/26 00:00</p>
+    </div><span data-v-8da3d041="" class="card-id">#99</span>
   </div>
 </div>
 <!--v-if-->"
 `;
 
 exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
-"<div class="bg-surface-secondary border border-edge-default rounded-lg p-3 hover:border-content-faint transition-colors cursor-pointer min-h-[120px] flex flex-col" draggable="true">
+"<div data-v-8da3d041="" class="task-card" draggable="true">
   <!-- Top row: title + effort/priority -->
-  <div class="flex items-start justify-between gap-2 mb-2">
-    <div class="flex items-start gap-1.5 flex-1 min-w-0">
+  <div data-v-8da3d041="" class="card-top">
+    <div data-v-8da3d041="" class="card-title-area">
       <!--v-if-->
-      <p class="text-sm text-content-primary font-medium leading-snug min-w-0 break-words">Simple Task</p>
+      <p data-v-8da3d041="" class="card-title">Simple Task</p>
     </div>
-    <div class="flex items-center gap-1 shrink-0">
+    <div data-v-8da3d041="" class="card-badge-row">
       <!--v-if-->
-      <!--v-if--><span class="text-xs font-bold px-1.5 py-0.5 rounded font-mono border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">S</span>
+      <!--v-if--><span data-v-8da3d041="" class="badge badge-effort-1">S</span>
     </div>
   </div><!-- Badges: perimeter + agent avatars -->
-  <div class="flex flex-wrap gap-1 mb-2"><span class="text-xs px-1.5 py-0.5 rounded font-mono border" style="color: rgb(190, 228, 129); background-color: rgb(41, 50, 26); border-color: rgb(74, 91, 47);">front-vuejs</span><!-- Multi-agent avatars (≤3 + overflow badge) -->
+  <div data-v-8da3d041="" class="card-meta"><span data-v-8da3d041="" class="badge-scope" style="color: rgb(190, 228, 129); background-color: rgb(41, 50, 26); border-color: rgb(74, 91, 47);">front-vuejs</span><!-- Multi-agent avatars (≤3 + overflow badge) -->
     <!-- Fallback: single agent badge when no task_agents rows -->
-    <agent-badge-stub name="dev-front" active="false"></agent-badge-stub>
+    <agent-badge-stub data-v-8da3d041="" name="dev-front" active="false"></agent-badge-stub>
   </div><!-- Footer: dates left, #id right -->
-  <div class="flex items-end justify-between gap-2 mt-auto pt-2 border-t border-edge-default/50">
-    <div class="flex flex-col gap-0.5">
-      <p class="text-xs text-content-subtle"><span class="text-content-muted">Créé</span> 01/01/26 00:00</p>
-      <p class="text-xs text-content-subtle"><span class="text-content-muted">Modifié</span> 01/01/26 00:00</p>
-    </div><span class="text-xs text-content-faint font-mono shrink-0">#10</span>
+  <div data-v-8da3d041="" class="card-footer card-footer-bordered">
+    <div data-v-8da3d041="" class="card-dates">
+      <p data-v-8da3d041="" class="card-date"><span data-v-8da3d041="" class="date-label">Créé</span> 01/01/26 00:00</p>
+      <p data-v-8da3d041="" class="card-date"><span data-v-8da3d041="" class="date-label">Modifié</span> 01/01/26 00:00</p>
+    </div><span data-v-8da3d041="" class="card-id">#10</span>
   </div>
 </div>
 <!--v-if-->"

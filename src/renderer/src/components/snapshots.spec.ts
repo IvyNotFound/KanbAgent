@@ -96,7 +96,7 @@ describe('StatusColumn — snapshots', () => {
         title: 'Todo',
         statut: 'todo',
         tasks: [],
-        accentClass: 'bg-slate-400',
+        accentColor: '#94a3b8',
       },
       global: {
         plugins: [createTestingPinia({
@@ -117,7 +117,7 @@ describe('StatusColumn — snapshots', () => {
         title: 'Todo',
         statut: 'todo',
         tasks,
-        accentClass: 'bg-slate-400',
+        accentColor: '#94a3b8',
       },
       global: {
         plugins: [createTestingPinia({
@@ -135,7 +135,7 @@ describe('StatusColumn — snapshots', () => {
         title: 'In Progress',
         statut: 'in_progress',
         tasks,
-        accentClass: 'bg-cyan-400',
+        accentColor: '#22d3ee',
       },
       global: {
         plugins: [createTestingPinia({
