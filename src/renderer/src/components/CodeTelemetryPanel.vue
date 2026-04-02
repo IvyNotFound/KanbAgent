@@ -200,7 +200,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
 }
 .telemetry-header {
   flex-shrink: 0;
-  padding: 8px 12px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--edge-subtle);
   display: flex;
   align-items: center;
@@ -236,7 +236,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
 }
 .telemetry-body {
   flex: 1;
-  padding: 12px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;

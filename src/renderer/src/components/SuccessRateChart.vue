@@ -206,7 +206,7 @@ function tooltip(day: DayRate): string {
 
 .chart-header {
   flex-shrink: 0;
-  padding: 12px 16px 8px;
+  padding: 12px 16px;
 }
 
 .chart-body {
@@ -214,8 +214,8 @@ function tooltip(day: DayRate): string {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 8px 16px 12px;
-  gap: 8px;
+  padding: 12px 16px;
+  gap: 12px;
   overflow-y: auto;
 }
 

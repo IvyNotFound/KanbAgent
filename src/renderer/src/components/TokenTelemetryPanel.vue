@@ -117,7 +117,7 @@ function formatTokens(n: number): string {
 }
 .token-header {
   flex-shrink: 0;
-  padding: 8px 12px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--edge-subtle);
   display: flex;
   align-items: center;
@@ -152,10 +152,10 @@ function formatTokens(n: number): string {
 }
 /* 4 token metrics */
 .token-metrics {
-  padding: 12px;
+  padding: 12px 16px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 .token-metric {
   display: flex;
@@ -177,7 +177,7 @@ function formatTokens(n: number): string {
 .token-metric-value--cache-write { color: #fbbf24; }
 /* Session count */
 .token-sessions {
-  padding: 0 12px 8px;
+  padding: 0 16px 12px;
 }
 .token-sessions-text {
   font-size: 11px;

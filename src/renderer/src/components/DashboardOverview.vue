@@ -185,7 +185,7 @@ function priorityColor(priority: string): string {
   <div class="overview-root">
 
     <!-- Title -->
-    <h2 class="text-h6 font-weight-medium mb-2 shrink-0">{{ t('dashboard.overview') }}</h2>
+    <h2 class="text-h6 font-weight-medium shrink-0">{{ t('dashboard.overview') }}</h2>
 
     <!-- No project state -->
     <div v-if="!store.dbPath" class="d-flex align-center justify-center" style="height: 160px;">
@@ -195,7 +195,7 @@ function priorityColor(priority: string): string {
     <template v-else>
 
       <!-- ── 4 Metric Cards ─────────────────────────────────────────────── -->
-      <v-row dense class="mb-2">
+      <v-row dense>
 
         <!-- Active agents -->
         <v-col cols="3">
@@ -478,7 +478,7 @@ function priorityColor(priority: string): string {
 
 .section-header {
   flex-shrink: 0;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--edge-default);
 }
 

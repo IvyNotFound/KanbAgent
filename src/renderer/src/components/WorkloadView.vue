@@ -120,7 +120,7 @@ const maxEffort = computed(() =>
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--edge-subtle);
   background: var(--surface-base);
 }
@@ -139,7 +139,7 @@ const maxEffort = computed(() =>
 .wl-empty { font-size: 14px; color: var(--content-faint); font-style: italic; }
 @keyframes wlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-.wl-table { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.wl-table { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
 .wl-cols {
   display: grid;
   grid-template-columns: minmax(120px,1fr) 60px 60px minmax(0,2fr) minmax(0,1fr);

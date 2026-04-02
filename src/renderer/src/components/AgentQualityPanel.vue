@@ -187,7 +187,7 @@ watch(() => store.dbPath, fetchQuality)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--edge-subtle);
   background: var(--surface-base);
 }
@@ -240,7 +240,7 @@ watch(() => store.dbPath, fetchQuality)
 }
 .quality-global {
   flex-shrink: 0;
-  padding: 12px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--edge-subtle);
   background: rgba(0, 0, 0, 0.06);
 }
@@ -273,7 +273,7 @@ watch(() => store.dbPath, fetchQuality)
   font-style: italic;
 }
 .quality-table {
-  padding: 16px 20px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
