@@ -34,6 +34,7 @@ const vuetifyPlugin = createVuetify({
           secondary: '#10b981',    // brand-emerald
           warning: '#f59e0b',      // brand-amber
           error: '#ef4444',        // brand-red
+          info: '#3b82f6',         // blue-500
           surface: '#09090b',      // zinc-950
           background: '#18181b',   // zinc-900
           'on-surface': '#f4f4f5', // zinc-100
@@ -76,6 +77,7 @@ const vuetifyPlugin = createVuetify({
           secondary: '#10b981',
           warning: '#f59e0b',
           error: '#ef4444',
+          info: '#3b82f6',         // blue-500
           surface: '#ffffff',
           background: '#f4f4f5',
           'on-surface': '#18181b',

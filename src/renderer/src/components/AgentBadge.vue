@@ -29,7 +29,7 @@ defineProps<{
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: rgb(52 211 153); /* emerald-400 */
+  background-color: rgb(var(--v-theme-secondary));
   flex-shrink: 0;
   display: inline-block;
   margin-right: 4px;

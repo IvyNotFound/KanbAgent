@@ -129,17 +129,17 @@ const confirmBtnColor = computed(() =>
   border-radius: 8px;
   flex-shrink: 0;
 }
-.icon-danger  { background-color: rgb(239 68 68 / 0.15); }
-.icon-warning { background-color: rgb(245 158 11 / 0.15); }
-.icon-info    { background-color: rgb(59 130 246 / 0.15); }
+.icon-danger  { background-color: rgba(var(--v-theme-error), 0.15); }
+.icon-warning { background-color: rgba(var(--v-theme-warning), 0.15); }
+.icon-info    { background-color: rgba(var(--v-theme-info), 0.15); }
 
 .icon-svg {
   width: 18px;
   height: 18px;
 }
-.icon-svg--danger  { color: rgb(248 113 113); }
-.icon-svg--warning { color: rgb(251 191 36); }
-.icon-svg--info    { color: rgb(96 165 250); }
+.icon-svg--danger  { color: rgb(var(--v-theme-error)); }
+.icon-svg--warning { color: rgb(var(--v-theme-warning)); }
+.icon-svg--info    { color: rgb(var(--v-theme-info)); }
 
 .content-text { min-width: 0; }
 
