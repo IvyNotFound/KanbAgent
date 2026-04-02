@@ -60,7 +60,7 @@ function toggleSection(section: Section) {
           <v-icon size="18">mdi-view-list</v-icon>
         </v-btn>
 
-        <hr class="rail-divider">
+        <v-divider class="rail-divider" />
 
         <!-- Agents -->
         <div class="rail-item">
@@ -229,8 +229,7 @@ function toggleSection(section: Section) {
   pointer-events: none;
 }
 .rail-divider {
-  border: none;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  flex: none;
   width: 24px;
   margin: 2px 0;
 }
