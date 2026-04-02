@@ -1,8 +1,12 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<span data-v-0937c3c8="" style="color: rgb(49, 29, 165); background-color: rgb(227, 224, 246); border-color: rgb(182, 174, 224);" title="review-master" class="agent-badge"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></span>"`;
+exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<v-chip data-v-0937c3c8="" size="small" variant="outlined" style="color: rgb(49, 29, 165); border-color: rgb(182, 174, 224); background-color: rgb(227, 224, 246);" title="review-master" class="agent-chip"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></v-chip>"`;
 
-exports[`AgentBadge — snapshots > matches snapshot: inactive badge 1`] = `"<span data-v-0937c3c8="" style="color: rgb(165, 131, 29); background-color: rgb(246, 240, 224); border-color: rgb(224, 211, 174);" title="dev-front-vuejs" class="agent-badge"><!--v-if--><span data-v-0937c3c8="" class="badge-name">dev-front-vuejs</span></span>"`;
+exports[`AgentBadge — snapshots > matches snapshot: inactive badge 1`] = `
+"<v-chip data-v-0937c3c8="" size="small" variant="outlined" style="color: rgb(165, 131, 29); border-color: rgb(224, 211, 174); background-color: rgb(246, 240, 224);" title="dev-front-vuejs" class="agent-chip">
+  <!--v-if--><span data-v-0937c3c8="" class="badge-name">dev-front-vuejs</span>
+</v-chip>"
+`;
 
 exports[`ConfirmDialog — snapshots > matches snapshot: danger dialog 1`] = `
 "<v-dialog data-v-ba1b5c38="" model-value="true" max-width="420" persistent="">

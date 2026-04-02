@@ -8,45 +8,38 @@ defineProps<{
 </script>
 
 <template>
-  <span
+  <v-chip
+    size="small"
+    variant="outlined"
     :style="{
       color: agentFg(name),
-      backgroundColor: agentBg(name),
-      borderColor: agentBorder(name)
+      borderColor: agentBorder(name),
+      backgroundColor: agentBg(name)
     }"
     :title="name"
-    class="agent-badge"
+    class="agent-chip"
   >
-    <span v-if="active" class="activity-dot"></span>
+    <span v-if="active" class="activity-dot" />
     <span class="badge-name">{{ name }}</span>
-  </span>
+  </v-chip>
 </template>
 
 <style scoped>
-.agent-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  border-width: 1px;
-  border-style: solid;
-  font-family: monospace;
-  max-width: 200px;
-}
-
 .activity-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background-color: rgb(52 211 153); /* emerald-400 */
   flex-shrink: 0;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
 }
 
 .badge-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 200px;
 }
 </style>
