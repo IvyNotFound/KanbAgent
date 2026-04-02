@@ -178,7 +178,6 @@ function onDefaultCliChange(v: string) {
                 <v-btn-toggle
                   :model-value="settingsStore.theme"
                   mandatory
-                  density="compact"
                   data-testid="theme-toggle"
                   @update:model-value="(v) => settingsStore.setTheme(v as Theme)"
                 >
@@ -320,7 +319,6 @@ function onDefaultCliChange(v: string) {
                   </span>
                   <v-btn
                     color="primary"
-                    size="small"
                     :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
                     @click="checkUpdaterNow"
                   >{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}</v-btn>
@@ -344,7 +342,6 @@ function onDefaultCliChange(v: string) {
                 <p class="settings-label mb-3 text-overline">{{ t('settings.exportData') }}</p>
                 <v-btn
                   color="primary"
-                  size="small"
                   prepend-icon="mdi-download"
                   :disabled="exporting"
                   @click="showExportConfirm = true"

@@ -385,8 +385,6 @@ async function launch() {
             <v-btn
               data-testid="btn-refresh"
               variant="text"
-              size="small"
-              density="compact"
               :loading="settingsStore.detectingClis"
               prepend-icon="mdi-refresh"
               @click="settingsStore.refreshCliDetection(true)"
@@ -397,14 +395,12 @@ async function launch() {
               <v-btn
                 data-testid="btn-cancel"
                 variant="text"
-                size="small"
                 @click="emit('close')"
               >
                 {{ t('launch.cancel') }}
               </v-btn>
               <v-btn
                 data-testid="btn-launch"
-                size="small"
                 :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name) }"
                 :disabled="loading || launching || allAvailableInstances.length === 0"
                 :loading="launching"

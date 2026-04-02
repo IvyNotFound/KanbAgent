@@ -280,15 +280,13 @@ async function save() {
           <v-btn
             color="error"
             variant="outlined"
-            size="small"
             :disabled="deleting || saving"
             @click="deleteAgent"
           >{{ deleting ? t('agent.deleting') : t('agent.deleteAgent') }}</v-btn>
           <div class="d-flex align-center ga-2">
-            <v-btn variant="text" size="small" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
+            <v-btn variant="text" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
             <v-btn
               data-testid="btn-save"
-              size="small"
               :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name) }"
               :disabled="saving || deleting || !name.trim() || maxSessionsInvalid"
               @click="save"
