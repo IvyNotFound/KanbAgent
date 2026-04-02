@@ -257,12 +257,12 @@ async function launch() {
 
           <!-- Resume session — convResume CLIs only (Claude) (T1036) -->
           <Transition
-            enter-active-class="transition-all duration-200 overflow-hidden"
-            enter-from-class="opacity-0 max-h-0"
-            enter-to-class="opacity-100 max-h-32"
-            leave-active-class="transition-all duration-150 overflow-hidden"
-            leave-from-class="opacity-100 max-h-32"
-            leave-to-class="opacity-0 max-h-0"
+            enter-active-class="expand-enter-active"
+            enter-from-class="expand-enter-from"
+            enter-to-class="expand-enter-to"
+            leave-active-class="expand-leave-active"
+            leave-from-class="expand-leave-from"
+            leave-to-class="expand-leave-to"
           >
             <div v-if="caps.convResume && lastConvId">
               <p class="section-title mb-2">{{ t('launch.prevSession') }}</p>
@@ -280,12 +280,12 @@ async function launch() {
 
           <!-- Thinking mode — thinkingMode CLIs only (Claude) (T1036) -->
           <Transition
-            enter-active-class="transition-all duration-200 overflow-hidden"
-            enter-from-class="opacity-0 max-h-0"
-            enter-to-class="opacity-100 max-h-32"
-            leave-active-class="transition-all duration-150 overflow-hidden"
-            leave-from-class="opacity-100 max-h-32"
-            leave-to-class="opacity-0 max-h-0"
+            enter-active-class="expand-enter-active"
+            enter-from-class="expand-enter-from"
+            enter-to-class="expand-enter-to"
+            leave-active-class="expand-leave-active"
+            leave-from-class="expand-leave-from"
+            leave-to-class="expand-leave-to"
           >
             <div v-if="caps.thinkingMode">
               <p class="section-title mb-2">{{ t('launch.thinkingMode') }}</p>
@@ -641,5 +641,31 @@ async function launch() {
   font-size: 12px;
   color: #f59e0b;
   text-align: right;
+}
+
+/* Expand/collapse animation for conditional sections (replaces Tailwind Transition classes — T1389) */
+.expand-enter-active {
+  transition: all 200ms ease;
+  overflow: hidden;
+}
+.expand-enter-from {
+  opacity: 0;
+  max-height: 0;
+}
+.expand-enter-to {
+  opacity: 1;
+  max-height: 8rem;
+}
+.expand-leave-active {
+  transition: all 150ms ease;
+  overflow: hidden;
+}
+.expand-leave-from {
+  opacity: 1;
+  max-height: 8rem;
+}
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
 }
 </style>
