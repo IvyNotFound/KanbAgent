@@ -30,10 +30,10 @@ watch(searchQuery, (val) => {
 })
 
 const STATUTS = computed(() => [
-  { key: 'todo',        label: t('columns.todo'),        dot: 'bg-amber-500' },
-  { key: 'in_progress', label: t('columns.in_progress'), dot: 'bg-emerald-500' },
-  { key: 'done',        label: t('columns.done'),        dot: 'bg-content-faint' },
-  { key: 'archived',    label: t('columns.archived'),    dot: 'bg-violet-500' },
+  { key: 'todo',        label: t('columns.todo'),        color: '#f59e0b' },
+  { key: 'in_progress', label: t('columns.in_progress'), color: '#10b981' },
+  { key: 'done',        label: t('columns.done'),        color: 'var(--content-faint)' },
+  { key: 'archived',    label: t('columns.archived'),    color: '#8b5cf6' },
 ])
 
 // Pre-computed lowercase index — recomputes only when tasks list changes, not on every keystroke
@@ -134,8 +134,10 @@ onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
 })
 
-function statutDot(statut: string): string {
-  return STATUTS.value.find(s => s.key === statut)?.dot ?? 'bg-content-faint'
+function effortColor(effort: number): string {
+  if (effort === 1) return '#10b981'
+  if (effort === 2) return '#f59e0b'
+  return '#ef4444'
 }
 </script>
 
@@ -146,15 +148,15 @@ function statutDot(statut: string): string {
     <div
       v-if="modelValue"
       data-testid="palette-backdrop"
-      class="flex items-start justify-center pt-[12vh]"
+      class="palette-backdrop"
       @click.self="close"
       @keydown="handleKeydown"
     >
-      <div class="w-full mx-4 bg-surface-primary rounded-xl shadow-2xl border border-edge-default/60 overflow-hidden flex flex-col max-h-[72vh]">
+      <div class="palette-panel">
 
           <!-- Search input -->
-          <div class="flex items-center gap-3 px-4 py-3 border-b border-edge-subtle shrink-0">
-            <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-content-subtle shrink-0">
+          <div class="palette-search">
+            <svg viewBox="0 0 16 16" fill="currentColor" class="search-icon">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
             </svg>
             <input
@@ -162,49 +164,45 @@ function statutDot(statut: string): string {
               v-model="searchQuery"
               type="text"
               :placeholder="t('commandPalette.placeholder')"
-              class="flex-1 bg-transparent text-content-primary placeholder-content-subtle outline-none text-sm"
+              class="palette-input"
             >
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="d-flex align-center ga-2 flex-shrink-0">
               <button
                 v-if="hasFilters"
-                class="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                class="btn-reset"
                 @click="clearFilters"
               >{{ t('commandPalette.resetFilters') }}</button>
-              <kbd class="px-1.5 py-0.5 text-xs bg-surface-secondary text-content-subtle rounded border border-edge-default">ESC</kbd>
+              <kbd class="palette-kbd">ESC</kbd>
             </div>
           </div>
 
           <!-- Filters -->
-          <div class="px-4 py-2.5 border-b border-edge-subtle shrink-0 space-y-2">
+          <div class="palette-filters">
             <!-- Statut chips -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[10px] text-content-faint uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.status') }}</span>
+            <div class="d-flex align-center ga-2 flex-wrap">
+              <span class="filter-label">{{ t('commandPalette.status') }}</span>
               <button
                 v-for="s in STATUTS"
                 :key="s.key"
-                class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs transition-all border"
-                :class="filterStatut === s.key
-                  ? 'border-content-subtle bg-surface-tertiary text-content-primary'
-                  : 'border-edge-default/60 text-content-subtle hover:border-content-faint hover:text-content-tertiary'"
+                class="filter-chip"
+                :class="filterStatut === s.key ? 'filter-chip--active' : ''"
                 @click="toggleStatut(s.key)"
               >
-                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="s.dot" />
+                <span class="status-dot" :style="{ backgroundColor: s.color }" />
                 {{ s.label }}
               </button>
             </div>
 
             <!-- Agent + Périmètre -->
-            <div v-if="tasksStore.agents.length > 0 || tasksStore.perimetresData.length > 0" class="flex items-center gap-3 flex-wrap">
+            <div v-if="tasksStore.agents.length > 0 || tasksStore.perimetresData.length > 0" class="d-flex align-center ga-3 flex-wrap">
               <!-- Agents -->
-              <div v-if="tasksStore.agents.length > 0" class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] text-content-faint uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.agent') }}</span>
+              <div v-if="tasksStore.agents.length > 0" class="d-flex align-center ga-2 flex-wrap">
+                <span class="filter-label">{{ t('commandPalette.agent') }}</span>
                 <button
                   v-for="agent in tasksStore.agents.slice(0, 8)"
                   :key="agent.id"
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border font-mono"
-                  :class="filterAgentId === agent.id
-                    ? 'border-content-subtle bg-surface-tertiary text-content-primary'
-                    : 'border-edge-default/60 text-content-subtle hover:border-content-faint hover:text-content-tertiary'"
+                  class="filter-chip filter-chip--mono"
+                  :class="filterAgentId === agent.id ? 'filter-chip--active' : ''"
                   :style="filterAgentId === Number(agent.id)
                     ? { color: agentFg(agent.name), backgroundColor: agentBg(agent.name), borderColor: agentFg(agent.name) + '66' }
                     : {}"
@@ -215,15 +213,13 @@ function statutDot(statut: string): string {
               </div>
 
               <!-- Périmètres -->
-              <div v-if="tasksStore.perimetresData.length > 0" class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] text-content-faint uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.perimeter') }}</span>
+              <div v-if="tasksStore.perimetresData.length > 0" class="d-flex align-center ga-2 flex-wrap">
+                <span class="filter-label">{{ t('commandPalette.perimeter') }}</span>
                 <button
                   v-for="p in tasksStore.perimetresData"
                   :key="p.id"
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border font-mono"
-                  :class="filterPerimetre === p.name
-                    ? 'border-content-subtle bg-surface-tertiary text-content-primary'
-                    : 'border-edge-default/60 text-content-subtle hover:border-content-faint hover:text-content-tertiary'"
+                  class="filter-chip filter-chip--mono"
+                  :class="filterPerimetre === p.name ? 'filter-chip--active' : ''"
                   :style="filterPerimetre === p.name
                     ? { color: agentFg(p.name), backgroundColor: agentBg(p.name), borderColor: agentFg(p.name) + '66' }
                     : {}"
@@ -236,50 +232,52 @@ function statutDot(statut: string): string {
           </div>
 
           <!-- Results -->
-          <div class="flex-1 overflow-y-auto min-h-0">
-            <div v-if="filteredTasks.length === 0" class="flex flex-col items-center justify-center py-12 gap-2">
-              <svg viewBox="0 0 16 16" fill="currentColor" class="w-6 h-6 text-content-dim">
+          <div class="palette-results">
+            <div v-if="filteredTasks.length === 0" class="palette-empty">
+              <svg viewBox="0 0 16 16" fill="currentColor" class="empty-icon">
                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
               </svg>
-              <p class="text-sm text-content-faint">
+              <p class="text-caption" style="color: var(--content-faint)">
                 {{ debouncedQuery || hasFilters ? t('commandPalette.noResults') : t('commandPalette.noTasksLoaded') }}
               </p>
             </div>
 
             <div v-else>
-              <div class="px-4 py-1.5 flex items-center justify-between">
-                <p class="text-[10px] text-content-faint uppercase tracking-wider font-semibold">
+              <div class="palette-count">
+                <p class="filter-label">
                   {{ filteredTasks.length }} {{ t('commandPalette.tasks', filteredTasks.length) }}
                 </p>
               </div>
               <div
                 v-for="(task, index) in filteredTasks"
                 :key="task.id"
-                class="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors border-l-2"
-                :class="index === selectedIndex
-                  ? 'bg-surface-secondary border-violet-500'
-                  : 'border-transparent hover:bg-surface-secondary/50 hover:border-content-faint'"
+                class="palette-item"
+                :class="index === selectedIndex ? 'palette-item--selected' : ''"
                 @click="selectTask(task)"
                 @mouseenter="selectedIndex = index"
               >
                 <!-- Status dot -->
-                <span class="w-2 h-2 rounded-full shrink-0 mt-0.5" :class="statutDot(task.status)" />
+                <span
+                  class="status-dot flex-shrink-0"
+                  style="margin-top: 2px;"
+                  :style="{ backgroundColor: STATUTS.find(s => s.key === task.status)?.color ?? 'var(--content-faint)' }"
+                />
 
                 <!-- Content -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-mono text-content-faint shrink-0">#{{ task.id }}</span>
-                    <span class="text-sm text-content-primary truncate font-medium">{{ task.title }}</span>
+                <div style="flex: 1; min-width: 0;">
+                  <div class="d-flex align-center ga-2">
+                    <span class="task-id">#{{ task.id }}</span>
+                    <span class="task-title">{{ task.title }}</span>
                   </div>
-                  <div class="flex items-center gap-2 mt-0.5">
+                  <div class="d-flex align-center ga-2 mt-1">
                     <span
                       v-if="task.agent_name"
-                      class="text-[11px] font-mono truncate"
+                      class="task-agent"
                       :style="{ color: agentFg(task.agent_name) }"
                     >{{ task.agent_name }}</span>
                     <span
                       v-if="task.scope"
-                      class="text-[10px] font-mono px-1 py-0.5 rounded shrink-0"
+                      class="task-scope"
                       :style="{ color: agentFg(task.scope), backgroundColor: agentBg(task.scope) }"
                     >{{ task.scope }}</span>
                   </div>
@@ -288,8 +286,8 @@ function statutDot(statut: string): string {
                 <!-- Effort dot -->
                 <span
                   v-if="task.effort"
-                  class="w-2 h-2 rounded-full shrink-0"
-                  :class="task.effort === 1 ? 'bg-emerald-500' : task.effort === 2 ? 'bg-amber-500' : 'bg-red-500'"
+                  class="effort-dot flex-shrink-0"
+                  :style="{ backgroundColor: effortColor(task.effort) }"
                   :title="task.effort === 1 ? 'Small' : task.effort === 2 ? 'Medium' : 'Large'"
                 />
               </div>
@@ -297,13 +295,227 @@ function statutDot(statut: string): string {
           </div>
 
           <!-- Footer -->
-          <div class="px-4 py-2 border-t border-edge-subtle flex items-center gap-4 text-xs text-content-faint shrink-0">
-            <span><kbd class="px-1 py-0.5 bg-surface-secondary rounded border border-edge-default">↑↓</kbd> {{ t('commandPalette.navigate') }}</span>
-            <span><kbd class="px-1 py-0.5 bg-surface-secondary rounded border border-edge-default">↵</kbd> {{ t('commandPalette.open') }}</span>
-            <span class="ml-auto"><kbd class="px-1 py-0.5 bg-surface-secondary rounded border border-edge-default">Ctrl+K</kbd> toggle</span>
+          <div class="palette-footer">
+            <span class="palette-hint"><kbd class="palette-kbd">↑↓</kbd> {{ t('commandPalette.navigate') }}</span>
+            <span class="palette-hint"><kbd class="palette-kbd">↵</kbd> {{ t('commandPalette.open') }}</span>
+            <span class="palette-hint" style="margin-left: auto;"><kbd class="palette-kbd">Ctrl+K</kbd> toggle</span>
           </div>
 
         </div>
       </div>
   </v-dialog>
 </template>
+
+<style scoped>
+.palette-backdrop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+.palette-panel {
+  width: 100%;
+  margin: 0 16px;
+  background: var(--surface-primary);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  border: 1px solid rgba(var(--v-theme-on-surface, 255, 255, 255), 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 72vh;
+}
+
+/* Search row */
+.palette-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.search-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--content-subtle);
+  flex-shrink: 0;
+}
+.palette-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--content-primary);
+}
+.palette-input::placeholder {
+  color: var(--content-subtle);
+}
+
+/* Filters */
+.palette-filters {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.filter-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--content-faint);
+  flex-shrink: 0;
+}
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  border: 1px solid rgba(var(--v-theme-on-surface, 255, 255, 255), 0.1);
+  background: none;
+  color: var(--content-subtle);
+  cursor: pointer;
+  transition: all 150ms;
+}
+.filter-chip:hover {
+  border-color: var(--content-faint);
+  color: var(--content-tertiary);
+}
+.filter-chip--active {
+  border-color: var(--content-subtle);
+  background: var(--surface-tertiary);
+  color: var(--content-primary);
+}
+.filter-chip--mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
+
+/* Status / effort dots */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.effort-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Results */
+.palette-results {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+.palette-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 8px;
+}
+.empty-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--content-dim);
+}
+.palette-count {
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.palette-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 100ms;
+  border-left: 2px solid transparent;
+}
+.palette-item:hover {
+  background: rgba(var(--v-theme-on-surface, 255, 255, 255), 0.05);
+  border-left-color: var(--content-faint);
+}
+.palette-item--selected {
+  background: var(--surface-secondary);
+  border-left-color: #8b5cf6;
+}
+
+/* Task item content */
+.task-id {
+  font-size: 12px;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  color: var(--content-faint);
+  flex-shrink: 0;
+}
+.task-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--content-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-agent {
+  font-size: 11px;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-scope {
+  font-size: 10px;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  padding: 2px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* Footer */
+.palette-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--edge-subtle);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.palette-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--content-faint);
+}
+.palette-kbd {
+  padding: 2px 6px;
+  font-size: 11px;
+  background: var(--surface-secondary);
+  color: var(--content-subtle);
+  border-radius: 4px;
+  border: 1px solid var(--edge-default);
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
+.btn-reset {
+  font-size: 12px;
+  color: #c4b5fd;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 150ms;
+}
+.btn-reset:hover {
+  color: #a78bfa;
+}
+</style>

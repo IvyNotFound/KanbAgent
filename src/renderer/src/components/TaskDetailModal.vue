@@ -30,18 +30,20 @@ const statusLabel = (key: string) => ({
   archived:    t('columns.archived'),
 }[key] ?? key)
 
-const STATUS_COLORS: Record<string, string> = {
-  todo:        'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  in_progress: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-  done:        'bg-surface-tertiary/50 text-content-tertiary border-content-faint/50',
-  archived:    'bg-violet-500/20 text-violet-300 border-violet-500/30',
+// Semantic class names for status badges (no Tailwind color classes)
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  todo:        'status-badge status-badge--todo',
+  in_progress: 'status-badge status-badge--in-progress',
+  done:        'status-badge status-badge--done',
+  archived:    'status-badge status-badge--archived',
 }
 
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
-const EFFORT_BADGE: Record<number, string> = {
-  1: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-  2: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  3: 'bg-red-500/20 text-red-300 border-red-500/30',
+// Semantic class names for effort badges
+const EFFORT_BADGE_CLASS: Record<number, string> = {
+  1: 'effort-badge effort-badge--small',
+  2: 'effort-badge effort-badge--medium',
+  3: 'effort-badge effort-badge--large',
 }
 
 function formatDateFull(iso: string): string {
@@ -163,25 +165,22 @@ onUnmounted(() => {
     <!-- v-if="task" ensures content not rendered when task is null (test compat for shallowMount) -->
     <div v-if="task" data-testid="task-detail-panel">
       <!-- Backdrop click handled by v-dialog; keep for test compat -->
-      <div
-        class="absolute inset-0"
-        @click="store.closeTask()"
-      ></div>
+      <div class="backdrop-overlay" @click="store.closeTask()"></div>
 
       <!-- Panel -->
-      <div class="relative w-full max-h-[90vh] bg-surface-primary border border-edge-default rounded-xl shadow-2xl flex flex-col overflow-hidden select-text">
+      <div class="task-panel">
 
         <!-- Header -->
-        <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-edge-subtle shrink-0">
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-content-primary leading-snug mb-2">{{ task.title }}</p>
-            <div class="flex flex-wrap gap-1.5">
-              <span :class="['text-xs px-2 py-0.5 rounded-full border font-medium', STATUS_COLORS[task.status]]">
+        <div class="task-header">
+          <div class="task-header-left">
+            <p class="task-title">{{ task.title }}</p>
+            <div class="d-flex flex-wrap ga-2">
+              <span :class="STATUS_BADGE_CLASS[task.status] ?? 'status-badge'">
                 {{ statusLabel(task.status) }}
               </span>
               <span
                 v-if="task.scope"
-                class="text-xs px-1.5 py-0.5 rounded font-mono border"
+                class="scope-badge"
                 :style="{
                   color: perimeterFg(task.scope),
                   backgroundColor: perimeterBg(task.scope),
@@ -190,46 +189,40 @@ onUnmounted(() => {
               >{{ task.scope }}</span>
               <span
                 v-if="task.effort"
-                :class="['text-xs font-bold px-2 py-0.5 rounded font-mono border', EFFORT_BADGE[task.effort]]"
+                :class="EFFORT_BADGE_CLASS[task.effort] ?? 'effort-badge'"
               >{{ EFFORT_LABEL[task.effort] }}</span>
             </div>
           </div>
-          <button
-            class="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-all text-sm"
-            @click="store.closeTask()"
-          >✕</button>
+          <button class="btn-close" @click="store.closeTask()">✕</button>
         </div>
 
         <!-- Body : 2 colonnes -->
-        <div class="flex flex-1 min-h-0 divide-x divide-edge-subtle">
+        <div class="task-body">
 
           <!-- Colonne gauche : description + commentaire tâche -->
-          <div class="flex-1 min-w-0 overflow-y-auto px-5 py-4 space-y-5">
+          <div class="task-left-col">
             <!-- Description -->
             <div v-if="task.description">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('taskDetail.description') }}</p>
-              <div class="md-content text-sm text-content-tertiary leading-relaxed" v-html="renderedDescription"></div>
+              <p class="section-label mb-2">{{ t('taskDetail.description') }}</p>
+              <div class="md-content" v-html="renderedDescription"></div>
             </div>
 
-            <p v-if="!task.description" class="text-sm text-content-faint italic pt-2">
+            <p v-if="!task.description" class="empty-text">
               {{ t('taskDetail.noDescription') }}
             </p>
           </div>
 
           <!-- Colonne droite : assignés + commentaires -->
-          <div class="w-72 shrink-0 flex flex-col min-h-0">
+          <div class="task-right-col">
 
             <!-- T553: Blocked indicator -->
-            <div
-              v-if="isBlocked"
-              class="px-4 py-2 border-b border-amber-500/30 bg-amber-500/10 shrink-0"
-            >
-              <p class="text-[10px] font-semibold text-amber-400 uppercase tracking-wider mb-1">{{ t('taskDetail.blockedTitle') }}</p>
-              <ul class="space-y-0.5">
+            <div v-if="isBlocked" class="blocked-banner">
+              <p class="section-label mb-1" style="color: #fbbf24;">{{ t('taskDetail.blockedTitle') }}</p>
+              <ul class="blocked-list">
                 <li
                   v-for="link in unresolvedBlockers"
                   :key="link.id"
-                  class="text-[10px] text-amber-300/80"
+                  class="blocked-item"
                 >
                   #{{ link.from_task === task.id ? link.to_task : link.from_task }}
                   {{ link.from_task === task.id ? link.to_titre : link.from_titre }}
@@ -238,27 +231,27 @@ onUnmounted(() => {
             </div>
 
             <!-- Section Agents (créateur / assigné / valideur) -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('taskDetail.agents') }}</p>
-              <div class="space-y-1.5">
-                <div v-if="task.agent_creator_name" class="flex items-center gap-2">
-                  <span class="text-[10px] text-content-faint w-14 shrink-0">{{ t('taskDetail.creator') }}</span>
+            <div class="right-section">
+              <p class="section-label mb-2">{{ t('taskDetail.agents') }}</p>
+              <div class="d-flex flex-column ga-2">
+                <div v-if="task.agent_creator_name" class="d-flex align-center ga-2">
+                  <span class="meta-label">{{ t('taskDetail.creator') }}</span>
                   <AgentBadge :name="task.agent_creator_name" />
                 </div>
-                <div v-if="task.agent_name" class="flex items-center gap-2">
-                  <span class="text-[10px] text-content-faint w-14 shrink-0">{{ t('taskDetail.assigned') }}</span>
+                <div v-if="task.agent_name" class="d-flex align-center ga-2">
+                  <span class="meta-label">{{ t('taskDetail.assigned') }}</span>
                   <AgentBadge :name="task.agent_name" />
                 </div>
-                <div v-if="valideurAgent" class="flex items-center gap-2">
-                  <span class="text-[10px] text-content-faint w-14 shrink-0">{{ t('taskDetail.validator') }}</span>
+                <div v-if="valideurAgent" class="d-flex align-center ga-2">
+                  <span class="meta-label">{{ t('taskDetail.validator') }}</span>
                   <AgentBadge :name="valideurAgent.name" />
                 </div>
               </div>
             </div>
 
             <!-- Section Dependencies -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('taskDetail.dependencies') }}</p>
+            <div class="right-section">
+              <p class="section-label mb-2">{{ t('taskDetail.dependencies') }}</p>
               <TaskDependencyGraph
                 v-if="task"
                 :task-id="task.id"
@@ -268,23 +261,24 @@ onUnmounted(() => {
             </div>
 
             <!-- Section Commits liés (T761) — hidden when no commits -->
-            <div v-if="gitCommits.length > 0" class="border-b border-edge-subtle shrink-0">
+            <div v-if="gitCommits.length > 0" class="right-section right-section--collapsible">
               <button
-                class="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-secondary/30 transition-colors"
+                class="commits-toggle"
                 @click="gitCommitsOpen = !gitCommitsOpen"
               >
-                <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider">
+                <p class="section-label">
                   {{ t('taskDetail.commits') }}
-                  <span class="ml-1 text-content-faint">({{ gitCommits.length }})</span>
+                  <span class="meta-count">({{ gitCommits.length }})</span>
                 </p>
                 <svg
-                  :class="['w-3 h-3 text-content-faint transition-transform', gitCommitsOpen ? 'rotate-90' : '']"
+                  class="toggle-arrow"
+                  :class="gitCommitsOpen ? 'toggle-arrow--open' : ''"
                   viewBox="0 0 16 16" fill="currentColor"
                 >
                   <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
               </button>
-              <div v-if="gitCommitsOpen" class="max-h-40 overflow-y-auto border-t border-edge-subtle">
+              <div v-if="gitCommitsOpen" class="commits-content">
                 <GitCommitList
                   :commits="gitCommits"
                   @open-task="(id) => { const t = store.tasks.find(x => x.id === id); if (t) store.openTask(t) }"
@@ -293,56 +287,56 @@ onUnmounted(() => {
             </div>
 
             <!-- Section Assignés (read-only — T571) -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">
+            <div class="right-section">
+              <p class="section-label mb-2">
                 {{ t('taskDetail.assignees') }}
               </p>
 
               <!-- Assigned agents list — display only -->
-              <div v-if="sortedAssignees.length > 0" class="space-y-1">
-                <div v-for="a in sortedAssignees" :key="a.agent_id" class="flex items-center gap-1.5">
+              <div v-if="sortedAssignees.length > 0" class="d-flex flex-column ga-2">
+                <div v-for="a in sortedAssignees" :key="a.agent_id" class="d-flex align-center ga-2">
                   <div
-                    class="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-[8px] font-bold border"
+                    class="assignee-avatar"
                     :style="{ color: agentFg(a.agent_name), backgroundColor: agentBg(a.agent_name), borderColor: agentBorder(a.agent_name) }"
                     :title="a.agent_name"
                   >{{ a.agent_name.slice(0, 2).toUpperCase() }}</div>
-                  <span class="text-xs text-content-secondary truncate flex-1 min-w-0">{{ a.agent_name }}</span>
-                  <span class="text-[10px] text-content-faint shrink-0">{{ a.role ?? '—' }}</span>
+                  <span class="text-caption" style="color: var(--content-secondary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.agent_name }}</span>
+                  <span class="text-caption" style="color: var(--content-faint); flex-shrink: 0;">{{ a.role ?? '—' }}</span>
                 </div>
               </div>
-              <p v-else class="text-xs text-content-faint italic">
+              <p v-else class="empty-text">
                 {{ t('taskDetail.noAssignees') }}
               </p>
             </div>
 
             <!-- Comments header -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider">
+            <div class="right-section right-section--no-bottom">
+              <p class="section-label">
                 {{ t('taskDetail.comments') }}
-                <span v-if="store.taskComments.length > 0" class="ml-1 text-content-faint">({{ store.taskComments.length }})</span>
+                <span v-if="store.taskComments.length > 0" class="meta-count ml-1">({{ store.taskComments.length }})</span>
               </p>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+            <div class="comments-list">
               <!-- Messages conversation -->
               <div
                 v-for="comment in renderedComments"
                 :key="comment.id"
-                class="flex flex-col gap-1"
+                class="d-flex flex-column ga-1"
               >
                 <!-- Auteur + temps -->
-                <div class="flex items-center justify-between gap-2 px-1">
+                <div class="d-flex align-center justify-space-between ga-2 px-1">
                   <span
-                    class="text-[11px] font-semibold font-mono truncate"
+                    class="comment-author"
                     :style="{ color: agentFg(comment.agent_name ?? 'unknown') }"
                   >{{ comment.agent_name ?? '?' }}</span>
-                  <span class="text-[10px] text-content-faint shrink-0" :title="formatDateFull(comment.created_at)">
+                  <span class="comment-time" :title="formatDateFull(comment.created_at)">
                     {{ relativeTime(comment.created_at) }}
                   </span>
                 </div>
                 <!-- Bulle -->
                 <div
-                  class="md-bubble rounded-lg px-3 py-2 text-xs leading-relaxed break-words border"
+                  class="md-bubble"
                   :style="{
                     color: agentFg(comment.agent_name ?? 'unknown'),
                     backgroundColor: agentBg(comment.agent_name ?? 'unknown'),
@@ -352,7 +346,7 @@ onUnmounted(() => {
                 ></div>
               </div>
 
-              <p v-if="store.taskComments.length === 0" class="text-xs text-content-faint italic text-center py-4">
+              <p v-if="store.taskComments.length === 0" class="empty-text text-center py-4">
                 {{ t('taskDetail.noComments') }}
               </p>
             </div>
@@ -360,18 +354,299 @@ onUnmounted(() => {
         </div>
 
         <!-- Footer -->
-        <div class="px-5 py-3 border-t border-edge-subtle bg-surface-base/50 flex items-center justify-between gap-4 shrink-0">
-          <div class="flex items-center gap-5">
-            <p class="text-xs text-content-muted">
-              <span class="text-content-subtle mr-1">{{ t('taskDetail.created') }}</span>{{ formatDateFull(task.created_at) }}
+        <div class="task-footer">
+          <div class="d-flex align-center ga-5">
+            <p class="text-caption" style="color: var(--content-muted);">
+              <span style="color: var(--content-subtle); margin-right: 4px;">{{ t('taskDetail.created') }}</span>{{ formatDateFull(task.created_at) }}
             </p>
-            <p class="text-xs text-content-muted">
-              <span class="text-content-subtle mr-1">{{ t('taskDetail.updated') }}</span>{{ formatDateFull(task.updated_at) }}
+            <p class="text-caption" style="color: var(--content-muted);">
+              <span style="color: var(--content-subtle); margin-right: 4px;">{{ t('taskDetail.updated') }}</span>{{ formatDateFull(task.updated_at) }}
             </p>
           </div>
-          <span class="text-xs text-content-subtle font-mono">#{{ task.id }}</span>
+          <span class="text-caption font-mono" style="color: var(--content-subtle);">#{{ task.id }}</span>
         </div>
       </div>
     </div>
   </v-dialog>
 </template>
+
+<style scoped>
+/* Backdrop overlay — kept for test compat (some tests look for click handler) */
+.backdrop-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* Main panel */
+.task-panel {
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  background: var(--surface-primary);
+  border: 1px solid var(--edge-default);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: text;
+}
+
+/* Header */
+.task-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.task-header-left {
+  flex: 1;
+  min-width: 0;
+}
+.task-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--content-primary);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+.btn-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--content-subtle);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 150ms;
+}
+.btn-close:hover {
+  color: var(--content-secondary);
+  background: var(--surface-secondary);
+}
+
+/* Status badges */
+.status-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid;
+  font-weight: 500;
+}
+.status-badge--todo        { background: rgba(245,158,11,0.2);   color: #fcd34d; border-color: rgba(245,158,11,0.3); }
+.status-badge--in-progress { background: rgba(16,185,129,0.2);   color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
+.status-badge--done        { background: rgba(113,113,122,0.2);  color: #a1a1aa; border-color: rgba(113,113,122,0.3); }
+.status-badge--archived    { background: rgba(139,92,246,0.2);   color: #c4b5fd; border-color: rgba(139,92,246,0.3); }
+
+/* Scope badge */
+.scope-badge {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  border: 1px solid;
+}
+
+/* Effort badges */
+.effort-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  border: 1px solid;
+}
+.effort-badge--small  { background: rgba(16,185,129,0.2);  color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
+.effort-badge--medium { background: rgba(245,158,11,0.2);  color: #fcd34d; border-color: rgba(245,158,11,0.3); }
+.effort-badge--large  { background: rgba(239,68,68,0.2);   color: #fca5a5; border-color: rgba(239,68,68,0.3); }
+
+/* Body layout: 2 columns */
+.task-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: none;
+}
+.task-body > .task-left-col {
+  border-right: 1px solid var(--edge-subtle);
+}
+
+/* Left column */
+.task-left-col {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Right column */
+.task-right-col {
+  width: 288px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Section headings */
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--content-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.right-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.right-section--collapsible {
+  padding: 0;
+}
+.right-section--no-bottom {
+  padding-bottom: 12px;
+}
+
+/* Blocked banner */
+.blocked-banner {
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.1);
+  flex-shrink: 0;
+}
+.blocked-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.blocked-item {
+  font-size: 10px;
+  color: rgba(251, 191, 36, 0.8);
+}
+
+/* Meta labels */
+.meta-label {
+  font-size: 10px;
+  color: var(--content-faint);
+  width: 56px;
+  flex-shrink: 0;
+}
+.meta-count {
+  color: var(--content-faint);
+}
+
+/* Commits collapsible */
+.commits-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.commits-toggle:hover {
+  background: rgba(var(--v-theme-on-surface, 255,255,255), 0.03);
+}
+.toggle-arrow {
+  width: 12px;
+  height: 12px;
+  color: var(--content-faint);
+  transition: transform 150ms;
+}
+.toggle-arrow--open {
+  transform: rotate(90deg);
+}
+.commits-content {
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 1px solid var(--edge-subtle);
+}
+
+/* Assignee avatar */
+.assignee-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+/* Comments */
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.comment-author {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comment-time {
+  font-size: 10px;
+  color: var(--content-faint);
+  flex-shrink: 0;
+}
+
+/* md-bubble: keep class for tests */
+.md-bubble {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-words;
+  border: 1px solid;
+}
+
+/* Empty states */
+.empty-text {
+  font-size: 12px;
+  color: var(--content-faint);
+  font-style: italic;
+  padding-top: 8px;
+}
+
+/* Footer */
+.task-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--edge-subtle);
+  background: var(--surface-base);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.font-mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
+</style>

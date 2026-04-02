@@ -107,40 +107,36 @@ function handleKeydown(e: KeyboardEvent) {
 
 <template>
   <v-dialog model-value max-width="700" :height="600" scrollable @update:model-value="emit('close')">
-    <v-card class="flex flex-col" style="max-height: 85vh;" @keydown="handleKeydown">
+    <v-card class="d-flex flex-column" style="max-height: 85vh;" @keydown="handleKeydown">
 
         <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-edge-subtle shrink-0">
-          <h2 class="text-lg font-semibold text-content-primary">{{ t('settings.title') }}</h2>
+        <div class="modal-header">
+          <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary)">{{ t('settings.title') }}</h2>
           <button
-            class="w-8 h-8 flex items-center justify-center rounded-lg text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors"
+            class="btn-close"
             :title="t('settings.fermer')"
             @click="emit('close')"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
+            <svg viewBox="0 0 16 16" fill="currentColor" style="width: 16px; height: 16px;">
               <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
             </svg>
           </button>
         </div>
 
         <!-- Body: sidebar + content panel -->
-        <div class="flex flex-1 min-h-0">
+        <div class="d-flex flex-grow-1" style="min-height: 0;">
 
           <!-- Sidebar navigation -->
-          <nav class="w-44 shrink-0 border-r border-edge-subtle py-2 flex flex-col gap-0.5">
+          <nav class="settings-nav">
             <button
               v-for="s in sections"
               :key="s.id"
               :data-testid="`nav-${s.id}`"
+              class="nav-btn"
+              :class="activeSection === s.id ? 'nav-btn--active' : ''"
               @click="activeSection = s.id"
-              :class="[
-                'flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors text-left mx-1',
-                activeSection === s.id
-                  ? 'bg-violet-600/20 text-violet-300 font-medium'
-                  : 'text-content-muted hover:bg-surface-secondary hover:text-content-secondary'
-              ]"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4 shrink-0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="nav-icon" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path :d="SECTION_ICONS[s.id]" />
               </svg>
               {{ t(s.labelKey) }}
@@ -148,29 +144,29 @@ function handleKeydown(e: KeyboardEvent) {
           </nav>
 
           <!-- Content panel -->
-          <div class="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+          <div class="settings-content">
 
             <!-- Appearance: Language + Theme -->
             <template v-if="activeSection === 'appearance'">
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-2 uppercase tracking-wider">{{ t('settings.language') }}</p>
+              <div class="settings-card">
+                <p class="settings-label">{{ t('settings.language') }}</p>
                 <select
                   :value="settingsStore.language"
+                  class="form-select"
                   @change="settingsStore.setLanguage(($event.target as HTMLSelectElement).value as import('@renderer/stores/settings').Language)"
-                  class="w-full bg-surface-secondary text-content-primary border border-edge-subtle rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
                 >
                   <option v-for="locale in availableLocales" :key="locale.code" :value="locale.code">{{ locale.label }}</option>
                 </select>
               </div>
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-2 uppercase tracking-wider">{{ t('settings.theme') }}</p>
-                <div class="flex gap-2">
+              <div class="settings-card">
+                <p class="settings-label">{{ t('settings.theme') }}</p>
+                <div class="d-flex ga-2">
                   <button
-                    :class="['flex-1 py-2 px-3 rounded text-sm font-medium transition-colors', settingsStore.theme === 'dark' ? 'bg-violet-600 text-white' : 'bg-surface-secondary text-content-muted hover:bg-surface-tertiary']"
+                    :class="['theme-btn', settingsStore.theme === 'dark' ? 'theme-btn--active' : '']"
                     @click="settingsStore.setTheme('dark')"
                   >{{ t('settings.dark') }}</button>
                   <button
-                    :class="['flex-1 py-2 px-3 rounded text-sm font-medium transition-colors', settingsStore.theme === 'light' ? 'bg-violet-600 text-white' : 'bg-surface-secondary text-content-muted hover:bg-surface-tertiary']"
+                    :class="['theme-btn', settingsStore.theme === 'light' ? 'theme-btn--active' : '']"
                     @click="settingsStore.setTheme('light')"
                   >{{ t('settings.light') }}</button>
                 </div>
@@ -179,35 +175,35 @@ function handleKeydown(e: KeyboardEvent) {
 
             <!-- Automation: Auto-launch + Auto-review -->
             <template v-else-if="activeSection === 'automation'">
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <div class="flex items-center justify-between gap-4">
+              <div class="settings-card">
+                <div class="d-flex align-center justify-space-between ga-4">
                   <div>
-                    <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.autoLaunch') }}</p>
-                    <p class="text-xs text-content-faint">{{ t('settings.autoLaunchDesc') }}</p>
+                    <p class="settings-label">{{ t('settings.autoLaunch') }}</p>
+                    <p class="settings-desc">{{ t('settings.autoLaunchDesc') }}</p>
                   </div>
                   <ToggleSwitch :model-value="settingsStore.autoLaunchAgentSessions" @update:model-value="settingsStore.setAutoLaunchAgentSessions($event)" />
                 </div>
               </div>
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="settings-card">
+                <div class="d-flex align-center justify-space-between ga-4 mb-2">
                   <div>
-                    <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.autoReview') }}</p>
-                    <p class="text-xs text-content-faint">{{ t('settings.autoReviewDesc') }}</p>
+                    <p class="settings-label">{{ t('settings.autoReview') }}</p>
+                    <p class="settings-desc">{{ t('settings.autoReviewDesc') }}</p>
                   </div>
                   <ToggleSwitch :model-value="settingsStore.autoReviewEnabled" @update:model-value="settingsStore.setAutoReviewEnabled($event)" />
                 </div>
-                <div v-if="settingsStore.autoReviewEnabled" class="flex items-center gap-2 mt-2">
-                  <label class="text-xs text-content-muted">{{ t('settings.autoReviewThreshold') }}</label>
+                <div v-if="settingsStore.autoReviewEnabled" class="d-flex align-center ga-2 mt-2">
+                  <label class="settings-desc">{{ t('settings.autoReviewThreshold') }}</label>
                   <input type="number" :value="settingsStore.autoReviewThreshold" min="3" max="100"
-                    class="w-16 bg-surface-secondary border border-edge-default rounded px-2 py-1 text-sm text-content-primary text-center outline-none focus:ring-1 focus:ring-violet-500"
+                    class="form-input-small"
                     @change="settingsStore.setAutoReviewThreshold(Number(($event.target as HTMLInputElement).value))" />
                 </div>
               </div>
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <div class="flex items-center justify-between gap-4">
+              <div class="settings-card">
+                <div class="d-flex align-center justify-space-between ga-4">
                   <div>
-                    <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.worktreeDefault') }}</p>
-                    <p class="text-xs text-content-faint">{{ t('settings.worktreeDefaultDesc') }}</p>
+                    <p class="settings-label">{{ t('settings.worktreeDefault') }}</p>
+                    <p class="settings-desc">{{ t('settings.worktreeDefaultDesc') }}</p>
                   </div>
                   <ToggleSwitch :model-value="settingsStore.worktreeDefault" @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, $event)" />
                 </div>
@@ -216,18 +212,18 @@ function handleKeydown(e: KeyboardEvent) {
 
             <!-- Editor: Max file lines -->
             <template v-else-if="activeSection === 'editor'">
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="settings-card">
+                <div class="d-flex align-center justify-space-between ga-4 mb-2">
                   <div>
-                    <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.maxFileLinesEnabled') }}</p>
-                    <p class="text-xs text-content-faint">{{ t('settings.maxFileLinesEnabledDesc') }}</p>
+                    <p class="settings-label">{{ t('settings.maxFileLinesEnabled') }}</p>
+                    <p class="settings-desc">{{ t('settings.maxFileLinesEnabledDesc') }}</p>
                   </div>
                   <ToggleSwitch :model-value="settingsStore.maxFileLinesEnabled" @update:model-value="settingsStore.setMaxFileLinesEnabled($event)" />
                 </div>
-                <div v-if="settingsStore.maxFileLinesEnabled" class="flex items-center gap-2 mt-2">
-                  <label class="text-xs text-content-muted">{{ t('settings.maxFileLinesCount') }}</label>
+                <div v-if="settingsStore.maxFileLinesEnabled" class="d-flex align-center ga-2 mt-2">
+                  <label class="settings-desc">{{ t('settings.maxFileLinesCount') }}</label>
                   <input type="number" :value="settingsStore.maxFileLinesCount" min="50" max="10000"
-                    class="w-20 bg-surface-secondary border border-edge-default rounded px-2 py-1 text-sm text-content-primary text-center outline-none focus:ring-1 focus:ring-violet-500"
+                    class="form-input-small form-input-small--wide"
                     @change="settingsStore.setMaxFileLinesCount(Number(($event.target as HTMLInputElement).value))" />
                 </div>
               </div>
@@ -235,9 +231,9 @@ function handleKeydown(e: KeyboardEvent) {
 
             <!-- CLI & Agents -->
             <template v-else-if="activeSection === 'cli'">
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.aiCodingAssistants') }}</p>
-                <p class="text-xs text-content-faint mb-3">{{ t('settings.aiCodingAssistantsDesc') }}</p>
+              <div class="settings-card">
+                <p class="settings-label">{{ t('settings.aiCodingAssistants') }}</p>
+                <p class="settings-desc mb-3">{{ t('settings.aiCodingAssistantsDesc') }}</p>
                 <CliDetectionList
                   :instances="settingsStore.allCliInstances"
                   :enabled="settingsStore.enabledClis"
@@ -246,12 +242,12 @@ function handleKeydown(e: KeyboardEvent) {
                   @toggle="settingsStore.toggleCli($event)"
                 />
               </div>
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.defaultCliInstance') }}</p>
-                <div v-if="availableDistros.length === 0" class="text-sm text-content-subtle">—</div>
+              <div class="settings-card">
+                <p class="settings-label">{{ t('settings.defaultCliInstance') }}</p>
+                <div v-if="availableDistros.length === 0" class="settings-desc">—</div>
                 <div v-else>
                   <select
-                    class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary outline-none focus:ring-1 focus:ring-violet-500"
+                    class="form-select"
                     :value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
                     @change="(e) => { const v = (e.target as HTMLSelectElement).value; const sep = v.indexOf(':'); settingsStore.setDefaultCliInstance(sep === -1 ? '' : v.slice(0, sep), sep === -1 ? v : v.slice(sep + 1)) }"
                   >
@@ -259,14 +255,14 @@ function handleKeydown(e: KeyboardEvent) {
                   </select>
                 </div>
               </div>
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.opencodeDefaultModel') }}</p>
-                <p class="text-xs text-content-faint mb-2">{{ t('settings.opencodeDefaultModelHint') }}</p>
+              <div class="settings-card">
+                <p class="settings-label">{{ t('settings.opencodeDefaultModel') }}</p>
+                <p class="settings-desc mb-2">{{ t('settings.opencodeDefaultModelHint') }}</p>
                 <input
                   type="text"
                   :value="settingsStore.opencodeDefaultModel"
                   placeholder="anthropic/claude-opus-4-5"
-                  class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary outline-none focus:ring-1 focus:ring-violet-500"
+                  class="form-input"
                   @blur="store.dbPath && settingsStore.setOpencodeDefaultModel(store.dbPath, ($event.target as HTMLInputElement).value)"
                 />
               </div>
@@ -274,11 +270,11 @@ function handleKeydown(e: KeyboardEvent) {
 
             <!-- Notifications -->
             <template v-else-if="activeSection === 'notifications'">
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <div class="flex items-center justify-between gap-4">
+              <div class="settings-card">
+                <div class="d-flex align-center justify-space-between ga-4">
                   <div>
-                    <p class="text-[11px] text-content-subtle mb-1 uppercase tracking-wider">{{ t('settings.notifications') }}</p>
-                    <p class="text-xs text-content-faint">{{ t('settings.notificationsDesc') }}</p>
+                    <p class="settings-label">{{ t('settings.notifications') }}</p>
+                    <p class="settings-desc">{{ t('settings.notificationsDesc') }}</p>
                   </div>
                   <ToggleSwitch :model-value="settingsStore.notificationsEnabled" @update:model-value="settingsStore.setNotificationsEnabled($event)" />
                 </div>
@@ -287,20 +283,20 @@ function handleKeydown(e: KeyboardEvent) {
 
             <!-- Application: Updates + About + Export + DB -->
             <template v-else-if="activeSection === 'application'">
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.updates') }}</p>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-content-muted">
-                    {{ t('settings.version') }}: <span class="font-mono text-content-tertiary">{{ settingsStore.appInfo.version }}</span>
+              <div class="settings-card">
+                <p class="settings-label mb-3">{{ t('settings.updates') }}</p>
+                <div class="d-flex align-center justify-space-between">
+                  <span class="settings-desc">
+                    {{ t('settings.version') }}: <span class="font-mono">{{ settingsStore.appInfo.version }}</span>
                   </span>
                   <button
-                    class="px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
+                    class="btn-primary"
                     :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
                     @click="checkUpdaterNow"
                   >{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}</button>
                 </div>
                 <div v-if="updaterStatus !== 'idle' && updaterStatus !== 'checking'" class="mt-2">
-                  <span :class="['text-sm font-medium', updaterStatus === 'available' || updaterStatus === 'downloaded' ? 'text-amber-400' : updaterStatus === 'up-to-date' ? 'text-emerald-400' : updaterStatus === 'error' ? 'text-red-400' : 'text-content-muted']">
+                  <span :class="['text-body-2 font-weight-medium', updaterStatus === 'available' || updaterStatus === 'downloaded' ? 'text-amber' : updaterStatus === 'up-to-date' ? 'text-emerald' : updaterStatus === 'error' ? 'text-red' : '']">
                     <template v-if="updaterStatus === 'up-to-date'">{{ t('settings.upToDate') }}</template>
                     <template v-else-if="updaterStatus === 'available'">{{ t('settings.updateAvailable') }}</template>
                     <template v-else-if="updaterStatus === 'downloading'">{{ t('settings.downloading') }}</template>
@@ -309,28 +305,28 @@ function handleKeydown(e: KeyboardEvent) {
                   </span>
                 </div>
               </div>
-              <div class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-2 uppercase tracking-wider">{{ t('settings.about') }}</p>
-                <p class="text-sm text-content-tertiary">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
-                <p class="text-xs text-content-subtle mt-1">{{ t('settings.aboutDesc') }}</p>
+              <div class="settings-card">
+                <p class="settings-label mb-2">{{ t('settings.about') }}</p>
+                <p class="settings-desc">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
+                <p class="settings-desc mt-1">{{ t('settings.aboutDesc') }}</p>
               </div>
-              <div v-if="store.dbPath" class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-3 uppercase tracking-wider">{{ t('settings.exportData') }}</p>
+              <div v-if="store.dbPath" class="settings-card">
+                <p class="settings-label mb-3">{{ t('settings.exportData') }}</p>
                 <button
-                  class="flex items-center gap-2 px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
+                  class="btn-primary btn-icon"
                   :disabled="exporting"
                   @click="showExportConfirm = true"
                 >
-                  <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4">
+                  <svg viewBox="0 0 16 16" fill="currentColor" style="width: 16px; height: 16px;">
                     <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                     <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
                   </svg>
                   {{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}
                 </button>
               </div>
-              <div v-if="store.dbPath" class="bg-surface-base border border-edge-subtle rounded-lg px-4 py-3">
-                <p class="text-[11px] text-content-subtle mb-2 uppercase tracking-wider">{{ t('settings.database') }}</p>
-                <p class="text-sm text-content-muted font-mono break-all">{{ store.dbPath }}</p>
+              <div v-if="store.dbPath" class="settings-card">
+                <p class="settings-label mb-2">{{ t('settings.database') }}</p>
+                <p class="settings-desc font-mono" style="word-break: break-all;">{{ store.dbPath }}</p>
               </div>
             </template>
 
@@ -342,19 +338,244 @@ function handleKeydown(e: KeyboardEvent) {
   <!-- Export confirmation nested dialog -->
   <v-dialog v-model="showExportConfirm" max-width="360">
     <v-card class="pa-5">
-      <h3 class="text-base font-semibold text-content-primary mb-2">{{ t('settings.exportConfirmTitle') }}</h3>
-      <p class="text-sm text-content-muted mb-2">{{ t('settings.exportConfirmMsg') }}</p>
-      <p class="text-xs text-amber-400 mb-4">{{ t('settings.exportConfirmWarn') }}</p>
-      <div class="flex gap-2 justify-end">
+      <h3 class="text-body-1 font-weight-medium mb-2" style="color: var(--content-primary)">{{ t('settings.exportConfirmTitle') }}</h3>
+      <p class="text-body-2 mb-2" style="color: var(--content-muted)">{{ t('settings.exportConfirmMsg') }}</p>
+      <p class="text-caption mb-4" style="color: #f59e0b;">{{ t('settings.exportConfirmWarn') }}</p>
+      <div class="d-flex ga-2 justify-end">
         <button
-          class="px-3 py-1.5 text-sm bg-surface-secondary hover:bg-surface-tertiary text-content-primary rounded-md transition-colors"
+          class="btn-ghost"
           @click="showExportConfirm = false"
         >{{ t('settings.exportCancel') }}</button>
         <button
-          class="px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors"
+          class="btn-primary"
           @click="exportZip"
         >{{ t('settings.exportConfirm') }}</button>
       </div>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+/* Modal layout */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+
+/* Close button */
+.btn-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--content-subtle);
+  cursor: pointer;
+  transition: all 150ms;
+}
+.btn-close:hover {
+  color: var(--content-secondary);
+  background: var(--surface-secondary);
+}
+
+/* Sidebar nav */
+.settings-nav {
+  width: 176px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--edge-subtle);
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: var(--content-muted);
+  cursor: pointer;
+  transition: all 150ms;
+  text-align: left;
+  margin: 0 4px;
+  box-sizing: border-box;
+}
+.nav-btn:hover {
+  background: var(--surface-secondary);
+  color: var(--content-secondary);
+}
+.nav-btn--active {
+  background: rgba(124, 58, 237, 0.2);
+  color: #c4b5fd;
+  font-weight: 500;
+}
+.nav-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Content panel */
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Settings card */
+.settings-card {
+  background: var(--surface-base);
+  border: 1px solid var(--edge-subtle);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.settings-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--content-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.settings-desc {
+  font-size: 12px;
+  color: var(--content-faint);
+}
+
+/* Form elements */
+.form-select {
+  width: 100%;
+  background: var(--surface-secondary);
+  color: var(--content-primary);
+  border: 1px solid var(--edge-subtle);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.form-select:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 1px #8b5cf6;
+}
+.form-input {
+  width: 100%;
+  background: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--content-primary);
+  outline: none;
+  transition: border-color 150ms;
+  box-sizing: border-box;
+}
+.form-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 1px #8b5cf6;
+}
+.form-input-small {
+  width: 64px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
+  color: var(--content-primary);
+  text-align: center;
+  outline: none;
+  transition: border-color 150ms;
+}
+.form-input-small--wide {
+  width: 80px;
+}
+.form-input-small:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 1px #8b5cf6;
+}
+
+/* Theme buttons */
+.theme-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  background: var(--surface-secondary);
+  color: var(--content-muted);
+  cursor: pointer;
+  transition: all 150ms;
+}
+.theme-btn:hover {
+  background: var(--surface-tertiary);
+}
+.theme-btn--active {
+  background: #7c3aed;
+  color: white;
+}
+
+/* Buttons */
+.btn-primary {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #6d28d9;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-ghost {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: var(--surface-secondary);
+  color: var(--content-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.btn-ghost:hover {
+  background: var(--surface-tertiary);
+}
+
+/* Typography utilities */
+.font-mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  color: var(--content-tertiary);
+}
+
+/* Updater status colors */
+.text-amber { color: #fbbf24; }
+.text-emerald { color: #34d399; }
+.text-red { color: #f87171; }
+</style>

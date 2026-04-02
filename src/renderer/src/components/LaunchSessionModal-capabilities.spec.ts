@@ -152,7 +152,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     expect(launchBtn!.attributes('disabled')).toBeDefined()
 
     // Help message should be visible
-    const helpMsg = wrapper.find('p.text-amber-500')
+    const helpMsg = wrapper.find('[data-testid="no-instance-warning"]')
     expect(helpMsg.exists()).toBe(true)
   })
 
