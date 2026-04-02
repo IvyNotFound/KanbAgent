@@ -429,9 +429,3 @@ exports[`ToastContainer — snapshots > matches snapshot: three toast types (err
   <div data-v-1a1a9880="" class="toast-item toast-info"><span data-v-1a1a9880="" class="toast-icon">ℹ</span><span data-v-1a1a9880="" class="toast-message">Changes saved</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
 </div>"
 `;
-
-exports[`ToggleSwitch — snapshots > matches snapshot: disabled state 1`] = `"<button data-v-c819432f="" type="button" role="switch" aria-checked="false" disabled="" class="toggle-switch is-off"><span data-v-c819432f="" class="toggle-thumb"></span></button>"`;
-
-exports[`ToggleSwitch — snapshots > matches snapshot: off state 1`] = `"<button data-v-c819432f="" type="button" role="switch" aria-checked="false" class="toggle-switch is-off"><span data-v-c819432f="" class="toggle-thumb"></span></button>"`;
-
-exports[`ToggleSwitch — snapshots > matches snapshot: on state 1`] = `"<button data-v-c819432f="" type="button" role="switch" aria-checked="true" class="toggle-switch is-on"><span data-v-c819432f="" class="toggle-thumb"></span></button>"`;

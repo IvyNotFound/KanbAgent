@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
-import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
 import CliDetectionList from '@renderer/components/CliDetectionList.vue'
 import { useUpdater } from '@renderer/composables/useUpdater'
 
@@ -177,7 +176,7 @@ function handleKeydown(e: KeyboardEvent) {
                     <p class="settings-label">{{ t('settings.autoLaunch') }}</p>
                     <p class="settings-desc">{{ t('settings.autoLaunchDesc') }}</p>
                   </div>
-                  <ToggleSwitch :model-value="settingsStore.autoLaunchAgentSessions" @update:model-value="settingsStore.setAutoLaunchAgentSessions($event)" />
+                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.autoLaunchAgentSessions" @update:model-value="settingsStore.setAutoLaunchAgentSessions(Boolean($event))" />
                 </div>
               </div>
               <div class="settings-card">
@@ -186,7 +185,7 @@ function handleKeydown(e: KeyboardEvent) {
                     <p class="settings-label">{{ t('settings.autoReview') }}</p>
                     <p class="settings-desc">{{ t('settings.autoReviewDesc') }}</p>
                   </div>
-                  <ToggleSwitch :model-value="settingsStore.autoReviewEnabled" @update:model-value="settingsStore.setAutoReviewEnabled($event)" />
+                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.autoReviewEnabled" @update:model-value="settingsStore.setAutoReviewEnabled(Boolean($event))" />
                 </div>
                 <div v-if="settingsStore.autoReviewEnabled" class="d-flex align-center ga-2 mt-2">
                   <label class="settings-desc">{{ t('settings.autoReviewThreshold') }}</label>
@@ -201,7 +200,7 @@ function handleKeydown(e: KeyboardEvent) {
                     <p class="settings-label">{{ t('settings.worktreeDefault') }}</p>
                     <p class="settings-desc">{{ t('settings.worktreeDefaultDesc') }}</p>
                   </div>
-                  <ToggleSwitch :model-value="settingsStore.worktreeDefault" @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, $event)" />
+                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.worktreeDefault" @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, Boolean($event))" />
                 </div>
               </div>
             </template>
@@ -214,7 +213,7 @@ function handleKeydown(e: KeyboardEvent) {
                     <p class="settings-label">{{ t('settings.maxFileLinesEnabled') }}</p>
                     <p class="settings-desc">{{ t('settings.maxFileLinesEnabledDesc') }}</p>
                   </div>
-                  <ToggleSwitch :model-value="settingsStore.maxFileLinesEnabled" @update:model-value="settingsStore.setMaxFileLinesEnabled($event)" />
+                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.maxFileLinesEnabled" @update:model-value="settingsStore.setMaxFileLinesEnabled(Boolean($event))" />
                 </div>
                 <div v-if="settingsStore.maxFileLinesEnabled" class="d-flex align-center ga-2 mt-2">
                   <label class="settings-desc">{{ t('settings.maxFileLinesCount') }}</label>
@@ -272,7 +271,7 @@ function handleKeydown(e: KeyboardEvent) {
                     <p class="settings-label">{{ t('settings.notifications') }}</p>
                     <p class="settings-desc">{{ t('settings.notificationsDesc') }}</p>
                   </div>
-                  <ToggleSwitch :model-value="settingsStore.notificationsEnabled" @update:model-value="settingsStore.setNotificationsEnabled($event)" />
+                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.notificationsEnabled" @update:model-value="settingsStore.setNotificationsEnabled(Boolean($event))" />
                 </div>
               </div>
             </template>

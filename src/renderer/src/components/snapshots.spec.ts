@@ -28,33 +28,6 @@ describe('AgentBadge — snapshots', () => {
   })
 })
 
-// ── ToggleSwitch ──────────────────────────────────────────────────────────────
-
-import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
-
-describe('ToggleSwitch — snapshots', () => {
-  it('matches snapshot: off state', () => {
-    const wrapper = shallowMount(ToggleSwitch, {
-      props: { modelValue: false },
-    })
-    expect(wrapper.html()).toMatchSnapshot()
-  })
-
-  it('matches snapshot: on state', () => {
-    const wrapper = shallowMount(ToggleSwitch, {
-      props: { modelValue: true },
-    })
-    expect(wrapper.html()).toMatchSnapshot()
-  })
-
-  it('matches snapshot: disabled state', () => {
-    const wrapper = shallowMount(ToggleSwitch, {
-      props: { modelValue: false, disabled: true },
-    })
-    expect(wrapper.html()).toMatchSnapshot()
-  })
-})
-
 // ── StatusColumn ──────────────────────────────────────────────────────────────
 
 import StatusColumn from '@renderer/components/StatusColumn.vue'
