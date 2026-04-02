@@ -355,7 +355,7 @@ watch(() => props.initialAgentId, (v) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 24px;
+  padding: 8px 24px;
   border-bottom: 1px solid var(--edge-default);
   background: var(--surface-base);
 }
@@ -402,7 +402,7 @@ watch(() => props.initialAgentId, (v) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 24px;
+  padding: 8px 24px;
   min-width: 0;
 }
 
@@ -418,7 +418,7 @@ watch(() => props.initialAgentId, (v) => {
   font-size: 12px;
   font-family: ui-monospace, monospace;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
 }
 /* dot colors */
@@ -445,7 +445,7 @@ watch(() => props.initialAgentId, (v) => {
   flex-shrink: 0;
   font-size: 12px;
   font-family: ui-monospace, monospace;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-weight: 500;
 }
@@ -469,11 +469,11 @@ watch(() => props.initialAgentId, (v) => {
 .al-chevron--open { transform: rotate(90deg); }
 
 .al-detail {
-  padding: 0 24px 10px;
-  margin-left: 18px;
+  padding: 0 24px 8px;
+  margin-left: 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .al-detail-text {
   color: var(--content-tertiary);
@@ -482,11 +482,11 @@ watch(() => props.initialAgentId, (v) => {
   overflow-wrap: break-word;
   margin: 0;
 }
-.al-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.al-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .al-file-badge {
   font-size: 12px;
   font-family: ui-monospace, monospace;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
   background: var(--surface-secondary);
   color: var(--content-subtle);

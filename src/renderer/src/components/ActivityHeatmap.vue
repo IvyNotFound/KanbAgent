@@ -194,7 +194,7 @@ const maxCount = computed(() => Math.max(...Array.from(dayCountMap.value.values(
 }
 .heatmap-filter-btns {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .heatmap-filter-btn {
@@ -215,7 +215,7 @@ const maxCount = computed(() => Math.max(...Array.from(dayCountMap.value.values(
 }
 .heatmap-grid {
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 .heatmap-cell {
   width: 12px;

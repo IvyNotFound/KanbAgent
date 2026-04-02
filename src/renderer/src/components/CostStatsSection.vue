@@ -372,8 +372,8 @@ const hoveredBar = ref<number | null>(null)
 .cost-summary-card {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px;
+  gap: 4px;
+  padding: 8px;
   border-radius: 8px;
   background: var(--surface-secondary);
   border: 1px solid var(--edge-default);
@@ -441,7 +441,7 @@ const hoveredBar = ref<number | null>(null)
 .cost-agent-table {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .cost-agent-row {
   display: flex;
@@ -452,7 +452,7 @@ const hoveredBar = ref<number | null>(null)
   width: 128px;
   font-size: 11px;
   font-family: ui-monospace, monospace;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-weight: 500;
   overflow: hidden;

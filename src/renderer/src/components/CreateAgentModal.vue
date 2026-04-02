@@ -422,7 +422,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 .field-label-note {
   color: var(--content-faint);
-  margin-left: 2px;
+  margin-left: 4px;
 }
 
 /* Type grid using v-btn-toggle */
@@ -440,7 +440,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 /* System prompt toggle */
 .prompt-toggle {
-  gap: 6px;
+  gap: 8px;
   font-size: 12px !important;
   color: var(--content-subtle) !important;
   justify-content: flex-start !important;

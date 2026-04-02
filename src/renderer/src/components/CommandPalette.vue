@@ -266,7 +266,7 @@ function effortColor(effort: number): string {
               <div class="palette-item-row">
                 <span
                   class="status-dot flex-shrink-0"
-                  style="margin-top: 2px;"
+                  style="margin-top: 4px;"
                   :style="{ backgroundColor: STATUTS.find(s => s.key === task.status)?.color ?? 'var(--content-faint)' }"
                 />
                 <div style="min-width: 0; flex: 1;">
@@ -353,7 +353,7 @@ function effortColor(effort: number): string {
 
 /* Filters */
 .palette-filters {
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--edge-subtle);
   flex-shrink: 0;
   display: flex;
@@ -411,7 +411,7 @@ function effortColor(effort: number): string {
   color: var(--content-dim);
 }
 .palette-count {
-  padding: 6px 16px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -419,7 +419,7 @@ function effortColor(effort: number): string {
 .palette-item {
   cursor: pointer;
   border-left: 2px solid transparent !important;
-  padding: 10px 16px !important;
+  padding: 8px 16px !important;
   min-height: 0 !important;
 }
 .palette-item:hover {
@@ -434,7 +434,7 @@ function effortColor(effort: number): string {
 .palette-item-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -462,7 +462,7 @@ function effortColor(effort: number): string {
 .task-scope {
   font-size: 10px;
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  padding: 2px 4px;
+  padding: 4px;
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -483,7 +483,7 @@ function effortColor(effort: number): string {
   color: var(--content-faint);
 }
 .palette-kbd {
-  padding: 2px 6px;
+  padding: 4px 8px;
   font-size: 11px;
   background: var(--surface-secondary);
   color: var(--content-subtle);

@@ -274,7 +274,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
 .telemetry-loc-row {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 8px;
 }
 .telemetry-loc-value {
   font-weight: 700;
@@ -295,7 +295,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
 .telemetry-lang-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .telemetry-lang-bar {
   display: flex;
@@ -303,18 +303,18 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
   border-radius: 9999px;
   overflow: hidden;
   width: 100%;
-  gap: 1px;
+  gap: 1px; /* intentional: thin segment separator in bar chart, not layout spacing */
 }
 .telemetry-lang-segment { transition: width 0.3s; }
 .telemetry-lang-legend {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .telemetry-lang-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .telemetry-lang-dot {
   flex-shrink: 0;

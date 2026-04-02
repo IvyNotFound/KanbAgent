@@ -137,7 +137,7 @@ onMounted(loadTree)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--edge-subtle);
   flex-shrink: 0;
 }
@@ -150,7 +150,7 @@ onMounted(loadTree)
 .ex-tree-refresh {
   color: var(--content-subtle) !important;
 }
-.ex-tree-nodes { flex: 1; padding: 2px 0; user-select: none; }
+.ex-tree-nodes { flex: 1; padding: 4px 0; user-select: none; }
 
 .ex-state-center { flex: 1; display: flex; align-items: center; justify-content: center; }
 .ex-padded { padding: 16px; }
@@ -172,7 +172,7 @@ onMounted(loadTree)
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--edge-subtle);
   flex-shrink: 0;
   min-height: 41px;
