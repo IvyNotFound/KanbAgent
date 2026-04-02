@@ -33,7 +33,7 @@ describe('AgentLogsView', () => {
     expect(text).toContain('debug')
   })
 
-  it('renders sub-tab navigation (logs and token stats)', () => {
+  it('renders level filter and refresh interactive elements', () => {
     const wrapper = shallowMount(AgentLogsView, {
       global: {
         plugins: [createTestingPinia({
@@ -45,9 +45,9 @@ describe('AgentLogsView', () => {
         stubs: { TokenStatsView: true },
       },
     })
-    const buttons = wrapper.findAll('button')
-    // Level filter buttons (all, info, warn, error, debug) + at least one more
-    expect(buttons.length).toBeGreaterThanOrEqual(5)
+    // Level filter v-btns (all, info, warn, error, debug) + refresh v-btn
+    const btns = wrapper.findAll('button, v-btn')
+    expect(btns.length).toBeGreaterThanOrEqual(5)
   })
 
   it('shows reset button when a filter is active and resets on click', async () => {
@@ -67,18 +67,20 @@ describe('AgentLogsView', () => {
     })
     await flushPromises()
 
+    // Some element with title exists (refresh button)
+    expect(wrapper.find('[title]').exists()).toBe(true)
+
     // Reset button should not be visible initially (filters at default)
-    expect(wrapper.find('button[title]').exists()).toBe(true)
-    const resetBefore = wrapper.findAll('button').find(b => b.text().includes('réinitialiser') || b.text().includes('reset'))
+    const resetBefore = wrapper.findAll('button, v-btn').find(b => b.text().includes('réinitialiser') || b.text().includes('reset'))
     expect(resetBefore).toBeUndefined()
 
     // Click 'error' level filter
-    const errorBtn = wrapper.findAll('button').find(b => b.text() === 'error')
+    const errorBtn = wrapper.findAll('button, v-btn').find(b => b.text() === 'error')
     await errorBtn!.trigger('click')
     await flushPromises()
 
     // Reset button should now be visible
-    const resetBtn = wrapper.findAll('button').find(b => b.text().includes('réinitialiser') || b.text().includes('reset'))
+    const resetBtn = wrapper.findAll('button, v-btn').find(b => b.text().includes('réinitialiser') || b.text().includes('reset'))
     expect(resetBtn?.exists()).toBe(true)
 
     // Click reset button
@@ -86,7 +88,7 @@ describe('AgentLogsView', () => {
     await flushPromises()
 
     // Reset button should disappear again
-    const resetAfter = wrapper.findAll('button').find(b => b.text().includes('réinitialiser') || b.text().includes('reset'))
+    const resetAfter = wrapper.findAll('button, v-btn').find(b => b.text().includes('réinitialiser') || b.text().includes('reset'))
     expect(resetAfter).toBeUndefined()
   })
 

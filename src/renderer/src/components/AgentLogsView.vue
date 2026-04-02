@@ -115,6 +115,19 @@ const uniqueAgents = computed(() =>
     .sort((a, b) => a[1].localeCompare(b[1]))
 )
 
+const levelBtnColor: Record<string, string | undefined> = {
+  all:   undefined,
+  info:  'info',
+  warn:  'warning',
+  error: 'error',
+  debug: 'secondary',
+}
+
+const agentSelectItems = computed<Array<{ title: string; value: number | null }>>(() => [
+  { title: t('logs.allAgents'), value: null },
+  ...uniqueAgents.value.map(([id, name]) => ({ title: name, value: id })),
+])
+
 // ── Timestamps ────────────────────────────────────────────────────────────
 function formatTime(dateStr: string): string {
   const d = parseUtcDate(dateStr)
@@ -145,14 +158,6 @@ const levelConfig: Record<string, { label: string; cls: string }> = {
 
 function levelCfg(niveau: string) {
   return levelConfig[niveau] ?? levelConfig.info
-}
-
-const filterLevelConfig: Record<string, string> = {
-  all:   'al-filter--all',
-  info:  'al-filter--info',
-  warn:  'al-filter--warn',
-  error: 'al-filter--error',
-  debug: 'al-filter--debug',
 }
 
 function resetFilters(): void {
@@ -204,50 +209,67 @@ watch(() => props.initialAgentId, (v) => {
     <!-- ── Filter bar ──────────────────────────────────────────────────── -->
     <div class="al-filter-bar">
       <div class="al-level-btns">
-        <button
+        <v-btn
           v-for="lvl in levels"
           :key="lvl"
-          class="al-level-btn"
-          :class="filterLevel === lvl ? filterLevelConfig[lvl] : 'al-level-btn--inactive'"
+          size="x-small"
+          density="compact"
+          :variant="filterLevel === lvl ? 'tonal' : 'text'"
+          :color="filterLevel === lvl ? levelBtnColor[lvl] : undefined"
+          style="font-family: ui-monospace, monospace; text-transform: none; min-width: 36px;"
           @click="filterLevel = lvl"
-        >{{ lvl }}</button>
+        >{{ lvl }}</v-btn>
       </div>
 
-      <div class="al-sep" />
+      <v-select
+        v-model="filterAgentId"
+        :items="agentSelectItems"
+        density="compact"
+        variant="outlined"
+        hide-details
+        style="max-width: 180px; font-size: 12px; font-family: ui-monospace, monospace;"
+      />
 
-      <select v-model.number="filterAgentId" class="al-agent-select">
-        <option :value="null">{{ t('logs.allAgents') }}</option>
-        <option v-for="[id, name] in uniqueAgents" :key="id" :value="id">{{ name }}</option>
-      </select>
-
-      <button
+      <v-btn
         v-if="filterLevel !== 'all' || filterAgentId !== null"
-        class="al-reset-btn"
+        size="x-small"
+        variant="outlined"
         :title="t('logs.resetFilters')"
+        style="font-family: ui-monospace, monospace; font-size: 12px; text-transform: none;"
         @click="resetFilters"
-      >{{ t('logs.reset') }}</button>
+      >{{ t('logs.reset') }}</v-btn>
 
       <div class="al-spacer" />
 
       <div v-if="totalPages > 1" class="al-pagination">
-        <button class="al-page-btn" :disabled="currentPage === 1" :title="t('logs.prevPage')" @click="prevPage">
-          <v-icon size="12">mdi-chevron-left</v-icon>
-        </button>
+        <v-btn
+          icon="mdi-chevron-left"
+          size="x-small"
+          variant="text"
+          :disabled="currentPage === 1"
+          :title="t('logs.prevPage')"
+          @click="prevPage"
+        />
         <span class="al-page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <button class="al-page-btn" :disabled="currentPage >= totalPages" :title="t('logs.nextPage')" @click="nextPage">
-          <v-icon size="12">mdi-chevron-right</v-icon>
-        </button>
+        <v-btn
+          icon="mdi-chevron-right"
+          size="x-small"
+          variant="text"
+          :disabled="currentPage >= totalPages"
+          :title="t('logs.nextPage')"
+          @click="nextPage"
+        />
       </div>
       <span v-else class="al-count">{{ paginatedLogs.length }} / {{ totalCount }}</span>
 
-      <button
-        class="al-refresh-btn"
-        :class="{ 'al-refresh-btn--spinning': loading }"
+      <v-btn
+        icon="mdi-refresh"
+        size="x-small"
+        variant="text"
         :title="t('logs.refresh')"
+        :class="{ 'al-refresh-btn--spinning': loading }"
         @click="fetchLogs"
-      >
-        <v-icon size="14">mdi-refresh</v-icon>
-      </button>
+      />
     </div>
 
     <!-- ── Log list ────────────────────────────────────────────────────── -->
@@ -336,91 +358,10 @@ watch(() => props.initialAgentId, (v) => {
   background: var(--surface-base);
 }
 .al-level-btns { display: flex; align-items: center; gap: 4px; }
-.al-level-btn {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  font-weight: 500;
-  box-shadow: 0 0 0 1px transparent;
-  transition: all 0.15s;
-  border: none;
-  cursor: pointer;
-}
-.al-level-btn--inactive {
-  color: var(--content-subtle);
-  background: transparent;
-  box-shadow: none;
-}
-.al-level-btn--inactive:hover {
-  color: var(--content-tertiary);
-  box-shadow: 0 0 0 1px var(--edge-default);
-}
-/* active filter states */
-.al-filter--all   { color: var(--content-tertiary); background: var(--surface-secondary); box-shadow: 0 0 0 1px var(--edge-default); }
-.al-filter--info  { color: #38bdf8; background: rgba(12,74,110,0.6);  box-shadow: 0 0 0 1px #0c4a6e; }
-.al-filter--warn  { color: #fbbf24; background: rgba(78,52,6,0.6);    box-shadow: 0 0 0 1px #78350f; }
-.al-filter--error { color: #f87171; background: rgba(69,10,10,0.6);   box-shadow: 0 0 0 1px #7f1d1d; }
-.al-filter--debug { color: #c4b5fd; background: rgba(46,16,101,0.6);  box-shadow: 0 0 0 1px #4c1d95; }
-
-.al-sep { width: 1px; height: 16px; background: var(--surface-secondary); margin: 0 4px; }
-.al-agent-select {
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  color: var(--content-tertiary);
-  outline: none;
-  cursor: pointer;
-}
-.al-reset-btn {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  color: var(--content-subtle);
-  background: transparent;
-  box-shadow: 0 0 0 1px var(--edge-default);
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s, box-shadow 0.15s;
-}
-.al-reset-btn:hover { color: var(--content-secondary); box-shadow: 0 0 0 1px #6d28d9; }
 .al-spacer { flex: 1; }
-.al-pagination { display: flex; align-items: center; gap: 8px; }
-.al-page-btn {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  color: var(--content-subtle);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-.al-page-btn:hover:not(:disabled) { color: var(--content-secondary); background: var(--surface-secondary); }
-.al-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.al-pagination { display: flex; align-items: center; gap: 4px; }
 .al-page-info { font-size: 11px; color: var(--content-faint); font-family: ui-monospace, monospace; }
 .al-count { font-size: 11px; color: var(--content-faint); font-family: ui-monospace, monospace; }
-.al-refresh-btn {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  color: var(--content-subtle);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-.al-refresh-btn:hover { color: var(--content-secondary); background: var(--surface-secondary); }
 .al-refresh-btn--spinning { animation: alSpin 1s linear infinite; }
 @keyframes alSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
