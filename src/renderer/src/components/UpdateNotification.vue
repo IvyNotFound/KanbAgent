@@ -25,7 +25,7 @@ const versionLabel = computed(() => (info.value?.version ? `v${info.value.versio
     enter-from-class="notif-enter-from"
     leave-to-class="notif-leave-to"
   >
-    <div v-if="isVisible" class="update-banner">
+    <div v-if="isVisible" class="update-banner elevation-2">
       <!-- Available -->
       <template v-if="status === 'available'">
         <span class="banner-text">{{ t('update.available', { version: versionLabel }) }}</span>
@@ -94,7 +94,6 @@ const versionLabel = computed(() => (info.value?.version ? `v${info.value.versio
   background-color: #6d28d9;
   color: #fff;
   font-size: 0.875rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
   max-height: 3rem;
 }

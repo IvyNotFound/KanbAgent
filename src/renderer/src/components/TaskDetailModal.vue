@@ -168,7 +168,7 @@ onUnmounted(() => {
       <div class="backdrop-overlay" @click="store.closeTask()"></div>
 
       <!-- Panel -->
-      <div class="task-panel">
+      <div class="task-panel elevation-8">
 
         <!-- Header -->
         <div class="task-header">
@@ -383,7 +383,6 @@ onUnmounted(() => {
   background: var(--surface-primary);
   border: 1px solid var(--edge-default);
   border-radius: 12px;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
   overflow: hidden;

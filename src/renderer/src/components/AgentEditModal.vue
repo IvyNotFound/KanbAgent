@@ -208,7 +208,7 @@ async function save() {
               :class="autoLaunch ? 'switch-track--on' : ''"
               @click="autoLaunch = !autoLaunch"
             >
-              <span class="switch-thumb" :class="autoLaunch ? 'switch-thumb--on' : ''" />
+              <span class="switch-thumb elevation-1" :class="autoLaunch ? 'switch-thumb--on' : ''" />
             </button>
           </div>
 
@@ -549,7 +549,6 @@ async function save() {
   height: 16px;
   border-radius: 9999px;
   background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   transform: translateX(0);
   transition: transform 200ms;
 }

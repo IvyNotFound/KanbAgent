@@ -78,7 +78,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
       @click.self="emit('close')"
     >
       <!-- Card -->
-      <div class="popup-card">
+      <div class="popup-card elevation-8">
         <!-- Header -->
         <div class="popup-header">
           <div class="popup-header-left">
@@ -150,7 +150,6 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
   background-color: var(--surface-primary);
   border: 1px solid var(--edge-default);
   border-radius: 12px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   width: 20rem;
   display: flex;
   flex-direction: column;

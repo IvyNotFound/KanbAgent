@@ -22,7 +22,7 @@ const COLOR: Record<Toast['type'], string> = {
     <div
       v-for="toast in toasts"
       :key="toast.id"
-      :class="['toast-item', COLOR[toast.type]]"
+      :class="['toast-item', 'elevation-4', COLOR[toast.type]]"
     >
       <span class="toast-icon">{{ ICON[toast.type] }}</span>
       <span class="toast-message">{{ toast.message }}</span>
@@ -56,7 +56,6 @@ const COLOR: Record<Toast['type'], string> = {
   border-width: 1px;
   border-style: solid;
   font-size: 0.875rem;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
   pointer-events: auto;
 }
 

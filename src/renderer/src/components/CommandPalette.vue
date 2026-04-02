@@ -152,7 +152,7 @@ function effortColor(effort: number): string {
       @click.self="close"
       @keydown="handleKeydown"
     >
-      <div class="palette-panel">
+      <div class="palette-panel elevation-8">
 
           <!-- Search input -->
           <div class="palette-search">
@@ -314,7 +314,6 @@ function effortColor(effort: number): string {
   margin: 0 16px;
   background: var(--surface-primary);
   border-radius: 12px;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
   border: 1px solid rgba(var(--v-theme-on-surface, 255, 255, 255), 0.1);
   overflow: hidden;
   display: flex;

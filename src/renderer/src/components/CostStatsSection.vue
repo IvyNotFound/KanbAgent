@@ -278,7 +278,7 @@ const hoveredBar = ref<number | null>(null)
             <div v-if="bar.cost === 0" class="cost-spark-zero" />
             <div
               v-if="hoveredBar === i"
-              class="cost-spark-tooltip"
+              class="cost-spark-tooltip elevation-2"
             >
               {{ bar.label }} : {{ formatCost(bar.cost) }}
             </div>
@@ -457,7 +457,6 @@ const hoveredBar = ref<number | null>(null)
   background: var(--surface-secondary);
   color: var(--content-primary);
   border: 1px solid var(--edge-default);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   pointer-events: none;
 }
 /* Per-agent table */

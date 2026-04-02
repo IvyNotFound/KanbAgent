@@ -97,7 +97,7 @@ function isEnabled(cli: CliType): boolean {
         @click="emit('toggle', meta.cli)"
       >
         <span
-          class="cli-toggle-thumb"
+          class="cli-toggle-thumb elevation-1"
           :class="{ 'cli-toggle-thumb--on': isEnabled(meta.cli) }"
         />
       </button>
@@ -217,7 +217,6 @@ function isEnabled(cli: CliType): boolean {
   margin-top: 1px;
   border-radius: 9999px;
   background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   transform: translateX(1px);
   transition: transform 0.2s;
 }

@@ -31,7 +31,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
       @contextmenu.prevent="emit('close')"
     >
       <div
-        class="context-menu"
+        class="context-menu elevation-8"
         :style="{ left: `${x}px`, top: `${y}px` }"
         @click.stop
       >
@@ -62,7 +62,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   background-color: rgb(var(--v-theme-surface));
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 8px;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   padding: 4px 0;
   min-width: 188px;
 }

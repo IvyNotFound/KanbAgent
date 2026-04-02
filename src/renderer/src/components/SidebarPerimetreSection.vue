@@ -134,7 +134,7 @@ async function addPerimetre() {
   <!-- Modal édition périmètre -->
   <Teleport to="body">
     <div v-if="editPerimetre" class="modal-backdrop" @click.self="editPerimetre = null">
-      <div class="modal-card">
+      <div class="modal-card elevation-8">
         <p class="modal-title">{{ t('sidebar.editPerimeter') }}</p>
         <div class="modal-field">
           <label class="modal-label">{{ t('sidebar.name') }}</label>
@@ -298,7 +298,6 @@ async function addPerimetre() {
   background: var(--surface-primary);
   border: 1px solid var(--edge-default);
   border-radius: 12px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
   padding: 20px;
   width: 384px;
   display: flex;

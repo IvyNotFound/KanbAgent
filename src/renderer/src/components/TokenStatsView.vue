@@ -104,7 +104,7 @@ const {
             :style="{ height: sparkBarHeight(bar.total) + 'px' }"
           />
           <div v-if="bar.total === 0" class="ts-spark-zero" />
-          <div v-if="hoveredSparkBar === i" class="ts-spark-tooltip">
+          <div v-if="hoveredSparkBar === i" class="ts-spark-tooltip elevation-2">
             {{ bar.label }} : {{ formatNumber(bar.total) }}
           </div>
         </div>
@@ -349,7 +349,6 @@ const {
   background: var(--surface-secondary);
   color: var(--content-primary);
   border: 1px solid var(--edge-default);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   pointer-events: none;
 }
 

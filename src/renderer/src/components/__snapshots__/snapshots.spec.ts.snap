@@ -62,7 +62,7 @@ exports[`ConfirmDialog — snapshots > matches snapshot: info dialog 1`] = `
 exports[`ContextMenu — snapshots > matches snapshot: items with separator 1`] = `
 "<div data-v-927d44d2="" to="body">
   <div data-v-927d44d2="" class="context-overlay">
-    <div data-v-927d44d2="" class="context-menu" style="left: 50px; top: 80px;"><button data-v-927d44d2="" class="menu-item">Edit</button><button data-v-927d44d2="" class="menu-item">Add subgroup</button>
+    <div data-v-927d44d2="" class="context-menu elevation-8" style="left: 50px; top: 80px;"><button data-v-927d44d2="" class="menu-item">Edit</button><button data-v-927d44d2="" class="menu-item">Add subgroup</button>
       <div data-v-927d44d2="" class="separator"></div><button data-v-927d44d2="" class="menu-item">Delete</button>
     </div>
   </div>
@@ -72,7 +72,7 @@ exports[`ContextMenu — snapshots > matches snapshot: items with separator 1`] 
 exports[`ContextMenu — snapshots > matches snapshot: simple items (no separator) 1`] = `
 "<div data-v-927d44d2="" to="body">
   <div data-v-927d44d2="" class="context-overlay">
-    <div data-v-927d44d2="" class="context-menu" style="left: 100px; top: 200px;"><button data-v-927d44d2="" class="menu-item">Rename</button><button data-v-927d44d2="" class="menu-item">Delete</button></div>
+    <div data-v-927d44d2="" class="context-menu elevation-8" style="left: 100px; top: 200px;"><button data-v-927d44d2="" class="menu-item">Rename</button><button data-v-927d44d2="" class="menu-item">Delete</button></div>
   </div>
 </div>"
 `;
@@ -428,8 +428,8 @@ exports[`ToastContainer — snapshots > matches snapshot: empty (no toasts) 1`] 
 exports[`ToastContainer — snapshots > matches snapshot: three toast types (error, warn, info) 1`] = `
 "<!-- MD3: fixed bottom-right, stacked toasts with elevation shadow -->
 <div data-v-1a1a9880="" class="toast-container">
-  <div data-v-1a1a9880="" class="toast-item toast-error"><span data-v-1a1a9880="" class="toast-icon">✕</span><span data-v-1a1a9880="" class="toast-message">Connection failed</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
-  <div data-v-1a1a9880="" class="toast-item toast-warn"><span data-v-1a1a9880="" class="toast-icon">⚠</span><span data-v-1a1a9880="" class="toast-message">Slow response detected</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
-  <div data-v-1a1a9880="" class="toast-item toast-info"><span data-v-1a1a9880="" class="toast-icon">ℹ</span><span data-v-1a1a9880="" class="toast-message">Changes saved</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
+  <div data-v-1a1a9880="" class="toast-item elevation-4 toast-error"><span data-v-1a1a9880="" class="toast-icon">✕</span><span data-v-1a1a9880="" class="toast-message">Connection failed</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
+  <div data-v-1a1a9880="" class="toast-item elevation-4 toast-warn"><span data-v-1a1a9880="" class="toast-icon">⚠</span><span data-v-1a1a9880="" class="toast-message">Slow response detected</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
+  <div data-v-1a1a9880="" class="toast-item elevation-4 toast-info"><span data-v-1a1a9880="" class="toast-icon">ℹ</span><span data-v-1a1a9880="" class="toast-message">Changes saved</span><button data-v-1a1a9880="" class="toast-dismiss">✕</button></div>
 </div>"
 `;
