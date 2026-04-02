@@ -188,7 +188,7 @@ function onAgentClick(row: TopologyRow): void {
 .tp-empty {}
 @keyframes tpPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-.tp-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.tp-scroll { flex: 1; min-height: 0; overflow: auto; }
 .tp-columns { display: flex; gap: 16px; padding: 16px; min-height: 100%; }
 .tp-column { display: flex; flex-direction: column; flex: 1; min-width: 180px; max-width: 320px; }
 .tp-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -234,7 +234,7 @@ function onAgentClick(row: TopologyRow): void {
 .tp-card--idle    { background: var(--surface-secondary); border-color: var(--edge-subtle); }
 .tp-card--idle:hover    { border-color: var(--edge-default); }
 
-.tp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.tp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; min-width: 0; }
 .tp-agent-name {
   font-size: 12px;
   font-family: ui-monospace, monospace;
@@ -261,12 +261,6 @@ function onAgentClick(row: TopologyRow): void {
 .tp-dot--blocked { background: rgb(var(--v-theme-warning)); }
 .tp-dot--idle    { background: var(--content-faint); }
 .tp-agent-type { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; }
-.tp-task {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  margin: 0;
-}
+.tp-task { font-size: 10px; color: var(--content-subtle); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; display: block; margin: 2px 0 0; }
 .tp-tokens { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; margin: 2px 0 0; }
 </style>
