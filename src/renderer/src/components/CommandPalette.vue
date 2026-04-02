@@ -371,6 +371,11 @@ function effortColor(effort: number): string {
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
   font-size: 12px;
 }
+/* Soften chip borders on dark background — selected chips override via inline :style */
+.palette-filters :deep(.v-chip--variant-outlined) {
+  border-color: rgba(var(--v-theme-on-surface), 0.18) !important;
+  color: var(--content-subtle) !important;
+}
 
 /* Status / effort dots */
 .status-dot {
@@ -391,7 +396,7 @@ function effortColor(effort: number): string {
 .palette-results {
   flex: 1;
   overflow-y: auto;
-  min-height: 0;
+  min-height: 240px; /* ~3-4 items, prevents height jump when filters reduce results */
 }
 .palette-empty {
   display: flex;
