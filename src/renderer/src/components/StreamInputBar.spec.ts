@@ -1,6 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, shallowMount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import StreamInputBar from '@renderer/components/StreamInputBar.vue'
+
+// v-* tags are compiled as custom elements (isCustomElement in vitest.config.ts).
+// Stubs cannot intercept custom elements — tests interact directly with the DOM:
+//   - wrapper.find('v-textarea') finds the <v-textarea> custom element
+//   - wrapper.vm.inputText (exposed via defineExpose) lets us set the bound text
+//   - wrapper.find('[data-testid="..."]') finds <v-btn> elements by attribute
 
 describe('StreamInputBar (T842)', () => {
   const defaultProps = {
@@ -11,17 +18,17 @@ describe('StreamInputBar (T842)', () => {
     accentFg: '#00ff00',
   }
 
-  it('renders a textarea for text input', () => {
+  it('renders a v-textarea for text input', () => {
     const wrapper = mount(StreamInputBar, { props: defaultProps })
-    expect(wrapper.find('textarea').exists()).toBe(true)
+    expect(wrapper.find('v-textarea').exists()).toBe(true)
     wrapper.unmount()
   })
 
   it('emits send with the text when Enter is pressed', async () => {
     const wrapper = mount(StreamInputBar, { props: defaultProps })
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Hello world')
-    await textarea.trigger('keydown', { key: 'Enter', shiftKey: false })
+    wrapper.vm.inputText = 'Hello world'
+    await nextTick()
+    await wrapper.find('v-textarea').trigger('keydown', { key: 'Enter', shiftKey: false })
     expect(wrapper.emitted('send')).toBeTruthy()
     expect(wrapper.emitted('send')![0]).toEqual(['Hello world'])
     wrapper.unmount()
@@ -29,7 +36,8 @@ describe('StreamInputBar (T842)', () => {
 
   it('emits send with text when send button is clicked', async () => {
     const wrapper = mount(StreamInputBar, { props: defaultProps })
-    await wrapper.find('textarea').setValue('Click send')
+    wrapper.vm.inputText = 'Click send'
+    await nextTick()
     await wrapper.find('[data-testid="send-button"]').trigger('click')
     expect(wrapper.emitted('send')).toBeTruthy()
     expect(wrapper.emitted('send')![0]).toEqual(['Click send'])
@@ -38,10 +46,10 @@ describe('StreamInputBar (T842)', () => {
 
   it('resets the input after send', async () => {
     const wrapper = mount(StreamInputBar, { props: defaultProps })
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Reset me')
-    await textarea.trigger('keydown', { key: 'Enter', shiftKey: false })
-    expect((textarea.element as HTMLTextAreaElement).value).toBe('')
+    wrapper.vm.inputText = 'Reset me'
+    await nextTick()
+    await wrapper.find('v-textarea').trigger('keydown', { key: 'Enter', shiftKey: false })
+    expect(wrapper.vm.inputText).toBe('')
     wrapper.unmount()
   })
 
@@ -49,7 +57,8 @@ describe('StreamInputBar (T842)', () => {
     const wrapper = mount(StreamInputBar, {
       props: { ...defaultProps, sessionId: null },
     })
-    await wrapper.find('textarea').setValue('No session')
+    wrapper.vm.inputText = 'No session'
+    await nextTick()
     await wrapper.find('[data-testid="send-button"]').trigger('click')
     expect(wrapper.emitted('send')).toBeFalsy()
     wrapper.unmount()

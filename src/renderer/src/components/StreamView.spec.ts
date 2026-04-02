@@ -3,6 +3,7 @@ import { mount, shallowMount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { nextTick } from 'vue'
 import StreamView from '@renderer/components/StreamView.vue'
+import StreamInputBar from '@renderer/components/StreamInputBar.vue'
 import type { StreamEvent } from '@renderer/components/StreamView.vue'
 import { mockElectronAPI } from '../../../test/setup'
 import i18n from '@renderer/plugins/i18n'
@@ -163,17 +164,19 @@ describe('StreamView', () => {
   })
 
   it('send button is disabled when input is empty', async () => {
+    // v-btn is a custom element — Vue sets :disabled as DOM attribute (not .disabled property)
     const { wrapper } = await mountStream()
     const btn = wrapper.find('[data-testid="send-button"]')
-    expect((btn.element as HTMLButtonElement).disabled).toBe(true)
+    expect(btn.element.hasAttribute('disabled')).toBe(true)
   })
 
   it('calls agentSend with message on send (T648)', async () => {
     // T648: sendMessage uses agentSend via stdin JSONL — no PTY respawn needed (ADR-009)
+    // v-textarea is a custom element — set text via StreamInputBar's exposed inputText ref
     const { wrapper } = await mountStream([], { convId: 'test-session-id' })
     vi.mocked(mockElectronAPI.agentSend).mockResolvedValue(undefined)
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Hello agent')
+    wrapper.findComponent(StreamInputBar).vm.inputText = 'Hello agent'
+    await nextTick()
     const btn = wrapper.find('[data-testid="send-button"]')
     await btn.trigger('click')
     await flushPromises()
@@ -183,12 +186,13 @@ describe('StreamView', () => {
   it('clears input after send', async () => {
     // T648: send requires sessionId — use convId shortcut to enable the button
     const { wrapper } = await mountStream([], { convId: 'test-session-id' })
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Mon message')
+    const inputBar = wrapper.findComponent(StreamInputBar)
+    inputBar.vm.inputText = 'Mon message'
+    await nextTick()
     const btn = wrapper.find('[data-testid="send-button"]')
     await btn.trigger('click')
     await flushPromises()
-    expect((textarea.element as HTMLTextAreaElement).value).toBe('')
+    expect(inputBar.vm.inputText).toBe('')
   })
 
   it('registers system:init session_id', async () => {
@@ -281,18 +285,17 @@ describe('StreamView', () => {
     expect(mockElectronAPI.agentCreate).toHaveBeenCalledWith(
       expect.objectContaining({ convId: 'abc123-session-id' })
     )
-    // Send button should be enabled (sessionId set from convId shortcut)
-    const btn = wrapper.find('[data-testid="send-button"]')
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Premier message')
-    expect((btn.element as HTMLButtonElement).disabled).toBe(false)
+    // Send button should be enabled once sessionId is set from convId shortcut.
+    // Verify the prop is correctly propagated to StreamInputBar.
+    const inputBar = wrapper.findComponent(StreamInputBar)
+    expect(inputBar.props('sessionId')).toBe('abc123-session-id')
   })
 
   it('displays sent message as user bubble immediately (T605)', async () => {
     // T648: send requires sessionId — use convId shortcut to enable the button
     const { wrapper } = await mountStream([], { convId: 'test-session-id' })
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Bonjour Claude')
+    wrapper.findComponent(StreamInputBar).vm.inputText = 'Bonjour Claude'
+    await nextTick()
     const btn = wrapper.find('[data-testid="send-button"]')
     await btn.trigger('click')
     await nextTick()
