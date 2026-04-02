@@ -254,24 +254,29 @@ onUnmounted(() => {
         <!-- system:init -->
         <div
           v-if="event.type === 'system' && event.subtype === 'init'"
-          class="block-system-init text-caption"
+          class="block-system-init"
           data-testid="block-system-init"
         >
-          {{ t('stream.sessionStarted') }}
-          <span v-if="event.session_id" class="init-session-id ml-1">· {{ event.session_id.slice(0, 8) }}…</span>
-          <template v-if="sessionContextMap.get(event._id!)">
+          <div class="d-flex align-center ga-2">
+            <v-divider />
+            <span class="text-caption text-medium-emphasis text-no-wrap">
+              {{ t('stream.sessionStarted') }}<span v-if="event.session_id"> · {{ event.session_id.slice(0, 8) }}…</span>
+            </span>
+            <v-divider />
             <v-btn
+              v-if="sessionContextMap.get(event._id!)"
               variant="text"
               size="x-small"
               density="compact"
-              class="init-ctx-btn ml-2"
+              class="init-ctx-btn"
               @click="toggleCollapsed(`init-ctx-${event._id}`, true)"
             >{{ (collapsed[`init-ctx-${event._id}`] ?? true) ? '▶ ' + t('stream.ctx') : '▼ ' + t('stream.ctx') }}</v-btn>
-            <div
-              v-show="!(collapsed[`init-ctx-${event._id}`] ?? true)"
-              class="init-ctx-body mt-1 ml-4"
-            >{{ sessionContextMap.get(event._id!) }}</div>
-          </template>
+          </div>
+          <div
+            v-if="sessionContextMap.get(event._id!)"
+            v-show="!(collapsed[`init-ctx-${event._id}`] ?? true)"
+            class="init-ctx-body mt-1 ml-4"
+          >{{ sessionContextMap.get(event._id!) }}</div>
         </div>
 
         <!-- error:spawn / error:exit -->
@@ -296,7 +301,6 @@ onUnmounted(() => {
         >
           <div
             class="user-bubble py-3 px-4 text-body-2"
-            :style="{ borderColor: accentBorder }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
               <span v-if="block.type === 'text'">{{ parsePromptContext(block.text ?? '').base }}</span>
@@ -306,12 +310,13 @@ onUnmounted(() => {
 
         <!-- assistant blocks -->
         <template v-if="event.type === 'assistant' && event.message">
+          <!-- Agent chip — once per assistant event -->
+          <v-chip v-if="agentName" size="x-small" :color="accentFg" variant="tonal" class="mb-1">{{ agentName }}</v-chip>
           <template v-for="(block, bIdx) in event.message.content" :key="`${event._id}-${bIdx}`">
-            <!-- text block — Markdown + DOMPurify (T678), agent color bg (T720) -->
+            <!-- text block — Markdown + DOMPurify (T678) -->
             <div
               v-if="block.type === 'text'"
               class="stream-markdown block-text py-3 px-4"
-              :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
               data-testid="block-text"
               v-html="block._html ?? ''"
             />
@@ -334,20 +339,25 @@ onUnmounted(() => {
         <!-- result footer — cost / duration / turns -->
         <div
           v-if="event.type === 'result'"
-          class="block-result ga-4 pt-2 text-caption"
+          class="block-result d-flex flex-wrap ga-2 py-2"
           data-testid="block-result"
         >
-          <span v-if="event.num_turns !== undefined">{{ t('stream.turns', event.num_turns, { named: { n: event.num_turns } }) }}</span>
-          <span v-if="event.cost_usd !== undefined">${{ event.cost_usd.toFixed(4) }}</span>
-          <span v-if="event.duration_ms !== undefined">{{ (event.duration_ms / 1000).toFixed(1) }}s</span>
-          <span v-if="event.session_id" class="result-session-id">{{ event.session_id.slice(0, 8) }}…</span>
+          <v-chip v-if="event.num_turns !== undefined" size="x-small" variant="tonal">
+            {{ t('stream.turns', event.num_turns, { named: { n: event.num_turns } }) }}
+          </v-chip>
+          <v-chip v-if="event.cost_usd !== undefined" size="x-small" variant="tonal">
+            ${{ event.cost_usd.toFixed(4) }}
+          </v-chip>
+          <v-chip v-if="event.duration_ms !== undefined" size="x-small" variant="tonal">
+            {{ (event.duration_ms / 1000).toFixed(1) }}s
+          </v-chip>
+          <span v-if="event.session_id" class="result-session-id ml-auto text-caption">{{ event.session_id.slice(0, 8) }}…</span>
         </div>
 
         <!-- text block — plain text output from non-Claude CLIs (T1197) -->
         <div
           v-if="event.type === 'text'"
           class="stream-markdown block-text py-3 px-4"
-          :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
           data-testid="block-text-raw"
           v-html="event._html ?? event.text ?? ''"
         />
@@ -406,8 +416,6 @@ onUnmounted(() => {
   height: 100%;
   background-color: var(--surface-base);
   color: var(--content-primary);
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
-  font-size: 14px;
 }
 
 .stream-accent-bar {
@@ -495,13 +503,13 @@ onUnmounted(() => {
   justify-content: flex-end;
 }
 .user-bubble {
-  background: var(--surface-secondary);
-  border: 1px solid;
-  border-radius: 8px;
-  max-width: 80%;
+  background: rgb(var(--v-theme-primary));
+  border-radius: 20px 20px 4px 20px;
+  max-width: 70%;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  color: var(--content-primary);
+  color: #fff;
+  font-size: 0.875rem;
   line-height: 1.625;
   user-select: text;
   cursor: text;
@@ -510,8 +518,7 @@ onUnmounted(() => {
 /* assistant text block */
 .block-text {
   border-radius: 8px;
-  border: 1px solid;
-  border-left-width: 4px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   line-height: 1.625;
   user-select: text;
   cursor: text;
@@ -519,13 +526,9 @@ onUnmounted(() => {
 
 /* result footer */
 .block-result {
-  display: flex;
-  flex-wrap: wrap;
-  color: var(--content-subtle);
   border-top: 1px solid var(--edge-subtle);
 }
 .result-session-id {
-  margin-left: auto;
   font-family: ui-monospace, monospace;
   color: var(--content-faint);
 }

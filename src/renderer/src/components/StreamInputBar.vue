@@ -45,6 +45,8 @@ function stopAgent(): void {
       v-model="inputText"
       rows="2"
       auto-grow
+      variant="outlined"
+      rounded="lg"
       placeholder="Envoyer un message…"
       hide-details
       class="flex-1-1 text-body-2"
@@ -54,19 +56,20 @@ function stopAgent(): void {
     <v-btn
       v-if="isStreaming && ptyId && !agentStopped"
       color="error"
-      variant="flat"
+      variant="tonal"
       data-testid="stop-button"
       @click="stopAgent"
     >Stop</v-btn>
     <!-- Send button — couleur agent quand actif (T680) -->
     <v-btn
-      :disabled="!inputText.trim() || !sessionId"
+      icon
+      rounded
       variant="flat"
-      class="text-body-2"
+      :disabled="!inputText.trim() || !sessionId"
       data-testid="send-button"
       :style="inputText.trim() && sessionId ? { backgroundColor: accentFg } : {}"
       @click="sendMessage"
-    >Envoyer</v-btn>
+    ><v-icon icon="mdi-send" /></v-btn>
   </div>
 </template>
 

@@ -43,17 +43,19 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
   <div
     v-if="block.type === 'tool_use'"
     class="tool-block mb-2"
-    :style="{ borderColor: accentBorder }"
     data-testid="block-tool-use"
   >
     <v-btn
       variant="text"
       block
       class="tool-header ga-2 py-2 px-3 text-caption"
-      :style="{ backgroundColor: accentBg, color: accentFg }"
+      :style="{ color: accentFg }"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), true)"
     >
-      <span class="collapse-arrow" :class="isCollapsed(eventId, blockIdx, true) ? '' : 'rotated'">▶</span>
+      <v-icon
+        :icon="isCollapsed(eventId, blockIdx, true) ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        size="small"
+      />
       <span class="tool-name">{{ block.name }}</span>
       <span class="tool-label">{{ t('stream.tool') }}</span>
     </v-btn>
@@ -79,10 +81,10 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
       :class="block.is_error ? 'tool-header--error' : ''"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), !block.is_error && !!block._isLong)"
     >
-      <span
-        class="collapse-arrow"
-        :class="isCollapsed(eventId, blockIdx, !block.is_error && !!block._isLong) ? '' : 'rotated'"
-      >▶</span>
+      <v-icon
+        :icon="isCollapsed(eventId, blockIdx, !block.is_error && !!block._isLong) ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        size="small"
+      />
       <span>{{ block.is_error ? t('stream.error') : t('stream.result') }}</span>
       <span
         v-if="isCollapsed(eventId, blockIdx, !block.is_error && !!block._isLong)"
@@ -101,8 +103,8 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
 
 <style scoped>
 .tool-block {
-  border: 1px solid;
-  border-radius: 8px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -139,14 +141,6 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
 .tool-header--error:hover {
   background-color: rgba(var(--v-theme-error), 0.15);
   filter: none;
-}
-
-.collapse-arrow {
-  transition: transform 0.2s;
-  display: inline-block;
-}
-.collapse-arrow.rotated {
-  transform: rotate(90deg);
 }
 
 .tool-name {
