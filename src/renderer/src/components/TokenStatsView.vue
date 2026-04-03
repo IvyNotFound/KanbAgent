@@ -236,7 +236,7 @@ const {
   display: flex;
   align-items: center;
 }
-.ts-title { font-weight: 600; color: var(--content-primary); margin: 0; }
+.ts-title { font-weight: 500; color: var(--content-primary); margin: 0; }
 .ts-period-label { text-transform: uppercase; letter-spacing: 0.05em; color: var(--content-faint); }
 .ts-period-btns { display: flex; }
 .ts-period-btn {

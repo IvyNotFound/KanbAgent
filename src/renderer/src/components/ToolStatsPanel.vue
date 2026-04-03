@@ -129,7 +129,7 @@ function sortIcon(key: SortKey): string {
   border-bottom: 1px solid var(--edge-default);
 }
 .tool-stats-title {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--content-primary);
   margin: 0;
 }

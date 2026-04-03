@@ -111,7 +111,7 @@ function relativeTime(ts: number): string {
   padding: 12px 24px;
   border-bottom: 1px solid var(--edge-default);
 }
-.he-title { font-weight: 600; color: var(--content-primary); margin: 0; }
+.he-title { font-weight: 500; color: var(--content-primary); margin: 0; }
 
 .he-filters {
   display: flex;

@@ -318,7 +318,7 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
   border-bottom: 1px solid var(--edge-subtle);
 }
 .oc-header-left { display: flex; align-items: center; gap: 12px; }
-.oc-title {}
+.oc-title { font-weight: 500; color: var(--content-primary); margin: 0; }
 .oc-loading {}
 @keyframes ocPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 .oc-header-right { display: flex; align-items: center; gap: 8px; }

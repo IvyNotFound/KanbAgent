@@ -203,7 +203,7 @@ watch(() => props.initialAgentId, (v) => {
 
     <!-- ── Title ──────────────────────────────────────────────────────────── -->
     <div class="al-title-bar">
-      <h2 class="al-title text-h6">{{ t('tokenStats.logsTab') }}</h2>
+      <h2 class="al-title text-h6 font-weight-medium">{{ t('tokenStats.logsTab') }}</h2>
     </div>
 
     <!-- ── Filter bar ──────────────────────────────────────────────────── -->
@@ -345,7 +345,7 @@ watch(() => props.initialAgentId, (v) => {
   padding: 12px 24px;
   border-bottom: 1px solid var(--edge-default);
 }
-.al-title {}
+.al-title { font-weight: 500; color: var(--content-primary); margin: 0; }
 
 /* filter bar */
 .al-filter-bar {

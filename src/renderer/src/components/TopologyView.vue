@@ -171,7 +171,7 @@ function onAgentClick(row: TopologyRow): void {
   padding: 12px 20px;
   border-bottom: 1px solid var(--edge-subtle);
 }
-.tp-title {}
+.tp-title { font-weight: 500; color: var(--content-primary); margin: 0; }
 .tp-refresh-btn {
   color: var(--content-subtle) !important;
   transition: color 0.15s;

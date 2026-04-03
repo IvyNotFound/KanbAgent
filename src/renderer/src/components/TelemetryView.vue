@@ -292,7 +292,7 @@ onMounted(scan)
   flex-shrink: 0;
 }
 .telem-title {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--content-primary);
   margin: 0;
 }
