@@ -128,7 +128,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
           <v-btn
             variant="outlined"
             block
-            class="btn-change ga-2 py-2 px-4 text-body-2"
+            class="btn-change ga-2 py-2 px-4"
             @click="handleChangeProject"
           >
             <v-icon class="icon-xs" size="14">mdi-folder-outline</v-icon>
@@ -139,7 +139,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
             color="error"
             variant="outlined"
             block
-            class="btn-close-project ga-2 py-2 px-4 text-body-2"
+            class="btn-close-project ga-2 py-2 px-4"
             @click="handleCloseProject"
           >
             <v-icon class="icon-xs" size="14">mdi-close</v-icon>

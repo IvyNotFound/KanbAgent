@@ -232,3 +232,13 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
+
+/* ── MD3 compliance — remove MD2 uppercase on all buttons ────────────────────
+   Vuetify 3 still inherits the MD2 button text-transform: uppercase.
+   MD3 spec requires sentence case (no uppercase transform) on button labels.
+   letter-spacing: 0.00625em matches MD3 Label Large spec.
+   ────────────────────────────────────────────────────────────────────────── */
+.v-btn {
+  text-transform: none;
+  letter-spacing: 0.00625em;
+}

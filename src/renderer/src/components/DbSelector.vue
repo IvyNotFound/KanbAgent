@@ -200,7 +200,7 @@ async function create() {
       <v-btn
         color="primary"
         block
-        class="create-btn ga-2 text-body-2"
+        class="create-btn ga-2"
         :disabled="creating || loadingInstances || (availableInstances.length > 1 && !selectedInstance)"
         @click="create"
       >
