@@ -219,6 +219,7 @@ function onAgentClick(row: TopologyRow): void {
   border-radius: 8px !important;
   border: 1px solid !important;
   padding: 10px 12px !important;
+  overflow: hidden;
   transition: background 0.15s, border-color 0.15s;
 }
 .tp-card :deep(.v-btn__content) {
@@ -260,6 +261,12 @@ function onAgentClick(row: TopologyRow): void {
 .tp-dot--blocked { background: rgb(var(--v-theme-warning)); }
 .tp-dot--idle    { background: var(--content-faint); }
 .tp-agent-type { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; }
-.tp-task {}
+.tp-task {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  margin: 0;
+}
 .tp-tokens { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; margin: 2px 0 0; }
 </style>
