@@ -48,7 +48,7 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
     <v-btn
       variant="text"
       block
-      class="tool-header ga-2 py-2 px-3 text-caption"
+      class="tool-header py-2 px-3 text-caption"
       :style="{ color: accentFg }"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), true)"
     >
@@ -77,7 +77,7 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
     <v-btn
       variant="text"
       block
-      class="tool-header tool-header--result ga-2 py-2 px-3 text-caption"
+      class="tool-header tool-header--result py-2 px-3 text-caption"
       :class="block.is_error ? 'tool-header--error' : ''"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), !block.is_error && !!block._isLong)"
     >
@@ -116,6 +116,12 @@ function toolInputPreview(input: Record<string, unknown> | undefined): string {
 .tool-block--error {
   border-color: rgba(var(--v-theme-error), 0.4);
   background-color: rgba(var(--v-theme-error), 0.08);
+}
+
+.tool-header :deep(.v-btn__content) {
+  gap: 8px;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .tool-header {
