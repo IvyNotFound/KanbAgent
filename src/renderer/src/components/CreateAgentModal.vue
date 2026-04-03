@@ -239,14 +239,13 @@ function handleKeydown(e: KeyboardEvent) {
               mandatory
               color="primary"
               variant="outlined"
-              density="comfortable"
+              density="default"
               class="type-toggle"
             >
               <v-btn
                 v-for="tp in ALL_TYPES"
                 :key="tp"
                 :value="tp"
-                size="small"
                 class="type-btn"
               >{{ tp }}</v-btn>
             </v-btn-toggle>
@@ -436,6 +435,7 @@ function handleKeydown(e: KeyboardEvent) {
 .type-btn {
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace !important;
   flex: 0 1 calc(25% - 3px) !important;
+  min-width: 0 !important;
 }
 
 /* System prompt toggle */
