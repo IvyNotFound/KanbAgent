@@ -214,9 +214,10 @@ watch(() => props.initialAgentId, (v) => {
           :key="lvl"
           size="x-small"
           density="compact"
+          class="al-level-btn"
           :variant="filterLevel === lvl ? 'tonal' : 'text'"
           :color="filterLevel === lvl ? levelBtnColor[lvl] : undefined"
-          style="font-family: ui-monospace, monospace; text-transform: none; min-width: 36px;"
+          style="min-width: 36px;"
           @click="filterLevel = lvl"
         >{{ lvl }}</v-btn>
       </div>
@@ -224,10 +225,11 @@ watch(() => props.initialAgentId, (v) => {
       <v-select
         v-model="filterAgentId"
         :items="agentSelectItems"
+        class="al-agent-select"
         density="compact"
         variant="outlined"
-        hide-details
-        style="max-width: 180px; font-size: 12px; font-family: ui-monospace, monospace;"
+        :hide-details="true"
+        style="max-width: 180px;"
       />
 
       <v-btn
@@ -358,6 +360,16 @@ watch(() => props.initialAgentId, (v) => {
   background: var(--surface-base);
 }
 .al-level-btns { display: flex; align-items: center; gap: 4px; }
+/* reach Vuetify's inner content element to apply monospace font */
+.al-level-btn :deep(.v-btn__content) {
+  font-family: ui-monospace, monospace;
+  text-transform: none;
+}
+/* v-select font — applied to field input; dropdown items render in a VMenu outside scope */
+.al-agent-select :deep(.v-field__input) {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
 .al-spacer { flex: 1; }
 .al-pagination { display: flex; align-items: center; gap: 4px; }
 .al-page-info { font-size: 11px; color: var(--content-faint); font-family: ui-monospace, monospace; }
