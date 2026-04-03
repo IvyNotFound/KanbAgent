@@ -161,6 +161,10 @@ defineExpose({
   flex-direction: column;
   overflow: hidden;
   user-select: none;
+  /* Reserve right edge (~8px) for the native window resize zone.
+     Prevents scrollbars of child views from sitting inside Electron's
+     resize detection zone on Windows (frame: false). */
+  padding-right: 8px;
 }
 .no-project-center {
   flex: 1;

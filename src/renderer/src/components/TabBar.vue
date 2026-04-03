@@ -270,7 +270,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       <span class="btn-wsl-plus text-body-1">+</span>
       <span>WSL</span>
     </button>
-    <div style="width: 12px; flex-shrink: 0;"></div>
+    <div style="width: 12px; flex-shrink: 0; pointer-events: none;"></div>
 
   </div>
 

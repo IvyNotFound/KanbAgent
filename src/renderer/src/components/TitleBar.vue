@@ -25,15 +25,18 @@ onUnmounted(() => {
 <template>
   <!-- elevation="0" flat desktop look; height="36" = original h-9 titlebar.
        All controls in default slot (not named slots) so shallowMount renders them correctly.
-       -webkit-app-region: drag is required for Electron frameless window dragging. -->
+       -webkit-app-region: drag is applied to the inner div (not v-app-bar) to avoid
+       the Electron 41 Windows issue where a position:fixed element with right:0 and
+       drag causes the OS to treat the full right window border as a drag zone, blocking
+       native resize. The static inner div correctly scopes the drag region to the
+       visible 36px title bar area only. -->
   <v-app-bar
     elevation="0"
     :height="36"
     color="surface"
     class="titlebar"
-    style="-webkit-app-region: drag"
   >
-    <div class="titlebar-content">
+    <div class="titlebar-content" style="-webkit-app-region: drag">
       <!-- Left: App identity -->
       <div class="titlebar-left">
         <div class="titlebar-dot"></div>

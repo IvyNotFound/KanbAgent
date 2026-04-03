@@ -225,7 +225,7 @@ exports[`TabBar — snapshots > matches snapshot: empty tab bar (no tabs) 1`] = 
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
   </button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="btn-wsl text-body-2" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="btn-wsl-plus text-body-1">+</span><span data-v-3c3dc65a="">WSL</span></button>
-  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0;"></div>
+  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0; pointer-events: none;"></div>
 </div>
 <!-- Menu contextuel groupe d'onglets -->
 <!--v-if-->"
@@ -257,7 +257,7 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
   </button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="btn-wsl text-body-2" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="btn-wsl-plus text-body-1">+</span><span data-v-3c3dc65a="">WSL</span></button>
-  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0;"></div>
+  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0; pointer-events: none;"></div>
 </div>
 <!-- Menu contextuel groupe d'onglets -->
 <!--v-if-->"
@@ -371,7 +371,11 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
 exports[`TitleBar — snapshots > matches snapshot: maximized 1`] = `
 "<!-- elevation="0" flat desktop look; height="36" = original h-9 titlebar.
        All controls in default slot (not named slots) so shallowMount renders them correctly.
-       -webkit-app-region: drag is required for Electron frameless window dragging. -->
+       -webkit-app-region: drag is applied to the inner div (not v-app-bar) to avoid
+       the Electron 41 Windows issue where a position:fixed element with right:0 and
+       drag causes the OS to treat the full right window border as a drag zone, blocking
+       native resize. The static inner div correctly scopes the drag region to the
+       visible 36px title bar area only. -->
 <v-app-bar data-v-f5fc7a66="" elevation="0" height="36" color="surface" class="titlebar">
   <div data-v-f5fc7a66="" class="titlebar-content">
     <!-- Left: App identity -->
@@ -399,7 +403,11 @@ exports[`TitleBar — snapshots > matches snapshot: maximized 1`] = `
 exports[`TitleBar — snapshots > matches snapshot: not maximized 1`] = `
 "<!-- elevation="0" flat desktop look; height="36" = original h-9 titlebar.
        All controls in default slot (not named slots) so shallowMount renders them correctly.
-       -webkit-app-region: drag is required for Electron frameless window dragging. -->
+       -webkit-app-region: drag is applied to the inner div (not v-app-bar) to avoid
+       the Electron 41 Windows issue where a position:fixed element with right:0 and
+       drag causes the OS to treat the full right window border as a drag zone, blocking
+       native resize. The static inner div correctly scopes the drag region to the
+       visible 36px title bar area only. -->
 <v-app-bar data-v-f5fc7a66="" elevation="0" height="36" color="surface" class="titlebar">
   <div data-v-f5fc7a66="" class="titlebar-content">
     <!-- Left: App identity -->
