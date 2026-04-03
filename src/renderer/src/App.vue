@@ -123,7 +123,7 @@ defineExpose({
             <!-- Terminal tabs (keep mounted to preserve session, hide inactive) -->
             <template v-for="tab in tabsStore.tabs.filter(t => t.type === 'terminal')" :key="tab.id">
               <div
-                style="overflow: hidden;"
+                style="overflow: hidden; height: 100%;"
                 :style="{ display: tabsStore.activeTabId === tab.id ? 'flex' : 'none', flex: tabsStore.activeTabId === tab.id ? '1' : undefined }"
               >
                 <StreamView :terminal-id="tab.id" style="flex: 1;" />

@@ -415,6 +415,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
   background-color: var(--surface-base);
   color: var(--content-primary);
 }
@@ -427,6 +428,7 @@ onUnmounted(() => {
 
 .stream-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
