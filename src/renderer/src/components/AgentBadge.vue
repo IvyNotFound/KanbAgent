@@ -33,7 +33,7 @@ defineProps<{
   border-width: 1px;
   border-style: solid;
   font-family: monospace;
-  max-width: 120px;
+  max-width: 200px;
 }
 
 .activity-dot {
