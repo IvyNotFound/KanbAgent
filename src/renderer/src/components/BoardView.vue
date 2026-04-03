@@ -512,7 +512,7 @@ const archivedGroupsSorted = computed(() => {
 }
 .archive-task-title {
   font-size: 0.875rem;
-  color: var(--content-tertiary);
+  color: var(--content-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
