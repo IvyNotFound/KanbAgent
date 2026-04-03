@@ -320,7 +320,7 @@ function effortColor(effort: number): string {
 .palette-panel {
   width: 100%;
   margin: 0 16px;
-  background: var(--surface-primary);
+  background: var(--surface-dialog);
   border-radius: 12px;
   border: 1px solid rgba(var(--v-theme-on-surface, 255, 255, 255), 0.1);
   overflow: hidden;

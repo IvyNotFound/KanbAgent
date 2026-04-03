@@ -324,7 +324,6 @@ async function save() {
   gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid var(--edge-subtle);
-  background: rgba(var(--v-theme-surface), 0.5);
   flex-shrink: 0;
 }
 

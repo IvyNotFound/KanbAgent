@@ -382,7 +382,7 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   max-height: 90vh;
-  background: var(--surface-primary);
+  background: var(--surface-dialog);
   border: 1px solid var(--edge-default);
   border-radius: 12px;
   display: flex;
@@ -599,7 +599,6 @@ padding: 2px 8px;
 /* Footer */
 .task-footer {
   border-top: 1px solid var(--edge-subtle);
-  background: var(--surface-base);
   display: flex;
   align-items: center;
   justify-content: space-between;

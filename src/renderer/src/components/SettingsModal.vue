@@ -141,6 +141,7 @@ function onDefaultCliChange(v: string) {
           <v-list
             nav
             density="compact"
+            bg-color="transparent"
             class="pa-1"
             style="width: 176px; flex-shrink: 0; border-right: 1px solid var(--edge-subtle);"
           >
