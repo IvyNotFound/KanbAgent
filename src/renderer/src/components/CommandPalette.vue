@@ -171,7 +171,7 @@ function effortColor(effort: number): string {
         <div class="palette-filters">
           <!-- Statut chips -->
           <div class="d-flex align-center ga-2 flex-wrap">
-            <span class="filter-label text-overline">{{ t('commandPalette.status') }}</span>
+            <span class="filter-label text-caption font-weight-medium">{{ t('commandPalette.status') }}</span>
             <v-chip-group
               :model-value="filterStatut ?? undefined"
               @update:model-value="filterStatut = $event ?? null"
@@ -193,7 +193,7 @@ function effortColor(effort: number): string {
           <div v-if="tasksStore.agents.length > 0 || tasksStore.perimetresData.length > 0" class="d-flex align-center ga-3 flex-wrap">
             <!-- Agents -->
             <div v-if="tasksStore.agents.length > 0" class="d-flex align-center ga-2 flex-wrap">
-              <span class="filter-label text-overline">{{ t('commandPalette.agent') }}</span>
+              <span class="filter-label text-caption font-weight-medium">{{ t('commandPalette.agent') }}</span>
               <v-chip-group
                 :model-value="filterAgentId ?? undefined"
                 @update:model-value="filterAgentId = $event != null ? Number($event) : null"
@@ -216,7 +216,7 @@ function effortColor(effort: number): string {
 
             <!-- Périmètres -->
             <div v-if="tasksStore.perimetresData.length > 0" class="d-flex align-center ga-2 flex-wrap">
-              <span class="filter-label text-overline">{{ t('commandPalette.perimeter') }}</span>
+              <span class="filter-label text-caption font-weight-medium">{{ t('commandPalette.perimeter') }}</span>
               <v-chip-group
                 :model-value="filterPerimetre ?? undefined"
                 @update:model-value="filterPerimetre = $event ?? null"
@@ -250,7 +250,7 @@ function effortColor(effort: number): string {
 
           <template v-else>
             <div class="palette-count">
-              <p class="filter-label text-overline">
+              <p class="filter-label text-caption font-weight-medium">
                 {{ filteredTasks.length }} {{ t('commandPalette.tasks', filteredTasks.length) }}
               </p>
             </div>
@@ -362,8 +362,7 @@ function effortColor(effort: number): string {
 }
 .filter-label {
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   flex-shrink: 0;
 }

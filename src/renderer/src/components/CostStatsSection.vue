@@ -216,7 +216,7 @@ const hoveredBar = ref<number | null>(null)
   <section class="cost-section ga-3">
 <!-- Header + period selector -->
     <div v-if="!props.period" class="cost-header">
-      <h3 class="cost-title text-overline">
+      <h3 class="cost-title text-caption font-weight-medium">
         {{ t('costStats.title') }}
       </h3>
       <div class="cost-period-btns ga-1">
@@ -226,7 +226,7 @@ const hoveredBar = ref<number | null>(null)
           variant="text"
           size="small"
           density="compact"
-          class="cost-period-btn text-overline"
+          class="cost-period-btn text-caption font-weight-medium"
           :class="{ 'cost-period-btn--active': selectedPeriod === p.key }"
           @click="selectedPeriod = p.key"
         >
@@ -249,22 +249,22 @@ const hoveredBar = ref<number | null>(null)
 <!-- Global summary row -->
       <div class="cost-summary-grid ga-2">
         <div class="cost-summary-card">
-          <span class="cost-summary-label text-overline">{{ t('costStats.totalCost') }}</span>
+          <span class="cost-summary-label text-caption font-weight-medium">{{ t('costStats.totalCost') }}</span>
           <span class="cost-summary-value text-body-2">{{ formatCost(globalCost) }}</span>
         </div>
         <div class="cost-summary-card">
-          <span class="cost-summary-label text-overline">{{ t('costStats.sessions') }}</span>
+          <span class="cost-summary-label text-caption font-weight-medium">{{ t('costStats.sessions') }}</span>
           <span class="cost-summary-value text-body-2">{{ globalSessions }}</span>
         </div>
         <div class="cost-summary-card">
-          <span class="cost-summary-label text-overline">{{ t('costStats.turns') }}</span>
+          <span class="cost-summary-label text-caption font-weight-medium">{{ t('costStats.turns') }}</span>
           <span class="cost-summary-value text-body-2">{{ globalTurns }}</span>
         </div>
       </div>
 
       <!-- Cost sparkline (last 7 periods) -->
       <div v-if="sparkPeriods.length > 1" class="cost-sparkline-section ga-1">
-        <span class="cost-section-label text-overline">{{ t('costStats.trend') }}</span>
+        <span class="cost-section-label text-caption font-weight-medium">{{ t('costStats.trend') }}</span>
         <div class="cost-sparkline ga-1">
           <div
             v-for="(bar, i) in sparkPeriods"
@@ -281,7 +281,7 @@ const hoveredBar = ref<number | null>(null)
             <div v-if="bar.cost === 0" class="cost-spark-zero" />
             <div
               v-if="hoveredBar === i"
-              class="cost-spark-tooltip elevation-2 py-1 px-2 text-overline"
+              class="cost-spark-tooltip elevation-2 py-1 px-2 text-caption font-weight-medium"
             >
               {{ bar.label }} : {{ formatCost(bar.cost) }}
             </div>
@@ -291,7 +291,7 @@ const hoveredBar = ref<number | null>(null)
 
       <!-- Per-agent cost table -->
       <div class="cost-agent-table">
-        <span class="cost-section-label text-overline">{{ t('costStats.perAgent') }}</span>
+        <span class="cost-section-label text-caption font-weight-medium">{{ t('costStats.perAgent') }}</span>
 
         <div
           v-for="row in byAgent"
@@ -342,8 +342,7 @@ const hoveredBar = ref<number | null>(null)
   justify-content: space-between;
 }
 .cost-title {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   margin: 0;
   font-weight: 400;
@@ -380,8 +379,7 @@ const hoveredBar = ref<number | null>(null)
   border: 1px solid var(--edge-default);
 }
 .cost-summary-label {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
 }
 .cost-summary-value {
@@ -391,8 +389,7 @@ const hoveredBar = ref<number | null>(null)
 }
 /* Section label */
 .cost-section-label {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   display: block;
 }

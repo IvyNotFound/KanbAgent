@@ -58,7 +58,7 @@ function isEnabled(cli: CliType): boolean {
       <v-btn
         color="primary"
         :disabled="loading"
-        class="cli-refresh-btn text-overline"
+        class="cli-refresh-btn text-caption font-weight-medium"
         @click="emit('refresh')"
       >
         <!-- spinner while loading -->
@@ -78,10 +78,10 @@ function isEnabled(cli: CliType): boolean {
       <div class="cli-row-left">
         <div class="cli-labels">
           <span class="cli-label text-caption">{{ meta.label }}</span>
-          <span class="cli-vendor text-overline">{{ meta.vendor }}</span>
+          <span class="cli-vendor text-caption font-weight-medium">{{ meta.vendor }}</span>
         </div>
         <span
-          class="cli-version-badge text-overline"
+          class="cli-version-badge text-caption font-weight-medium"
           :class="{ 'cli-version-badge--detected': isDetected(meta.cli) }"
         >
           {{ versionLabel(meta.cli) }}

@@ -207,7 +207,7 @@ function priorityColor(priority: string): string {
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ activeAgentsCount }}</div>
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.activeAgents') }}</div>
-                <div class="metric-sublabel text-truncate text-overline">{{ t('dashboard.sessionsStarted') }}</div>
+                <div class="metric-sublabel text-truncate text-caption font-weight-medium">{{ t('dashboard.sessionsStarted') }}</div>
               </div>
             </v-card-text>
           </v-card>
@@ -223,7 +223,7 @@ function priorityColor(priority: string): string {
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ store.stats.in_progress }}</div>
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.inProgress') }}</div>
-                <div class="metric-sublabel text-truncate text-overline">{{ t('dashboard.activeTasks') }}</div>
+                <div class="metric-sublabel text-truncate text-caption font-weight-medium">{{ t('dashboard.activeTasks') }}</div>
               </div>
             </v-card-text>
           </v-card>
@@ -239,7 +239,7 @@ function priorityColor(priority: string): string {
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ store.stats.todo }}</div>
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.todo') }}</div>
-                <div class="metric-sublabel text-truncate text-overline">{{ t('dashboard.pendingTasks') }}</div>
+                <div class="metric-sublabel text-truncate text-caption font-weight-medium">{{ t('dashboard.pendingTasks') }}</div>
               </div>
             </v-card-text>
           </v-card>
@@ -255,7 +255,7 @@ function priorityColor(priority: string): string {
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ sessionsTodayCount }}</div>
                 <div class="text-caption text-medium-emphasis text-truncate">{{ t('dashboard.today') }}</div>
-                <div class="metric-sublabel text-truncate text-overline">{{ t('dashboard.sessionsStarted') }}</div>
+                <div class="metric-sublabel text-truncate text-caption font-weight-medium">{{ t('dashboard.sessionsStarted') }}</div>
               </div>
             </v-card-text>
           </v-card>
@@ -277,7 +277,7 @@ function priorityColor(priority: string): string {
         <v-col cols="6">
           <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
-              <span class="text-overline text-medium-emphasis">{{ t('dashboard.recentTasks') }}</span>
+              <span class="text-caption font-weight-medium text-medium-emphasis">{{ t('dashboard.recentTasks') }}</span>
             </div>
             <v-list
               v-if="recentTasks.length > 0"
@@ -331,7 +331,7 @@ function priorityColor(priority: string): string {
         <v-col cols="6">
           <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
-              <span class="text-overline text-medium-emphasis">{{ t('dashboard.recentActivity') }}</span>
+              <span class="text-caption font-weight-medium text-medium-emphasis">{{ t('dashboard.recentActivity') }}</span>
             </div>
             <v-list
               v-if="recentActivity.length > 0"
@@ -377,7 +377,7 @@ function priorityColor(priority: string): string {
         <v-col cols="6">
           <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
-              <span class="text-overline text-medium-emphasis">{{ t('dashboard.activity') }}</span>
+              <span class="text-caption font-weight-medium text-medium-emphasis">{{ t('dashboard.activity') }}</span>
             </div>
             <ActivityHeatmap v-if="store.dbPath" :db-path="store.dbPath" />
           </v-card>

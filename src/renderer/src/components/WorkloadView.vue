@@ -69,7 +69,7 @@ const maxEffort = computed(() =>
     <!-- Table -->
     <div v-else class="wl-table">
       <!-- Column headers -->
-      <div class="wl-cols wl-cols-head text-overline">
+      <div class="wl-cols wl-cols-head text-caption font-weight-medium">
         <span>{{ t('workload.agent') }}</span>
         <span class="wl-right">{{ t('workload.tasks') }}</span>
         <span class="wl-right">{{ t('workload.effort') }}</span>
@@ -97,10 +97,10 @@ const maxEffort = computed(() =>
         </div>
         <span
           v-if="row.currentTask"
-          class="wl-current text-overline"
+          class="wl-current text-caption font-weight-medium"
           :title="row.currentTask"
         >{{ row.currentTask }}</span>
-        <span v-else class="wl-current wl-dash text-overline">—</span>
+        <span v-else class="wl-current wl-dash text-caption font-weight-medium">—</span>
       </div>
     </div>
   </div>
@@ -144,8 +144,7 @@ const maxEffort = computed(() =>
 }
 .wl-cols-head {
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   padding-bottom: 4px;
   border-bottom: 1px solid var(--edge-subtle);

@@ -37,7 +37,7 @@ onUnmounted(() => {
       <!-- Left: App identity -->
       <div class="titlebar-left">
         <div class="titlebar-dot"></div>
-        <span class="titlebar-name text-overline">KanbAgent</span>
+        <span class="titlebar-name text-caption font-weight-medium">KanbAgent</span>
       </div>
 
       <!-- Center: Search bar (always visible, VS Code style) -->
@@ -131,8 +131,7 @@ onUnmounted(() => {
 .titlebar-name {
   font-weight: 600;
   color: rgba(var(--v-theme-on-surface), 0.5);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 .titlebar-center {
   display: flex;

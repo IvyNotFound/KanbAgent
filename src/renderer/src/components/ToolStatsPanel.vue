@@ -57,19 +57,19 @@ function sortIcon(key: SortKey): string {
         <table class="tool-stats-table text-caption">
           <thead>
             <tr class="tool-stats-thead-row">
-              <th class="tool-stats-th tool-stats-th--left text-overline" @click="setSort('calls')">
+              <th class="tool-stats-th tool-stats-th--left text-caption font-weight-medium" @click="setSort('calls')">
                 {{ t('toolStats.tool') }}
               </th>
-              <th class="tool-stats-th text-overline" @click="setSort('calls')">
+              <th class="tool-stats-th text-caption font-weight-medium" @click="setSort('calls')">
                 {{ t('toolStats.calls') }}{{ sortIcon('calls') }}
               </th>
-              <th class="tool-stats-th text-overline" @click="setSort('errors')">
+              <th class="tool-stats-th text-caption font-weight-medium" @click="setSort('errors')">
                 {{ t('toolStats.errors') }}{{ sortIcon('errors') }}
               </th>
-              <th class="tool-stats-th text-overline" @click="setSort('errorRate')">
+              <th class="tool-stats-th text-caption font-weight-medium" @click="setSort('errorRate')">
                 {{ t('toolStats.errorRate') }}{{ sortIcon('errorRate') }}
               </th>
-              <th class="tool-stats-th text-overline" @click="setSort('avgDurationMs')">
+              <th class="tool-stats-th text-caption font-weight-medium" @click="setSort('avgDurationMs')">
                 {{ t('toolStats.avgDuration') }}{{ sortIcon('avgDurationMs') }}
               </th>
             </tr>
@@ -164,8 +164,7 @@ function sortIcon(key: SortKey): string {
 }
 .tool-stats-th {
   padding: 10px 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-muted);
   text-align: right;
   cursor: pointer;

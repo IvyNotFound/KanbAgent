@@ -94,7 +94,7 @@ const EFFORT_STYLE: Record<number, { color: string; background: string; border: 
         </div>
 
         <!-- Children count hint when collapsed -->
-        <p v-if="hasChildren && !expanded" class="children-hint text-overline">
+        <p v-if="hasChildren && !expanded" class="children-hint text-caption font-weight-medium">
           {{ t('task.subtasks', node.children.length, { named: { n: node.children.length } }) }}
         </p>
       </div>

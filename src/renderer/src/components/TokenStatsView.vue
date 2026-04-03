@@ -20,7 +20,7 @@ const {
     <!-- ── Period selector ────────────────────────────────────────────── -->
     <div class="ts-period-bar ga-2 pt-3 px-4 pb-2">
       <h2 class="ts-title mr-2 text-h6">{{ t('tokenStats.title') }}</h2>
-      <span class="ts-period-label text-overline">{{ t('tokenStats.period.label') }}</span>
+      <span class="ts-period-label text-caption font-weight-medium">{{ t('tokenStats.period.label') }}</span>
       <div class="ts-period-btns ga-1">
         <v-btn
           v-for="period in PERIODS"
@@ -28,7 +28,7 @@ const {
           variant="text"
           size="x-small"
           density="compact"
-          class="ts-period-btn text-overline"
+          class="ts-period-btn text-caption font-weight-medium"
           :class="selectedPeriod === period.key ? 'ts-period-btn--active' : ''"
           @click="selectedPeriod = period.key"
         >
@@ -40,49 +40,49 @@ const {
     <!-- ── Summary cards ──────────────────────────────────────────────── -->
     <div class="ts-cards-row ga-2 py-2 px-4">
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-overline">{{ t('tokenStats.total') }}</span>
+        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.total') }}</span>
         <span class="ts-card-value text-body-1">{{ formatNumber(globalStats.total) }}</span>
-        <div class="ts-card-sub ts-mono text-overline">
+        <div class="ts-card-sub ts-mono text-caption font-weight-medium">
           <span class="ts-in">↓ {{ formatNumber(globalStats.tokens_in) }}</span>
           <span class="ts-out">↑ {{ formatNumber(globalStats.tokens_out) }}</span>
         </div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-overline">{{ t('tokenStats.sessions') }}</span>
+        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.sessions') }}</span>
         <span class="ts-card-value text-body-1">{{ globalStats.session_count }}</span>
-        <div class="ts-card-sub text-overline">
+        <div class="ts-card-sub text-caption font-weight-medium">
           {{ t('tokenStats.avgPerSession') }} {{ formatNumber(avgPerSession) }}
         </div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-overline">{{ t('tokenStats.cache') }}</span>
+        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.cache') }}</span>
         <span class="ts-card-value text-body-1">{{ formatNumber(globalStats.tokens_cache_read + globalStats.tokens_cache_write) }}</span>
-        <div class="ts-card-sub ts-mono text-overline">
+        <div class="ts-card-sub ts-mono text-caption font-weight-medium">
           <span class="ts-amber">R {{ formatNumber(globalStats.tokens_cache_read) }}</span>
           <span class="ts-violet">W {{ formatNumber(globalStats.tokens_cache_write) }}</span>
         </div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-overline">{{ t('tokenStats.cacheHit') }}</span>
+        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.cacheHit') }}</span>
         <span class="ts-card-value ts-tabnum text-body-1" :style="{ color: cacheHitColor }">{{ cacheHitRate }}%</span>
-        <div class="ts-card-sub text-overline">{{ t('tokenStats.cacheHitLabel') }}</div>
+        <div class="ts-card-sub text-caption font-weight-medium">{{ t('tokenStats.cacheHitLabel') }}</div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-overline">{{ t('tokenStats.cost') }}</span>
+        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.cost') }}</span>
         <span class="ts-card-value text-body-1">{{ formatCost(estimatedCost) }}</span>
-        <div class="ts-card-sub ts-faint text-overline">{{ t('tokenStats.costNote') }}</div>
+        <div class="ts-card-sub ts-faint text-caption font-weight-medium">{{ t('tokenStats.costNote') }}</div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-overline">{{ t('tokenStats.ratio') }}</span>
+        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.ratio') }}</span>
         <span class="ts-card-value text-body-1">
           {{ globalStats.total > 0 ? Math.round((globalStats.tokens_out / Math.max(globalStats.total, 1)) * 100) : 0 }}%
         </span>
-        <div class="ts-card-sub text-overline">
+        <div class="ts-card-sub text-caption font-weight-medium">
           <span class="ts-out">{{ t('tokenStats.outputRatio') }}</span>
         </div>
       </div>
@@ -91,7 +91,7 @@ const {
     <!-- ── Sparkline 30 days ─────────────────────────────────────────── -->
     <div class="ts-spark-wrap py-2 px-4">
       <div class="ts-spark-header ga-2 mb-1">
-        <span class="ts-mini-label text-overline">{{ t('tokenStats.evolution') }}</span>
+        <span class="ts-mini-label text-caption font-weight-medium">{{ t('tokenStats.evolution') }}</span>
       </div>
       <div class="ts-spark-bars ga-1">
         <div
@@ -107,7 +107,7 @@ const {
             :style="{ height: sparkBarHeight(bar.total) + 'px' }"
           />
           <div v-if="bar.total === 0" class="ts-spark-zero" />
-          <div v-if="hoveredSparkBar === i" class="ts-spark-tooltip elevation-2 text-overline">
+          <div v-if="hoveredSparkBar === i" class="ts-spark-tooltip elevation-2 text-caption font-weight-medium">
             {{ bar.label }} : {{ formatNumber(bar.total) }}
           </div>
         </div>
@@ -122,7 +122,7 @@ const {
 
       <!-- Per-agent table with bars -->
       <section>
-        <h3 class="ts-section-title mb-2 text-overline">{{ t('tokenStats.perAgent') }}</h3>
+        <h3 class="ts-section-title mb-2 text-caption font-weight-medium">{{ t('tokenStats.perAgent') }}</h3>
 
         <div v-if="agentRows.length === 0" class="ts-empty py-4 text-body-2">{{ t('tokenStats.noData') }}</div>
 
@@ -142,10 +142,10 @@ const {
 
             <div class="ts-bar-wrap">
               <div class="ts-bar-fill" :style="{ width: barWidth(row.total) }" />
-              <span class="ts-bar-label ts-mono text-overline">{{ formatNumber(row.total) }}</span>
+              <span class="ts-bar-label ts-mono text-caption font-weight-medium">{{ formatNumber(row.total) }}</span>
             </div>
 
-            <div class="ts-agent-totals ga-2 ts-mono text-overline">
+            <div class="ts-agent-totals ga-2 ts-mono text-caption font-weight-medium">
               <span class="ts-in">↓{{ formatNumber(row.tokens_in) }}</span>
               <span class="ts-out">↑{{ formatNumber(row.tokens_out) }}</span>
               <span class="ts-faint">{{ row.session_count }}s</span>
@@ -156,11 +156,11 @@ const {
 
       <!-- Per-session table -->
       <section>
-        <h3 class="ts-section-title mb-2 text-overline">{{ t('tokenStats.perSession') }}</h3>
+        <h3 class="ts-section-title mb-2 text-caption font-weight-medium">{{ t('tokenStats.perSession') }}</h3>
 
         <div v-if="sessionRows.length === 0" class="ts-empty py-4">{{ t('tokenStats.noData') }}</div>
 
-        <table v-else class="ts-table text-overline">
+        <table v-else class="ts-table text-caption font-weight-medium">
           <thead>
             <tr class="ts-thead-row">
               <th class="ts-th">ID</th>
@@ -237,7 +237,7 @@ const {
   align-items: center;
 }
 .ts-title { font-weight: 500; color: var(--content-primary); margin: 0; }
-.ts-period-label { text-transform: uppercase; letter-spacing: 0.05em; color: var(--content-faint); }
+.ts-period-label { letter-spacing: 0.02em; color: var(--content-faint); }
 .ts-period-btns { display: flex; }
 .ts-period-btn {
   padding: 2px 10px !important;
@@ -266,8 +266,7 @@ const {
   border: 1px solid var(--edge-default);
 }
 .ts-card-label {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -299,7 +298,7 @@ const {
 .ts-mono { font-family: ui-monospace, monospace; }
 .ts-tabnum { font-variant-numeric: tabular-nums; }
 .ts-semibold { font-weight: 600; }
-.ts-mini-label { text-transform: uppercase; letter-spacing: 0.05em; color: var(--content-faint); }
+.ts-mini-label { letter-spacing: 0.02em; color: var(--content-faint); }
 
 /* sparkline */
 .ts-spark-wrap {
@@ -353,8 +352,7 @@ const {
   flex-direction: column;
 }
 .ts-section-title {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   margin: 0;
 }

@@ -80,13 +80,13 @@ watch(() => store.dbPath, fetchQuality)
         <select
           v-if="perimetres.length > 1"
           v-model="filterPerimetre"
-          class="quality-select text-overline"
+          class="quality-select text-caption font-weight-medium"
         >
           <option :value="null">{{ t('quality.all') }}</option>
           <option v-for="p in perimetres" :key="p" :value="p">{{ p }}</option>
         </select>
       </div>
-      <v-btn variant="text" size="small" class="text-overline" @click="fetchQuality">{{ t('quality.refresh') }}</v-btn>
+      <v-btn variant="text" size="small" class="text-caption font-weight-medium" @click="fetchQuality">{{ t('quality.refresh') }}</v-btn>
     </div>
 
     <!-- Loading -->
@@ -108,14 +108,14 @@ watch(() => store.dbPath, fetchQuality)
       <!-- Global indicator -->
       <div class="quality-global py-3 px-4">
         <div class="quality-global-rate ga-4">
-          <span class="quality-rate-label text-overline">{{ t('quality.rejectionRate') }}</span>
+          <span class="quality-rate-label text-caption font-weight-medium">{{ t('quality.rejectionRate') }}</span>
           <span
             class="quality-rate-value"
             :style="{ color: rateColor(globalRejectionRate) }"
           >{{ globalRejectionRate }}%</span>
-          <span v-if="!hasRejections" class="quality-no-rejections text-overline">{{ t('quality.noRejections') }}</span>
+          <span v-if="!hasRejections" class="quality-no-rejections text-caption font-weight-medium">{{ t('quality.noRejections') }}</span>
         </div>
-        <p class="quality-heuristic-note text-overline mt-1">
+        <p class="quality-heuristic-note text-caption font-weight-medium mt-1">
           {{ t('quality.heuristicNote') }}
         </p>
       </div>
@@ -123,7 +123,7 @@ watch(() => store.dbPath, fetchQuality)
       <!-- Table -->
       <div class="quality-table py-3 px-4 ga-2">
         <!-- Column headers -->
-        <div class="quality-row ga-3 quality-header-row text-overline pb-1">
+        <div class="quality-row ga-3 quality-header-row text-caption font-weight-medium pb-1">
           <span>Agent</span>
           <span class="quality-col-right">{{ t('quality.colTotal') }}</span>
           <span class="quality-col-right">{{ t('quality.colRejected') }}</span>
@@ -233,8 +233,7 @@ watch(() => store.dbPath, fetchQuality)
   align-items: center;
 }
 .quality-rate-label {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   font-weight: 600;
 }
@@ -263,8 +262,7 @@ watch(() => store.dbPath, fetchQuality)
 }
 .quality-header-row {
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   border-bottom: 1px solid var(--edge-subtle);
 }

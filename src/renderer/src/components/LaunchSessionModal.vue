@@ -197,7 +197,7 @@ async function launch() {
           :style="{ borderLeftColor: agentFg(agent.name), borderLeftWidth: '3px' }"
         >
           <div>
-            <p class="section-label mb-1 text-overline">{{ t('launch.title') }}</p>
+            <p class="section-label mb-1 text-caption font-weight-medium">{{ t('launch.title') }}</p>
             <p class="agent-title" :style="{ color: agentFg(agent.name) }">
               {{ agent.name }}
             </p>
@@ -451,8 +451,7 @@ async function launch() {
 .section-label {
   font-weight: 600;
   color: var(--content-subtle);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
 }
 .agent-title {
   font-size: 16px;

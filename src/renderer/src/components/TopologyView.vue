@@ -143,7 +143,7 @@ function onAgentClick(row: TopologyRow): void {
                 </span>
               </div>
               <p class="tp-agent-type">{{ agent.type }}</p>
-              <p v-if="agent.current_task" class="tp-task text-overline" :title="agent.current_task">{{ agent.current_task }}</p>
+              <p v-if="agent.current_task" class="tp-task text-caption font-weight-medium" :title="agent.current_task">{{ agent.current_task }}</p>
               <p v-if="agent.session_tokens != null && agent.session_tokens > 0" class="tp-tokens">
                 {{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}
               </p>

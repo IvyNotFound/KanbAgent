@@ -146,7 +146,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
         <input
           :ref="(el) => { if (el) renameGroupInputEl = el as HTMLInputElement }"
           v-model="renameGroupName"
-          class="rename-input text-overline"
+          class="rename-input text-caption font-weight-medium"
           @keydown.enter="confirmRename(group.id)"
           @keydown.esc="cancelRename"
           @blur="confirmRename(group.id)"
@@ -154,7 +154,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
       </template>
       <span
         v-else
-        class="text-overline"
+        class="text-caption font-weight-medium"
         :class="['group-name', { 'group-name--deep': level >= 5 }]"
         :title="level >= 5 ? `Profondeur ${level} — organisation complexe` : undefined"
         @dblclick="startRename(group)"
@@ -170,7 +170,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
     </div>
 
     <!-- Drop hint -->
-    <div v-if="dragOverGroupId === group.id" class="drop-hint text-overline">{{ t('sidebar.dropAgentHere') }}</div>
+    <div v-if="dragOverGroupId === group.id" class="drop-hint text-caption font-weight-medium">{{ t('sidebar.dropAgentHere') }}</div>
 
     <!-- Content (hidden when collapsed) -->
     <div v-if="!collapsed">
@@ -179,7 +179,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
         <input
           :ref="(el) => { if (el) createSubgroupInputEl = el as HTMLInputElement }"
           v-model="newSubgroupName"
-          class="group-name-input py-1 px-2 text-caption text-overline"
+          class="group-name-input py-1 px-2 text-caption font-weight-medium"
           :placeholder="t('sidebar.newGroupPlaceholder')"
           @keydown.enter="confirmCreateSubgroup"
           @keydown.esc="cancelCreateSubgroup"
@@ -229,7 +229,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
             </div>
           </div>
         </div>
-        <div v-if="groupAgents.length === 0 && dragOverGroupId !== group.id" class="empty-msg py-1 px-2 text-overline">{{ t('sidebar.dropAgentHere') }}</div>
+        <div v-if="groupAgents.length === 0 && dragOverGroupId !== group.id" class="empty-msg py-1 px-2 text-caption font-weight-medium">{{ t('sidebar.dropAgentHere') }}</div>
       </div>
     </div>
   </div>
@@ -290,8 +290,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   border-radius: 4px;
   padding: 2px 6px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--content-primary);
   outline: none;
 }
@@ -301,8 +300,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 .group-name {
   flex: 1;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   cursor: pointer;
   user-select: none;
   overflow: hidden;

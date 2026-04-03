@@ -129,7 +129,7 @@ function tooltip(day: DayBars): string {
           <div
             v-for="(day, idx) in grouped"
             :key="day.date"
-            class="bar-col text-center font-mono text-overline"
+            class="bar-col text-center font-mono text-caption font-weight-medium"
             :class="(idx % 2 === 0 || idx === 13) ? 'date-visible' : 'date-hidden'"
           >
             {{ shortDate(day.date) }}
