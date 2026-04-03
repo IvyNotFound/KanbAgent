@@ -188,7 +188,7 @@ async function launch() {
 </script>
 
 <template>
-  <v-dialog model-value max-width="384" scrollable @update:model-value="emit('close')">
+  <v-dialog model-value max-width="560" scrollable @update:model-value="emit('close')">
     <div data-testid="launch-modal-backdrop" @click.self="emit('close')">
     <v-card class="d-flex flex-column overflow-hidden">
         <!-- Header -->
@@ -286,7 +286,7 @@ async function launch() {
                 :label="t('launch.resume', { resume: '--resume' })"
                 class="launch-switch"
               />
-              <p class="field-hint mt-1 text-overline">{{ t('launch.resumeNote') }}</p>
+              <p class="field-hint mt-1 text-caption">{{ t('launch.resumeNote') }}</p>
             </div>
           </Transition>
 
@@ -327,7 +327,7 @@ async function launch() {
                   {{ t('launch.disabled') }}
                 </v-btn>
               </v-btn-toggle>
-              <p class="field-hint mt-1 text-overline">
+              <p class="field-hint mt-1 text-caption">
                 {{ t('launch.thinkingNote') }}
               </p>
             </div>
@@ -351,7 +351,7 @@ async function launch() {
             />
             <div class="d-flex align-center ga-2 mt-2">
               <v-icon size="12" style="color: var(--content-faint); flex-shrink: 0;">mdi-information-outline</v-icon>
-              <span class="field-hint text-overline" style="margin-top: 0;">{{ t('launch.promptNote') }}</span>
+              <span class="field-hint text-caption" style="margin-top: 0;">{{ t('launch.promptNote') }}</span>
             </div>
           </div>
 
@@ -366,11 +366,11 @@ async function launch() {
               :label="t('launch.multiInstance')"
               class="launch-switch"
             />
-            <p class="field-hint mt-1 text-overline">{{ t('launch.multiInstanceNote') }}</p>
-            <p class="field-hint text-overline" style="font-style: italic;">
+            <p class="field-hint mt-1 text-caption">{{ t('launch.multiInstanceNote') }}</p>
+            <p class="field-hint text-caption" style="font-style: italic;">
               {{ t('launch.worktreeSource', { source: worktreeSource === 'global' ? t('launch.worktreeSourceGlobal') : worktreeSource === 'agent' ? t('launch.worktreeSourceAgent') : t('launch.worktreeSourceManual') }) }}
             </p>
-            <p v-if="worktreeError" class="field-hint field-hint--error text-overline">
+            <p v-if="worktreeError" class="field-hint field-hint--error text-caption">
               {{ t('launch.multiInstanceError', { error: worktreeError }) }}
             </p>
           </div>
@@ -395,12 +395,16 @@ async function launch() {
               <v-btn
                 data-testid="btn-cancel"
                 variant="text"
+                size="default"
+                style="min-width: 80px;"
                 @click="emit('close')"
               >
                 {{ t('launch.cancel') }}
               </v-btn>
               <v-btn
                 data-testid="btn-launch"
+                size="default"
+                style="min-width: 80px;"
                 :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name) }"
                 :disabled="loading || launching || allAvailableInstances.length === 0"
                 :loading="launching"
