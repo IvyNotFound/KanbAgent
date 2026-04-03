@@ -239,6 +239,7 @@ function handleKeydown(e: KeyboardEvent) {
               mandatory
               color="primary"
               variant="outlined"
+              density="comfortable"
               class="type-toggle"
             >
               <v-btn
@@ -360,7 +361,6 @@ function handleKeydown(e: KeyboardEvent) {
                 v-if="isEditMode"
                 color="error"
                 variant="outlined"
-                size="small"
                 :disabled="deleting || loading"
                 @click="deleteAgent"
               >{{ deleting ? t('agent.deleting') : t('agent.deleteAgent') }}</v-btn>
@@ -368,10 +368,9 @@ function handleKeydown(e: KeyboardEvent) {
             <!-- Right: primary actions + shortcut hint near the submit button -->
             <div class="d-flex align-center ga-3">
               <span class="text-caption text-disabled">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
-              <v-btn variant="text" size="small" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
+              <v-btn variant="text" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
               <v-btn
                 color="primary"
-                size="small"
                 data-testid="btn-submit"
                 :disabled="loading || !name.trim() || (isEditMode && maxSessionsInvalid)"
                 @click="submit"
