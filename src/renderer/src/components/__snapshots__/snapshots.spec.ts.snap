@@ -1,9 +1,9 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<v-chip data-v-0937c3c8="" size="small" variant="outlined" style="color: rgb(49, 29, 165); border-color: rgb(182, 174, 224); background-color: rgb(227, 224, 246);" title="review-master" class="agent-chip"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></v-chip>"`;
+exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<v-chip data-v-0937c3c8="" size="small" variant="outlined" style="color: rgb(56, 142, 60); border-color: rgb(129, 199, 132); background-color: rgb(232, 245, 233);" title="review-master" class="agent-chip"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></v-chip>"`;
 
 exports[`AgentBadge — snapshots > matches snapshot: inactive badge 1`] = `
-"<v-chip data-v-0937c3c8="" size="small" variant="outlined" style="color: rgb(165, 131, 29); border-color: rgb(224, 211, 174); background-color: rgb(246, 240, 224);" title="dev-front-vuejs" class="agent-chip">
+"<v-chip data-v-0937c3c8="" size="small" variant="outlined" style="color: rgb(211, 47, 47); border-color: rgb(229, 115, 115); background-color: rgb(255, 235, 238);" title="dev-front-vuejs" class="agent-chip">
   <!--v-if--><span data-v-0937c3c8="" class="badge-name">dev-front-vuejs</span>
 </v-chip>"
 `;
@@ -246,12 +246,12 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
     <!-- Onglets fichiers -->
     <!-- Groupe agent -->
     <div data-v-3c3dc65a="" class="tab-group">
-      <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="tab-agent text-body-2" style="color: rgb(235, 159, 112); background-color: rgb(66, 41, 26);">
+      <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="tab-agent text-body-2" style="color: rgb(128, 203, 196); background-color: rgb(0, 77, 64);">
         <v-icon data-v-3c3dc65a="" size="12" style="flex-shrink: 0;">mdi-console</v-icon><span data-v-3c3dc65a="" style="opacity: 0.5; user-select: none;">·</span><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span>
         <v-icon data-v-3c3dc65a="" class="tab-chevron" style="transform: rotate(-90deg);" size="10">mdi-chevron-down</v-icon>
-        <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(235, 159, 112);"></span>
-      </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub text-body-2" style="color: rgb(235, 159, 112); background-color: rgb(66, 41, 26);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
-        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-overline" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(235, 159, 112);"></span>
+        <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(128, 203, 196);"></span>
+      </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub text-body-2" style="color: rgb(128, 203, 196); background-color: rgb(0, 77, 64);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
+        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-caption font-weight-medium" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(128, 203, 196);"></span>
       </button>
     </div>
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
@@ -282,7 +282,7 @@ exports[`TaskCard — snapshots > matches snapshot: critical in_progress task wi
   </v-card-text><!-- Badges: perimeter + agent avatars -->
   <v-card-text data-v-8da3d041="" class="pa-3 pt-0 pb-0">
     <div data-v-8da3d041="" class="card-meta ga-1">
-      <v-chip data-v-8da3d041="" size="x-small" variant="outlined" style="color: rgb(123, 197, 234); border-color: rgb(43, 77, 94); background-color: rgb(24, 43, 52);">back-electron</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
+      <v-chip data-v-8da3d041="" size="x-small" variant="outlined" style="color: rgb(187, 222, 251); border-color: rgb(21, 101, 192); background-color: rgb(13, 71, 161);">back-electron</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-back" active="false"></agent-badge-stub>
     </div>
@@ -351,7 +351,7 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
   </v-card-text><!-- Badges: perimeter + agent avatars -->
   <v-card-text data-v-8da3d041="" class="pa-3 pt-0 pb-0">
     <div data-v-8da3d041="" class="card-meta ga-1">
-      <v-chip data-v-8da3d041="" size="x-small" variant="outlined" style="color: rgb(190, 228, 129); border-color: rgb(74, 91, 47); background-color: rgb(41, 50, 26);">front-vuejs</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
+      <v-chip data-v-8da3d041="" size="x-small" variant="outlined" style="color: rgb(178, 223, 219); border-color: rgb(0, 105, 92); background-color: rgb(0, 77, 64);">front-vuejs</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-front" active="false"></agent-badge-stub>
     </div>
@@ -380,7 +380,7 @@ exports[`TitleBar — snapshots > matches snapshot: maximized 1`] = `
   <div data-v-f5fc7a66="" class="titlebar-content">
     <!-- Left: App identity -->
     <div data-v-f5fc7a66="" class="titlebar-left">
-      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-overline">KanbAgent</span>
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-caption font-weight-medium">KanbAgent</span>
     </div><!-- Center: Search bar (always visible, VS Code style) -->
     <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)">
         <v-icon data-v-f5fc7a66="" class="search-icon">mdi-magnify</v-icon><span data-v-f5fc7a66="" class="search-text text-caption">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd>
@@ -412,7 +412,7 @@ exports[`TitleBar — snapshots > matches snapshot: not maximized 1`] = `
   <div data-v-f5fc7a66="" class="titlebar-content">
     <!-- Left: App identity -->
     <div data-v-f5fc7a66="" class="titlebar-left">
-      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-overline">KanbAgent</span>
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-caption font-weight-medium">KanbAgent</span>
     </div><!-- Center: Search bar (always visible, VS Code style) -->
     <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)">
         <v-icon data-v-f5fc7a66="" class="search-icon">mdi-magnify</v-icon><span data-v-f5fc7a66="" class="search-text text-caption">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd>
