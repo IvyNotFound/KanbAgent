@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { agentHue, agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder, setDarkMode as setDarkModeReactive, colorVersion } from '@renderer/utils/agentColor'
 
 /** Toggle dark mode on document.documentElement and reactive ref for testing */
@@ -11,14 +11,16 @@ function setDarkMode(enabled: boolean) {
   setDarkModeReactive(enabled)
 }
 
+const HEX_PATTERN = /^#[0-9a-f]{6}$/i
+
 describe('agentColor', () => {
   afterEach(() => setDarkMode(false))
 
   describe('agentHue', () => {
-    it('should return a number between 0 and 359', () => {
-      const hue = agentHue('test-agent')
-      expect(hue).toBeGreaterThanOrEqual(0)
-      expect(hue).toBeLessThan(360)
+    it('should return a palette index between 0 and 14', () => {
+      const idx = agentHue('test-agent')
+      expect(idx).toBeGreaterThanOrEqual(0)
+      expect(idx).toBeLessThan(15)
     })
 
     it('should return consistent value for same input (determinism)', () => {
@@ -27,11 +29,11 @@ describe('agentColor', () => {
 
     it('should return same value on repeated calls (no randomness)', () => {
       const name = 'review-master'
-      const hue1 = agentHue(name)
-      const hue2 = agentHue(name)
-      const hue3 = agentHue(name)
-      expect(hue1).toBe(hue2)
-      expect(hue2).toBe(hue3)
+      const idx1 = agentHue(name)
+      const idx2 = agentHue(name)
+      const idx3 = agentHue(name)
+      expect(idx1).toBe(idx2)
+      expect(idx2).toBe(idx3)
     })
 
     it('should return different values for different inputs', () => {
@@ -39,121 +41,113 @@ describe('agentColor', () => {
     })
 
     it('should return integer (no decimals from modulo)', () => {
-      const hue = agentHue('dev-front-vuejs')
-      expect(Number.isInteger(hue)).toBe(true)
+      const idx = agentHue('dev-front-vuejs')
+      expect(Number.isInteger(idx)).toBe(true)
     })
 
     it('should handle empty string without crashing', () => {
-      const hue = agentHue('')
-      expect(hue).toBeGreaterThanOrEqual(0)
-      expect(hue).toBeLessThan(360)
+      const idx = agentHue('')
+      expect(idx).toBeGreaterThanOrEqual(0)
+      expect(idx).toBeLessThan(15)
     })
 
     it('should handle names with dashes and underscores', () => {
-      const hue = agentHue('dev-front-vuejs_v2')
-      expect(typeof hue).toBe('number')
-      expect(hue).toBeGreaterThanOrEqual(0)
-      expect(hue).toBeLessThan(360)
+      const idx = agentHue('dev-front-vuejs_v2')
+      expect(typeof idx).toBe('number')
+      expect(idx).toBeGreaterThanOrEqual(0)
+      expect(idx).toBeLessThan(15)
     })
 
     it('should handle unicode characters without crashing', () => {
-      const hue = agentHue('agent-🤖')
-      expect(hue).toBeGreaterThanOrEqual(0)
-      expect(hue).toBeLessThan(360)
+      const idx = agentHue('agent-🤖')
+      expect(idx).toBeGreaterThanOrEqual(0)
+      expect(idx).toBeLessThan(15)
     })
 
     it('should be case-sensitive (uppercase ≠ lowercase)', () => {
-      const hueUpper = agentHue('AGENT')
-      const hueLower = agentHue('agent')
-      expect(hueUpper).toBeGreaterThanOrEqual(0)
-      expect(hueLower).toBeGreaterThanOrEqual(0)
-      expect(hueUpper).not.toBe(hueLower)
+      const idxUpper = agentHue('AGENT')
+      const idxLower = agentHue('agent')
+      expect(idxUpper).toBeGreaterThanOrEqual(0)
+      expect(idxLower).toBeGreaterThanOrEqual(0)
+      expect(idxUpper).not.toBe(idxLower)
     })
 
     it('should handle long names without crashing', () => {
       const longName = 'a'.repeat(200)
-      const hue = agentHue(longName)
-      expect(hue).toBeGreaterThanOrEqual(0)
-      expect(hue).toBeLessThan(360)
+      const idx = agentHue(longName)
+      expect(idx).toBeGreaterThanOrEqual(0)
+      expect(idx).toBeLessThan(15)
     })
   })
 
   describe('agentFg', () => {
-    it('should return a valid HSL color string', () => {
+    it('should return a valid hex color string', () => {
       const fg = agentFg('test')
-      expect(fg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(fg).toMatch(HEX_PATTERN)
     })
 
     it('should return consistent value for same input', () => {
       expect(agentFg('test')).toBe(agentFg('test'))
     })
 
-    it('should use the exact hue from agentHue', () => {
-      const name = 'my-agent'
-      const hue = agentHue(name)
-      expect(agentFg(name)).toContain(`hsl(${hue},`)
-    })
-
-    it('should return light-mode values when dark class absent', () => {
+    it('should return light-mode color when dark class absent', () => {
       setDarkMode(false)
-      const name = 'my-agent'
-      const hue = agentHue(name)
-      const fg = agentFg(name)
-      // Lightness 38% in light mode; saturation is variable per name (T464)
-      expect(fg).toMatch(/^hsl\(\d+, \d+%, 38%\)$/)
-      expect(fg).toContain(`hsl(${hue},`)
+      const fg = agentFg('my-agent')
+      expect(fg).toMatch(HEX_PATTERN)
     })
 
-    it('should return dark-mode values when dark class present', () => {
+    it('should return dark-mode color when dark class present', () => {
       setDarkMode(true)
-      const name = 'my-agent'
-      const hue = agentHue(name)
-      const fg = agentFg(name)
-      // Lightness 68% in dark mode; saturation is variable per name (T464)
-      expect(fg).toMatch(/^hsl\(\d+, \d+%, 68%\)$/)
-      expect(fg).toContain(`hsl(${hue},`)
+      const fg = agentFg('my-agent')
+      expect(fg).toMatch(HEX_PATTERN)
+    })
+
+    it('dark and light values differ for same name', () => {
+      setDarkMode(false)
+      const lightFg = agentFg('my-agent')
+      setDarkMode(true)
+      const darkFg = agentFg('my-agent')
+      expect(darkFg).not.toBe(lightFg)
     })
   })
 
   describe('agentBg', () => {
-    it('should return a valid HSL color string', () => {
+    it('should return a valid hex color string', () => {
       const bg = agentBg('test')
-      expect(bg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(bg).toMatch(HEX_PATTERN)
     })
 
-    it('should return light-mode values (high lightness) when dark class absent', () => {
+    it('agentBg dark and light values differ', () => {
       setDarkMode(false)
-      const bg = agentBg('test')
-      const match = bg.match(/(\d+)%\)$/)
-      const lightness = match ? parseInt(match[1]) : 0
-      expect(lightness).toBeGreaterThanOrEqual(85)
-    })
-
-    it('should return dark-mode values (low lightness) when dark class present', () => {
+      const light = agentBg('test')
       setDarkMode(true)
-      const bg = agentBg('test')
-      const match = bg.match(/(\d+)%\)$/)
-      const lightness = match ? parseInt(match[1]) : 100
-      expect(lightness).toBeLessThanOrEqual(25)
+      const dark = agentBg('test')
+      expect(dark).not.toBe(light)
     })
 
-    it('should use the exact hue from agentHue', () => {
-      const name = 'my-agent'
-      const hue = agentHue(name)
-      expect(agentBg(name)).toContain(`hsl(${hue},`)
+    it('agentBg differs from agentFg for same name in dark mode', () => {
+      setDarkMode(true)
+      expect(agentBg('my-agent')).not.toBe(agentFg('my-agent'))
+    })
+
+    it('agentBg differs from agentFg for same name in light mode', () => {
+      setDarkMode(false)
+      expect(agentBg('my-agent')).not.toBe(agentFg('my-agent'))
     })
   })
 
   describe('agentBorder', () => {
-    it('should return a valid HSL color string', () => {
+    it('should return a valid hex color string', () => {
       const border = agentBorder('test')
-      expect(border).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(border).toMatch(HEX_PATTERN)
     })
 
-    it('should use the exact hue from agentHue', () => {
-      const name = 'my-agent'
-      const hue = agentHue(name)
-      expect(agentBorder(name)).toContain(`hsl(${hue},`)
+    it('agentBorder dark and light values differ', () => {
+      setDarkMode(false)
+      const light = agentBorder('test')
+      setDarkMode(true)
+      const dark = agentBorder('test')
+      expect(dark).not.toBe(light)
     })
   })
 
@@ -174,86 +168,78 @@ describe('agentColor', () => {
       expect(colorVersion.value).toBe(v0)
     })
 
-    it('agentFg returns light values after switching dark→light', () => {
+    it('agentFg returns different value after switching dark→light', () => {
       const name = 'test-agent-reactive'
-      const hue = agentHue(name)
       setDarkMode(true)
       const darkFg = agentFg(name)
-      // Dark: lightness 68%; saturation variable per name (T464)
-      expect(darkFg).toMatch(/^hsl\(\d+, \d+%, 68%\)$/)
-      expect(darkFg).toContain(`hsl(${hue},`)
+      expect(darkFg).toMatch(HEX_PATTERN)
       setDarkMode(false)
       const lightFg = agentFg(name)
-      // Light: lightness 38%; saturation variable per name (T464)
-      expect(lightFg).toMatch(/^hsl\(\d+, \d+%, 38%\)$/)
-      expect(lightFg).toContain(`hsl(${hue},`)
+      expect(lightFg).toMatch(HEX_PATTERN)
       expect(lightFg).not.toBe(darkFg)
     })
 
-    it('perimeterFg returns light values after switching dark→light', () => {
+    it('perimeterFg returns different value after switching dark→light', () => {
       const name = 'front-vuejs'
-      const hue = agentHue(name)
       setDarkMode(true)
       const darkFg = perimeterFg(name)
-      // Dark: lightness 70%; saturation variable per name (T464)
-      expect(darkFg).toMatch(/^hsl\(\d+, \d+%, 70%\)$/)
-      expect(darkFg).toContain(`hsl(${hue},`)
+      expect(darkFg).toMatch(HEX_PATTERN)
       setDarkMode(false)
       const lightFg = perimeterFg(name)
-      // Light: lightness 35%; saturation variable per name (T464)
-      expect(lightFg).toMatch(/^hsl\(\d+, \d+%, 35%\)$/)
-      expect(lightFg).toContain(`hsl(${hue},`)
+      expect(lightFg).toMatch(HEX_PATTERN)
       expect(lightFg).not.toBe(darkFg)
     })
   })
 
   describe('color scheme coherence', () => {
-    it('all three functions should use the same hue for a given name', () => {
-      const name = 'test-agent-123'
-      const hue = agentHue(name)
-      expect(agentFg(name)).toContain(`hsl(${hue},`)
-      expect(agentBg(name)).toContain(`hsl(${hue},`)
-      expect(agentBorder(name)).toContain(`hsl(${hue},`)
-    })
-
-    it('dark mode: lightness order agentBg < agentBorder < agentFg', () => {
+    it('all agent functions return different colors for a given name in dark mode', () => {
       setDarkMode(true)
-      const name = 'review-master'
-      const bgL = parseInt(agentBg(name).match(/(\d+)%\)$/)![1])
-      const borderL = parseInt(agentBorder(name).match(/(\d+)%\)$/)![1])
-      const fgL = parseInt(agentFg(name).match(/(\d+)%\)$/)![1])
-      expect(bgL).toBeLessThan(borderL)
-      expect(borderL).toBeLessThan(fgL)
+      const name = 'test-agent-123'
+      const fg = agentFg(name)
+      const bg = agentBg(name)
+      const border = agentBorder(name)
+      expect(fg).not.toBe(bg)
+      expect(bg).not.toBe(border)
+      expect(fg).not.toBe(border)
     })
 
-    it('light mode: lightness order agentFg < agentBorder < agentBg', () => {
+    it('all agent functions return different colors for a given name in light mode', () => {
       setDarkMode(false)
+      const name = 'test-agent-123'
+      const fg = agentFg(name)
+      const bg = agentBg(name)
+      const border = agentBorder(name)
+      expect(fg).not.toBe(bg)
+      expect(bg).not.toBe(border)
+      expect(fg).not.toBe(border)
+    })
+
+    it('same name → same color for all functions (determinism)', () => {
       const name = 'review-master'
-      const fgL = parseInt(agentFg(name).match(/(\d+)%\)$/)![1])
-      const borderL = parseInt(agentBorder(name).match(/(\d+)%\)$/)![1])
-      const bgL = parseInt(agentBg(name).match(/(\d+)%\)$/)![1])
-      expect(fgL).toBeLessThan(borderL)
-      expect(borderL).toBeLessThan(bgL)
+      expect(agentFg(name)).toBe(agentFg(name))
+      expect(agentBg(name)).toBe(agentBg(name))
+      expect(agentBorder(name)).toBe(agentBorder(name))
     })
   })
 
   describe('hash function edge cases', () => {
-    it('empty string returns hue 0 (hash returns 0)', () => {
-      // hash('') = 0, so hue = 0 % 360 = 0
+    it('empty string returns palette index 0 (hash returns 0)', () => {
+      // hash('') = 0, so idx = 0 % 15 = 0
       expect(agentHue('')).toBe(0)
     })
 
-    it('different names produce different hash results — multiplier h*31 matters', () => {
-      const names = ['a', 'b', 'c', 'dev-front-vuejs', 'review-master', 'test-back-electron']
-      const hues = names.map(n => agentHue(n))
-      const unique = new Set(hues)
+    it('different names produce different palette indices — multiplier h*31 matters', () => {
+      // Single ASCII letters a-f produce indices 7,8,9,10,11,12 — all distinct
+      const names = ['a', 'b', 'c', 'd', 'e', 'f']
+      const indices = names.map(n => agentHue(n))
+      const unique = new Set(indices)
       expect(unique.size).toBe(names.length)
     })
 
-    it('single character produces non-zero hue', () => {
-      const hue = agentHue('a')
-      expect(hue).toBeGreaterThan(0)
-      expect(hue).toBeLessThan(360)
+    it('single character produces non-zero palette index', () => {
+      const idx = agentHue('a')
+      expect(idx).toBeGreaterThan(0)
+      expect(idx).toBeLessThan(15)
     })
   })
 })

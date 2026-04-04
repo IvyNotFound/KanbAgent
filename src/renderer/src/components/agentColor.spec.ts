@@ -1,50 +1,53 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder, isDark, setDarkMode, agentHue, colorVersion } from '@renderer/utils/agentColor'
 
+const HEX_PATTERN = /^#[0-9a-f]{6}$/i
+
 describe('agentColor utilities (T353)', () => {
-  it('agentHue returns a stable hue for the same name', () => {
+  afterEach(() => setDarkMode(false))
+
+  it('agentHue returns a stable palette index for the same name', () => {
     const h1 = agentHue('dev-front')
     const h2 = agentHue('dev-front')
     expect(h1).toBe(h2)
     expect(h1).toBeGreaterThanOrEqual(0)
-    expect(h1).toBeLessThan(360)
+    expect(h1).toBeLessThan(15)
   })
 
-  it('agentHue returns different hues for different names', () => {
-    const h1 = agentHue('dev-front')
-    const h2 = agentHue('review-master')
-    // Different names should (almost certainly) have different hues
+  it('agentHue returns different indices for different names', () => {
+    const h1 = agentHue('dev-front')      // → 8
+    const h2 = agentHue('review-master')  // → 9
     expect(h1).not.toBe(h2)
   })
 
-  it('agentFg returns HSL string', () => {
+  it('agentFg returns hex string', () => {
     const fg = agentFg('test-agent')
-    expect(fg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+    expect(fg).toMatch(HEX_PATTERN)
   })
 
-  it('agentBg returns HSL string', () => {
+  it('agentBg returns hex string', () => {
     const bg = agentBg('test-agent')
-    expect(bg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+    expect(bg).toMatch(HEX_PATTERN)
   })
 
-  it('agentBorder returns HSL string', () => {
+  it('agentBorder returns hex string', () => {
     const border = agentBorder('test-agent')
-    expect(border).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+    expect(border).toMatch(HEX_PATTERN)
   })
 
-  it('perimeterFg returns HSL string', () => {
+  it('perimeterFg returns hex string', () => {
     const fg = perimeterFg('front-vuejs')
-    expect(fg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+    expect(fg).toMatch(HEX_PATTERN)
   })
 
-  it('perimeterBg returns HSL string', () => {
+  it('perimeterBg returns hex string', () => {
     const bg = perimeterBg('front-vuejs')
-    expect(bg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+    expect(bg).toMatch(HEX_PATTERN)
   })
 
-  it('perimeterBorder returns HSL string', () => {
+  it('perimeterBorder returns hex string', () => {
     const border = perimeterBorder('front-vuejs')
-    expect(border).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+    expect(border).toMatch(HEX_PATTERN)
   })
 
   it('setDarkMode toggles isDark()', () => {
@@ -55,7 +58,7 @@ describe('agentColor utilities (T353)', () => {
     expect(isDark()).toBe(false)
   })
 
-  it('dark mode changes lightness values in agentFg', () => {
+  it('dark mode changes color values in agentFg', () => {
     setDarkMode(true)
     const darkFg = agentFg('test')
 
@@ -64,124 +67,124 @@ describe('agentColor utilities (T353)', () => {
 
     expect(darkFg).not.toBe(lightFg)
   })
-
 })
 
-// ─── T1319: mutation-killing tests ───────────────────────────────────────────
+// ─── T1319 (updated for T1467 MD2 migration) ─────────────────────────────────
 
-describe('agentColor — hash function exact values (T1319)', () => {
-  // 'hello': hash=99162322, hue=322, satIdx=0 (hash>>9=193676=even%4=0), sat=55
-  // 'test-agent': hash=621962762, hue=122, satIdx=3, sat=85
+describe('agentColor — hash function exact palette indices (T1319)', () => {
+  // 'hello': hash=99162322, 99162322%15=7 (cyan)
+  // 'test-agent': hash=621962762, 621962762%15=2 (purple)
   // These exact values kill h*31 -> h+31 / h*32 / h-31 mutants
 
-  it('agentHue(hello) === 322 (kills h*31 arithmetic mutants)', () => {
-    expect(agentHue('hello')).toBe(322)
+  it('agentHue(hello) === 7 (hash=99162322, 99162322%15=7)', () => {
+    expect(agentHue('hello')).toBe(7)
   })
 
-  it('agentHue(test-agent) === 122 (kills h*31 arithmetic mutants)', () => {
-    expect(agentHue('test-agent')).toBe(122)
+  it('agentHue(test-agent) === 2 (hash=621962762, 621962762%15=2)', () => {
+    expect(agentHue('test-agent')).toBe(2)
   })
 
   it('agentHue of empty string is 0 (covers !name guard)', () => {
     expect(agentHue('')).toBe(0)
   })
 
-  it('agentHue differs between anagram-like names (order matters in hash)', () => {
-    // 'ab': hash=3105 hue=225, 'ba': hash=3135 hue=255
-    expect(agentHue('ab')).toBe(225)
-    expect(agentHue('ba')).toBe(255)
-    expect(agentHue('ab')).not.toBe(agentHue('ba'))
+  it('agentHue differs between order-sensitive names (order matters in hash)', () => {
+    // 'hello' → idx=7, 'world' → idx=12 (both computed from hash%15)
+    expect(agentHue('hello')).toBe(7)
+    expect(agentHue('world')).toBe(12)
+    expect(agentHue('hello')).not.toBe(agentHue('world'))
   })
 })
 
-describe('agentColor — saturation math exact values (T1319)', () => {
-  // test-agent: hue=122, sat=85
-  // agentBg dark uses s*0.58=49, light uses s*0.72=61
-  // agentBorder uses s*0.58=49
-  // perimeterFg dark uses s*0.86=73, light uses s*0.79=67
-  // perimeterBg dark uses s*0.43=37, light uses s*0.57=48
-  // hello: sat=55 (verifies different SAT_STEPS entry)
+describe('agentColor — MD2 shade exact values (T1319 + T1467)', () => {
+  // test-agent: idx=2 (purple family)
+  // agentFg dark=lighten3=#ce93d8, light=darken2=#7b1fa2
+  // agentBg dark=darken4=#4a148c, light=lighten5=#f3e5f5
+  // agentBorder dark=darken2=#7b1fa2, light=lighten2=#ba68c8
+  // perimeterFg dark=lighten4=#e1bee7, light=darken1=#8e24aa
+  // perimeterBg dark=darken4=#4a148c, light=lighten5=#f3e5f5
+  // perimeterBorder dark=darken3=#6a1b9a, light=lighten3=#ce93d8
 
-  it('agentBg dark mode uses s*0.58 exactly (test-agent: sat=85 -> 49)', () => {
+  afterEach(() => setDarkMode(false))
+
+  it('agentBg dark mode (test-agent: purple darken4 #4a148c)', () => {
     setDarkMode(true)
-    expect(agentBg('test-agent')).toBe('hsl(122, 49%, 18%)')
+    expect(agentBg('test-agent')).toBe('#4a148c')
   })
 
-  it('agentBg light mode uses s*0.72 exactly (test-agent: sat=85 -> 61)', () => {
+  it('agentBg light mode (test-agent: purple lighten5 #f3e5f5)', () => {
     setDarkMode(false)
-    expect(agentBg('test-agent')).toBe('hsl(122, 61%, 92%)')
+    expect(agentBg('test-agent')).toBe('#f3e5f5')
   })
 
-  it('agentBorder dark mode uses s*0.58 (test-agent: sat=85 -> 49, L=32)', () => {
+  it('agentBorder dark mode (test-agent: purple darken2 #7b1fa2)', () => {
     setDarkMode(true)
-    expect(agentBorder('test-agent')).toBe('hsl(122, 49%, 32%)')
+    expect(agentBorder('test-agent')).toBe('#7b1fa2')
   })
 
-  it('agentBorder light mode uses s*0.58 (test-agent: sat=85 -> 49, L=78)', () => {
+  it('agentBorder light mode (test-agent: purple lighten2 #ba68c8)', () => {
     setDarkMode(false)
-    expect(agentBorder('test-agent')).toBe('hsl(122, 49%, 78%)')
+    expect(agentBorder('test-agent')).toBe('#ba68c8')
   })
 
-  it('perimeterFg dark mode uses s*0.86 (test-agent: sat=85 -> 73)', () => {
+  it('perimeterFg dark mode (test-agent: purple lighten4 #e1bee7)', () => {
     setDarkMode(true)
-    expect(perimeterFg('test-agent')).toBe('hsl(122, 73%, 70%)')
+    expect(perimeterFg('test-agent')).toBe('#e1bee7')
   })
 
-  it('perimeterFg light mode uses s*0.79 (test-agent: sat=85 -> 67)', () => {
+  it('perimeterFg light mode (test-agent: purple darken1 #8e24aa)', () => {
     setDarkMode(false)
-    expect(perimeterFg('test-agent')).toBe('hsl(122, 67%, 35%)')
+    expect(perimeterFg('test-agent')).toBe('#8e24aa')
   })
 
-  it('perimeterBg dark mode uses s*0.43 (test-agent: sat=85 -> 37)', () => {
+  it('perimeterBg dark mode (test-agent: purple darken4 #4a148c)', () => {
     setDarkMode(true)
-    expect(perimeterBg('test-agent')).toBe('hsl(122, 37%, 15%)')
+    expect(perimeterBg('test-agent')).toBe('#4a148c')
   })
 
-  it('perimeterBg light mode uses s*0.57 (test-agent: sat=85 -> 48)', () => {
+  it('perimeterBg light mode (test-agent: purple lighten5 #f3e5f5)', () => {
     setDarkMode(false)
-    expect(perimeterBg('test-agent')).toBe('hsl(122, 48%, 93%)')
+    expect(perimeterBg('test-agent')).toBe('#f3e5f5')
   })
 
-  it('perimeterBorder dark mode uses s*0.43 (test-agent: sat=85 -> 37, L=27)', () => {
+  it('perimeterBorder dark mode (test-agent: purple darken3 #6a1b9a)', () => {
     setDarkMode(true)
-    expect(perimeterBorder('test-agent')).toBe('hsl(122, 37%, 27%)')
+    expect(perimeterBorder('test-agent')).toBe('#6a1b9a')
   })
 
-  it('perimeterBorder light mode uses s*0.43 (test-agent: sat=85 -> 37, L=80)', () => {
+  it('perimeterBorder light mode (test-agent: purple lighten3 #ce93d8)', () => {
     setDarkMode(false)
-    expect(perimeterBorder('test-agent')).toBe('hsl(122, 37%, 80%)')
+    expect(perimeterBorder('test-agent')).toBe('#ce93d8')
   })
 
-  it('sat=55 (hello) verifies different SAT_STEPS slot, kills >> 9 -> >> 8 mutant', () => {
-    // hello: hash=99162322, hash>>9=193676, 193676%4=0 -> sat=55
-    // If mutated to hash>>8=387149, 387149%4=1 -> sat=65 (different)
+  it('hello dark agentFg (cyan lighten3 #80deea)', () => {
     setDarkMode(true)
-    expect(perimeterFg('hello')).toBe('hsl(322, 47%, 70%)')
+    expect(agentFg('hello')).toBe('#80deea')
   })
 })
 
-describe('agentColor — Math.min(s, 70) clamp in agentFg (T1319)', () => {
-  // test-agent: sat=85 > 70, so Math.min(85, 70)=70 in light mode
-  // hello: sat=55 <= 70, Math.min(55, 70)=55 (no clamp)
+describe('agentColor — agentFg exact dark/light shades (T1319 + T1467)', () => {
+  afterEach(() => setDarkMode(false))
 
-  it('agentFg light mode clamps sat to 70 when s=85 (kills Math.min removal mutant)', () => {
-    setDarkMode(false)
-    expect(agentFg('test-agent')).toBe('hsl(122, 70%, 38%)')
-  })
-
-  it('agentFg dark mode uses unclamped sat=85 (no Math.min in dark path)', () => {
+  it('agentFg dark mode (test-agent: purple lighten3 #ce93d8)', () => {
     setDarkMode(true)
-    expect(agentFg('test-agent')).toBe('hsl(122, 85%, 68%)')
+    expect(agentFg('test-agent')).toBe('#ce93d8')
   })
 
-  it('agentFg light mode uses unclamped sat=55 when s < 70 (Math.min is no-op)', () => {
+  it('agentFg light mode (test-agent: purple darken2 #7b1fa2)', () => {
     setDarkMode(false)
-    // hello: sat=55, hue=322
-    expect(agentFg('hello')).toBe('hsl(322, 55%, 38%)')
+    expect(agentFg('test-agent')).toBe('#7b1fa2')
+  })
+
+  it('agentFg light mode (hello: cyan darken2 #0097a7)', () => {
+    setDarkMode(false)
+    expect(agentFg('hello')).toBe('#0097a7')
   })
 })
 
 describe('agentColor — setDarkMode no-op and cache invalidation (T1319)', () => {
+  afterEach(() => setDarkMode(false))
+
   it('setDarkMode does not increment colorVersion when value unchanged', () => {
     setDarkMode(true)
     const before = colorVersion.value
@@ -219,30 +222,21 @@ describe('agentColor — setDarkMode no-op and cache invalidation (T1319)', () =
 describe('agentColor — cache FIFO boundary (T1319)', () => {
   // cacheSet evicts when map.size >= CACHE_MAX (100)
   // Mutation >= -> > would allow 101 entries instead of 100
-  // We test via agentHue which uses hueCache: after 100 unique names, adding one more
-  // should keep the cache at exactly CACHE_MAX (old entry evicted)
 
-  it('agentHue still returns correct value for name added at/after CACHE_MAX boundary', () => {
-    // Fill the cache with 100 unique names via agentHue calls
-    // The internal hueCache starts populated from previous tests; we warm it beyond CACHE_MAX
-    // by calling agentHue with 110 unique names
+  it('agentHue still returns valid index for name added at/after CACHE_MAX boundary', () => {
     for (let i = 0; i < 110; i++) {
       agentHue(`unique-cache-name-${i}`)
     }
-    // The cache should still function correctly — new queries are computed properly
-    expect(agentHue('unique-cache-name-105')).toBe(agentHue('unique-cache-name-105'))
-    expect(agentHue('unique-cache-name-105')).toBeGreaterThanOrEqual(0)
-    expect(agentHue('unique-cache-name-105')).toBeLessThan(360)
+    const idx = agentHue('unique-cache-name-105')
+    expect(idx).toBe(agentHue('unique-cache-name-105'))
+    expect(idx).toBeGreaterThanOrEqual(0)
+    expect(idx).toBeLessThan(15)
   })
 
-  it('cache eviction: first entries are evicted when CACHE_MAX exceeded', () => {
-    // After filling 110+ names, early names would have been evicted
-    // Calling agentHue again on an early name re-computes it correctly
-    const hue = agentHue('unique-cache-name-0')
-    // It must still return the correct deterministic hue
-    expect(hue).toBe(agentHue('unique-cache-name-0'))
-    expect(hue).toBeGreaterThanOrEqual(0)
-    expect(hue).toBeLessThan(360)
+  it('cache eviction: first entries are evicted and recomputed correctly', () => {
+    const idx = agentHue('unique-cache-name-0')
+    expect(idx).toBe(agentHue('unique-cache-name-0'))
+    expect(idx).toBeGreaterThanOrEqual(0)
+    expect(idx).toBeLessThan(15)
   })
 })
-

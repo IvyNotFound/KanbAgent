@@ -1,12 +1,18 @@
 /**
- * Mutation-focused tests for agentColor.ts (T1286)
+ * Mutation-focused tests for agentColor.ts (T1286 + T1467)
  *
- * Targets surviving mutants:
- * - Hash arithmetic: h * 31 + charCodeAt(0)
- * - LRU eviction at exactly CACHE_MAX boundary
- * - Saturation arithmetic factors (0.43, 0.57, 0.58, 0.72, 0.79, 0.86)
- * - Math.min(s, 70) in agentFg light mode
- * - isDark() guard in setDarkMode
+ * Kills surviving mutants in:
+ * - hash(): h * 31 + charCodeAt(0) — exact palette indices for known names
+ * - agentHue(): hash(name) % 15 (palette size) — kills off-by-one on modulo
+ * - cacheSet(): FIFO eviction at exactly CACHE_MAX boundary (>= not >)
+ * - setDarkMode(): no-op guard — kills removal of the isDark() early return
+ *
+ * Pre-computed palette indices (hash(name) % 15):
+ *   'a'   → hash=97,   97  % 15 = 7
+ *   'ab'  → hash=3105, 3105% 15 = 0
+ *   'aa'  → hash=3104, 3104% 15 = 14
+ *   'z'   → hash=122,  122 % 15 = 2
+ *   'bc'  → hash=3137, 3137% 15 = 2
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import {
@@ -31,75 +37,79 @@ function setDarkMode(enabled: boolean) {
   setDarkModeReactive(enabled)
 }
 
-describe('agentColor mutation coverage (T1286)', () => {
+const HEX_PATTERN = /^#[0-9a-f]{6}$/i
+
+describe('agentColor mutation coverage (T1286 + T1467)', () => {
   afterEach(() => setDarkMode(false))
 
-  // ── Hash arithmetic ──────────────────────────────────────────────────────────
-  describe('hash arithmetic — exact values', () => {
-    it('agentHue("a") equals charCode("a") % 360', () => {
-      // hash("a") = (0 * 31 + 97) & 0xffffffff = 97, abs(97) = 97, 97 % 360 = 97
-      expect(agentHue('a')).toBe(97)
+  // ── Hash arithmetic — exact palette indices ───────────────────────────────────
+  describe('hash arithmetic — exact palette indices', () => {
+    it('agentHue("a") = 7 (hash=97, 97%15=7)', () => {
+      // hash("a") = charCode('a') = 97; 97 % 15 = 7
+      expect(agentHue('a')).toBe(7)
     })
 
-    it('agentHue("ab") uses h * 31 + charCode (not h + charCode or h * 32 etc.)', () => {
-      // hash("ab") computed with (h * 31 + ch.charCodeAt(0)) & 0xffffffff:
+    it('agentHue("ab") = 0 — verifies h*31 multiplier (not h+ch or h*32)', () => {
+      // hash("ab"):
       //   after 'a': h = (0 * 31 + 97) & 0xffffffff = 97
       //   after 'b': h = (97 * 31 + 98) & 0xffffffff = 3105
-      //   3105 % 360 = 225
-      expect(agentHue('ab')).toBe(225)
+      //   3105 % 15 = 0
+      expect(agentHue('ab')).toBe(0)
     })
 
-    it('agentHue("z") equals charCode("z") % 360', () => {
-      // charCode('z') = 122, 122 % 360 = 122
-      expect(agentHue('z')).toBe(122)
+    it('agentHue("z") = 2 (hash=122, 122%15=2)', () => {
+      // charCode('z') = 122; 122 % 15 = 2
+      expect(agentHue('z')).toBe(2)
     })
 
-    it('agentHue("aa") — verifies multiplier 31 vs alternatives', () => {
+    it('agentHue("aa") = 14 — verifies multiplier 31 vs alternatives', () => {
       // hash("aa"):
       //   h = 97 after 'a'
       //   h = (97 * 31 + 97) & 0xffffffff = 3104 after second 'a'
-      //   3104 % 360 = 224
-      expect(agentHue('aa')).toBe(224)
+      //   3104 % 15 = 14
+      expect(agentHue('aa')).toBe(14)
     })
 
-    it('agentHue("bc") — verifies exact hash chain', () => {
+    it('agentHue("bc") = 2 — verifies exact hash chain', () => {
       // charCode('b') = 98, charCode('c') = 99
       // h = 98 after 'b'
       // h = (98 * 31 + 99) & 0xffffffff = 3137 after 'c'
-      // 3137 % 360 = 257
-      expect(agentHue('bc')).toBe(257)
+      // 3137 % 15 = 2
+      expect(agentHue('bc')).toBe(2)
+    })
+
+    it('agentHue("") = 0 (hash returns 0 for empty string)', () => {
+      expect(agentHue('')).toBe(0)
     })
   })
 
   // ── LRU eviction at CACHE_MAX boundary ──────────────────────────────────────
   describe('LRU eviction — exact CACHE_MAX boundary', () => {
-    it('filling exactly CACHE_MAX=100 unique names — all return valid hues', () => {
+    it('filling exactly CACHE_MAX=100 unique names — all return valid palette indices', () => {
       for (let i = 0; i < 100; i++) {
-        const hue = agentHue(`lru-boundary-${i}`)
-        expect(hue).toBeGreaterThanOrEqual(0)
-        expect(hue).toBeLessThan(360)
+        const idx = agentHue(`lru-boundary-${i}`)
+        expect(idx).toBeGreaterThanOrEqual(0)
+        expect(idx).toBeLessThan(15)
       }
     })
 
     it('at exactly CACHE_MAX+1=101 names — eviction triggers, result still valid', () => {
       for (let i = 0; i < 101; i++) {
-        const hue = agentHue(`lru-trigger-${i}`)
-        expect(hue).toBeGreaterThanOrEqual(0)
-        expect(hue).toBeLessThan(360)
+        const idx = agentHue(`lru-trigger-${i}`)
+        expect(idx).toBeGreaterThanOrEqual(0)
+        expect(idx).toBeLessThan(15)
       }
-      // Entry 101 triggers eviction but still returns valid value
-      const hue101 = agentHue('lru-trigger-101')
-      expect(hue101).toBeGreaterThanOrEqual(0)
-      expect(hue101).toBeLessThan(360)
+      const idx101 = agentHue('lru-trigger-101')
+      expect(idx101).toBeGreaterThanOrEqual(0)
+      expect(idx101).toBeLessThan(15)
     })
 
-    it('agentFg eviction at boundary — 100 entries then 101st', () => {
+    it('agentFg eviction at boundary — 100 entries then 101st returns valid hex', () => {
       for (let i = 0; i < 100; i++) {
         agentFg(`fg-boundary-${i}`)
       }
-      // 101st triggers eviction
       const fg = agentFg('fg-boundary-100')
-      expect(fg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(fg).toMatch(HEX_PATTERN)
     })
 
     it('all color caches survive eviction correctly', () => {
@@ -109,153 +119,85 @@ describe('agentColor mutation coverage (T1286)', () => {
         perimeterBg(`pbg-evict-${i}`)
         perimeterBorder(`pborder-evict-${i}`)
       }
-      expect(agentBorder('border-evict-101')).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(perimeterFg('pfg-evict-101')).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(perimeterBg('pbg-evict-101')).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(perimeterBorder('pborder-evict-101')).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(agentBorder('border-evict-101')).toMatch(HEX_PATTERN)
+      expect(perimeterFg('pfg-evict-101')).toMatch(HEX_PATTERN)
+      expect(perimeterBg('pbg-evict-101')).toMatch(HEX_PATTERN)
+      expect(perimeterBorder('pborder-evict-101')).toMatch(HEX_PATTERN)
     })
   })
 
-  // ── Saturation arithmetic factors ────────────────────────────────────────────
-  describe('saturation factors — exact relationships', () => {
-    it('agentBg dark saturation = round(baseSat * 0.58) — less than raw sat', () => {
+  // ── MD2 shade relationships ──────────────────────────────────────────────────
+  describe('MD2 shade relationships — semantic invariants', () => {
+    it('agentBg dark differs from agentFg dark (darken4 vs lighten3)', () => {
       setDarkMode(true)
       const name = 'sat-factor-test'
-      // Get reference fg saturation (uses full baseSat in dark)
-      const fg = agentFg(name)
-      const bg = agentBg(name)
-      const fgS = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-      const bgS = parseInt(bg.match(/hsl\(\d+, (\d+)%/)![1])
-      // bg uses factor 0.58, fg uses full sat — so bgS < fgS
-      expect(bgS).toBeLessThan(fgS)
-      // And must be > 0
-      expect(bgS).toBeGreaterThan(0)
+      expect(agentBg(name)).not.toBe(agentFg(name))
     })
 
-    it('agentBg light saturation = round(baseSat * 0.72) — less than dark fg', () => {
+    it('agentBg light differs from agentFg light (lighten5 vs darken2)', () => {
       setDarkMode(false)
       const name = 'sat-light-factor-test'
-      const bg = agentBg(name)
-      const bgS = parseInt(bg.match(/hsl\(\d+, (\d+)%/)![1])
-      expect(bgS).toBeGreaterThan(0)
-      expect(bgS).toBeLessThan(100)
+      expect(agentBg(name)).not.toBe(agentFg(name))
     })
 
-    it('agentBorder uses factor 0.58 — saturation lower than agentFg in dark', () => {
+    it('agentBorder dark differs from agentFg dark (darken2 vs lighten3)', () => {
       setDarkMode(true)
       const name = 'border-factor-check'
-      const fg = agentFg(name)
-      const border = agentBorder(name)
-      const fgS = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-      const borderS = parseInt(border.match(/hsl\(\d+, (\d+)%/)![1])
-      expect(borderS).toBeLessThan(fgS)
+      expect(agentBorder(name)).not.toBe(agentFg(name))
     })
 
-    it('perimeterFg dark factor 0.86 — between agentFg(1.0) and agentBg(0.58)', () => {
+    it('perimeterFg dark differs from agentBg dark (lighten4 vs darken4)', () => {
       setDarkMode(true)
       const name = 'perimeter-factor-dark'
-      const fg = agentFg(name)
-      const pfg = perimeterFg(name)
-      const bg = agentBg(name)
-      const fgS = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-      const pfgS = parseInt(pfg.match(/hsl\(\d+, (\d+)%/)![1])
-      const bgS = parseInt(bg.match(/hsl\(\d+, (\d+)%/)![1])
-      // pfg factor 0.86 > bg factor 0.58, so pfgS > bgS (for any positive sat)
-      expect(pfgS).toBeGreaterThanOrEqual(bgS)
+      expect(perimeterFg(name)).not.toBe(agentBg(name))
     })
 
-    it('perimeterFg light factor 0.79 — lower than dark factor 0.86 relative', () => {
+    it('perimeterFg differs between dark and light mode', () => {
       const name = 'perimeter-factor-light'
       setDarkMode(true)
-      const darkPfg = perimeterFg(name)
-      const darkPfgS = parseInt(darkPfg.match(/hsl\(\d+, (\d+)%/)![1])
-
+      const dark = perimeterFg(name)
       setDarkMode(false)
-      const lightPfg = perimeterFg(name)
-      const lightPfgS = parseInt(lightPfg.match(/hsl\(\d+, (\d+)%/)![1])
-
-      // Both should be positive values between 0 and 100
-      expect(darkPfgS).toBeGreaterThan(0)
-      expect(lightPfgS).toBeGreaterThan(0)
+      const light = perimeterFg(name)
+      expect(dark).not.toBe(light)
     })
 
-    it('perimeterBg dark factor 0.43 — lowest saturation among dark colors', () => {
+    it('perimeterBg dark differs from agentFg dark', () => {
       setDarkMode(true)
       const name = 'pbg-factor-test'
-      const fg = agentFg(name)
-      const pbg = perimeterBg(name)
-      const fgS = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-      const pbgS = parseInt(pbg.match(/hsl\(\d+, (\d+)%/)![1])
-      // perimeterBg uses factor 0.43 — should be less than agentFg (factor 1.0)
-      expect(pbgS).toBeLessThan(fgS)
+      expect(perimeterBg(name)).not.toBe(agentFg(name))
     })
 
-    it('perimeterBg light factor 0.57 — saturation > 0', () => {
+    it('perimeterBg light: valid hex color', () => {
       setDarkMode(false)
       const name = 'pbg-light-factor-test'
-      const pbg = perimeterBg(name)
-      const pbgS = parseInt(pbg.match(/hsl\(\d+, (\d+)%/)![1])
-      expect(pbgS).toBeGreaterThan(0)
+      expect(perimeterBg(name)).toMatch(HEX_PATTERN)
     })
 
-    it('perimeterBorder dark factor 0.43 — same as perimeterBg', () => {
+    it('perimeterBorder dark differs from agentBorder dark (darken3 vs darken2)', () => {
       setDarkMode(true)
       const name = 'pborder-factor-test'
-      const pbg = perimeterBg(name)
-      const pborder = perimeterBorder(name)
-      const pbgS = parseInt(pbg.match(/hsl\(\d+, (\d+)%/)![1])
-      const pborderS = parseInt(pborder.match(/hsl\(\d+, (\d+)%/)![1])
-      // Both use factor 0.43 on same baseSat — should be equal
-      expect(pborderS).toBe(pbgS)
+      expect(perimeterBorder(name)).not.toBe(agentBorder(name))
     })
   })
 
-  // ── Math.min(s, 70) in agentFg light mode ────────────────────────────────────
-  describe('agentFg light mode — Math.min(s, 70) cap', () => {
-    it('agentFg light: saturation is capped at 70 for high-sat names', () => {
+  // ── agentFg light mode — no capping (pure MD shade lookup) ───────────────────
+  describe('agentFg light mode — all names return valid darken2 hex', () => {
+    it('light mode returns valid hex for 50 different names', () => {
       setDarkMode(false)
-      // We need a name with baseSat > 70 to trigger Math.min clamp
-      // SAT_STEPS = [55, 65, 75, 85] — need index 2 or 3 (75 or 85)
-      // Try many names until we find one with sat 75 or 85
-      let found = false
-      for (let i = 0; i < 200 && !found; i++) {
-        const name = `sat-cap-test-${i}`
-        const fg = agentFg(name)
-        const s = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-        if (s === 70) {
-          found = true
-          // Verify: dark mode for same name has sat > 70 (uncapped)
-          setDarkMode(true)
-          const darkFg = agentFg(name)
-          const darkS = parseInt(darkFg.match(/hsl\(\d+, (\d+)%/)![1])
-          expect(darkS).toBeGreaterThan(70)
-          setDarkMode(false)
-        }
-      }
-      // Even if no name found with exactly 70, we test correctness
-      // At minimum all light sats must be <= 70
       for (let i = 0; i < 50; i++) {
-        const name = `sat-cap-verify-${i}`
-        const fg = agentFg(name)
-        const s = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-        expect(s).toBeLessThanOrEqual(70)
+        const fg = agentFg(`sat-cap-verify-${i}`)
+        expect(fg).toMatch(HEX_PATTERN)
       }
     })
 
-    it('agentFg dark: saturation can exceed 70 (no cap)', () => {
+    it('dark mode returns valid hex for all names', () => {
       setDarkMode(true)
-      // Find a name with baseSat 75 or 85
-      let foundHighSat = false
-      for (let i = 0; i < 200 && !foundHighSat; i++) {
-        const name = `dark-no-cap-${i}`
-        const fg = agentFg(name)
-        const s = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-        if (s > 70) {
-          foundHighSat = true
-          expect(s).toBeGreaterThan(70)
-        }
+      let count = 0
+      for (let i = 0; i < 50; i++) {
+        const fg = agentFg(`dark-verify-${i}`)
+        if (fg.match(HEX_PATTERN)) count++
       }
-      expect(foundHighSat).toBe(true)
+      expect(count).toBe(50)
     })
   })
 
@@ -286,40 +228,26 @@ describe('agentColor mutation coverage (T1286)', () => {
     })
   })
 
-  // ── Saturation SAT_STEPS indexing ────────────────────────────────────────────
-  describe('saturation steps — (hash >> 9) % 4 indexing', () => {
-    it('all names produce saturation from [55, 65, 75, 85]', () => {
-      const validSats = new Set([55, 65, 75, 85])
+  // ── Palette coverage ─────────────────────────────────────────────────────────
+  describe('palette coverage — all 15 indices reachable', () => {
+    it('all names produce palette index from [0, 14]', () => {
       const names = [
         'a', 'b', 'ab', 'review', 'dev-front', 'test-back',
         'doc', 'arch', 'setup', 'devops', 'infra-prod', 'ux-front',
       ]
       for (const name of names) {
-        // Get base sat from agentBorder dark (factor 0.58) — reverse calc
-        setDarkMode(true)
-        const border = agentBorder(name)
-        const borderS = parseInt(border.match(/hsl\(\d+, (\d+)%/)![1])
-        // borderS = Math.round(baseSat * 0.58)
-        // baseSat = borderS / 0.58 ≈ ...
-        // We just verify borderS > 0 and border format is valid
-        expect(borderS).toBeGreaterThan(0)
-        expect(border).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-        setDarkMode(false)
+        const idx = agentHue(name)
+        expect(idx).toBeGreaterThanOrEqual(0)
+        expect(idx).toBeLessThanOrEqual(14)
       }
     })
 
-    it('different names can hit different SAT_STEPS indices', () => {
-      setDarkMode(false)
-      const satsFound = new Set<number>()
-      for (let i = 0; i < 500; i++) {
-        const fg = agentFg(`step-probe-${i}`)
-        const s = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-        satsFound.add(s)
+    it('single-char names a-o cover all 15 palette indices', () => {
+      const found = new Set<number>()
+      for (const ch of 'abcdefghijklmno') {
+        found.add(agentHue(ch))
       }
-      // With enough names, we should cover multiple saturation values (or capped 70)
-      // At minimum 55 and 65 (which are < 70, so not capped)
-      expect(satsFound.has(55)).toBe(true)
-      expect(satsFound.has(65)).toBe(true)
+      expect(found.size).toBe(15)
     })
   })
 
@@ -332,9 +260,8 @@ describe('agentColor mutation coverage (T1286)', () => {
       setDarkMode(true)
       const dark = agentFg(name)
       expect(light).not.toBe(dark)
-      // Verify both are valid
-      expect(light).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(dark).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(light).toMatch(HEX_PATTERN)
+      expect(dark).toMatch(HEX_PATTERN)
     })
 
     it('all perimeter caches are invalidated on theme switch', () => {
