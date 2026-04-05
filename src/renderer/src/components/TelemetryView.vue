@@ -197,7 +197,7 @@ onMounted(scan)
         <div class="telem-lang-bar">
           <div
             class="telem-lang-segment"
-            :style="{ width: sourcePercent + '%', backgroundColor: 'rgb(var(--v-theme-secondary))' }"
+            :style="{ width: sourcePercent + '%', backgroundColor: 'rgba(var(--v-theme-primary), 0.65)' }"
             :title="`Source — ${sourcePercent.toFixed(1)}%`"
           />
           <div
@@ -208,7 +208,7 @@ onMounted(scan)
         </div>
         <div class="telem-legend-row ga-4 text-caption">
           <span class="telem-legend-item">
-            <span class="telem-dot" style="background: rgb(var(--v-theme-secondary));" />
+            <span class="telem-dot" style="background: rgba(var(--v-theme-primary), 0.65);" />
             {{ t('telemetry.sourceLabel', { percent: sourcePercent.toFixed(1) }) }}
           </span>
           <span class="telem-legend-item">
@@ -360,9 +360,9 @@ onMounted(scan)
   font-weight: 700;
   color: var(--content-primary);
 }
-.telem-value--green { color: rgb(var(--v-theme-secondary)); }
+.telem-value--green { color: rgb(var(--v-theme-primary)); }
 .telem-value--blue { color: rgb(var(--v-theme-primary)); }
-.telem-value--green-soft { color: rgba(var(--v-theme-secondary), 0.8); }
+.telem-value--green-soft { color: rgba(var(--v-theme-primary), 0.7); }
 .telem-value--amber-soft { color: rgba(var(--v-theme-warning), 0.8); }
 
 /* sections */
