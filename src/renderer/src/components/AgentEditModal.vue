@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
-import { agentBorder, agentAccent } from '@renderer/utils/agentColor'
+import { agentBg, agentFg, agentAccent } from '@renderer/utils/agentColor'
 import type { Agent } from '@renderer/types'
 
 const { t } = useI18n()
@@ -136,22 +136,21 @@ async function save() {
     <v-card class="d-flex flex-column" style="max-height: 85vh;">
 
         <!-- Header -->
-        <div
-          class="modal-header"
-          :style="{ borderLeftColor: agentBorder(agent.name), borderLeftWidth: '3px' }"
-        >
-          <div>
-            <p class="section-label mb-1">{{ t('agent.editTitle') }}</p>
-            <p class="agent-title" :style="{ color: agentAccent(agent.name) }">
-              {{ agent.name }}
-            </p>
+        <div class="modal-header">
+          <div class="d-flex align-center ga-3">
+            <div class="agent-avatar" :style="{ background: agentBg(agent.name), color: agentFg(agent.name) }">
+              {{ agent.name.slice(0, 1).toUpperCase() }}
+            </div>
+            <div>
+              <p class="text-caption" style="color: var(--content-muted); line-height: 1.2;">{{ t('agent.editTitle') }}</p>
+              <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary); line-height: 1.3;">{{ agent.name }}</h2>
+            </div>
           </div>
           <v-btn
             icon="mdi-close"
             variant="text"
             size="small"
             data-testid="btn-close"
-            :style="{ color: agentAccent(agent.name) }"
             @click="emit('close')"
           />
         </div>
@@ -345,18 +344,17 @@ async function save() {
   flex-shrink: 0;
 }
 
-/* Header typography */
-.section-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--content-subtle);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.agent-title {
-  font-size: 16px;
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  font-weight: 600;
+/* Header avatar */
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* Field labels for toggle sections */

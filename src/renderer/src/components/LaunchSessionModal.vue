@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore, parseDefaultCliInstance } from '@renderer/stores/settings'
-import { agentBorder, agentAccent } from '@renderer/utils/agentColor'
+import { agentBorder, agentAccent, agentBg, agentFg } from '@renderer/utils/agentColor'
 import { useModalEscape } from '@renderer/composables/useModalEscape'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useToast } from '@renderer/composables/useToast'
@@ -192,20 +192,21 @@ async function launch() {
     <div data-testid="launch-modal-backdrop" @click.self="emit('close')">
     <v-card elevation="3" class="d-flex flex-column" style="max-height: 85vh;">
         <!-- Header -->
-        <div
-          class="modal-header"
-          :style="{ borderLeft: '3px solid ' + agentBorder(agent.name) }"
-        >
-          <div>
-            <p class="text-label-medium" style="color: var(--content-muted); letter-spacing: 0.02em; font-weight: 600; line-height: 1.2;">{{ t('launch.title') }}</p>
-            <span class="agent-title" :style="{ color: agentAccent(agent.name) }">{{ agent.name }}</span>
+        <div class="modal-header">
+          <div class="d-flex align-center ga-3">
+            <div class="agent-avatar" :style="{ background: agentBg(agent.name), color: agentFg(agent.name) }">
+              {{ agent.name.slice(0, 1).toUpperCase() }}
+            </div>
+            <div>
+              <p class="text-caption" style="color: var(--content-muted); line-height: 1.2;">{{ t('launch.title') }}</p>
+              <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary); line-height: 1.3;">{{ agent.name }}</h2>
+            </div>
           </div>
           <v-btn
             data-testid="btn-close"
             icon="mdi-close"
             size="small"
             variant="text"
-            :style="{ color: agentAccent(agent.name) }"
             @click="emit('close')"
           />
         </div>
@@ -441,11 +442,17 @@ async function launch() {
   flex-shrink: 0;
 }
 
-/* Header typography */
-.agent-title {
-  font-size: 16px;
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  font-weight: 600;
+/* Header avatar */
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .section-title {
