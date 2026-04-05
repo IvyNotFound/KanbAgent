@@ -29,8 +29,6 @@
     "prevPage": "Previous",
     "nextPage": "Next",
     "pageOf": "Page {page} / {total} ({count} tasks)",
-    "listView": "List view",
-    "treeView": "Tree view",
     "staleTasks": "{count} stale task | {count} stale tasks"
   },
   "taskCard": {

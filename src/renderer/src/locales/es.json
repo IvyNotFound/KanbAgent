@@ -29,8 +29,6 @@
     "prevPage": "Anterior",
     "nextPage": "Siguiente",
     "pageOf": "Página {page} / {total} ({count} tareas)",
-    "listView": "Vista de lista",
-    "treeView": "Vista de árbol",
     "staleTasks": "{count} tarea estancada | {count} tareas estancadas"
   },
   "taskCard": {

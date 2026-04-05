@@ -3,16 +3,12 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Task } from '@renderer/types'
 import TaskCard from './TaskCard.vue'
-import TaskTreeNode from './TaskTreeNode.vue'
-import { buildTree } from '@renderer/utils/taskTree'
 
 const props = defineProps<{
   title: string
   statut: string
   tasks: Task[]
   accentColor: string
-  /** Whether the tree view is active. Controlled externally so all columns share the same mode. */
-  treeMode?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,8 +19,6 @@ const { t } = useI18n()
 
 const isDragOver = ref(false)
 const isDropTarget = computed(() => props.statut === 'in_progress')
-
-const treeRoots = computed(() => props.treeMode ? buildTree(props.tasks) : [])
 
 function onDragOver(e: DragEvent): void {
   if (!isDropTarget.value) return
@@ -62,15 +56,9 @@ function onDrop(e: DragEvent): void {
       </div>
       <span class="column-count text-caption">{{ tasks.length }}</span>
     </div>
-    <!-- List mode -->
-    <div v-if="!treeMode" class="column-body pa-2 ga-2" style="contain: content;">
+    <div class="column-body pa-2 ga-2" style="contain: content;">
       <TaskCard v-for="task in tasks" :key="task.id" :task="task" />
       <div v-if="tasks.length === 0" class="column-empty py-8 text-caption">{{ t('statusColumn.noTasks') }}</div>
-    </div>
-    <!-- Tree mode -->
-    <div v-else class="column-body-tree pa-2" style="contain: content;">
-      <TaskTreeNode v-for="root in treeRoots" :key="root.id" :node="root" />
-      <div v-if="treeRoots.length === 0" class="column-empty py-8 text-caption">{{ t('statusColumn.noTasks') }}</div>
     </div>
   </div>
 </template>
@@ -126,14 +114,6 @@ function onDrop(e: DragEvent): void {
   display: flex;
   flex-direction: column;
   min-height: 0;
-}
-.column-body-tree {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 .column-empty {
   color: var(--content-faint);

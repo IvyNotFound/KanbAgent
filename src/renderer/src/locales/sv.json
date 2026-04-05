@@ -29,8 +29,6 @@
     "prevPage": "Föregående",
     "nextPage": "Nästa",
     "pageOf": "Sida {page} / {total} ({count} uppgifter)",
-    "listView": "Listvy",
-    "treeView": "Trädvy",
     "staleTasks": "{count} inaktiv uppgift | {count} inaktiva uppgifter"
   },
   "taskCard": {

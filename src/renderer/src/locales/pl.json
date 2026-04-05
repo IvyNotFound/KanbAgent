@@ -29,8 +29,6 @@
     "prevPage": "Poprzednia",
     "nextPage": "Następna",
     "pageOf": "Strona {page} / {total} ({count} zadań)",
-    "listView": "Widok listy",
-    "treeView": "Widok drzewa",
     "staleTasks": "{count} przestarzałe zadanie | {count} przestarzałe zadania"
   },
   "taskCard": {

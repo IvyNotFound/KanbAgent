@@ -29,8 +29,6 @@
     "prevPage": "前へ",
     "nextPage": "次へ",
     "pageOf": "ページ {page} / {total} （{count} タスク）",
-    "listView": "リスト表示",
-    "treeView": "ツリー表示",
     "staleTasks": "{count} 件の停滞タスク | {count} 件の停滞タスク"
   },
   "taskCard": {

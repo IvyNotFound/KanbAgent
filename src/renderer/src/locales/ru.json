@@ -29,8 +29,6 @@
     "prevPage": "Назад",
     "nextPage": "Вперёд",
     "pageOf": "Страница {page} / {total} ({count} задач)",
-    "listView": "Список",
-    "treeView": "Дерево",
     "staleTasks": "{count} зависшая задача | {count} зависших задач"
   },
   "taskCard": {

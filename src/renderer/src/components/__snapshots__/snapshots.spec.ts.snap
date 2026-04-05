@@ -172,7 +172,7 @@ exports[`StatusColumn — snapshots > matches snapshot: column with 2 tasks 1`] 
     <div data-v-b539d429="" class="column-title-row ga-2">
       <div data-v-b539d429="" class="column-accent" style="background-color: rgb(148, 163, 184);"></div><span data-v-b539d429="" class="column-title text-caption">Todo</span>
     </div><span data-v-b539d429="" class="column-count text-caption">2</span>
-  </div><!-- List mode -->
+  </div>
   <div data-v-b539d429="" class="column-body pa-2 ga-2" style="contain: content;">
     <task-card-stub data-v-b539d429="" task="[object Object]"></task-card-stub>
     <task-card-stub data-v-b539d429="" task="[object Object]"></task-card-stub>
@@ -187,7 +187,7 @@ exports[`StatusColumn — snapshots > matches snapshot: empty column 1`] = `
     <div data-v-b539d429="" class="column-title-row ga-2">
       <div data-v-b539d429="" class="column-accent" style="background-color: rgb(148, 163, 184);"></div><span data-v-b539d429="" class="column-title text-caption">Todo</span>
     </div><span data-v-b539d429="" class="column-count text-caption">0</span>
-  </div><!-- List mode -->
+  </div>
   <div data-v-b539d429="" class="column-body pa-2 ga-2" style="contain: content;">
     <div data-v-b539d429="" class="column-empty py-8 text-caption">Aucune tâche</div>
   </div>
@@ -200,7 +200,7 @@ exports[`StatusColumn — snapshots > matches snapshot: in_progress column (drop
     <div data-v-b539d429="" class="column-title-row ga-2">
       <div data-v-b539d429="" class="column-accent" style="background-color: rgb(34, 211, 238);"></div><span data-v-b539d429="" class="column-title text-caption">In Progress</span>
     </div><span data-v-b539d429="" class="column-count text-caption">1</span>
-  </div><!-- List mode -->
+  </div>
   <div data-v-b539d429="" class="column-body pa-2 ga-2" style="contain: content;">
     <task-card-stub data-v-b539d429="" task="[object Object]"></task-card-stub>
     <!--v-if-->

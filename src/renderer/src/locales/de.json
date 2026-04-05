@@ -29,8 +29,6 @@
     "prevPage": "Zurück",
     "nextPage": "Weiter",
     "pageOf": "Seite {page} / {total} ({count} Aufgaben)",
-    "listView": "Listenansicht",
-    "treeView": "Baumansicht",
     "staleTasks": "{count} veraltete Aufgabe | {count} veraltete Aufgaben"
   },
   "taskCard": {

@@ -29,8 +29,6 @@
     "prevPage": "السابق",
     "nextPage": "التالي",
     "pageOf": "الصفحة {page} / {total} ({count} مهام)",
-    "listView": "عرض القائمة",
-    "treeView": "عرض الشجرة",
     "staleTasks": "مهمة قديمة {count} | مهام قديمة {count}"
   },
   "taskCard": {

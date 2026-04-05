@@ -29,8 +29,6 @@
     "prevPage": "이전",
     "nextPage": "다음",
     "pageOf": "{page} / {total} 페이지 （{count}개 작업）",
-    "listView": "목록 보기",
-    "treeView": "트리 보기",
     "staleTasks": "{count}개의 지연 작업 | {count}개의 지연 작업"
   },
   "taskCard": {

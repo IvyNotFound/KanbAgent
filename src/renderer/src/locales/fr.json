@@ -29,8 +29,6 @@
     "prevPage": "Précédent",
     "nextPage": "Suivant",
     "pageOf": "Page {page} / {total} ({count} tâches)",
-    "listView": "Vue liste",
-    "treeView": "Vue arborescente",
     "staleTasks": "{count} tâche bloquée depuis trop longtemps | {count} tâches bloquées depuis trop longtemps"
   },
   "taskCard": {

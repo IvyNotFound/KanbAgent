@@ -29,8 +29,6 @@
     "prevPage": "Forrige",
     "nextPage": "Næste",
     "pageOf": "Side {page} / {total} ({count} opgaver)",
-    "listView": "Listevisning",
-    "treeView": "Trævisning",
     "staleTasks": "{count} forældet opgave | {count} forældede opgaver"
   },
   "taskCard": {

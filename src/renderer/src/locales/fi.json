@@ -29,8 +29,6 @@
     "prevPage": "Edellinen",
     "nextPage": "Seuraava",
     "pageOf": "Sivu {page} / {total} ({count} tehtävää)",
-    "listView": "Listanäkymä",
-    "treeView": "Puunäkymä",
     "staleTasks": "{count} vanhentunut tehtävä | {count} vanhentunutta tehtävää"
   },
   "taskCard": {

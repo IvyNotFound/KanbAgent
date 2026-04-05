@@ -29,8 +29,6 @@
     "prevPage": "Precedente",
     "nextPage": "Successivo",
     "pageOf": "Pagina {page} / {total} ({count} attività)",
-    "listView": "Vista elenco",
-    "treeView": "Vista ad albero",
     "staleTasks": "{count} attività in stallo | {count} attività in stallo"
   },
   "taskCard": {

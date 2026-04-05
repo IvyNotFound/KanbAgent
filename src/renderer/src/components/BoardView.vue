@@ -18,7 +18,6 @@ const pagination = useArchivedPagination()
 
 type BoardTab = 'backlog' | 'archive'
 const activeTab = ref<BoardTab>('backlog')
-const treeMode = ref(false)
 
 const emptyTasks = { todo: [], in_progress: [], done: [], archived: [] }
 const tasks = computed(() => store.tasksByStatus ?? emptyTasks)
@@ -147,28 +146,6 @@ const archivedGroupsSorted = computed(() => {
         </v-btn>
       </div>
 
-      <!-- List / Tree toggle (backlog only) -->
-      <div v-if="activeTab === 'backlog'" class="view-toggle">
-        <v-btn
-          variant="text"
-          size="small"
-          class="text-caption" :class="['toggle-btn', { active: !treeMode }]"
-          :title="t('board.listView')"
-          @click="treeMode = false"
-        >
-          <v-icon class="toggle-icon" size="18">mdi-view-list</v-icon>
-        </v-btn>
-        <v-btn
-          variant="text"
-          size="small"
-          class="text-caption" :class="['toggle-btn', 'toggle-btn-separator', { active: treeMode }]"
-          :title="t('board.treeView')"
-          @click="treeMode = true"
-        >
-          <v-icon class="toggle-icon" size="18">mdi-file-tree</v-icon>
-        </v-btn>
-      </div>
-
       <!-- Active filters -->
       <div class="board-filters ga-2">
         <span v-if="activeAgentName" class="filter-badge-agent">
@@ -211,7 +188,6 @@ const archivedGroupsSorted = computed(() => {
           :statut="col.key"
           :tasks="tasks?.[col.key] || []"
           :accent-color="col.accentColor"
-          :tree-mode="treeMode"
           @task-dropped="(taskId) => onTaskDropped(taskId, col.key)"
         />
       </div>
@@ -344,28 +320,6 @@ const archivedGroupsSorted = computed(() => {
 .tab-btn.active {
   background-color: var(--surface-tertiary) !important;
   color: var(--content-primary) !important;
-}
-.view-toggle {
-  display: flex;
-  align-items: center;
-  border-radius: 6px;
-  border: 1px solid var(--edge-subtle);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.toggle-btn {
-  color: var(--content-subtle) !important;
-}
-.toggle-btn.active {
-  background-color: var(--surface-tertiary) !important;
-  color: var(--content-primary) !important;
-}
-.toggle-btn-separator {
-  border-left: 1px solid var(--edge-subtle);
-}
-.toggle-icon {
-  width: 14px;
-  height: 14px;
 }
 .board-filters {
   display: flex;

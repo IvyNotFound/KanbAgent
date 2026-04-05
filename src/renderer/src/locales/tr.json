@@ -29,8 +29,6 @@
     "prevPage": "Önceki",
     "nextPage": "Sonraki",
     "pageOf": "Sayfa {page} / {total} ({count} görev)",
-    "listView": "Liste görünümü",
-    "treeView": "Ağaç görünümü",
     "staleTasks": "{count} durağan görev | {count} durağan görev"
   },
   "taskCard": {
