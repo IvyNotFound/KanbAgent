@@ -74,25 +74,20 @@ async function fetchTasks(): Promise<void> {
 watch(() => store.dbPath, fetchTasks)
 watch(daysBack, fetchTasks)
 
+const periodItems = computed(() => [
+  { title: '7d', value: 7 },
+  { title: '14d', value: 14 },
+  { title: '30d', value: 30 },
+  { title: '60d', value: 60 },
+  { title: '90d', value: 90 },
+])
+
 const unassignedLabel = computed(() => t('timeline.unassigned'))
 
 const allAgents = computed(() => {
   const names = new Set(tasks.value.map(t => t.agentName ?? unassignedLabel.value))
   return [...names].sort()
 })
-
-function toggleAgent(name: string): void {
-  const idx = selectedAgents.value.indexOf(name)
-  if (idx >= 0) {
-    selectedAgents.value.splice(idx, 1)
-  } else {
-    selectedAgents.value.push(name)
-  }
-}
-
-function isAgentSelected(name: string): boolean {
-  return selectedAgents.value.includes(name)
-}
 
 const filteredTasks = computed(() => {
   if (selectedAgents.value.length === 0) return tasks.value
@@ -228,52 +223,46 @@ const legendItems = computed(() => [
 <template>
   <div class="tl-view" @mousemove="moveTooltip">
     <!-- Header -->
-    <div class="tl-header py-3 px-5">
-      <h2 class="tl-title text-body-2">{{ t('timeline.title') }}</h2>
-      <div class="tl-header-controls ga-3">
-        <div class="tl-period">
-          <span class="tl-muted-xs text-caption">{{ t('timeline.period') }}</span>
-          <select v-model="daysBack" class="tl-select py-1 px-2 text-caption">
-            <option :value="7">7j</option>
-            <option :value="14">14j</option>
-            <option :value="30">30j</option>
-            <option :value="60">60j</option>
-            <option :value="90">90j</option>
-          </select>
-        </div>
-        <v-btn variant="outlined" size="x-small" class="tl-refresh-btn py-1 px-2 text-caption" :disabled="loading" @click="fetchTasks">
-          {{ loading ? t('common.loading') : t('common.refresh') }}
+    <div class="tl-header">
+      <h2 class="tl-title text-h6 font-weight-medium">{{ t('timeline.title') }}</h2>
+      <div class="tl-header-controls">
+        <v-select
+          v-model="daysBack"
+          :items="periodItems"
+          density="compact"
+          variant="outlined"
+          :hide-details="true"
+          style="max-width: 160px;"
+        />
+        <v-btn variant="text" size="small" :loading="loading" prepend-icon="mdi-refresh" @click="fetchTasks">
+          {{ t('common.refresh') }}
         </v-btn>
       </div>
     </div>
 
     <!-- Agent filter chips -->
-    <div v-if="allAgents.length > 0" class="tl-filters ga-2 py-2 px-5">
-      <span class="tl-muted-xs tl-shrink text-caption">{{ t('timeline.filterAgents') }}</span>
-      <v-btn
-        v-for="name in allAgents"
-        :key="name"
-        variant="text"
-        size="x-small"
-        density="compact"
-        class="tl-chip text-caption"
-        :class="isAgentSelected(name) ? '' : 'tl-chip--inactive'"
-        :style="isAgentSelected(name) ? { color: agentFg(name), background: agentBg(name), borderColor: agentBorder(name) } : {}"
-        @click="toggleAgent(name)"
-      >{{ name }}</v-btn>
-      <v-btn
-        v-if="selectedAgents.length > 0"
-        variant="text"
-        size="x-small"
-        density="compact"
-        class="tl-clear-btn ml-1 text-caption"
-        @click="selectedAgents = []"
-      >{{ t('timeline.clearFilter') }}</v-btn>
+    <div v-if="allAgents.length > 0" class="tl-filters py-2 px-4">
+      <span class="tl-filter-label text-caption">{{ t('timeline.filterAgents') }}</span>
+      <v-chip-group v-model="selectedAgents" multiple>
+        <v-chip
+          v-for="name in allAgents"
+          :key="name"
+          :value="name"
+          size="small"
+          variant="outlined"
+          :style="selectedAgents.includes(name) ? { color: agentFg(name), background: agentBg(name), borderColor: agentBorder(name) } : {}"
+        >{{ name }}</v-chip>
+      </v-chip-group>
+      <v-btn v-if="selectedAgents.length > 0" variant="text" size="small" @click="selectedAgents = []">
+        {{ t('timeline.clearFilter') }}
+      </v-btn>
     </div>
 
     <!-- Timeline body -->
     <div class="tl-body">
-      <div v-if="loading" class="tl-state-center tl-muted-sm text-body-2">{{ t('common.loading') }}</div>
+      <div v-if="loading" class="tl-state-center">
+        <v-progress-circular indeterminate :size="32" :width="3" />
+      </div>
       <div v-else-if="error" class="tl-state-center tl-error text-body-2">{{ error }}</div>
       <div v-else-if="groups.length === 0" class="tl-state-center tl-muted-sm text-body-2">{{ t('timeline.noData') }}</div>
       <div v-else class="tl-canvas">
@@ -356,57 +345,32 @@ const legendItems = computed(() => [
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-primary, var(--surface-base));
+  background: var(--surface-base);
   overflow: hidden;
 }
 .tl-header {
+  height: 44px;
+  padding: 0 16px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--edge-subtle);
-  background: var(--surface-base);
 }
-.tl-title { font-weight: 600; color: var(--content-secondary); margin: 0; }
+.tl-title { color: var(--content-primary); margin: 0; }
 .tl-header-controls { display: flex; align-items: center; gap: 12px; }
-.tl-period { display: flex; align-items: center; gap: 6px; }
-.tl-muted-xs { color: var(--content-muted); }
-.tl-muted-sm { color: var(--content-muted); }
-.tl-select {
-  background: var(--surface-base);
-  border: 1px solid var(--edge-subtle);
-  border-radius: var(--shape-xs);
-  color: var(--content-primary);
-  cursor: pointer;
-  outline: none;
-}
-.tl-refresh-btn {
-  color: var(--content-muted) !important;
-  transition: color var(--md-duration-short3) var(--md-easing-standard);
-}
-.tl-refresh-btn:hover:not(:disabled) { color: var(--content-primary) !important; }
 
 .tl-filters {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 8px;
   border-bottom: 1px solid var(--edge-subtle);
   flex-wrap: wrap;
 }
-.tl-shrink { flex-shrink: 0; }
-.tl-chip {
-  padding: 2px 8px !important;
-  border-radius: var(--shape-full) !important;
-  border: 1px solid !important;
-  transition: border-color var(--md-duration-short3) var(--md-easing-standard), color var(--md-duration-short3) var(--md-easing-standard);
-}
-.tl-chip--inactive { border-color: var(--edge-subtle) !important; color: var(--content-muted) !important; }
-.tl-chip--inactive:hover { border-color: var(--edge-default) !important; }
-.tl-clear-btn {
-  color: var(--content-muted) !important;
-  transition: color var(--md-duration-short3) var(--md-easing-standard);
-}
-.tl-clear-btn:hover { color: var(--content-primary) !important; }
+.tl-filter-label { color: var(--content-muted); flex-shrink: 0; }
+.tl-muted-xs { color: var(--content-muted); }
+.tl-muted-sm { color: var(--content-muted); }
 
 .tl-body { flex: 1; overflow: auto; }
 .tl-state-center { display: flex; align-items: center; justify-content: center; height: 128px; }
@@ -478,7 +442,7 @@ const legendItems = computed(() => [
 .tl-tooltip {
   position: fixed;
   z-index: 50;
-  background: var(--surface-primary, var(--surface-base));
+  background: var(--surface-base);
   border: 1px solid var(--edge-default);
   border-radius: var(--shape-sm);
   pointer-events: none;
