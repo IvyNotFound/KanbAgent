@@ -210,6 +210,7 @@ function resultPreview(html: string | undefined): string {
 
 .tool-label {
   margin-left: auto;
+  color: var(--content-muted);
   opacity: 0.6;
 }
 
