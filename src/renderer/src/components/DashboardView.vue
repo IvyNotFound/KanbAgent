@@ -188,7 +188,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
   line-height: 1;
   align-items: center;
   min-height: 36px;
-  padding-inline: 12px;
+  padding-inline: 16px;
   text-transform: none;
 }
 

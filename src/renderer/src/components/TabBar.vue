@@ -206,7 +206,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
           >{{ group.tabs.length }}</span>
           <span
             v-if="isGroupActive(group)"
-            style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px;"
+            style="position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 3px 3px 0 0;"
             :style="group.agentName ? { backgroundColor: agentAccent(group.agentName) } : { backgroundColor: 'rgb(var(--v-theme-primary))' }"
           ></span>
         </button>
@@ -229,7 +229,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
                 @click.stop="handleCloseTab(tab)"
               >✕</span>
               <span
-                style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px;"
+                style="position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 3px 3px 0 0;"
                 :style="indicatorStyleMap.get(tab.id)"
               ></span>
             </button>
@@ -284,24 +284,23 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 20px;
-  font-weight: 600;
+  padding: 0 24px;
+  font-weight: 500;
   transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
   border: none;
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   flex-shrink: 0;
   cursor: pointer;
   background: none;
-  color: rgba(var(--v-theme-on-surface), 0.4);
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .tab-fixed:hover {
   color: rgba(var(--v-theme-on-surface), 0.7);
   background: rgba(var(--v-theme-on-surface), 0.06);
 }
 .tab-fixed--active {
-  color: rgba(var(--v-theme-on-surface), 0.9);
-  background: rgba(var(--v-theme-on-surface), 0.08);
+  color: rgb(var(--v-theme-primary));
+  background: transparent;
 }
 .tab-icon {
   width: 14px;
@@ -516,7 +515,8 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   bottom: 0;
   left: 0;
   right: 0;
-  height: 2px;
-  background: rgba(var(--v-theme-on-surface), 0.25);
+  height: 3px;
+  background: rgb(var(--v-theme-primary));
+  border-radius: 3px 3px 0 0;
 }
 </style>
