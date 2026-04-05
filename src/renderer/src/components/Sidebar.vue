@@ -218,12 +218,12 @@ function toggleSection(section: Section) {
 .rail-item--bottom {
   margin-bottom: 4px;
 }
-/* Fixed 40×32px pill on ALL rail buttons — prevents size jump on active toggle */
+/* Fixed 40×40px circle on ALL rail buttons — prevents size jump on active toggle */
 .rail-btn {
   width: 40px !important;
   min-width: 40px !important;
-  height: 32px !important;
-  border-radius: 16px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
 }
 /* Active indicator: primaryContainer (purple-tonal) — harmonizes with primary seed #8b5cf6 */
 .rail-btn-active {
