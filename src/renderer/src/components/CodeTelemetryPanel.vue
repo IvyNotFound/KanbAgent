@@ -82,7 +82,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
   <div class="telemetry-panel">
 <!-- Header -->
     <div class="telemetry-header">
-      <span class="telemetry-title text-label-medium">
+      <span class="telemetry-title text-body-2 font-weight-medium">
         {{ t('dashboard.codeTelemetry') }}
       </span>
       <v-btn
@@ -202,8 +202,6 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
   justify-content: space-between;
 }
 .telemetry-title {
-  font-weight: 600;
-  letter-spacing: 0.02em;
   color: var(--content-secondary);
 }
 .telemetry-refresh-btn {

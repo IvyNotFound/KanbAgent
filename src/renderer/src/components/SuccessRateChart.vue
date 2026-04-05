@@ -114,7 +114,7 @@ function tooltip(day: DayRate): string {
   <v-card elevation="0" class="chart-card">
     <!-- Title with avg rate -->
     <div class="chart-header d-flex align-center ga-2">
-      <h3 class="text-caption font-weight-semibold text-medium-emphasis">
+      <h3 class="text-body-2 font-weight-medium chart-title">
         {{ t('successRateChart.title') }}
       </h3>
       <span
@@ -126,7 +126,6 @@ function tooltip(day: DayRate): string {
         {{ t('successRateChart.avg', { rate: avgRate }) }}
       </span>
     </div>
-    <v-divider />
     <div class="chart-body">
 
       <!-- Loading -->
@@ -207,6 +206,12 @@ function tooltip(day: DayRate): string {
 .chart-header {
   flex-shrink: 0;
   padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.chart-title {
+  color: var(--content-secondary);
+  margin: 0;
 }
 
 .chart-body {

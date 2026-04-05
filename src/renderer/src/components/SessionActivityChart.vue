@@ -90,11 +90,10 @@ function tooltip(day: DayBars): string {
 <template>
   <v-card elevation="0" class="chart-card">
     <div class="chart-header">
-      <h3 class="text-caption font-weight-semibold text-medium-emphasis">
+      <h3 class="text-body-2 font-weight-medium chart-title">
         {{ t('sessionActivityChart.title') }}
       </h3>
     </div>
-    <v-divider />
     <div class="chart-body">
 
       <!-- Loading -->
@@ -174,6 +173,12 @@ function tooltip(day: DayBars): string {
 .chart-header {
   flex-shrink: 0;
   padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.chart-title {
+  color: var(--content-secondary);
+  margin: 0;
 }
 
 .chart-body {

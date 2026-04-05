@@ -52,7 +52,7 @@ const maxEffort = computed(() =>
   <div class="wl-view">
     <!-- Header -->
     <div class="wl-header">
-      <h2 class="wl-title text-body-2">{{ t('workload.title') }}</h2>
+      <h2 class="wl-title text-body-2 font-weight-medium">{{ t('workload.title') }}</h2>
       <v-btn variant="text" size="small" class="wl-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</v-btn>
     </div>
 
@@ -124,7 +124,7 @@ const maxEffort = computed(() =>
   border-bottom: 1px solid var(--edge-subtle);
   background: var(--surface-base);
 }
-.wl-title {}
+.wl-title { color: var(--content-secondary); }
 .wl-refresh-btn {
   color: var(--content-subtle) !important;
   transition: color var(--md-duration-short3) var(--md-easing-standard);

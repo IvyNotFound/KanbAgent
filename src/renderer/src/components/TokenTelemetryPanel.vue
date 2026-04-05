@@ -48,7 +48,7 @@ function formatTokens(n: number): string {
   <div class="token-panel">
 <!-- Header + period tabs -->
     <div class="token-header py-3 px-4">
-      <span class="token-title text-label-medium">
+      <span class="token-title text-body-2 font-weight-medium">
         {{ t('dashboard.telemetry') }}
       </span>
       <div class="token-tabs ga-1">
@@ -126,8 +126,6 @@ function formatTokens(n: number): string {
   justify-content: space-between;
 }
 .token-title {
-  font-weight: 600;
-  letter-spacing: 0.02em;
   color: var(--content-secondary);
 }
 .token-tabs {

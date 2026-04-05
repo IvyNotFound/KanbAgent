@@ -207,7 +207,7 @@ function priorityColor(priority: string): string {
           <v-card elevation="1" class="metric-card">
             <v-card-text class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--cyan shrink-0">
-                <v-icon class="metric-svg" size="20" style="color: rgb(var(--v-theme-primary))">mdi-account-group</v-icon>
+                <v-icon class="metric-svg" size="20" style="color: rgb(var(--v-theme-secondary))">mdi-account-group</v-icon>
               </div>
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ activeAgentsCount }}</div>
@@ -255,7 +255,7 @@ function priorityColor(priority: string): string {
           <v-card elevation="1" class="metric-card">
             <v-card-text class="d-flex align-center ga-3 pa-4">
               <div class="metric-icon metric-icon--emerald shrink-0">
-                <v-icon class="metric-svg" size="20" style="color: rgb(var(--v-theme-secondary))">mdi-calendar-today</v-icon>
+                <v-icon class="metric-svg" size="20" style="color: rgb(var(--v-theme-info))">mdi-calendar-today</v-icon>
               </div>
               <div class="metric-values">
                 <div class="text-h6 font-weight-bold tabular-nums lh-tight">{{ sessionsTodayCount }}</div>
@@ -282,7 +282,7 @@ function priorityColor(priority: string): string {
         <v-col cols="6">
           <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
-              <span class="text-label-medium text-medium-emphasis">{{ t('dashboard.recentTasks') }}</span>
+              <span class="text-body-2 font-weight-medium section-title">{{ t('dashboard.recentTasks') }}</span>
             </div>
             <v-list
               v-if="recentTasks.length > 0"
@@ -336,7 +336,7 @@ function priorityColor(priority: string): string {
         <v-col cols="6">
           <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
-              <span class="text-label-medium text-medium-emphasis">{{ t('dashboard.recentActivity') }}</span>
+              <span class="text-body-2 font-weight-medium section-title">{{ t('dashboard.recentActivity') }}</span>
             </div>
             <v-list
               v-if="recentActivity.length > 0"
@@ -382,7 +382,7 @@ function priorityColor(priority: string): string {
         <v-col cols="6">
           <v-card elevation="0" class="metric-card section-card">
             <div class="section-header">
-              <span class="text-label-medium text-medium-emphasis">{{ t('dashboard.activity') }}</span>
+              <span class="text-body-2 font-weight-medium section-title">{{ t('dashboard.activity') }}</span>
             </div>
             <ActivityHeatmap v-if="store.dbPath" :db-path="store.dbPath" />
           </v-card>
@@ -482,7 +482,7 @@ function priorityColor(priority: string): string {
 .metric-icon--cyan    { background-color: rgba(var(--v-theme-secondary), 0.15); }
 .metric-icon--amber   { background-color: rgba(var(--v-theme-warning), 0.15); }
 .metric-icon--violet  { background-color: rgba(var(--v-theme-primary), 0.15); }
-.metric-icon--emerald { background-color: rgba(var(--v-theme-secondary), 0.15); }
+.metric-icon--emerald { background-color: rgba(var(--v-theme-info), 0.15); }
 
 .metric-svg {
   width: 16px;
@@ -513,6 +513,10 @@ function priorityColor(priority: string): string {
   flex-shrink: 0;
   padding: 12px 16px;
   border-bottom: 1px solid var(--edge-default);
+}
+
+.section-title {
+  color: var(--content-secondary);
 }
 
 .section-scroll {

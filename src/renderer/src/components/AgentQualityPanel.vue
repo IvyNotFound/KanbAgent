@@ -80,7 +80,7 @@ watch(() => store.dbPath, fetchQuality)
     <!-- Header -->
     <div class="quality-header py-3 px-4">
       <div class="quality-header-left ga-3">
-        <h2 class="quality-title text-caption">{{ t('quality.title') }}</h2>
+        <h2 class="quality-title text-body-2 font-weight-medium">{{ t('quality.title') }}</h2>
         <!-- Perimetre filter -->
         <v-select
           v-if="perimetres.length > 1"
@@ -201,7 +201,6 @@ watch(() => store.dbPath, fetchQuality)
   align-items: center;
 }
 .quality-title {
-  font-weight: 600;
   color: var(--content-secondary);
   margin: 0;
 }
@@ -224,7 +223,7 @@ watch(() => store.dbPath, fetchQuality)
 .quality-global {
   flex-shrink: 0;
   border-bottom: 1px solid var(--edge-subtle);
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--surface-base);
 }
 .quality-global-rate {
   display: flex;
