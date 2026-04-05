@@ -58,7 +58,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Right: Window controls — Windows 11 style -->
-      <div class="titlebar-controls" style="-webkit-app-region: no-drag">
+      <div class="titlebar-controls">
         <!-- Minimize -->
         <button
           style="-webkit-app-region: no-drag"
