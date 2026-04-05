@@ -39,28 +39,28 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     <div data-testid="payload-modal-backdrop" @click.self="emit('close')">
       <v-card class="payload-card">
         <!-- Header -->
-        <div class="modal-header">
-          <span class="text-subtitle-2 font-weight-medium font-mono">{{ event.event }}</span>
-          <span class="text-caption text-disabled font-mono">{{ timestamp }}</span>
-          <div class="flex-grow-1" />
+        <v-card-title class="d-flex align-center gap-3 pa-4 pb-3">
+          <span class="text-subtitle-2 font-weight-medium" style="font-family: ui-monospace, monospace;">{{ event.event }}</span>
+          <span class="text-caption text-disabled" style="font-family: ui-monospace, monospace;">{{ timestamp }}</span>
+          <v-spacer />
           <v-btn
             icon="mdi-close"
             variant="text"
             size="small"
             density="compact"
-            class="close-btn"
             @click="emit('close')"
           />
-        </div>
+        </v-card-title>
+        <v-divider />
 
         <!-- Payload -->
-        <div class="payload-body pa-4">
+        <v-card-text class="pa-4 payload-body">
           <pre
             v-if="formattedPayload"
             class="payload-pre"
           >{{ formattedPayload }}</pre>
           <p v-else class="text-caption text-disabled font-italic">{{ t('hooks.noPayload') }}</p>
-        </div>
+        </v-card-text>
       </v-card>
     </div>
   </v-dialog>
@@ -68,28 +68,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 <style scoped>
 .payload-card {
-  display: flex;
-  flex-direction: column;
   max-height: 80vh;
 }
 
-.modal-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  flex-shrink: 0;
-}
-
-.close-btn {
-  opacity: 0.5;
-}
-.close-btn:hover { opacity: 1; }
-
 .payload-body {
   overflow: auto;
-  flex: 1;
 }
 
 .payload-pre {

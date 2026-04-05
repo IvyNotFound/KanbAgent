@@ -45,7 +45,7 @@ function relativeTime(ts: number): string {
     </div>
     <!-- Filters bar -->
     <div class="he-filters">
-      <span class="he-filter-label text-overline text-medium-emphasis">{{ t('hooks.filters') }}</span>
+      <span class="he-filter-label text-label-medium text-medium-emphasis">{{ t('hooks.filters') }}</span>
       <v-chip-group v-model="filterTypes" multiple column>
         <v-chip
           v-for="eventType in ALL_TYPES"

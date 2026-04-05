@@ -71,9 +71,12 @@ function rowLabel(e: HookEvent): string {
       <div class="header-spacer" />
 
       <!-- Expand/collapse toggle -->
-      <v-btn variant="text" size="x-small" density="compact" class="toggle-btn">
-        {{ expanded ? '▲' : '▼' }}
-      </v-btn>
+      <v-btn
+        variant="text"
+        size="x-small"
+        density="compact"
+        :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+      />
     </div>
 
     <!-- Expanded event list — max-h-36 kept for test selector compatibility -->
@@ -116,7 +119,7 @@ function rowLabel(e: HookEvent): string {
 
 .hook-bar {
   border-top: 1px solid var(--edge-subtle);
-  background-color: rgba(var(--surface-primary-rgb, 24 24 27), 0.8);
+  background-color: var(--surface-primary);
   backdrop-filter: blur(4px);
 }
 
@@ -138,18 +141,9 @@ function rowLabel(e: HookEvent): string {
 }
 
 .spinner {
-  width: 0.75rem;
-  height: 0.75rem;
-  animation: spin 1s linear infinite;
   color: rgb(var(--v-theme-warning));
   flex-shrink: 0;
 }
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-.spinner-track { opacity: 0.25; }
-.spinner-arc   { opacity: 0.75; }
 
 .tool-name-active {
   font-size: 0.6875rem;
@@ -169,11 +163,6 @@ function rowLabel(e: HookEvent): string {
 
 .header-spacer { flex: 1; }
 
-.toggle-btn {
-  font-size: 0.625rem !important;
-  color: var(--content-subtle) !important;
-  font-family: ui-monospace, monospace !important;
-}
 
 .event-list {
   border-top: 1px solid rgba(var(--edge-subtle-rgb, 39 39 42), 0.5);
