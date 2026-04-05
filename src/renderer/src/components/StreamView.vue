@@ -331,8 +331,6 @@ onUnmounted(() => {
         <!-- assistant blocks -->
         <template v-if="event.type === 'assistant' && event.message">
           <div class="block-assistant">
-            <!-- Agent chip — once per assistant event -->
-            <v-chip v-if="agentName" size="x-small" :color="accentFg" variant="tonal" class="mb-1">{{ agentName }}</v-chip>
             <template v-for="(block, bIdx) in event.message.content" :key="`${event._id}-${bIdx}`">
               <!-- text block — Markdown + DOMPurify (T678) -->
               <div
