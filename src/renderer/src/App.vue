@@ -148,6 +148,13 @@ defineExpose({
 </template>
 
 <style scoped>
+/* Constrain v-main to viewport height so the flex chain below can resolve.
+   Without this, v-main's flex-shrink:0 lets it grow unbounded (= content height),
+   making all downstream height:100% resolve to content height, not 100dvh. */
+.app-main {
+  height: 100%;
+  min-height: 0;
+}
 /* Force v-main scroller to be a flex column filling available space.
    Vuetify 3.12 renamed .v-main__wrap → .v-main__scroller (confirmed in vuetify@3.12.4). */
 .app-main :deep(.v-main__scroller) {
