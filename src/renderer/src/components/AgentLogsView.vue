@@ -199,12 +199,10 @@ watch(() => props.initialAgentId, (v) => {
         <v-btn
           v-for="lvl in levels"
           :key="lvl"
-          size="x-small"
-          density="compact"
+          size="small"
           class="al-level-btn"
           :variant="filterLevel === lvl ? 'tonal' : 'text'"
           :color="filterLevel === lvl ? levelBtnColor[lvl] : undefined"
-          style="min-width: 36px;"
           @click="filterLevel = lvl"
         >{{ lvl }}</v-btn>
       </div>
@@ -221,8 +219,10 @@ watch(() => props.initialAgentId, (v) => {
 
       <v-btn
         v-if="filterLevel !== 'all' || filterAgentId !== null"
-        size="x-small"
-        variant="outlined"
+        size="small"
+        variant="text"
+        color="primary"
+        class="al-reset-btn text-caption"
         :title="t('logs.resetFilters')"
         @click="resetFilters"
       >{{ t('logs.reset') }}</v-btn>
@@ -351,6 +351,7 @@ watch(() => props.initialAgentId, (v) => {
   background: var(--surface-base);
 }
 .al-level-btns { display: flex; align-items: center; gap: 4px; }
+.al-level-btn { min-height: 32px !important; padding: 0 12px !important; }
 /* v-select compact sizing */
 .al-agent-select :deep(.v-field__input) {
   font-size: 12px;
