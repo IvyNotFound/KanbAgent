@@ -45,16 +45,16 @@ const vuetifyPlugin = createVuetify({
           'on-primary': '#3c0091',         // onPrimary dark — tone 20
           'primary-container': '#5516be',  // primaryContainer dark — tone 30
           'on-primary-container': '#e9ddff', // onPrimaryContainer dark — tone 90
-          secondary: '#10b981',            // brand-emerald
+          secondary: '#fda4af',            // brand-rose, MD3 tone 80
           warning: '#f59e0b',              // brand-amber
           error: '#ef4444',               // brand-red
           info: '#3b82f6',                // blue-500
           surface: '#141316',             // neutral tone 6
           background: '#141316',          // neutral tone 6
           'on-surface': '#e6e1e6',        // neutral tone 90
-          // Container colors — emerald + error kept from brand palette
-          'secondary-container': '#0d3d2e',    // secondaryContainer dark (emerald tonal)
-          'on-secondary-container': '#6ee7b7', // onSecondaryContainer dark (emerald-200)
+          // Container colors — rose + error kept from brand palette
+          'secondary-container': '#4c0519',    // secondaryContainer dark (rose tonal)
+          'on-secondary-container': '#fecdd3', // onSecondaryContainer dark (rose-200)
           'error-container': '#4c1d1d',        // errorContainer dark (red tonal)
           'on-error-container': '#fca5a5',     // onErrorContainer dark (red-300)
           // Surface tokens (MD3 neutral palette — seed #8b5cf6)
@@ -99,16 +99,16 @@ const vuetifyPlugin = createVuetify({
           'on-primary': '#ffffff',         // onPrimary light — tone 100
           'primary-container': '#e9ddff',  // primaryContainer light — tone 90
           'on-primary-container': '#23005c', // onPrimaryContainer light — tone 10
-          secondary: '#10b981',            // brand-emerald
+          secondary: '#e11d48',            // brand-rose, MD3 tone 40
           warning: '#f59e0b',              // brand-amber
           error: '#ef4444',               // brand-red
           info: '#3b82f6',                // blue-500
           surface: '#fdf8fd',             // neutral tone 98
           background: '#f2ecf1',          // neutral tone 94
           'on-surface': '#1c1b1e',        // neutral tone 10
-          // Container colors — emerald + error kept from brand palette
-          'secondary-container': '#d1fae5',    // secondaryContainer light (emerald-100)
-          'on-secondary-container': '#065f46', // onSecondaryContainer light (emerald-800)
+          // Container colors — rose + error kept from brand palette
+          'secondary-container': '#ffe4e8',    // secondaryContainer light (rose-100)
+          'on-secondary-container': '#881337', // onSecondaryContainer light (rose-900)
           'error-container': '#fee2e2',        // errorContainer light (red-100)
           'on-error-container': '#991b1b',     // onErrorContainer light (red-800)
           // Surface tokens (MD3 neutral palette — seed #8b5cf6)
