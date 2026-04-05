@@ -123,30 +123,27 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="popup-footer py-4 px-5 ga-2">
+        <!-- Footer — MD3: horizontal actions right-aligned, version text left -->
+        <v-card-actions class="popup-footer px-4 py-3">
+          <p class="popup-version">v{{ appVersion }}</p>
+          <v-spacer />
           <v-btn
-            variant="outlined"
-            block
-            class="btn-change ga-2 py-2 px-4"
+            variant="text"
+            class="btn-change"
             @click="handleChangeProject"
           >
-            <v-icon class="icon-xs" size="14">mdi-folder-outline</v-icon>
             {{ t('project.changeProject') }}
           </v-btn>
           <v-btn
             v-if="store.projectPath"
             color="error"
-            variant="outlined"
-            block
-            class="btn-close-project ga-2 py-2 px-4"
+            variant="tonal"
+            class="btn-close-project"
             @click="handleCloseProject"
           >
-            <v-icon class="icon-xs" size="14">mdi-close</v-icon>
             {{ t('project.close') }}
           </v-btn>
-          <p class="popup-version pt-1">v{{ appVersion }}</p>
-        </div>
+        </v-card-actions>
       </v-card>
     </div>
   </v-dialog>
@@ -244,12 +241,10 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
   margin: 0;
 }
 
-/* Footer */
+/* Footer — transparent so it inherits the card's surface-dialog background */
 .popup-footer {
   border-top: 1px solid var(--edge-subtle);
-  background: var(--surface-base);
-  display: flex;
-  flex-direction: column;
+  background: transparent;
 }
 
 
@@ -257,17 +252,12 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
   font-size: 0.6875rem;
   color: var(--content-faint);
   font-family: ui-monospace, monospace;
-  text-align: right;
   margin: 0;
+  align-self: center;
 }
 
 .icon-sm {
   width: 1rem;
   height: 1rem;
-}
-.icon-xs {
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
 }
 </style>
