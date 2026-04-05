@@ -270,6 +270,10 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   transition: background var(--md-duration-short3) var(--md-easing-standard);
   cursor: pointer;
 }
+/* MD3 state layer hover (8% on-surface) — only when not dragging over */
+.group-header:hover:not(.drag-target) {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
 .group-header.drag-target {
   background: rgba(var(--v-theme-primary), 0.1);
   box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.4);
@@ -293,17 +297,17 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 }
 .group-name {
   flex: 1;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 500; /* MD3 Label Large */
+  letter-spacing: 0.00625em; /* MD3 Label Large: 0.1px / 16px */
   cursor: pointer;
   user-select: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 2px 0;
-  color: var(--content-subtle);
+  color: rgb(var(--v-theme-on-surface-variant));
 }
-.group-name--deep { color: rgb(var(--v-theme-content-subtle)); }
+.group-name--deep { color: rgb(var(--v-theme-on-surface-variant)); }
 .header-btn {
   width: 20px !important;
   min-width: 20px !important;
@@ -341,88 +345,5 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 }
 .icon-btn--confirm { color: rgb(var(--v-theme-secondary)) !important; }
 .icon-btn--cancel { color: var(--content-faint) !important; }
-.agent-item { position: relative; }
-/* Flex row inside v-list-item default slot */
-.agent-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-/* Status indicator */
-.agent-status {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-}
-.status-spinner {
-  width: 14px;
-  height: 14px;
-  animation: spin 1s linear infinite;
-}
-.status-pulse {
-  width: 14px;
-  height: 14px;
-  animation: pulse 2s ease-in-out infinite;
-}
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: block;
-}
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-/* Agent name — takes remaining space */
-.agent-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.875rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: monospace;
-  color: var(--content-muted);
-}
-.agent-name--active { color: var(--content-primary); }
-/* Agent action buttons — shown on hover */
-.agent-actions {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  opacity: 0;
-  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
-}
-.agent-item:hover .agent-actions { opacity: 1; }
-.drag-handle {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  color: var(--content-dim);
-}
-.action-btn {
-  width: 20px !important;
-  min-width: 20px !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  color: var(--content-subtle) !important;
-}
-.action-btn--launch:hover { filter: brightness(1.15); }
-.empty-msg {
-  color: var(--content-dim);
-  font-style: italic;
-}
+/* Agent item styles shared with SidebarAgentSection — defined in main.css */
 </style>

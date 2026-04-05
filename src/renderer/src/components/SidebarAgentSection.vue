@@ -293,10 +293,10 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.4);
 }
 .section-label {
-  min-height: 28px !important;
-  font-weight: 600;
-  color: var(--content-subtle) !important;
-  letter-spacing: 0.02em;
+  min-height: 32px !important; /* MD3 list subheader standard */
+  font-weight: 500; /* MD3 Label Large */
+  letter-spacing: 0.00625em; /* MD3 Label Large: 0.1px / 16px */
+  color: rgb(var(--v-theme-on-surface-variant)) !important;
   user-select: none;
 }
 .drop-hint {
@@ -307,92 +307,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   border: 1px dashed rgba(var(--v-theme-primary), 0.4);
   border-radius: var(--shape-xs);
 }
-.agent-item {
-  position: relative;
-}
-/* Flex row inside v-list-item default slot */
-.agent-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-/* Status indicator */
-.agent-status {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-}
-.status-spinner {
-  width: 14px;
-  height: 14px;
-  animation: spin 1s linear infinite;
-}
-.status-pulse {
-  width: 14px;
-  height: 14px;
-  animation: pulse 2s ease-in-out infinite;
-}
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: block;
-}
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-/* Agent name — takes up remaining space */
-.agent-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.875rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: monospace;
-  color: var(--content-muted);
-}
-.agent-name--active { color: var(--content-primary); }
-/* Agent action buttons — shown on hover via opacity */
-.agent-actions {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  opacity: 0;
-  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
-}
-.agent-item:hover .agent-actions { opacity: 1; }
-.drag-handle {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  color: var(--content-dim);
-}
-.action-btn {
-  width: 20px !important;
-  min-width: 20px !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  color: var(--content-subtle) !important;
-}
-.action-btn--launch:hover { filter: brightness(1.15); }
-.empty-msg {
-  color: var(--content-dim);
-  font-style: italic;
-}
+/* Agent item styles shared with SidebarGroupNode — defined in main.css */
 .no-agents-msg {
   color: var(--content-faint);
 }

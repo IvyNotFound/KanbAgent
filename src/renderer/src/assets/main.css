@@ -345,6 +345,91 @@ body,
   border-color: #2e7d32;
 }
 
+/* ── Sidebar Agent Item — shared styles (SidebarGroupNode + SidebarAgentSection) ─
+   Centralized here to avoid drift between the two components. All MD3-aligned.
+   ────────────────────────────────────────────────────────────────────────────── */
+.agent-item { position: relative; }
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+/* MD3 status indicator — 12×12 container, 8×8 dot (50% ratio, centered) */
+.agent-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+.status-spinner {
+  width: 12px;
+  height: 12px;
+  animation: spin 1s linear infinite;
+}
+.status-pulse {
+  width: 12px;
+  height: 12px;
+  animation: pulse 2s ease-in-out infinite;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: block;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+/* MD3 Body Small (13px) — no monospace per MD3 nav conventions */
+.agent-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem; /* 13px — MD3 Body Small */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+.agent-name--active { color: var(--content-primary); }
+.agent-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
+}
+.agent-item:hover .agent-actions { opacity: 1; }
+.drag-handle {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: var(--content-dim);
+}
+.action-btn {
+  width: 20px !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  color: var(--content-subtle) !important;
+}
+.action-btn--launch:hover { filter: brightness(1.15); }
+.empty-msg {
+  color: var(--content-dim);
+  font-style: italic;
+}
+
 /* MD3 dialog depth — backdrop blur + elevated surface tint (v-dialog only, not menus/tooltips) */
 .v-dialog .v-overlay__scrim {
   backdrop-filter: blur(6px);
