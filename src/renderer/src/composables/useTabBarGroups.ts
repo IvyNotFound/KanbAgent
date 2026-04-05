@@ -9,7 +9,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import type { Ref } from 'vue'
 import { useTabsStore } from '@renderer/stores/tabs'
 import type { Tab } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentHue, isDark, colorVersion } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, isDark, colorVersion } from '@renderer/utils/agentColor'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -127,12 +127,9 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
           : {})
         continue
       }
-      const h = agentHue(tab.agentName)
       map.set(tab.id, isActive
         ? { color: agentFg(tab.agentName), backgroundColor: agentBg(tab.agentName) }
-        : (isDark()
-          ? { color: `hsla(${h}, 65%, 65%, 0.65)`, backgroundColor: `hsla(${h}, 38%, 16%, 0.55)` }
-          : { color: `hsla(${h}, 55%, 40%, 0.7)`, backgroundColor: `hsla(${h}, 45%, 92%, 0.6)` }))
+        : { color: agentFg(tab.agentName), backgroundColor: agentBg(tab.agentName), opacity: '0.65' })
     }
     return map
   })
@@ -148,12 +145,9 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
         continue
       }
       const isActive = group.tabs.some(t => t.id === activeId)
-      const h = agentHue(name)
       map.set(name, isActive
         ? { color: agentFg(name), backgroundColor: agentBg(name) }
-        : (isDark()
-          ? { color: `hsla(${h}, 65%, 65%, 0.65)`, backgroundColor: `hsla(${h}, 38%, 16%, 0.55)` }
-          : { color: `hsla(${h}, 55%, 40%, 0.7)`, backgroundColor: `hsla(${h}, 45%, 92%, 0.6)` }))
+        : { color: agentFg(name), backgroundColor: agentBg(name), opacity: '0.65' })
     }
     return map
   })
@@ -164,7 +158,7 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
     for (const tab of store.tabs) {
       map.set(tab.id, tab.agentName
         ? { backgroundColor: agentFg(tab.agentName) }
-        : { backgroundColor: '#a78bfa' }) // violet-400
+        : { backgroundColor: isDark() ? '#a1a1aa' : '#71717a' }) // zinc-400/500
     }
     return map
   })
