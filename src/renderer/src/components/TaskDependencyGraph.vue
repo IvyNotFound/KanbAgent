@@ -95,7 +95,7 @@ function typeBadgeLabel(link: TaskLink): string {
     <template v-else>
       <!-- Outgoing: this task blocks or depends on -->
       <div v-if="outgoing.length > 0" class="dep-section">
-        <p class="dep-section-label text-caption font-weight-medium">{{ t('taskDetail.blocks') }}</p>
+        <p class="dep-section-label text-label-medium">{{ t('taskDetail.blocks') }}</p>
         <div class="dep-list">
           <v-btn
             v-for="link in outgoing"
@@ -122,7 +122,7 @@ function typeBadgeLabel(link: TaskLink): string {
 
       <!-- Incoming: blocked by or depended upon by -->
       <div v-if="incoming.length > 0" class="dep-section">
-        <p class="dep-section-label text-caption font-weight-medium">{{ t('taskDetail.blockedBy') }}</p>
+        <p class="dep-section-label text-label-medium">{{ t('taskDetail.blockedBy') }}</p>
         <div class="dep-list">
           <v-btn
             v-for="link in incoming"
@@ -149,7 +149,7 @@ function typeBadgeLabel(link: TaskLink): string {
 
       <!-- Related: related_to, duplicates -->
       <div v-if="related.length > 0" class="dep-section">
-        <p class="dep-section-label text-caption font-weight-medium">{{ t('taskDetail.relatedTo') }}</p>
+        <p class="dep-section-label text-label-medium">{{ t('taskDetail.relatedTo') }}</p>
         <div class="dep-list">
           <v-btn
             v-for="link in related"

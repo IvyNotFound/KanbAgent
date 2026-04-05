@@ -200,12 +200,12 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
     <div class="oc-header">
       <div class="oc-header-left">
         <h2 class="oc-title text-h6 font-weight-medium">{{ t('orgchart.agentsTitle') }}</h2>
-        <span v-if="loading" class="oc-loading text-caption font-weight-medium">•••</span>
+        <span v-if="loading" class="oc-loading text-label-medium">•••</span>
       </div>
       <div class="oc-header-right">
         <!-- Legend -->
         <div class="oc-legend">
-          <span v-for="(color, key) in dotColors" :key="key" class="oc-legend-item text-caption font-weight-medium">
+          <span v-for="(color, key) in dotColors" :key="key" class="oc-legend-item text-label-medium">
             <span class="oc-legend-dot" :style="{ background: color }"></span>
             <span>{{ key === 'cyan' ? t('orgchart.status.active') : key === 'green' ? t('orgchart.status.todo') : key === 'yellow' ? t('orgchart.status.idle') : key === 'red' ? t('orgchart.status.blocked') : t('orgchart.status.inactive') }}</span>
           </span>

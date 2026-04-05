@@ -141,7 +141,7 @@ function toggleSection(section: Section) {
 
           <!-- Header -->
           <div class="panel-header">
-            <p class="panel-title text-caption font-weight-medium">
+            <p class="panel-title text-label-medium">
               {{ activeSection ? sectionTitles[activeSection] : '' }}
             </p>
             <v-btn

@@ -4,6 +4,29 @@ html {
   overflow: hidden;
 }
 
+/* ── MD3 Typography — global font stack ──────────────────────────────────────
+   Inter is not bundled; system-ui resolves to the OS native UI font
+   (Segoe UI on Windows, SF Pro on macOS, Roboto on Android/ChromeOS).
+   This matches MD3's recommendation of using the platform system font.
+   ────────────────────────────────────────────────────────────────────────── */
+body,
+.v-application {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ── MD3 Typography — Label Medium role ──────────────────────────────────────
+   Vuetify 3 utility classes use MD2 names (text-caption, text-body-2, etc.).
+   The MD3 role "Label Medium" (12px / 500 / 0.031em) maps exactly to the
+   combination `text-caption font-weight-medium` used throughout the project.
+   This single class replaces that pair everywhere.
+   ────────────────────────────────────────────────────────────────────────── */
+.text-label-medium {
+  font-size: 0.75rem;     /* 12px */
+  font-weight: 500;
+  line-height: 1rem;      /* 16px */
+  letter-spacing: 0.031em;
+}
+
 /* Constrain Vuetify app wrap to viewport height — required for the flex scroll chain.
    Vuetify's default is min-height:100dvh (grows with content). Without an explicit height,
    height:100% on .v-main__scroller resolves to auto, causing .stream-scroll to grow with

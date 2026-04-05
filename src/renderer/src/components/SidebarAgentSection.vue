@@ -191,9 +191,9 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       @drop="onGroupDrop($event, null)"
     >
       <div class="section-header px-1" :class="{ 'drag-target': dragOverGroupId === '__ungrouped__' }">
-        <span class="section-label text-caption font-weight-medium">{{ t('sidebar.ungrouped') }}</span>
+        <span class="section-label text-label-medium">{{ t('sidebar.ungrouped') }}</span>
       </div>
-      <div v-if="dragOverGroupId === '__ungrouped__'" class="drop-hint text-caption font-weight-medium">{{ t('sidebar.dropAgentHere') }}</div>
+      <div v-if="dragOverGroupId === '__ungrouped__'" class="drop-hint text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
       <div class="agents-list">
         <div
           v-for="agent in ungroupedAgents"
@@ -225,7 +225,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
           </div>
         </div>
       </div>
-      <div v-if="ungroupedAgents.length === 0 && store.agents.length > 0 && dragOverGroupId !== '__ungrouped__'" class="empty-msg py-1 px-2 text-caption font-weight-medium">{{ t('sidebar.dropAgentHere') }}</div>
+      <div v-if="ungroupedAgents.length === 0 && store.agents.length > 0 && dragOverGroupId !== '__ungrouped__'" class="empty-msg py-1 px-2 text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
       <div v-if="store.agents.length === 0" class="no-agents-msg pa-2 text-body-2">{{ t('sidebar.noAgent') }}</div>
     </div>
 

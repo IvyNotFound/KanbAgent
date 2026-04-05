@@ -251,7 +251,7 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
         <v-icon data-v-3c3dc65a="" class="tab-chevron" style="transform: rotate(-90deg);" size="10">mdi-chevron-down</v-icon>
         <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(77, 182, 172);"></span>
       </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub text-body-2" style="color: rgb(128, 203, 196); background-color: rgb(0, 77, 64);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
-        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-caption font-weight-medium" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(128, 203, 196);"></span>
+        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-label-medium" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(128, 203, 196);"></span>
       </button>
     </div>
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
@@ -392,7 +392,7 @@ exports[`TitleBar — snapshots > matches snapshot: maximized 1`] = `
   <div data-v-f5fc7a66="" class="titlebar-content">
     <!-- Left: App identity -->
     <div data-v-f5fc7a66="" class="titlebar-left">
-      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-caption font-weight-medium">KanbAgent</span>
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-label-medium">KanbAgent</span>
     </div><!-- Center: Search bar (always visible, VS Code style) -->
     <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)">
         <v-icon data-v-f5fc7a66="" class="search-icon">mdi-magnify</v-icon><span data-v-f5fc7a66="" class="search-text text-caption">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd>
@@ -424,7 +424,7 @@ exports[`TitleBar — snapshots > matches snapshot: not maximized 1`] = `
   <div data-v-f5fc7a66="" class="titlebar-content">
     <!-- Left: App identity -->
     <div data-v-f5fc7a66="" class="titlebar-left">
-      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-caption font-weight-medium">KanbAgent</span>
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-label-medium">KanbAgent</span>
     </div><!-- Center: Search bar (always visible, VS Code style) -->
     <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)">
         <v-icon data-v-f5fc7a66="" class="search-icon">mdi-magnify</v-icon><span data-v-f5fc7a66="" class="search-text text-caption">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd>

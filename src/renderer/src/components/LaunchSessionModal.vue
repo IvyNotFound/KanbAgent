@@ -197,7 +197,7 @@ async function launch() {
           :style="{ borderLeftColor: agentBorder(agent.name), borderLeftWidth: '3px' }"
         >
           <div>
-            <p class="section-label mb-1 text-caption font-weight-medium">{{ t('launch.title') }}</p>
+            <p class="section-label mb-1 text-label-medium">{{ t('launch.title') }}</p>
             <p class="agent-title" :style="{ color: agentAccent(agent.name) }">
               {{ agent.name }}
             </p>

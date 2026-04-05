@@ -167,7 +167,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
         <span class="tab-title-mono">{{ tab.title }}</span>
         <span v-if="tab.dirty" class="tab-dirty" :title="t('tabBar.unsaved')" />
         <span
-          class="tab-close text-caption font-weight-medium"
+          class="tab-close text-label-medium"
           :title="t('tabBar.closeTab')"
           @click.stop="handleCloseTab(tab)"
         >✕</span>
@@ -224,7 +224,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
               <span class="tab-sub-label">{{ subTabLabel(tab) }}</span>
               <span v-if="tab.dirty" class="tab-dirty" :title="t('tabBar.unsaved')" />
               <span
-                class="tab-close text-caption font-weight-medium"
+                class="tab-close text-label-medium"
                 :title="t('tabBar.closeTab')"
                 @click.stop="handleCloseTab(tab)"
               >✕</span>

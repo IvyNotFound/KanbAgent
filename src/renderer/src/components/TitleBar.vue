@@ -40,7 +40,7 @@ onUnmounted(() => {
       <!-- Left: App identity -->
       <div class="titlebar-left">
         <div class="titlebar-dot"></div>
-        <span class="titlebar-name text-caption font-weight-medium">KanbAgent</span>
+        <span class="titlebar-name text-label-medium">KanbAgent</span>
       </div>
 
       <!-- Center: Search bar (always visible, VS Code style) -->

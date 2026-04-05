@@ -82,7 +82,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
   <div class="telemetry-panel">
 <!-- Header -->
     <div class="telemetry-header">
-      <span class="telemetry-title text-caption font-weight-medium">
+      <span class="telemetry-title text-label-medium">
         {{ t('dashboard.codeTelemetry') }}
       </span>
       <v-btn
@@ -106,7 +106,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
     <div class="telemetry-body">
 <!-- No project -->
       <div v-if="!props.projectPath" class="telemetry-center">
-        <p class="telemetry-empty-text text-caption font-weight-medium">{{ t('common.noProject') }}</p>
+        <p class="telemetry-empty-text text-label-medium">{{ t('common.noProject') }}</p>
       </div>
 
       <!-- Loading skeleton -->
@@ -121,13 +121,13 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
 
       <!-- Error -->
       <div v-else-if="error" class="telemetry-center">
-        <p class="telemetry-error-text text-caption font-weight-medium">{{ error }}</p>
+        <p class="telemetry-error-text text-label-medium">{{ error }}</p>
       </div>
 
       <!-- Not yet scanned -->
       <div v-else-if="!data" class="telemetry-not-scanned">
-        <p class="telemetry-empty-text text-caption font-weight-medium">{{ t('dashboard.notScanned') }}</p>
-        <v-btn variant="outlined" size="small" class="telemetry-scan-btn text-caption font-weight-medium" @click="scan">
+        <p class="telemetry-empty-text text-label-medium">{{ t('dashboard.notScanned') }}</p>
+        <v-btn variant="outlined" size="small" class="telemetry-scan-btn text-label-medium" @click="scan">
           {{ t('dashboard.scan') }}
         </v-btn>
       </div>
@@ -139,10 +139,10 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
           <span class="telemetry-loc-value text-h5">
             {{ formatLines(totalLines) }}
           </span>
-          <span class="telemetry-loc-label text-caption font-weight-medium">{{ t('dashboard.linesOfCode') }}</span>
+          <span class="telemetry-loc-label text-label-medium">{{ t('dashboard.linesOfCode') }}</span>
           <span
             v-if="testRatioVal !== null"
-            class="telemetry-test-ratio text-caption font-weight-medium"
+            class="telemetry-test-ratio text-label-medium"
           >
             {{ testRatioVal.toFixed(1) }}% {{ t('dashboard.testRatio') }}
           </span>
@@ -171,8 +171,8 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
                 class="telemetry-lang-dot"
                 :style="{ backgroundColor: lang.color }"
               />
-              <span class="telemetry-lang-name text-caption font-weight-medium">{{ lang.name }}</span>
-              <span class="telemetry-lang-pct text-caption font-weight-medium">
+              <span class="telemetry-lang-name text-label-medium">{{ lang.name }}</span>
+              <span class="telemetry-lang-pct text-label-medium">
                 {{ lang.percent.toFixed(1) }}%
               </span>
             </div>

@@ -198,7 +198,7 @@ onUnmounted(() => {
           <div class="task-left-col py-4 px-5 ga-5">
             <!-- Description -->
             <div v-if="task.description">
-              <p class="section-label mb-2 text-caption font-weight-medium">{{ t('taskDetail.description') }}</p>
+              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.description') }}</p>
               <div class="md-content" v-html="renderedDescription"></div>
             </div>
 
@@ -212,12 +212,12 @@ onUnmounted(() => {
 
             <!-- T553: Blocked indicator -->
             <div v-if="isBlocked" class="blocked-banner py-2 px-4">
-              <p class="section-label mb-1 text-caption font-weight-medium" style="color: rgb(var(--v-theme-warning));">{{ t('taskDetail.blockedTitle') }}</p>
+              <p class="section-label mb-1 text-label-medium" style="color: rgb(var(--v-theme-warning));">{{ t('taskDetail.blockedTitle') }}</p>
               <ul class="blocked-list">
                 <li
                   v-for="link in unresolvedBlockers"
                   :key="link.id"
-                  class="blocked-item text-caption font-weight-medium"
+                  class="blocked-item text-label-medium"
                 >
                   #{{ link.from_task === task.id ? link.to_task : link.from_task }}
                   {{ link.from_task === task.id ? link.to_titre : link.from_titre }}
@@ -227,18 +227,18 @@ onUnmounted(() => {
 
             <!-- Section Agents (créateur / assigné / valideur) -->
             <div class="right-section">
-              <p class="section-label mb-2 text-caption font-weight-medium">{{ t('taskDetail.agents') }}</p>
+              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.agents') }}</p>
               <div class="d-flex flex-column ga-2">
                 <div v-if="task.agent_creator_name" class="d-flex align-center ga-2">
-                  <span class="meta-label text-caption font-weight-medium">{{ t('taskDetail.creator') }}</span>
+                  <span class="meta-label text-label-medium">{{ t('taskDetail.creator') }}</span>
                   <AgentBadge :name="task.agent_creator_name" />
                 </div>
                 <div v-if="task.agent_name" class="d-flex align-center ga-2">
-                  <span class="meta-label text-caption font-weight-medium">{{ t('taskDetail.assigned') }}</span>
+                  <span class="meta-label text-label-medium">{{ t('taskDetail.assigned') }}</span>
                   <AgentBadge :name="task.agent_name" />
                 </div>
                 <div v-if="valideurAgent" class="d-flex align-center ga-2">
-                  <span class="meta-label text-caption font-weight-medium">{{ t('taskDetail.validator') }}</span>
+                  <span class="meta-label text-label-medium">{{ t('taskDetail.validator') }}</span>
                   <AgentBadge :name="valideurAgent.name" />
                 </div>
               </div>
@@ -246,7 +246,7 @@ onUnmounted(() => {
 
             <!-- Section Dependencies -->
             <div class="right-section">
-              <p class="section-label mb-2 text-caption font-weight-medium">{{ t('taskDetail.dependencies') }}</p>
+              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.dependencies') }}</p>
               <TaskDependencyGraph
                 v-if="task"
                 :task-id="task.id"
@@ -263,7 +263,7 @@ onUnmounted(() => {
                 class="commits-toggle py-3 px-4"
                 @click="gitCommitsOpen = !gitCommitsOpen"
               >
-                <p class="section-label text-caption font-weight-medium">
+                <p class="section-label text-label-medium">
                   {{ t('taskDetail.commits') }}
                   <span class="meta-count">({{ gitCommits.length }})</span>
                 </p>
@@ -283,7 +283,7 @@ onUnmounted(() => {
 
             <!-- Section Assignés (read-only — T571) -->
             <div class="right-section">
-              <p class="section-label mb-2 text-caption font-weight-medium">
+              <p class="section-label mb-2 text-label-medium">
                 {{ t('taskDetail.assignees') }}
               </p>
 
@@ -307,7 +307,7 @@ onUnmounted(() => {
 
             <!-- Comments header -->
             <div class="right-section right-section--no-bottom">
-              <p class="section-label text-caption font-weight-medium">
+              <p class="section-label text-label-medium">
                 {{ t('taskDetail.comments') }}
                 <span v-if="store.taskComments.length > 0" class="meta-count ml-1">({{ store.taskComments.length }})</span>
               </p>

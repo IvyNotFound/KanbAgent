@@ -117,7 +117,7 @@ async function addPerimetre() {
               </span>
             </div>
           </div>
-          <p v-if="p.description" class="perimetre-desc text-caption font-weight-medium">{{ p.description }}</p>
+          <p v-if="p.description" class="perimetre-desc text-label-medium">{{ p.description }}</p>
         </v-btn>
         <v-btn icon variant="text" density="compact" size="x-small" class="edit-btn" :title="t('sidebar.editPerimeter')" @click.stop="openEditPerimetre(p)">
           <v-icon size="12" class="icon-sm">mdi-pencil</v-icon>

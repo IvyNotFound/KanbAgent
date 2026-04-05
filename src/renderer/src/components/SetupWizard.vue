@@ -131,7 +131,7 @@ async function handleSetup() {
               <div class="option-box d-flex align-start ga-3">
                 <v-icon class="option-icon mt-1 shrink-0" size="16" style="color: rgb(var(--v-theme-primary))">mdi-check</v-icon>
                 <div>
-                  <p class="text-caption font-weight-medium text-medium-emphasis">{{ t('setup.createProjectDb', { projectDb: '.claude/project.db' }) }}</p>
+                  <p class="text-label-medium text-medium-emphasis">{{ t('setup.createProjectDb', { projectDb: '.claude/project.db' }) }}</p>
                   <p class="text-caption text-disabled mt-1">{{ t('setup.createProjectDbDesc') }}</p>
                 </div>
               </div>
@@ -148,7 +148,7 @@ async function handleSetup() {
                   style="accent-color: rgb(var(--v-theme-primary))"
                 />
                 <div>
-                  <p class="text-caption font-weight-medium text-medium-emphasis">{{ t('setup.generateClaudeMd', { claudeMd: 'CLAUDE.md' }) }}</p>
+                  <p class="text-label-medium text-medium-emphasis">{{ t('setup.generateClaudeMd', { claudeMd: 'CLAUDE.md' }) }}</p>
                   <p class="text-caption text-disabled mt-1">{{ t('setup.generateClaudeMdDesc') }}</p>
                 </div>
               </label>

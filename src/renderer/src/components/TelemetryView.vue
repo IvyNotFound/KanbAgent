@@ -142,23 +142,23 @@ onMounted(scan)
       <!-- Stat cards -->
       <div class="telem-stat-grid ga-4" :class="hasAdvancedMetrics ? 'telem-stat-grid--wide' : ''">
         <div class="telem-stat-card pa-3 ga-1">
-          <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.totalLines') }}</span>
+          <span class="telem-stat-label text-label-medium">{{ t('telemetry.totalLines') }}</span>
           <span class="telem-stat-value text-h5">{{ formatLines(data.totalLines) }}</span>
         </div>
         <div v-if="hasAdvancedMetrics" class="telem-stat-card pa-3 ga-1">
-          <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.realCode') }}</span>
+          <span class="telem-stat-label text-label-medium">{{ t('telemetry.realCode') }}</span>
           <span class="telem-stat-value text-h5">{{ formatLines(data.totalCodeLines ?? 0) }}</span>
         </div>
         <div class="telem-stat-card pa-3 ga-1">
-          <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.totalFiles') }}</span>
+          <span class="telem-stat-label text-label-medium">{{ t('telemetry.totalFiles') }}</span>
           <span class="telem-stat-value text-h5">{{ data.totalFiles.toLocaleString() }}</span>
         </div>
         <div v-if="hasAdvancedMetrics" class="telem-stat-card pa-3 ga-1">
-          <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.testFiles') }}</span>
+          <span class="telem-stat-label text-label-medium">{{ t('telemetry.testFiles') }}</span>
           <span class="telem-stat-value text-h5">{{ (data.totalTestFiles ?? 0).toLocaleString() }}</span>
         </div>
         <div class="telem-stat-card pa-3 ga-1">
-          <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.languages') }}</span>
+          <span class="telem-stat-label text-label-medium">{{ t('telemetry.languages') }}</span>
           <span class="telem-stat-value text-h5">{{ data.languages.length }}</span>
         </div>
       </div>
@@ -223,15 +223,15 @@ onMounted(scan)
         <span class="telem-section-label text-body-2">{{ t('telemetry.codeQuality') }}</span>
         <div class="telem-quality-grid ga-3">
           <div class="telem-stat-card pa-4 ga-1">
-            <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.percentRealCode') }}</span>
+            <span class="telem-stat-label text-label-medium">{{ t('telemetry.percentRealCode') }}</span>
             <span class="telem-stat-value telem-value--green text-h5">{{ codePercent.toFixed(1) }}%</span>
           </div>
           <div class="telem-stat-card pa-4 ga-1">
-            <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.percentComments') }}</span>
+            <span class="telem-stat-label text-label-medium">{{ t('telemetry.percentComments') }}</span>
             <span class="telem-stat-value telem-value--blue text-h5">{{ commentPercent.toFixed(1) }}%</span>
           </div>
           <div class="telem-stat-card pa-4 ga-1">
-            <span class="telem-stat-label text-caption font-weight-medium">{{ t('telemetry.percentBlank') }}</span>
+            <span class="telem-stat-label text-label-medium">{{ t('telemetry.percentBlank') }}</span>
             <span class="telem-stat-value telem-muted text-h5">{{ blankPercent.toFixed(1) }}%</span>
           </div>
         </div>
@@ -241,7 +241,7 @@ onMounted(scan)
       <div class="telem-table-wrap text-body-2">
         <table class="telem-table text-body-2">
           <thead>
-            <tr class="telem-thead-row text-caption font-weight-medium">
+            <tr class="telem-thead-row text-label-medium">
               <th class="telem-th telem-th--left">{{ t('telemetry.colLanguage') }}</th>
               <th class="telem-th telem-th--right">{{ t('telemetry.colLines') }}</th>
               <th v-if="hasLangAdvanced" class="telem-th telem-th--right">{{ t('telemetry.colSource') }}</th>

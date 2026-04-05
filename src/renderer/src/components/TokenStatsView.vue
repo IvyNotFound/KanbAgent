@@ -19,7 +19,7 @@ const {
     <!-- ── Period selector ────────────────────────────────────────────── -->
     <div class="ts-period-bar ga-2">
       <h2 class="ts-title text-h6 font-weight-medium">{{ t('tokenStats.title') }}</h2>
-      <span class="ts-period-label text-caption font-weight-medium">{{ t('tokenStats.period.label') }}</span>
+      <span class="ts-period-label text-label-medium">{{ t('tokenStats.period.label') }}</span>
       <div class="ts-period-btns ga-1">
         <v-btn
           v-for="period in PERIODS"
@@ -27,7 +27,7 @@ const {
           variant="text"
           size="x-small"
           density="compact"
-          class="ts-period-btn text-caption font-weight-medium"
+          class="ts-period-btn text-label-medium"
           :class="selectedPeriod === period.key ? 'ts-period-btn--active' : ''"
           @click="selectedPeriod = period.key"
         >
@@ -39,49 +39,49 @@ const {
     <!-- ── Summary cards ──────────────────────────────────────────────── -->
     <div class="ts-cards-row ga-2 py-2 px-4">
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.total') }}</span>
+        <span class="ts-card-label text-label-medium">{{ t('tokenStats.total') }}</span>
         <span class="ts-card-value text-body-1">{{ formatNumber(globalStats.total) }}</span>
-        <div class="ts-card-sub ts-mono text-caption font-weight-medium">
+        <div class="ts-card-sub ts-mono text-label-medium">
           <span class="ts-in">↓ {{ formatNumber(globalStats.tokens_in) }}</span>
           <span class="ts-out">↑ {{ formatNumber(globalStats.tokens_out) }}</span>
         </div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.sessions') }}</span>
+        <span class="ts-card-label text-label-medium">{{ t('tokenStats.sessions') }}</span>
         <span class="ts-card-value text-body-1">{{ globalStats.session_count }}</span>
-        <div class="ts-card-sub text-caption font-weight-medium">
+        <div class="ts-card-sub text-label-medium">
           {{ t('tokenStats.avgPerSession') }} {{ formatNumber(avgPerSession) }}
         </div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.cache') }}</span>
+        <span class="ts-card-label text-label-medium">{{ t('tokenStats.cache') }}</span>
         <span class="ts-card-value text-body-1">{{ formatNumber(globalStats.tokens_cache_read + globalStats.tokens_cache_write) }}</span>
-        <div class="ts-card-sub ts-mono text-caption font-weight-medium">
+        <div class="ts-card-sub ts-mono text-label-medium">
           <span class="ts-amber">R {{ formatNumber(globalStats.tokens_cache_read) }}</span>
           <span class="ts-violet">W {{ formatNumber(globalStats.tokens_cache_write) }}</span>
         </div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.cacheHit') }}</span>
+        <span class="ts-card-label text-label-medium">{{ t('tokenStats.cacheHit') }}</span>
         <span class="ts-card-value ts-tabnum text-body-1" :style="{ color: cacheHitColor }">{{ cacheHitRate }}%</span>
-        <div class="ts-card-sub text-caption font-weight-medium">{{ t('tokenStats.cacheHitLabel') }}</div>
+        <div class="ts-card-sub text-label-medium">{{ t('tokenStats.cacheHitLabel') }}</div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.cost') }}</span>
+        <span class="ts-card-label text-label-medium">{{ t('tokenStats.cost') }}</span>
         <span class="ts-card-value text-body-1">{{ formatCost(estimatedCost) }}</span>
-        <div class="ts-card-sub ts-faint text-caption font-weight-medium">{{ t('tokenStats.costNote') }}</div>
+        <div class="ts-card-sub ts-faint text-label-medium">{{ t('tokenStats.costNote') }}</div>
       </div>
 
       <div class="ts-card ga-1 pa-3">
-        <span class="ts-card-label text-caption font-weight-medium">{{ t('tokenStats.ratio') }}</span>
+        <span class="ts-card-label text-label-medium">{{ t('tokenStats.ratio') }}</span>
         <span class="ts-card-value text-body-1">
           {{ globalStats.total > 0 ? Math.round((globalStats.tokens_out / Math.max(globalStats.total, 1)) * 100) : 0 }}%
         </span>
-        <div class="ts-card-sub text-caption font-weight-medium">
+        <div class="ts-card-sub text-label-medium">
           <span class="ts-out">{{ t('tokenStats.outputRatio') }}</span>
         </div>
       </div>
@@ -90,7 +90,7 @@ const {
     <!-- ── Sparkline 30 days ─────────────────────────────────────────── -->
     <div class="ts-spark-wrap py-2 px-4">
       <div class="ts-spark-header ga-2 mb-1">
-        <span class="ts-mini-label text-caption font-weight-medium">{{ t('tokenStats.evolution') }}</span>
+        <span class="ts-mini-label text-label-medium">{{ t('tokenStats.evolution') }}</span>
       </div>
       <div class="ts-spark-bars ga-1">
         <div
@@ -106,7 +106,7 @@ const {
             :style="{ height: sparkBarHeight(bar.total) + 'px' }"
           />
           <div v-if="bar.total === 0" class="ts-spark-zero" />
-          <div v-if="hoveredSparkBar === i" class="ts-spark-tooltip elevation-2 text-caption font-weight-medium">
+          <div v-if="hoveredSparkBar === i" class="ts-spark-tooltip elevation-2 text-label-medium">
             {{ bar.label }} : {{ formatNumber(bar.total) }}
           </div>
         </div>
@@ -120,7 +120,7 @@ const {
 
       <!-- Per-agent table with bars -->
       <section>
-        <h3 class="ts-section-title mb-2 text-caption font-weight-medium">{{ t('tokenStats.perAgent') }}</h3>
+        <h3 class="ts-section-title mb-2 text-label-medium">{{ t('tokenStats.perAgent') }}</h3>
 
         <div v-if="agentRows.length === 0" class="ts-empty py-4 text-body-2">{{ t('tokenStats.noData') }}</div>
 
@@ -140,10 +140,10 @@ const {
 
             <div class="ts-bar-wrap">
               <div class="ts-bar-fill" :style="{ width: barWidth(row.total) }" />
-              <span class="ts-bar-label ts-mono text-caption font-weight-medium">{{ formatNumber(row.total) }}</span>
+              <span class="ts-bar-label ts-mono text-label-medium">{{ formatNumber(row.total) }}</span>
             </div>
 
-            <div class="ts-agent-totals ga-2 ts-mono text-caption font-weight-medium">
+            <div class="ts-agent-totals ga-2 ts-mono text-label-medium">
               <span class="ts-in">↓{{ formatNumber(row.tokens_in) }}</span>
               <span class="ts-out">↑{{ formatNumber(row.tokens_out) }}</span>
               <span class="ts-faint">{{ row.session_count }}s</span>
@@ -154,11 +154,11 @@ const {
 
       <!-- Per-session table -->
       <section>
-        <h3 class="ts-section-title mb-2 text-caption font-weight-medium">{{ t('tokenStats.perSession') }}</h3>
+        <h3 class="ts-section-title mb-2 text-label-medium">{{ t('tokenStats.perSession') }}</h3>
 
         <div v-if="sessionRows.length === 0" class="ts-empty py-4">{{ t('tokenStats.noData') }}</div>
 
-        <table v-else class="ts-table text-caption font-weight-medium">
+        <table v-else class="ts-table text-label-medium">
           <thead>
             <tr class="ts-thead-row">
               <th class="ts-th">ID</th>
