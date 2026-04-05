@@ -165,7 +165,7 @@ function statusColor(status: string): string {
   const map: Record<string, string> = {
     todo: 'default',
     in_progress: 'info',
-    done: 'success',
+    done: 'default',
     archived: 'default',
   }
   return map[status] ?? 'default'
