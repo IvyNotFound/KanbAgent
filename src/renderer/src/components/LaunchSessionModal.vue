@@ -207,6 +207,7 @@ async function launch() {
             icon="mdi-close"
             size="small"
             variant="text"
+            :color="agentAccent(agent.name)"
             @click="emit('close')"
           />
         </div>
@@ -389,6 +390,7 @@ async function launch() {
                 variant="text"
                 size="default"
                 style="min-width: 80px;"
+                :color="agentAccent(agent.name)"
                 @click="emit('close')"
               >
                 {{ t('launch.cancel') }}
@@ -396,7 +398,7 @@ async function launch() {
               <v-btn
                 data-testid="btn-launch"
                 variant="tonal"
-                color="primary"
+                :color="agentAccent(agent.name)"
                 size="default"
                 style="min-width: 80px;"
                 :disabled="loading || launching || allAvailableInstances.length === 0"
