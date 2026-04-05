@@ -76,5 +76,19 @@ function stopAgent(): void {
 <style scoped>
 .input-bar {
   border-top: 1px solid var(--edge-subtle);
+  /* Override user-select:none inherited from .main-wrap (App.vue).
+     On Windows/Electron, user-select:none on a parent blocks focus and
+     keyboard capture in child input elements (T1488). */
+  user-select: text;
+  pointer-events: auto;
+}
+/* Explicitly re-enable text input on the native textarea element */
+.input-bar :deep(textarea) {
+  user-select: text;
+  pointer-events: auto;
+}
+/* Prevent Vuetify's v-field overlay from intercepting pointer events */
+.input-bar :deep(.v-field__overlay) {
+  pointer-events: none;
 }
 </style>
