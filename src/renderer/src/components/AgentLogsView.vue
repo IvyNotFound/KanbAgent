@@ -147,19 +147,6 @@ function absoluteTime(dateStr: string): string {
   })
 }
 
-// ── Level styling ─────────────────────────────────────────────────────────
-// Using scoped CSS class names instead of Tailwind utilities
-const levelConfig: Record<string, { label: string; cls: string }> = {
-  info:  { label: 'info',  cls: 'al-level--info'  },
-  warn:  { label: 'warn',  cls: 'al-level--warn'  },
-  error: { label: 'error', cls: 'al-level--error' },
-  debug: { label: 'debug', cls: 'al-level--debug' },
-}
-
-function levelCfg(niveau: string) {
-  return levelConfig[niveau] ?? levelConfig.info
-}
-
 function resetFilters(): void {
   filterLevel.value = 'all'
   filterAgentId.value = null
@@ -237,7 +224,6 @@ watch(() => props.initialAgentId, (v) => {
         size="x-small"
         variant="outlined"
         :title="t('logs.resetFilters')"
-        style="font-family: ui-monospace, monospace; font-size: 12px; text-transform: none;"
         @click="resetFilters"
       >{{ t('logs.reset') }}</v-btn>
 
@@ -293,8 +279,12 @@ watch(() => props.initialAgentId, (v) => {
       >
         <!-- Main line -->
         <div class="al-row-main">
-          <span class="al-dot" :class="levelCfg(log.level).cls" />
-          <span class="al-badge" :class="levelCfg(log.level).cls">{{ levelCfg(log.level).label }}</span>
+          <v-chip
+            :color="levelBtnColor[log.level]"
+            size="x-small"
+            variant="tonal"
+            class="al-level-chip"
+          >{{ log.level }}</v-chip>
           <span class="al-time" :title="absoluteTime(log.created_at)">{{ formatTime(log.created_at) }}</span>
           <span
             v-if="log.agent_name"
@@ -360,20 +350,14 @@ watch(() => props.initialAgentId, (v) => {
   background: var(--surface-base);
 }
 .al-level-btns { display: flex; align-items: center; gap: 4px; }
-/* reach Vuetify's inner content element to apply monospace font */
-.al-level-btn :deep(.v-btn__content) {
-  font-family: ui-monospace, monospace;
-  text-transform: none;
-}
-/* v-select font — applied to field input; dropdown items render in a VMenu outside scope */
+/* v-select compact sizing */
 .al-agent-select :deep(.v-field__input) {
-  font-family: ui-monospace, monospace;
   font-size: 12px;
 }
 .al-spacer { flex: 1; }
 .al-pagination { display: flex; align-items: center; gap: 4px; }
-.al-page-info { font-size: 11px; color: var(--content-faint); font-family: ui-monospace, monospace; }
-.al-count { font-size: 11px; color: var(--content-faint); font-family: ui-monospace, monospace; }
+.al-page-info { font-size: 11px; color: var(--content-faint); }
+.al-count { font-size: 11px; color: var(--content-faint); }
 .al-refresh-btn--spinning { animation: alSpin 1s linear infinite; }
 @keyframes alSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -406,31 +390,8 @@ watch(() => props.initialAgentId, (v) => {
   min-width: 0;
 }
 
-/* level badge + dot using combined class */
-.al-dot {
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-.al-badge {
-  flex-shrink: 0;
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-/* dot colors */
-.al-level--info.al-dot  { background: #38bdf8; }
-.al-level--warn.al-dot  { background: rgb(var(--v-theme-warning)); }
-.al-level--error.al-dot { background: rgb(var(--v-theme-error)); }
-.al-level--debug.al-dot { background: rgb(var(--v-theme-primary)); }
-/* badge colors */
-.al-level--info.al-badge  { color: #38bdf8; background: rgba(12,74,110,0.6); }
-.al-level--warn.al-badge  { color: rgb(var(--v-theme-warning)); background: rgba(78,52,6,0.6); }
-.al-level--error.al-badge { color: rgb(var(--v-theme-error)); background: rgba(69,10,10,0.6); }
-.al-level--debug.al-badge { color: rgb(var(--v-theme-primary)); background: rgba(46,16,101,0.6); }
+/* level chip (replaces custom dot+badge) */
+.al-level-chip { flex-shrink: 0; }
 
 .al-time {
   flex-shrink: 0;
@@ -444,7 +405,6 @@ watch(() => props.initialAgentId, (v) => {
 .al-agent-badge {
   flex-shrink: 0;
   font-size: 12px;
-  font-family: ui-monospace, monospace;
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: 500;
