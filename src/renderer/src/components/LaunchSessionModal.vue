@@ -190,18 +190,18 @@ async function launch() {
 <template>
   <v-dialog model-value max-width="560" scrollable @update:model-value="emit('close')">
     <div data-testid="launch-modal-backdrop" @click.self="emit('close')">
-    <v-card class="d-flex flex-column overflow-hidden">
+    <v-card elevation="3" class="overflow-hidden">
         <!-- Header -->
-        <div
-          class="modal-header"
-          :style="{ borderLeftColor: agentBorder(agent.name), borderLeftWidth: '3px' }"
+        <v-toolbar
+          color="transparent"
+          density="compact"
+          :style="{ borderLeft: '3px solid ' + agentBorder(agent.name) }"
         >
-          <div>
-            <p class="section-label mb-1 text-label-medium">{{ t('launch.title') }}</p>
-            <p class="agent-title" :style="{ color: agentAccent(agent.name) }">
-              {{ agent.name }}
-            </p>
-          </div>
+          <v-toolbar-title class="pl-1">
+            <p class="text-label-medium" style="color: var(--content-muted); letter-spacing: 0.02em; font-weight: 600; line-height: 1.2;">{{ t('launch.title') }}</p>
+            <span class="agent-title" :style="{ color: agentAccent(agent.name) }">{{ agent.name }}</span>
+          </v-toolbar-title>
+          <v-spacer />
           <v-btn
             data-testid="btn-close"
             icon
@@ -211,13 +211,15 @@ async function launch() {
           >
             <v-icon>mdi-close</v-icon>
           </v-btn>
-        </div>
+        </v-toolbar>
+
+        <v-divider />
 
         <!-- Loading bar -->
         <v-progress-linear v-if="loading" indeterminate color="primary" height="2" />
 
         <!-- Body -->
-        <div class="modal-body">
+        <v-card-text class="d-flex flex-column ga-4 pa-5">
 
           <!-- Unified instance list: all CLIs × all environments (Windows, WSL distros, local) -->
           <div>
@@ -374,11 +376,13 @@ async function launch() {
               {{ t('launch.multiInstanceError', { error: worktreeError }) }}
             </p>
           </div>
-        </div>
+        </v-card-text>
+
+        <v-divider />
 
         <!-- Footer -->
-        <div class="modal-footer">
-          <p v-if="!loading && allAvailableInstances.length === 0" data-testid="no-instance-warning" class="no-instance-warning text-caption">
+        <v-card-actions class="flex-column align-stretch pa-4 ga-2">
+          <p v-if="!loading && allAvailableInstances.length === 0" data-testid="no-instance-warning" class="no-instance-warning text-caption text-right">
             {{ noInstanceText }}
           </p>
           <div class="d-flex align-center justify-space-between ga-2">
@@ -403,9 +407,10 @@ async function launch() {
               </v-btn>
               <v-btn
                 data-testid="btn-launch"
+                variant="tonal"
+                :color="agentAccent(agent.name)"
                 size="default"
                 style="min-width: 80px;"
-                :style="{ backgroundColor: agentAccent(agent.name) + '22', color: agentAccent(agent.name), borderColor: agentBorder(agent.name) }"
                 :disabled="loading || launching || allAvailableInstances.length === 0"
                 :loading="launching"
                 @click="launch"
@@ -415,53 +420,25 @@ async function launch() {
               </v-btn>
             </div>
           </div>
-        </div>
+        </v-card-actions>
     </v-card>
     </div>
   </v-dialog>
 </template>
 
 <style scoped>
-/* Card layout */
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--edge-subtle);
-  flex-shrink: 0;
-}
-.modal-body {
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--edge-subtle);
-  /* No explicit background — inherits surface-dialog from v-card (global main.css rule).
-     surface-base (zinc-950) would create an MD3-non-compliant inverted elevation:
-     footer would appear "deeper" than the card body, which contradicts MD3 surface levels. */
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
 /* Header typography */
-.section-label {
-  font-weight: 600;
-  /* content-muted (zinc-400) = 6.25:1 on surface-dialog (zinc-800) — WCAG AA compliant.
-     content-subtle (zinc-500) was only 3.36:1 which fails AA for 12px caption text. */
-  color: var(--content-muted);
-  letter-spacing: 0.02em;
-}
 .agent-title {
   font-size: 16px;
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
   font-weight: 600;
 }
+:deep(.v-toolbar-title.agent-title) {
+  font-size: 16px;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  font-weight: 600;
+}
+
 .section-title {
   font-weight: 500;
   color: var(--content-secondary);
