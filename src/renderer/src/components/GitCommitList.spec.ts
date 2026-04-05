@@ -31,7 +31,7 @@ describe('GitCommitList', () => {
 
   it('emits openTask when badge is clicked', async () => {
     const wrapper = mount(GitCommitList, { props: { commits }, global: { plugins: [i18n] } })
-    const badge = wrapper.findAll('v-btn').find(b => b.text().trim() === 'T42')
+    const badge = wrapper.findAll('v-chip').find(b => b.text().trim() === 'T42')
     expect(badge).toBeDefined()
     await badge!.trigger('click')
     expect(wrapper.emitted('openTask')).toBeTruthy()

@@ -114,10 +114,11 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
       </div>
       <!-- Loading -->
       <div v-if="gitLoading" class="d-flex align-center justify-center flex-1 pa-8">
-        <p class="text-caption text-medium-emphasis">{{ t('common.loading') }}</p>
+        <v-progress-circular indeterminate :size="32" :width="3" />
       </div>
       <!-- Error states -->
       <div v-else-if="gitError" class="d-flex flex-column align-center justify-center flex-1 pa-8 ga-3">
+        <v-icon size="32" color="medium-emphasis">{{ gitError === 'error' ? 'mdi-alert-circle-outline' : 'mdi-source-commit' }}</v-icon>
         <p class="text-caption text-medium-emphasis font-italic">
           <template v-if="gitError === 'no-project'">{{ t('common.noProject') }}</template>
           <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
