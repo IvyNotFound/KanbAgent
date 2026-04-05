@@ -244,6 +244,8 @@ function handleKeydown(e: KeyboardEvent) {
             :items="ALL_TYPES"
             :label="t('agent.type')"
             variant="outlined"
+            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
             hide-details
           />
 
@@ -256,6 +258,8 @@ function handleKeydown(e: KeyboardEvent) {
             placeholder="front-vuejs"
             variant="outlined"
             density="compact"
+            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
             hide-details
           />
 
