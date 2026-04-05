@@ -443,7 +443,7 @@ function resultPreview(html: string | undefined): string {
 
 /* T1570: tool_use body uses a neutral theme-based background, not agent color */
 .tool-block--use .tool-body {
-  background: rgba(var(--v-theme-surface-variant), 0.35);
+  background: var(--surface-secondary);
 }
 
 .tool-body pre {
