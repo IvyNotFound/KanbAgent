@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { agentFg, agentBorder } from '@renderer/utils/agentColor'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -105,49 +105,49 @@ function onAgentClick(row: TopologyRow): void {
         >
           <!-- Column header -->
           <div class="tp-col-header">
-            <span
+            <v-chip
               v-if="perimetre !== '__global__'"
-              class="tp-scope-badge"
-              :style="{ color: agentFg(perimetre), backgroundColor: agentBg(perimetre), borderColor: agentBorder(perimetre) }"
-            >{{ perimetre }}</span>
-            <span v-else class="tp-scope-badge tp-scope-badge--global">{{ t('topology.global') }}</span>
+              size="small"
+              variant="outlined"
+              :style="{ color: agentFg(perimetre), borderColor: agentBorder(perimetre) }"
+              class="tp-scope-chip"
+            >{{ perimetre }}</v-chip>
+            <v-chip
+              v-else
+              size="small"
+              variant="outlined"
+              class="tp-scope-chip tp-scope-chip--global"
+            >{{ t('topology.global') }}</v-chip>
             <span class="tp-col-count">{{ perimAgents.length }}</span>
           </div>
 
           <!-- Agent cards -->
           <div class="tp-cards">
-            <v-btn
+            <v-card
               v-for="agent in perimAgents"
               :key="agent.id"
-              variant="text"
-              block
+              :variant="agentStatus(agent) === 'idle' ? 'outlined' : 'tonal'"
+              :color="agentStatus(agent) === 'active' ? 'secondary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
               class="tp-card"
-              :class="[
-                agentStatus(agent) === 'active'  ? 'tp-card--active'  :
-                agentStatus(agent) === 'blocked' ? 'tp-card--blocked' : 'tp-card--idle'
-              ]"
-              :title="t('topology.filterByAgent', { name: agent.name })"
               @click="onAgentClick(agent)"
             >
-              <div class="tp-card-top">
-                <span class="tp-agent-name" :style="{ color: agentFg(agent.name) }">{{ agent.name }}</span>
-                <span class="tp-status-badge" :class="[
-                  agentStatus(agent) === 'active'  ? 'tp-badge--active'  :
-                  agentStatus(agent) === 'blocked' ? 'tp-badge--blocked' : 'tp-badge--idle'
-                ]">
-                  <span class="tp-status-dot" :class="[
-                    agentStatus(agent) === 'active'  ? 'tp-dot--active'  :
-                    agentStatus(agent) === 'blocked' ? 'tp-dot--blocked' : 'tp-dot--idle'
-                  ]"></span>
-                  {{ t(`topology.status.${agentStatus(agent)}`) }}
-                </span>
+              <div class="tp-card-inner" :title="t('topology.filterByAgent', { name: agent.name })">
+                <div class="tp-card-top">
+                  <span class="tp-agent-name" :style="{ color: agentFg(agent.name) }">{{ agent.name }}</span>
+                  <v-chip
+                    :color="agentStatus(agent) === 'active' ? 'secondary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
+                    size="x-small"
+                    variant="tonal"
+                    class="tp-status-chip"
+                  ><span class="tp-status-dot mr-1" :class="`tp-dot--${agentStatus(agent)}`"></span>{{ t(`topology.status.${agentStatus(agent)}`) }}</v-chip>
+                </div>
+                <p class="tp-agent-type">{{ agent.type }}</p>
+                <p v-if="agent.current_task" class="tp-task text-label-medium" :title="agent.current_task">{{ agent.current_task }}</p>
+                <p v-if="agent.session_tokens != null && agent.session_tokens > 0" class="tp-tokens">
+                  {{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}
+                </p>
               </div>
-              <p class="tp-agent-type">{{ agent.type }}</p>
-              <p v-if="agent.current_task" class="tp-task text-label-medium" :title="agent.current_task">{{ agent.current_task }}</p>
-              <p v-if="agent.session_tokens != null && agent.session_tokens > 0" class="tp-tokens">
-                {{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}
-              </p>
-            </v-btn>
+            </v-card>
           </div>
         </div>
       </div>
@@ -193,48 +193,23 @@ function onAgentClick(row: TopologyRow): void {
 .tp-columns { display: flex; gap: 16px; padding: 16px; min-height: 100%; }
 .tp-column { display: flex; flex-direction: column; flex: 1; min-width: 180px; max-width: 320px; }
 .tp-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.tp-scope-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: var(--shape-full);
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  border: 1px solid;
-}
-.tp-scope-badge--global {
-  color: var(--content-subtle);
-  background: var(--surface-secondary);
-  border-color: var(--edge-default);
+
+.tp-scope-chip { font-family: ui-monospace, monospace; font-size: 12px !important; }
+.tp-scope-chip--global {
+  color: var(--content-subtle) !important;
+  border-color: var(--edge-default) !important;
 }
 .tp-col-count { font-size: 10px; color: var(--content-faint); font-family: ui-monospace, monospace; }
 
 .tp-cards { display: flex; flex-direction: column; gap: 8px; }
 .tp-card {
-  width: 100% !important;
-  text-align: left !important;
-  justify-content: flex-start !important;
-  align-items: flex-start !important;
-  height: auto !important;
-  min-height: 0 !important;
-  border-radius: var(--shape-sm) !important;
-  border: 1px solid !important;
-  padding: 10px 12px !important;
-  overflow: hidden;
-  transition: background var(--md-duration-short3) var(--md-easing-standard), border-color var(--md-duration-short3) var(--md-easing-standard);
-}
-.tp-card :deep(.v-btn__content) {
-  flex-direction: column;
-  align-items: flex-start;
   width: 100%;
+  overflow: hidden;
+  cursor: pointer;
 }
-.tp-card--active  { background: rgba(var(--v-theme-secondary),0.05); border-color: rgba(var(--v-theme-secondary),0.3); }
-.tp-card--active:hover  { background: rgba(var(--v-theme-secondary),0.10); }
-.tp-card--blocked { background: rgba(var(--v-theme-warning),0.05); border-color: rgba(var(--v-theme-warning),0.3); }
-.tp-card--blocked:hover { background: rgba(var(--v-theme-warning),0.10); }
-.tp-card--idle    { background: var(--surface-secondary); border-color: var(--edge-subtle); }
-.tp-card--idle:hover    { border-color: var(--edge-default); }
-
+.tp-card-inner {
+  padding: 10px 12px;
+}
 .tp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; min-width: 0; }
 .tp-agent-name {
   font-size: 12px;
@@ -244,20 +219,8 @@ function onAgentClick(row: TopologyRow): void {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tp-status-badge {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-family: ui-monospace, monospace;
-  padding: 2px 6px;
-  border-radius: var(--shape-full);
-}
-.tp-badge--active  { background: rgba(var(--v-theme-secondary),0.2); color: rgb(var(--v-theme-secondary)); }
-.tp-badge--blocked { background: rgba(var(--v-theme-warning),0.2); color: rgb(var(--v-theme-warning)); }
-.tp-badge--idle    { background: var(--surface-tertiary); color: var(--content-faint); }
-.tp-status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.tp-status-chip { font-family: ui-monospace, monospace; flex-shrink: 0; }
+.tp-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .tp-dot--active  { background: rgb(var(--v-theme-secondary)); }
 .tp-dot--blocked { background: rgb(var(--v-theme-warning)); }
 .tp-dot--idle    { background: var(--content-faint); }

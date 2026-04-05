@@ -86,9 +86,9 @@ describe('TopologyView (T750)', () => {
     })
     await flushPromises()
     // Find the dev-front agent card (scope=front-vuejs, id=1)
-    const buttons = wrapper.findAll('v-btn[title]')
-    const devFrontBtn = buttons.find(b => b.text().includes('dev-front'))!
-    await devFrontBtn.trigger('click')
+    const cards = wrapper.findAll('.tp-card')
+    const devFrontCard = cards.find(c => c.text().includes('dev-front'))!
+    await devFrontCard.trigger('click')
     const { useTasksStore: getTasksStore } = await import('@renderer/stores/tasks')
     const tasksStore = getTasksStore(pinia)
     expect(tasksStore.selectedAgentId).toBe(1)
