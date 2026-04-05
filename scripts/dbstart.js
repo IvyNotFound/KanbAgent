@@ -161,11 +161,31 @@ async function runWithDaemon() {
   if (!r5 || !r5.rows || r5.rows.length === 0) return false
   const sessionId = r5.rows[0]['last_insert_rowid()']
 
+  // 4b. Auto-link session to target task (in_progress first, then todo)
+  const rLink = await daemonExec(
+    `UPDATE tasks\n` +
+    `SET session_id = ${sessionId}\n` +
+    `WHERE id = (\n` +
+    `  SELECT id FROM tasks\n` +
+    `  WHERE agent_assigned_id = ${agentId}\n` +
+    `    AND status IN ('in_progress', 'todo')\n` +
+    `    AND session_id IS NULL\n` +
+    `  ORDER BY CASE status WHEN 'in_progress' THEN 0 ELSE 1 END, updated_at DESC\n` +
+    `  LIMIT 1\n` +
+    `)\n` +
+    `AND session_id IS NULL;\n` +
+    `SELECT id FROM tasks WHERE session_id = ${sessionId} LIMIT 1;`
+  )
+  const linkedTaskId = rLink && rLink.rows && rLink.rows.length > 0 ? rLink.rows[0].id : null
+
   // === OUTPUT ===
   console.log(`=== IDENTIFIANTS ===`)
   console.log(`agent_id: ${agentId}`)
   console.log(`session_id: ${sessionId}`)
   console.log(`SESSION_ID=${sessionUUID}`)
+  if (linkedTaskId !== null) {
+    console.log(`task_linked: T${linkedTaskId}`)
+  }
 
   if (isInWorktree) {
     console.log('\n=== WORKTREE ACTIF ===')
@@ -295,6 +315,23 @@ function runWithCli() {
       10
     )
 
+    // 4b. Auto-link session to target task (in_progress first, then todo)
+    const linkedTaskRaw = sqlExec(
+      `UPDATE tasks\n` +
+      `SET session_id = ${sessionId}\n` +
+      `WHERE id = (\n` +
+      `  SELECT id FROM tasks\n` +
+      `  WHERE agent_assigned_id = ${agentId}\n` +
+      `    AND status IN ('in_progress', 'todo')\n` +
+      `    AND session_id IS NULL\n` +
+      `  ORDER BY CASE status WHEN 'in_progress' THEN 0 ELSE 1 END, updated_at DESC\n` +
+      `  LIMIT 1\n` +
+      `)\n` +
+      `AND session_id IS NULL;\n` +
+      `SELECT id FROM tasks WHERE session_id = ${sessionId} LIMIT 1;`
+    )
+    const linkedTaskId = parseInt(linkedTaskRaw, 10) || null
+
     // Release lock — writes are done
     releaseLock(lockPath)
 
@@ -304,6 +341,9 @@ function runWithCli() {
     console.log(`agent_id: ${agentId}`)
     console.log(`session_id: ${sessionId}`)
     console.log(`SESSION_ID=${sessionUUID}`)
+    if (linkedTaskId !== null) {
+      console.log(`task_linked: T${linkedTaskId}`)
+    }
 
     if (isInWorktree) {
       console.log('\n=== WORKTREE ACTIF ===')
