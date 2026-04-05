@@ -238,7 +238,7 @@ watch(() => props.initialAgentId, (v) => {
           :title="t('logs.prevPage')"
           @click="prevPage"
         />
-        <span class="al-page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <span class="al-page-info text-caption">{{ currentPage }} / {{ totalPages }}</span>
         <v-btn
           icon="mdi-chevron-right"
           size="x-small"
@@ -248,7 +248,7 @@ watch(() => props.initialAgentId, (v) => {
           @click="nextPage"
         />
       </div>
-      <span v-else class="al-count">{{ paginatedLogs.length }} / {{ totalCount }}</span>
+      <span v-else class="al-count text-caption">{{ paginatedLogs.length }} / {{ totalCount }}</span>
 
       <v-btn
         icon="mdi-refresh"
@@ -285,17 +285,17 @@ watch(() => props.initialAgentId, (v) => {
             variant="tonal"
             class="al-level-chip"
           >{{ log.level }}</v-chip>
-          <span class="al-time" :title="absoluteTime(log.created_at)">{{ formatTime(log.created_at) }}</span>
+          <span class="al-time text-label-medium" :title="absoluteTime(log.created_at)">{{ formatTime(log.created_at) }}</span>
           <span
             v-if="log.agent_name"
-            class="al-agent-badge"
+            class="al-agent-badge text-label-medium"
             :style="{
               color: agentFg(log.agent_name),
               backgroundColor: agentBg(log.agent_name),
               boxShadow: `0 0 0 1px ${agentBorder(log.agent_name)}`
             }"
           >{{ log.agent_name }}</span>
-          <span v-else class="al-agent-badge al-agent-badge--none">—</span>
+          <span v-else class="al-agent-badge al-agent-badge--none text-label-medium">—</span>
           <span class="al-action text-body-2">{{ log.action }}</span>
           <v-icon
             v-if="log.detail || log.parsedFiles.length > 0"
@@ -312,7 +312,7 @@ watch(() => props.initialAgentId, (v) => {
             <span
               v-for="f in log.parsedFiles"
               :key="f"
-              class="al-file-badge"
+              class="al-file-badge text-label-medium"
             >{{ f.split('/').pop() }}</span>
           </div>
         </div>
@@ -351,15 +351,10 @@ watch(() => props.initialAgentId, (v) => {
   background: var(--surface-base);
 }
 .al-level-btns { display: flex; align-items: center; gap: 4px; }
-.al-level-btn { min-height: 32px !important; padding: 0 12px !important; }
-/* v-select compact sizing */
-.al-agent-select :deep(.v-field__input) {
-  font-size: 12px;
-}
 .al-spacer { flex: 1; }
 .al-pagination { display: flex; align-items: center; gap: 4px; }
-.al-page-info { font-size: 11px; color: var(--content-faint); }
-.al-count { font-size: 11px; color: var(--content-faint); }
+.al-page-info { color: var(--content-faint); }
+.al-count { color: var(--content-faint); }
 .al-refresh-btn--spinning { animation: alSpin 1s linear infinite; }
 @keyframes alSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -397,7 +392,6 @@ watch(() => props.initialAgentId, (v) => {
 
 .al-time {
   flex-shrink: 0;
-  font-size: 12px;
   color: var(--content-subtle);
   font-family: ui-monospace, monospace;
   width: 56px;
@@ -406,14 +400,13 @@ watch(() => props.initialAgentId, (v) => {
 }
 .al-agent-badge {
   flex-shrink: 0;
-  font-size: 12px;
   padding: 4px 8px;
   border-radius: var(--shape-xs);
   font-weight: 500;
 }
 .al-agent-badge--none { color: var(--content-dim); }
 .al-action {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--content-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -446,7 +439,6 @@ watch(() => props.initialAgentId, (v) => {
 }
 .al-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .al-file-badge {
-  font-size: 12px;
   font-family: ui-monospace, monospace;
   padding: 4px 8px;
   border-radius: var(--shape-xs);
