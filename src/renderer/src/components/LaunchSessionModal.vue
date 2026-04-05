@@ -378,7 +378,6 @@ async function launch() {
               variant="text"
               :loading="settingsStore.detectingClis"
               prepend-icon="mdi-refresh"
-              :style="{ color: agentAccent(agent.name) }"
               @click="settingsStore.refreshCliDetection(true)"
             >
               {{ t('launch.refreshDetection') }}
@@ -389,7 +388,6 @@ async function launch() {
                 variant="text"
                 size="default"
                 style="min-width: 80px;"
-                :style="{ color: agentAccent(agent.name) }"
                 @click="emit('close')"
               >
                 {{ t('launch.cancel') }}
@@ -397,7 +395,7 @@ async function launch() {
               <v-btn
                 data-testid="btn-launch"
                 variant="tonal"
-                :color="agentAccent(agent.name)"
+                color="primary"
                 size="default"
                 style="min-width: 80px;"
                 :disabled="loading || launching || allAvailableInstances.length === 0"
