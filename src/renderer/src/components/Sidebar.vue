@@ -64,7 +64,6 @@ function toggleSection(section: Section) {
 
         <!-- Agents -->
         <div class="rail-item">
-          <span v-if="activeSection === 'agents'" class="rail-indicator" />
           <v-btn
             :title="t('sidebar.agents')"
             icon
@@ -78,7 +77,6 @@ function toggleSection(section: Section) {
 
         <!-- Périmètres -->
         <div class="rail-item">
-          <span v-if="activeSection === 'perimetres'" class="rail-indicator" />
           <v-btn
             :title="t('sidebar.perimeters')"
             icon
@@ -92,7 +90,6 @@ function toggleSection(section: Section) {
 
         <!-- Arborescence -->
         <div class="rail-item">
-          <span v-if="activeSection === 'tree'" class="rail-indicator" />
           <v-btn
             :title="t('sidebar.tree')"
             icon
@@ -108,7 +105,6 @@ function toggleSection(section: Section) {
 
         <!-- Projet -->
         <div class="rail-item">
-          <span v-if="isProjectPopupOpen" class="rail-indicator" />
           <v-btn
             :title="t('sidebar.project')"
             icon
@@ -122,7 +118,6 @@ function toggleSection(section: Section) {
 
         <!-- Paramètres -->
         <div class="rail-item rail-item--bottom">
-          <span v-if="isSettingsOpen" class="rail-indicator" />
           <v-btn
             :title="t('sidebar.settings')"
             icon
@@ -205,11 +200,10 @@ function toggleSection(section: Section) {
   align-items: center;
   padding: 8px 0;
   gap: 4px;
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-right: 1px solid rgb(var(--v-theme-edge-default));
 }
-/* Wrapper for rail buttons that need the active indicator */
+/* Wrapper for rail buttons */
 .rail-item {
-  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
@@ -218,21 +212,13 @@ function toggleSection(section: Section) {
 .rail-item--bottom {
   margin-bottom: 4px;
 }
-/* Active state background for rail v-btn */
+/* MD3 Navigation Rail — active indicator pill (secondaryContainer, 40×32px) */
 .rail-btn-active {
-  color: rgba(var(--v-theme-on-surface), 0.9) !important;
-  background: rgba(var(--v-theme-on-surface), 0.12) !important;
-}
-.rail-indicator {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 20px;
-  background: rgba(var(--v-theme-on-surface), 0.9);
-  border-radius: 0 2px 2px 0;
-  pointer-events: none;
+  border-radius: 16px !important;
+  background: rgb(var(--v-theme-secondary-container)) !important;
+  color: rgb(var(--v-theme-on-secondary-container)) !important;
+  width: 40px !important;
+  height: 32px !important;
 }
 .rail-divider {
   flex: none;
@@ -252,19 +238,19 @@ function toggleSection(section: Section) {
   height: 100%;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-right: 1px solid rgb(var(--v-theme-edge-default));
 }
 .panel-header {
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-bottom: 1px solid rgb(var(--v-theme-edge-default));
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
 }
 .panel-title {
-  font-weight: 600;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-weight: 500; /* MD3 labelMedium */
+  color: rgba(var(--v-theme-on-surface-variant), 1);
   letter-spacing: 0.02em;
   user-select: none;
 }
