@@ -88,21 +88,15 @@ function isEnabled(cli: CliType): boolean {
         </span>
       </div>
 
-      <!-- Right: toggle (native button — avoids Vuetify flex centering that mispositions the thumb) -->
-      <button
-        type="button"
-        class="cli-toggle"
-        :class="{ 'cli-toggle--on': isEnabled(meta.cli) }"
-        :title="isEnabled(meta.cli) ? t('settings.cliEnabled') : t('settings.cliDisabled')"
-        role="switch"
-        :aria-checked="isEnabled(meta.cli)"
-        @click="emit('toggle', meta.cli)"
-      >
-        <span
-          class="cli-toggle-thumb"
-          :class="{ 'cli-toggle-thumb--on': isEnabled(meta.cli) }"
-        />
-      </button>
+      <!-- Right: v-switch MD3 toggle -->
+      <v-switch
+        :model-value="isEnabled(meta.cli)"
+        color="primary"
+        hide-details
+        density="compact"
+        class="flex-grow-0"
+        @update:model-value="emit('toggle', meta.cli)"
+      />
     </div>
   </div>
 </template>
@@ -176,37 +170,4 @@ function isEnabled(cli: CliType): boolean {
   color: rgb(var(--v-theme-secondary));
   border-color: rgba(var(--v-theme-secondary), 0.3);
 }
-/* Toggle switch — native <button>, no Vuetify flex override needed */
-.cli-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 36px;
-  height: 20px;
-  padding: 0;
-  flex-shrink: 0;
-  border-radius: 9999px;
-  border: 1px solid var(--edge-default);
-  background: var(--surface-tertiary);
-  cursor: pointer;
-  outline: none;
-  transition: background-color 0.2s, border-color 0.2s;
-  overflow: hidden;
-}
-.cli-toggle--on {
-  background: rgb(var(--v-theme-primary));
-  border-color: rgb(var(--v-theme-primary));
-}
-.cli-toggle-thumb {
-  pointer-events: none;
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin-top: 1px;
-  border-radius: 9999px;
-  background: white;
-  transform: translateX(1px);
-  transition: transform 0.2s;
-}
-.cli-toggle-thumb--on { transform: translateX(17px); }
 </style>
