@@ -62,7 +62,7 @@ const vuetifyPlugin = createVuetify({
           'surface-primary': '#1c1b1e',    // neutral T10
           'surface-secondary': '#2b292d',  // neutral T17
           'surface-tertiary': '#363438',   // neutral T22
-          'surface-dialog': '#2b292d',     // neutral T17 — dialog elevation
+          'surface-dialog': '#1c1b1e',     // neutral T10 — dialog elevation (darkened to restore contrast with internal sections T17/T22)
           'surface-variant': '73,69,78',       // MD3 surfaceVariant dark — NV tone 30
           'on-surface-variant': '202,196,207', // MD3 onSurfaceVariant dark — NV tone 80
           // Content tokens (MD3 neutral palette)
