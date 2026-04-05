@@ -65,6 +65,10 @@ export default defineConfig({
     alias: {
       '@renderer': resolve(__dirname, 'src/renderer/src'),
       '@': resolve(__dirname, 'src/renderer/src'),
+      // T1523: route better-sqlite3 to a WASM stub so Vitest (Node v25.6.1,
+      // MODULE_VERSION 141) does not load the native binary compiled for Electron
+      // (MODULE_VERSION 145). Electron itself still uses the native binary at runtime.
+      'better-sqlite3': resolve(__dirname, 'src/main/__mocks__/better-sqlite3-vitest.ts'),
     },
   },
 })
