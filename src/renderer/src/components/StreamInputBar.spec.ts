@@ -71,11 +71,26 @@ describe('StreamInputBar (T842)', () => {
     wrapper.unmount()
   })
 
-  it('shows stop button when isStreaming && ptyId && !agentStopped', () => {
+  it('shows stop button even when not streaming (always visible, T1569)', () => {
+    const wrapper = mount(StreamInputBar, { props: defaultProps })
+    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('stop button has disabled attribute when not streaming (T1569)', () => {
+    const wrapper = mount(StreamInputBar, { props: defaultProps })
+    const btn = wrapper.find('[data-testid="stop-button"]')
+    expect(btn.attributes('disabled')).not.toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('stop button disabled attribute is false when streaming with ptyId (T1569)', () => {
     const wrapper = mount(StreamInputBar, {
       props: { ...defaultProps, isStreaming: true, ptyId: 'pty-1', agentStopped: false },
     })
-    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(true)
+    const btn = wrapper.find('[data-testid="stop-button"]')
+    // custom element renders :disabled="false" as attribute "false" (not absent)
+    expect(btn.attributes('disabled')).toBe('false')
     wrapper.unmount()
   })
 

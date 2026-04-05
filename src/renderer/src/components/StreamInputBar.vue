@@ -52,15 +52,14 @@ function stopAgent(): void {
       class="flex-1-1 text-body-2"
       @keydown="handleKeydown"
     />
-    <!-- Stop button (T683, T1536) — icon style consistent with Send.
-         Always in DOM (visibility) to prevent Send from shifting when Stop appears. -->
+    <!-- Stop button (T683, T1536, T1569) — always visible, disabled when not actionable -->
     <v-btn
       icon
       rounded
       variant="flat"
       color="error"
       class="action-btn"
-      :style="isStreaming && ptyId && !agentStopped ? {} : { visibility: 'hidden', pointerEvents: 'none' }"
+      :disabled="!isStreaming || !ptyId || agentStopped"
       data-testid="stop-button"
       @click="stopAgent"
     >
