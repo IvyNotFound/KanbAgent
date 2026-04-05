@@ -377,6 +377,7 @@ async function launch() {
               data-testid="btn-refresh"
               variant="text"
               :loading="settingsStore.detectingClis"
+              :color="agentAccent(agent.name)"
               prepend-icon="mdi-refresh"
               @click="settingsStore.refreshCliDetection(true)"
             >
