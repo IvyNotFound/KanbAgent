@@ -43,8 +43,8 @@ function sortIcon(key: SortKey): string {
 <template>
   <div class="tool-stats-panel">
     <!-- Header -->
-    <div class="tool-stats-header py-3 px-6">
-      <h2 class="tool-stats-title text-h6">{{ t('toolStats.title') }}</h2>
+    <div class="tool-stats-header">
+      <h2 class="tool-stats-title text-h6 font-weight-medium">{{ t('toolStats.title') }}</h2>
     </div>
     <!-- Empty state -->
     <div v-if="toolStats.length === 0" class="tool-stats-empty pa-12">
@@ -126,10 +126,11 @@ function sortIcon(key: SortKey): string {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--edge-default);
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
 }
 .tool-stats-title {
-  font-weight: 500;
   color: var(--content-primary);
   margin: 0;
 }

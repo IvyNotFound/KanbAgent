@@ -41,7 +41,7 @@ function relativeTime(ts: number): string {
   <div class="he-view">
     <!-- Header -->
     <div class="he-header">
-      <h2 class="he-title text-h6">{{ t('sidebar.hooks') }}</h2>
+      <h2 class="he-title text-h6 font-weight-medium">{{ t('sidebar.hooks') }}</h2>
     </div>
     <!-- Filters bar -->
     <div class="he-filters">
@@ -108,10 +108,11 @@ function relativeTime(ts: number): string {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--edge-default);
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
 }
-.he-title { font-weight: 500; color: var(--content-primary); margin: 0; }
+.he-title { color: var(--content-primary); margin: 0; }
 
 .he-filters {
   display: flex;

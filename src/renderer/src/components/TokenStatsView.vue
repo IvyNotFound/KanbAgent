@@ -17,8 +17,8 @@ const {
 <template>
   <div class="ts-view">
     <!-- ── Period selector ────────────────────────────────────────────── -->
-    <div class="ts-period-bar ga-2 pt-3 px-4 pb-2">
-      <h2 class="ts-title mr-2 text-h6">{{ t('tokenStats.title') }}</h2>
+    <div class="ts-period-bar ga-2">
+      <h2 class="ts-title text-h6 font-weight-medium">{{ t('tokenStats.title') }}</h2>
       <span class="ts-period-label text-caption font-weight-medium">{{ t('tokenStats.period.label') }}</span>
       <div class="ts-period-btns ga-1">
         <v-btn
@@ -233,8 +233,11 @@ const {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
 }
-.ts-title { font-weight: 500; color: var(--content-primary); margin: 0; }
+.ts-title { color: var(--content-primary); margin: 0; margin-right: 8px; }
 .ts-period-label { letter-spacing: 0.02em; color: var(--content-faint); }
 .ts-period-btns { display: flex; }
 .ts-period-btn {

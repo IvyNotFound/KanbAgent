@@ -81,7 +81,7 @@ function onAgentClick(row: TopologyRow): void {
   <div class="tp-view">
     <!-- Header -->
     <div class="tp-header">
-      <h2 class="tp-title text-h6">{{ t('topology.title') }}</h2>
+      <h2 class="tp-title text-h6 font-weight-medium">{{ t('topology.title') }}</h2>
       <v-btn variant="text" size="small" class="tp-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</v-btn>
     </div>
 
@@ -168,10 +168,11 @@ function onAgentClick(row: TopologyRow): void {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  height: 44px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--edge-subtle);
 }
-.tp-title { font-weight: 500; color: var(--content-primary); margin: 0; }
+.tp-title { color: var(--content-primary); margin: 0; }
 .tp-refresh-btn {
   color: var(--content-subtle) !important;
   transition: color 0.15s;

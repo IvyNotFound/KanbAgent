@@ -193,7 +193,7 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
     <!-- Header -->
     <div class="oc-header">
       <div class="oc-header-left">
-        <h2 class="oc-title text-h6">{{ t('orgchart.agentsTitle') }}</h2>
+        <h2 class="oc-title text-h6 font-weight-medium">{{ t('orgchart.agentsTitle') }}</h2>
         <span v-if="loading" class="oc-loading text-caption font-weight-medium">•••</span>
       </div>
       <div class="oc-header-right">
@@ -314,11 +314,12 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  height: 44px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--edge-subtle);
 }
 .oc-header-left { display: flex; align-items: center; gap: 12px; }
-.oc-title { font-weight: 500; color: var(--content-primary); margin: 0; }
+.oc-title { color: var(--content-primary); margin: 0; }
 .oc-loading {}
 @keyframes ocPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 .oc-header-right { display: flex; align-items: center; gap: 8px; }

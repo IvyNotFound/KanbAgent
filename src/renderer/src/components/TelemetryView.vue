@@ -99,10 +99,10 @@ onMounted(scan)
 </script>
 
 <template>
-  <div class="telemetry-view pa-6 ga-6">
+  <div class="telemetry-view">
     <!-- Header -->
     <div class="telem-header">
-      <h2 class="telem-title text-h6">{{ t('telemetry.title') }}</h2>
+      <h2 class="telem-title text-h6 font-weight-medium">{{ t('telemetry.title') }}</h2>
       <v-btn
         variant="text"
         size="small"
@@ -117,6 +117,9 @@ onMounted(scan)
         <span v-else>{{ t('telemetry.rescan') }}</span>
       </v-btn>
     </div>
+
+    <!-- Scrollable body -->
+    <div class="telem-body">
 
     <!-- No project guard -->
     <div v-if="!store.projectPath" class="telem-state-center telem-subtle ga-3 text-body-2">
@@ -272,6 +275,8 @@ onMounted(scan)
         {{ t('telemetry.scannedAt', { date: formatDate(data.scannedAt) }) }}
       </p>
     </template>
+
+    </div><!-- end telem-body -->
   </div>
 </template>
 
@@ -280,21 +285,32 @@ onMounted(scan)
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: auto;
   background-color: var(--surface-base);
   color: var(--content-primary);
 }
 
 .telem-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
 }
 .telem-title {
-  font-weight: 500;
   color: var(--content-primary);
   margin: 0;
+}
+
+.telem-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 .telem-rescan-btn {
   background: var(--surface-tertiary) !important;

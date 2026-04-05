@@ -184,8 +184,13 @@ function priorityColor(priority: string): string {
 <template>
   <div class="overview-root">
 
-    <!-- Title -->
-    <h2 class="text-h6 font-weight-medium shrink-0">{{ t('dashboard.overview') }}</h2>
+    <!-- Fixed header -->
+    <div class="overview-header">
+      <h2 class="text-h6 font-weight-medium overview-title">{{ t('dashboard.overview') }}</h2>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="overview-body">
 
     <!-- No project state -->
     <div v-if="!store.dbPath" class="d-flex align-center justify-center" style="height: 160px;">
@@ -408,6 +413,8 @@ function priorityColor(priority: string): string {
       </Suspense>
 
     </template>
+
+    </div><!-- end overview-body -->
   </div>
 </template>
 
@@ -416,11 +423,32 @@ function priorityColor(priority: string): string {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: auto;
-  padding: 24px;
-  gap: 16px;
   background: var(--surface-base);
   color: var(--content-primary);
+}
+
+.overview-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.overview-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.overview-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* ── Metric cards ── */

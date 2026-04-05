@@ -334,10 +334,11 @@ watch(() => props.initialAgentId, (v) => {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--edge-default);
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
 }
-.al-title { font-weight: 500; color: var(--content-primary); margin: 0; }
+.al-title { color: var(--content-primary); margin: 0; }
 
 /* filter bar */
 .al-filter-bar {

@@ -98,7 +98,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
     <div v-if="activeSubTab === 'git'" class="tab-content git-panel">
       <!-- Toolbar -->
       <div class="git-toolbar d-flex align-center justify-space-between px-4">
-        <h2 class="text-h6 font-weight-medium" style="color: var(--content-primary); margin: 0">Git</h2>
+        <h2 class="git-title text-h6 font-weight-medium">Git</h2>
         <v-btn
           variant="text"
           size="small"
@@ -201,5 +201,10 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
   flex-shrink: 0;
   height: 44px;
   border-bottom: 1px solid var(--edge-subtle);
+}
+
+.git-title {
+  margin: 0;
+  color: var(--content-primary);
 }
 </style>
