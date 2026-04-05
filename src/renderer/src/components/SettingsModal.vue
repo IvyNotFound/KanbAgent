@@ -405,15 +405,17 @@ function onDefaultCliChange(v: string) {
   padding: 12px 16px;
 }
 
-/* Settings labels and descriptions */
+/* Settings labels and descriptions
+   surface-dialog = zinc-800 (#27272a) — content-subtle/faint fail WCAG AA on this bg.
+   content-tertiary (zinc-300) → ~8.8:1 on zinc-800 ✓  content-muted (zinc-400) → ~5.1:1 ✓ */
 .settings-label {
   font-weight: 500;
-  color: var(--content-subtle);
+  color: var(--content-tertiary);
   letter-spacing: 0.02em;
   margin-bottom: 8px;
 }
 .settings-desc {
-  color: var(--content-faint);
+  color: var(--content-muted);
 }
 
 /* Typography utilities */
