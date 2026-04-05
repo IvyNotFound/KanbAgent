@@ -221,8 +221,8 @@ describe('SidebarGroupNode', () => {
         },
       },
     })
-    // rename input appears instead of span
-    expect(wrapper.find('input').exists()).toBe(true)
+    // rename text-field appears instead of span (T1574: input → v-text-field)
+    expect(wrapper.find('v-text-field').exists()).toBe(true)
     wrapper.unmount()
   })
 })

@@ -83,6 +83,7 @@ defineExpose({ loadSidebarTree })
 </script>
 
 <template>
+  <!-- MD3 v-list for file tree items (default slot only — avoids Vue 3.5 named-slot + v-for compiler issue) -->
   <div class="file-tree-content">
     <div v-if="loadingSidebarTree" class="loading-state">
       <span class="loading-text text-caption">{{ t('common.loading') }}</span>
@@ -93,23 +94,28 @@ defineExpose({ loadSidebarTree })
     <div v-else-if="flatSidebarTree.length === 0 && !loadingSidebarTree" class="empty-state text-caption">
       {{ t('sidebar.emptyFolder') }}
     </div>
-    <v-btn
-      v-for="item in flatSidebarTree"
-      :key="item.node.path"
-      variant="text"
-      block
-      class="text-body-2"
-      :class="['tree-btn', item.node.isDir ? 'tree-btn--dir' : 'tree-btn--file']"
-      :style="{ paddingLeft: `${6 + item.depth * 12}px` }"
-      @click="item.node.isDir ? toggleSidebarDir(item.node.path, item.node) : tabsStore.openFile(item.node.path, item.node.name)"
-    >
-      <!-- Icône dossier ouvert/fermé ou fichier -->
-      <v-icon v-if="item.node.isDir && isDirOpen(item.node.path)" class="tree-icon tree-icon--open" size="14">mdi-folder-open</v-icon>
-      <v-icon v-else-if="item.node.isDir" class="tree-icon tree-icon--closed" size="14">mdi-folder</v-icon>
-      <v-icon v-else class="tree-icon tree-icon--file" size="14">mdi-file-outline</v-icon>
-      <!-- Nom -->
-      <span :class="['tree-name', item.node.isDir ? 'tree-name--dir' : 'tree-name--file']">{{ item.node.name }}</span>
-    </v-btn>
+    <v-list v-else density="compact" bg-color="transparent" class="pa-0">
+      <!-- Tree items — indentation via paddingLeft, icons + name in default slot -->
+      <v-list-item
+        v-for="item in flatSidebarTree"
+        :key="item.node.path"
+        density="compact"
+        :class="[item.node.isDir ? 'tree-item--dir' : 'tree-item--file']"
+        :style="{ paddingLeft: `${6 + item.depth * 12}px` }"
+        @click="item.node.isDir ? toggleSidebarDir(item.node.path, item.node) : tabsStore.openFile(item.node.path, item.node.name)"
+      >
+        <div class="tree-row">
+          <!-- Icône dossier ouvert/fermé ou fichier — single element avoids slot fragment issue -->
+          <v-icon
+            :class="['tree-icon', item.node.isDir && isDirOpen(item.node.path) ? 'tree-icon--open' : item.node.isDir ? 'tree-icon--closed' : 'tree-icon--file']"
+            size="14"
+          >
+            {{ item.node.isDir && isDirOpen(item.node.path) ? 'mdi-folder-open' : item.node.isDir ? 'mdi-folder' : 'mdi-file-outline' }}
+          </v-icon>
+          <span :class="['tree-name', item.node.isDir ? 'tree-name--dir' : 'tree-name--file']">{{ item.node.name }}</span>
+        </div>
+      </v-list-item>
+    </v-list>
   </div>
   <div class="tree-footer">
     <v-btn variant="text" size="small" class="refresh-btn text-caption" @click="loadSidebarTree">↺ {{ t('common.refresh') }}</v-btn>
@@ -142,19 +148,15 @@ defineExpose({ loadSidebarTree })
   padding: 12px 16px;
   color: var(--content-faint);
 }
-.tree-btn {
-  gap: 8px !important;
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
-  padding-right: 8px !important;
-  text-align: left !important;
-  justify-content: flex-start !important;
-  border-radius: var(--shape-xs) !important;
-  height: auto !important;
-  min-height: 0 !important;
+/* Tree item row layout */
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0;
 }
-.tree-btn--dir:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
-.tree-btn--file:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .tree-icon {
   width: 16px;
   height: 16px;
@@ -163,7 +165,7 @@ defineExpose({ loadSidebarTree })
 .tree-icon--open { color: rgb(var(--v-theme-warning)); }
 .tree-icon--closed { color: rgba(var(--v-theme-warning), 0.7); }
 .tree-icon--file { color: var(--content-subtle); }
-.tree-btn:hover .tree-icon--file { color: var(--content-muted); }
+.tree-item--file:hover .tree-icon--file { color: var(--content-muted); }
 .tree-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -174,9 +176,9 @@ defineExpose({ loadSidebarTree })
   color: var(--content-secondary);
   font-weight: 500;
 }
-.tree-btn:hover .tree-name--dir { color: var(--content-primary); }
+.tree-item--dir:hover .tree-name--dir { color: var(--content-primary); }
 .tree-name--file { color: var(--content-muted); }
-.tree-btn:hover .tree-name--file { color: var(--content-secondary); }
+.tree-item--file:hover .tree-name--file { color: var(--content-secondary); }
 .tree-footer {
   padding: 8px 16px;
   border-top: 1px solid var(--edge-subtle);

@@ -7,7 +7,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentBorder, agentAccent } from '@renderer/utils/agentColor'
+import { agentFg, agentAccent } from '@renderer/utils/agentColor'
 import type { Perimetre } from '@renderer/types'
 
 const { t } = useI18n()
@@ -19,6 +19,12 @@ const editPerimetre = ref<Perimetre | null>(null)
 const editPerimetreName = ref('')
 const editPerimetreDesc = ref('')
 const savingPerimetre = ref(false)
+
+/** v-dialog model — opens when editPerimetre is set */
+const showEditDialog = computed({
+  get: () => editPerimetre.value !== null,
+  set: (v: boolean) => { if (!v) editPerimetre.value = null },
+})
 
 const taskCountByPerimetre = computed(() => {
   const map = new Map<string, number>()
@@ -85,74 +91,103 @@ async function addPerimetre() {
       <v-btn variant="text" size="small" color="primary" class="reset-btn text-caption" @click="store.selectedPerimetre = null">{{ t('sidebar.reset') }}</v-btn>
     </div>
 
-    <div v-for="p in store.perimetresData" :key="p.id" class="perimetre-item">
-      <div class="perimetre-row-wrap">
-        <v-btn
-          variant="text"
-          block
-          :class="['perimetre-btn', store.selectedPerimetre === p.name ? 'perimetre-btn--selected' : '']"
-          :style="store.selectedPerimetre === p.name ? { backgroundColor: agentBg(p.name), borderColor: agentBorder(p.name) } : {}"
+    <!-- MD3 v-list for perimetre items (default slot only — avoids Vue 3.5 named-slot + v-for compiler issue) -->
+    <v-list density="compact" bg-color="transparent" class="pa-0">
+      <div v-for="p in store.perimetresData" :key="p.id" class="perimetre-item">
+        <v-list-item
+          density="compact"
+          rounded="lg"
+          :active="store.selectedPerimetre === p.name"
+          active-color="secondary-container"
           @click="store.togglePerimetreFilter(p.name)"
         >
-          <div class="perimetre-row ga-2">
-            <span class="perimetre-name" :style="{ color: agentAccent(p.name) }">{{ p.name }}</span>
-            <div class="perimetre-badges">
-              <span
-                v-if="(agentCountByPerimetre.get(p.name) ?? 0) > 0"
-                class="perimetre-badge ga-1"
-                :style="{ color: agentFg(p.name), backgroundColor: agentBg(p.name), borderColor: agentBorder(p.name) }"
-                :title="t('sidebar.nbAgents', agentCountByPerimetre.get(p.name) ?? 0, { named: { n: agentCountByPerimetre.get(p.name) ?? 0 } })"
-              >
-                <v-icon size="10" class="badge-icon">mdi-account</v-icon>
-                {{ agentCountByPerimetre.get(p.name) ?? 0 }}
-              </span>
-              <span
-                v-if="(taskCountByPerimetre.get(p.name) ?? 0) > 0"
-                class="perimetre-badge ga-1"
-                :style="{ color: agentFg(p.name), backgroundColor: agentBg(p.name), borderColor: agentBorder(p.name) }"
-                :title="t('sidebar.nbActiveTasks', taskCountByPerimetre.get(p.name) ?? 0, { named: { n: taskCountByPerimetre.get(p.name) ?? 0 } })"
-              >
-                <v-icon size="10" class="badge-icon">mdi-format-list-checks</v-icon>
-                {{ taskCountByPerimetre.get(p.name) ?? 0 }}
-              </span>
+          <div class="perimetre-content">
+            <div class="perimetre-row">
+              <span class="perimetre-name" :style="{ color: agentAccent(p.name) }">{{ p.name }}</span>
+              <div class="perimetre-badges ga-1">
+                <!-- MD3 v-chip badges replacing custom .perimetre-badge spans -->
+                <v-chip
+                  v-if="(agentCountByPerimetre.get(p.name) ?? 0) > 0"
+                  size="x-small"
+                  variant="tonal"
+                  :color="agentFg(p.name)"
+                  :title="t('sidebar.nbAgents', agentCountByPerimetre.get(p.name) ?? 0, { named: { n: agentCountByPerimetre.get(p.name) ?? 0 } })"
+                >
+                  <v-icon size="9" start>mdi-account</v-icon>
+                  {{ agentCountByPerimetre.get(p.name) ?? 0 }}
+                </v-chip>
+                <v-chip
+                  v-if="(taskCountByPerimetre.get(p.name) ?? 0) > 0"
+                  size="x-small"
+                  variant="tonal"
+                  :color="agentFg(p.name)"
+                  :title="t('sidebar.nbActiveTasks', taskCountByPerimetre.get(p.name) ?? 0, { named: { n: taskCountByPerimetre.get(p.name) ?? 0 } })"
+                >
+                  <v-icon size="9" start>mdi-format-list-checks</v-icon>
+                  {{ taskCountByPerimetre.get(p.name) ?? 0 }}
+                </v-chip>
+                <!-- Edit button — visible on hover -->
+                <v-btn
+                  icon
+                  variant="text"
+                  density="compact"
+                  size="x-small"
+                  class="edit-btn"
+                  :title="t('sidebar.editPerimeter')"
+                  @click.stop="openEditPerimetre(p)"
+                >
+                  <v-icon size="12">mdi-pencil</v-icon>
+                </v-btn>
+              </div>
             </div>
+            <p v-if="p.description" class="perimetre-desc text-label-medium">{{ p.description }}</p>
           </div>
-          <p v-if="p.description" class="perimetre-desc text-label-medium">{{ p.description }}</p>
-        </v-btn>
-        <v-btn icon variant="text" density="compact" size="x-small" class="edit-btn" :title="t('sidebar.editPerimeter')" @click.stop="openEditPerimetre(p)">
-          <v-icon size="12" class="icon-sm">mdi-pencil</v-icon>
-        </v-btn>
+        </v-list-item>
       </div>
-    </div>
+    </v-list>
 
     <div v-if="store.perimetresData.length === 0" class="no-perimeter-msg pa-2 text-body-2">{{ t('sidebar.noPerimeter') }}</div>
 
-    <v-btn variant="text" block size="small" class="add-btn ga-2 pa-2 mt-2 text-caption" @click="addPerimetre">
-      <v-icon size="12" class="icon-sm">mdi-plus</v-icon>
+    <v-btn variant="text" block size="small" height="36" class="add-btn ga-2 mt-2 text-caption" prepend-icon="mdi-plus" @click="addPerimetre">
       {{ t('sidebar.addPerimeter') }}
     </v-btn>
   </div>
 
-  <!-- Modal édition périmètre -->
-  <Teleport to="body">
-    <div v-if="editPerimetre" class="modal-backdrop" @click.self="editPerimetre = null">
-      <div class="modal-card elevation-3 pa-5 ga-3">
-        <p class="modal-title text-body-2">{{ t('sidebar.editPerimeter') }}</p>
-        <div class="modal-field ga-1">
-          <label class="modal-label text-caption">{{ t('sidebar.name') }}</label>
-          <input v-model="editPerimetreName" class="modal-input" :placeholder="t('sidebar.namePlaceholder')" @keydown.esc="editPerimetre = null" />
-        </div>
-        <div class="modal-field ga-1">
-          <label class="modal-label text-caption">{{ t('sidebar.description') }}</label>
-          <input v-model="editPerimetreDesc" class="modal-input modal-input--secondary" :placeholder="t('sidebar.descriptionPlaceholder')" @keydown.enter="savePerimetre" @keydown.esc="editPerimetre = null" />
-        </div>
-        <div class="modal-actions ga-2">
-          <v-btn variant="text" size="small" class="modal-btn modal-btn--cancel text-caption" @click="editPerimetre = null">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="primary" size="small" :disabled="savingPerimetre || !editPerimetreName.trim()" class="modal-btn modal-btn--save text-caption" @click="savePerimetre">{{ savingPerimetre ? t('common.saving') : t('common.save') }}</v-btn>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+  <!-- Modal édition périmètre — MD3 v-dialog + v-card -->
+  <v-dialog v-model="showEditDialog" max-width="384">
+    <v-card v-if="editPerimetre">
+      <v-card-title class="text-body-2 font-weight-bold">{{ t('sidebar.editPerimeter') }}</v-card-title>
+      <v-card-text class="d-flex flex-column ga-3 pt-2">
+        <v-text-field
+          v-model="editPerimetreName"
+          density="compact"
+          variant="outlined"
+          autofocus
+          hide-details="auto"
+          :label="t('sidebar.name')"
+          :placeholder="t('sidebar.namePlaceholder')"
+          @keydown.esc="editPerimetre = null"
+        />
+        <v-text-field
+          v-model="editPerimetreDesc"
+          density="compact"
+          variant="outlined"
+          hide-details="auto"
+          :label="t('sidebar.description')"
+          :placeholder="t('sidebar.descriptionPlaceholder')"
+          @keydown.enter="savePerimetre"
+          @keydown.esc="editPerimetre = null"
+        />
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" size="small" @click="editPerimetre = null">{{ t('common.cancel') }}</v-btn>
+        <v-btn color="primary" size="small" :disabled="savingPerimetre || !editPerimetreName.trim()" @click="savePerimetre">
+          {{ savingPerimetre ? t('common.saving') : t('common.save') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>
@@ -168,72 +203,46 @@ async function addPerimetre() {
   justify-content: flex-end;
 }
 .perimetre-item {
-  border-radius: var(--shape-xs);
-}
-.perimetre-row-wrap {
   position: relative;
 }
-.perimetre-btn {
-  text-align: left !important;
-  padding-right: 32px !important;
-  justify-content: flex-start !important;
-  height: auto !important;
-}
-.perimetre-btn--selected {
-  box-shadow: 0 0 0 1px var(--content-faint) !important;
+/* Layout inside v-list-item default slot */
+.perimetre-content {
+  width: 100%;
+  min-width: 0;
 }
 .perimetre-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
 }
 .perimetre-name {
+  flex: 1;
+  min-width: 0;
   font-size: 0.875rem;
   font-family: monospace;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
 }
 .perimetre-badges {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.perimetre-badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.6875rem;
-  font-family: monospace;
-  padding: 2px 6px;
-  border-radius: var(--shape-xs);
-  border: 1px solid;
-}
-.badge-icon {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
 }
 .perimetre-desc {
   color: var(--content-faint);
+  font-size: 0.75rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-top: 2px;
 }
+/* Edit button — visible on hover only */
 .edit-btn {
-  position: absolute !important;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px !important;
-  min-width: 24px !important;
-  height: 24px !important;
-  min-height: 24px !important;
-  padding: 0 !important;
-  color: var(--content-faint) !important;
   opacity: 0;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
 .perimetre-item:hover .edit-btn { opacity: 1; }
 .no-perimeter-msg {
@@ -242,56 +251,5 @@ async function addPerimetre() {
 .add-btn {
   color: var(--content-faint) !important;
   justify-content: flex-start !important;
-}
-.icon-sm { width: 14px; height: 14px; }
-
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-}
-.modal-card {
-  background: var(--surface-primary);
-  border: 1px solid var(--edge-default);
-  border-radius: var(--shape-md);
-  width: 384px;
-  display: flex;
-  flex-direction: column;
-}
-.modal-title {
-  font-weight: 600;
-  color: var(--content-secondary);
-}
-.modal-field {
-  display: flex;
-  flex-direction: column;
-}
-.modal-label {
-  color: var(--content-subtle);
-  letter-spacing: 0.02em;
-  font-weight: 600;
-}
-.modal-input {
-  width: 100%;
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
-  border-radius: var(--shape-xs);
-  padding: 6px 12px;
-  font-size: 0.875rem;
-  color: var(--content-primary);
-  font-family: monospace;
-  outline: none;
-  box-sizing: border-box;
-}
-.modal-input:focus { box-shadow: 0 0 0 1px rgb(var(--v-theme-primary)); }
-.modal-input--secondary { color: var(--content-tertiary); font-family: inherit; }
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
 }
 </style>

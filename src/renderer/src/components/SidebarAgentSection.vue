@@ -47,7 +47,6 @@ const {
   confirmDeleteGroup,
   creatingGroup,
   newGroupName,
-  createGroupInputEl,
   startCreateGroup,
   confirmCreateGroup,
   cancelCreateGroup,
@@ -161,18 +160,21 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       <v-btn variant="text" size="small" color="primary" class="reset-btn text-caption" @click="store.selectedAgentId = null">{{ t('sidebar.reset') }}</v-btn>
     </div>
 
-    <!-- Création de groupe inline (top-level) -->
+    <!-- Création de groupe inline (top-level) — MD3 v-text-field -->
     <div v-if="creatingGroup" class="group-create-row ga-1 mb-2">
-      <input
-        ref="createGroupInputEl"
+      <v-text-field
         v-model="newGroupName"
-        class="group-name-input py-1 px-2 text-caption"
+        density="compact"
+        variant="outlined"
+        hide-details
+        autofocus
+        class="group-name-input"
         :placeholder="t('sidebar.newGroupPlaceholder')"
         @keydown.enter="confirmCreateGroup"
         @keydown.esc="cancelCreateGroup"
       />
-      <v-btn variant="text" size="small" density="compact" class="icon-btn icon-btn--confirm text-caption" @click="confirmCreateGroup">✓</v-btn>
-      <v-btn variant="text" size="small" density="compact" class="icon-btn icon-btn--cancel text-caption" @click="cancelCreateGroup">✕</v-btn>
+      <v-btn variant="text" density="compact" size="x-small" class="icon-btn icon-btn--confirm text-caption" @click="confirmCreateGroup">✓</v-btn>
+      <v-btn variant="text" density="compact" size="x-small" class="icon-btn icon-btn--cancel text-caption" @click="cancelCreateGroup">✕</v-btn>
     </div>
 
     <!-- ── Groupes hiérarchiques ── -->
@@ -186,15 +188,19 @@ async function duplicateAgent(agent: Agent): Promise<void> {
     <!-- ── Non groupés ── -->
     <div
       class="ungrouped-zone mb-2"
+      :class="{ 'drag-target': dragOverGroupId === '__ungrouped__' }"
       @dragover="onGroupDragOver($event, null)"
       @dragleave="onGroupDragLeave"
       @drop="onGroupDrop($event, null)"
     >
-      <div class="section-header px-1" :class="{ 'drag-target': dragOverGroupId === '__ungrouped__' }">
-        <span class="section-label text-label-medium">{{ t('sidebar.ungrouped') }}</span>
-      </div>
+      <!-- MD3 list subheader -->
+      <v-list-subheader class="section-label text-label-medium px-1">
+        {{ t('sidebar.ungrouped') }}
+      </v-list-subheader>
       <div v-if="dragOverGroupId === '__ungrouped__'" class="drop-hint text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
-      <div class="agents-list">
+
+      <!-- MD3 v-list + v-list-item for agents (default slot only — avoids Vue 3.5 named-slot + v-for compiler issue) -->
+      <v-list density="compact" bg-color="transparent" class="pa-0">
         <div
           v-for="agent in ungroupedAgents"
           :key="agent.id"
@@ -203,41 +209,40 @@ async function duplicateAgent(agent: Agent): Promise<void> {
           @dragstart="onAgentDragStart($event, agent)"
           @contextmenu.prevent="openContextMenuLocal($event, agent)"
         >
-          <div class="agent-row-wrap">
-            <v-btn
-              variant="text"
-              block
-              :class="['agent-btn', isAgentSelected(agent.id) ? 'agent-btn--selected' : '']"
-              @click="store.toggleAgentFilter(agent.id)"
-            >
+          <v-list-item
+            density="compact"
+            rounded="lg"
+            :active="isAgentSelected(agent.id)"
+            active-color="secondary-container"
+            @click="store.toggleAgentFilter(agent.id)"
+          >
+            <div class="agent-row">
               <span class="agent-status">
                 <v-progress-circular v-if="tabsStore.isAgentActive(agent.name)" class="status-spinner" indeterminate :size="12" :width="2" :style="{ color: agentAccent(agent.name) }" />
                 <v-icon v-else-if="hasOpenTerminal(agent.name) && !tabsStore.isAgentActive(agent.name)" class="status-pulse" size="12" :style="{ color: agentAccent(agent.name) }">mdi-circle-medium</v-icon>
                 <span v-else class="status-dot" :style="{ backgroundColor: agentAccent(agent.name) }" />
               </span>
               <span :class="['agent-name', isAgentSelected(agent.id) ? 'agent-name--active' : '']">{{ agent.name }}</span>
-            </v-btn>
-            <div class="agent-actions ga-1">
-              <span class="drag-handle" :title="t('sidebar.move')"><v-icon size="12" class="icon-xs">mdi-drag</v-icon></span>
-              <v-btn variant="text" density="compact" size="x-small" class="action-btn" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = agent"><v-icon size="12" class="icon-sm">mdi-pencil</v-icon></v-btn>
-              <v-btn variant="text" density="compact" size="x-small" class="action-btn action-btn--launch" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><v-icon size="12" class="icon-sm">mdi-play</v-icon></v-btn>
+              <div class="agent-actions ga-1">
+                <span class="drag-handle" :title="t('sidebar.move')"><v-icon size="12">mdi-drag</v-icon></span>
+                <v-btn variant="text" density="compact" size="x-small" class="action-btn" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = agent"><v-icon size="12">mdi-pencil</v-icon></v-btn>
+                <v-btn variant="text" density="compact" size="x-small" class="action-btn action-btn--launch" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><v-icon size="12">mdi-play</v-icon></v-btn>
+              </div>
             </div>
-          </div>
+          </v-list-item>
         </div>
-      </div>
-      <div v-if="ungroupedAgents.length === 0 && store.agents.length > 0 && dragOverGroupId !== '__ungrouped__'" class="empty-msg py-1 px-2 text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
+        <div v-if="ungroupedAgents.length === 0 && store.agents.length > 0 && dragOverGroupId !== '__ungrouped__'" class="empty-msg py-1 px-2 text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
+      </v-list>
       <div v-if="store.agents.length === 0" class="no-agents-msg pa-2 text-body-2">{{ t('sidebar.noAgent') }}</div>
     </div>
 
-    <!-- Bouton nouveau groupe -->
-    <v-btn v-if="!creatingGroup" variant="text" block size="small" class="add-btn ga-2 text-caption" @click="startCreateGroup">
-      <v-icon size="12" class="icon-sm">mdi-plus</v-icon>
+    <!-- Bouton nouveau groupe — MD3 text button with prepend-icon -->
+    <v-btn v-if="!creatingGroup" variant="text" block size="small" height="36" class="add-btn text-caption" prepend-icon="mdi-plus" @click="startCreateGroup">
       {{ t('sidebar.newGroup') }}
     </v-btn>
 
     <!-- Bouton ajouter agent -->
-    <v-btn variant="text" block size="small" class="add-btn add-btn--mt ga-2 mt-1 text-caption" @click="showCreateAgent = true">
-      <v-icon size="12" class="icon-sm">mdi-plus</v-icon>
+    <v-btn variant="text" block size="small" height="36" class="add-btn mt-1 text-caption" prepend-icon="mdi-plus" @click="showCreateAgent = true">
       {{ t('sidebar.addAgent') }}
     </v-btn>
   </div>
@@ -264,17 +269,10 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   display: flex;
   align-items: center;
 }
+/* v-text-field already handles styling; keep min-width for the input to flex properly */
 .group-name-input {
   flex: 1;
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
-  border-radius: var(--shape-xs);
-  color: var(--content-primary);
-  outline: none;
-  font-weight: 600;
-}
-.group-name-input:focus {
-  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
+  min-width: 0;
 }
 .icon-btn {
   min-width: 24px !important;
@@ -284,26 +282,21 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 }
 .icon-btn--confirm { color: rgb(var(--v-theme-secondary)) !important; }
 .icon-btn--cancel { color: var(--content-faint) !important; }
+
+/* Ungrouped zone drag-target highlight */
 .ungrouped-zone {
-}
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-bottom: 2px;
   border-radius: var(--shape-xs);
   transition: all var(--md-duration-short3) var(--md-easing-standard);
 }
-.section-header.drag-target {
+.ungrouped-zone.drag-target {
   background: rgba(var(--v-theme-primary), 0.1);
   box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.4);
 }
 .section-label {
-  flex: 1;
+  min-height: 28px !important;
   font-weight: 600;
-  color: var(--content-subtle);
+  color: var(--content-subtle) !important;
   letter-spacing: 0.02em;
-  padding: 2px 0;
   user-select: none;
 }
 .drop-hint {
@@ -314,29 +307,19 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   border: 1px dashed rgba(var(--v-theme-primary), 0.4);
   border-radius: var(--shape-xs);
 }
-.agents-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
 .agent-item {
   position: relative;
 }
-.agent-row-wrap {
-  position: relative;
+/* Flex row inside v-list-item default slot */
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
-.agent-btn {
-  padding-right: 80px !important;
-  justify-content: flex-start !important;
-  gap: 12px !important;
-  text-align: left !important;
-}
-.agent-btn--selected {
-  background: var(--surface-secondary) !important;
-  box-shadow: 0 0 0 1px var(--content-faint) !important;
-}
+/* Status indicator */
 .agent-status {
-  position: relative;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -368,7 +351,10 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+/* Agent name — takes up remaining space */
 .agent-name {
+  flex: 1;
+  min-width: 0;
   font-size: 0.875rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -377,12 +363,11 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   color: var(--content-muted);
 }
 .agent-name--active { color: var(--content-primary); }
+/* Agent action buttons — shown on hover via opacity */
 .agent-actions {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
   display: flex;
+  align-items: center;
   opacity: 0;
   transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
@@ -415,7 +400,4 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   color: var(--content-faint) !important;
   justify-content: flex-start !important;
 }
-.add-btn--mt { }
-.icon-xs { width: 10px; height: 10px; }
-.icon-sm { width: 12px; height: 12px; }
 </style>

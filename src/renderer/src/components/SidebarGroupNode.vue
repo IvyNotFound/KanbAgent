@@ -37,14 +37,12 @@ const tabsStore = useTabsStore()
 const {
   renamingGroupId,
   renameGroupName,
-  renameGroupInputEl,
   confirmRename,
   cancelRename,
   startRename,
   handleDeleteGroup,
   creatingSubgroupForId,
   newSubgroupName,
-  createSubgroupInputEl,
   startCreateSubgroup,
   confirmCreateSubgroup,
   cancelCreateSubgroup,
@@ -141,12 +139,15 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
         <v-icon class="chevron-icon" size="14" :style="collapsed ? { transform: 'rotate(-90deg)' } : {}">mdi-chevron-down</v-icon>
       </v-btn>
 
-      <!-- Rename input or group name -->
+      <!-- Rename input (MD3 v-text-field) or group name -->
       <template v-if="renamingGroupId === group.id">
-        <input
-          :ref="(el) => { if (el) renameGroupInputEl = el as HTMLInputElement }"
+        <v-text-field
           v-model="renameGroupName"
-          class="rename-input text-label-medium"
+          density="compact"
+          variant="outlined"
+          hide-details
+          autofocus
+          class="rename-input"
           @keydown.enter="confirmRename(group.id)"
           @keydown.esc="cancelRename"
           @blur="confirmRename(group.id)"
@@ -162,10 +163,10 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 
       <!-- Inline action buttons (visible on hover) -->
       <v-btn variant="text" density="compact" size="x-small" class="header-btn" :title="t('sidebar.renameGroup')" @click.stop="startRename(group)">
-        <v-icon size="12" class="icon-sm">mdi-pencil</v-icon>
+        <v-icon size="12">mdi-pencil</v-icon>
       </v-btn>
       <v-btn variant="text" density="compact" size="x-small" class="header-btn header-btn--danger" :title="t('sidebar.deleteGroup')" @click.stop="handleDeleteGroup(group.id)">
-        <v-icon size="12" class="icon-sm">mdi-delete</v-icon>
+        <v-icon size="12">mdi-delete</v-icon>
       </v-btn>
     </div>
 
@@ -174,12 +175,15 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 
     <!-- Content (hidden when collapsed) -->
     <div v-if="!collapsed">
-      <!-- Inline subgroup creation for this group -->
+      <!-- Inline subgroup creation (MD3 v-text-field) -->
       <div v-if="creatingSubgroupForId === group.id" :style="subgroupInputStyle" class="subgroup-create-row ga-1 mb-1">
-        <input
-          :ref="(el) => { if (el) createSubgroupInputEl = el as HTMLInputElement }"
+        <v-text-field
           v-model="newSubgroupName"
-          class="group-name-input py-1 px-2 text-label-medium"
+          density="compact"
+          variant="outlined"
+          hide-details
+          autofocus
+          class="group-name-input"
           :placeholder="t('sidebar.newGroupPlaceholder')"
           @keydown.enter="confirmCreateSubgroup"
           @keydown.esc="cancelCreateSubgroup"
@@ -198,8 +202,8 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
         />
       </div>
 
-      <!-- Agents in this group -->
-      <div :style="childContentStyle" class="agents-list">
+      <!-- Agents in this group — MD3 v-list + v-list-item (default slot only) -->
+      <v-list density="compact" bg-color="transparent" class="pa-0" :style="childContentStyle">
         <div
           v-for="agent in groupAgents"
           :key="agent.id"
@@ -208,29 +212,30 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
           @dragstart="onAgentDragStart($event, agent)"
           @contextmenu.prevent="openContextMenu($event, agent)"
         >
-          <div class="agent-row-wrap">
-            <v-btn
-              variant="text"
-              block
-              :class="['agent-btn', isAgentSelected(agent.id) ? 'agent-btn--selected' : '']"
-              @click="store.toggleAgentFilter(agent.id)"
-            >
+          <v-list-item
+            density="compact"
+            rounded="lg"
+            :active="isAgentSelected(agent.id)"
+            active-color="secondary-container"
+            @click="store.toggleAgentFilter(agent.id)"
+          >
+            <div class="agent-row">
               <span class="agent-status">
                 <v-progress-circular v-if="tabsStore.isAgentActive(agent.name)" class="status-spinner" indeterminate :size="12" :width="2" :style="{ color: agentAccent(agent.name) }" />
                 <v-icon v-else-if="hasOpenTerminal(agent.name) && !tabsStore.isAgentActive(agent.name)" class="status-pulse" size="12" :style="{ color: agentAccent(agent.name) }">mdi-circle-medium</v-icon>
                 <span v-else class="status-dot" :style="{ backgroundColor: agentAccent(agent.name) }" />
               </span>
               <span :class="['agent-name', isAgentSelected(agent.id) ? 'agent-name--active' : '']">{{ agent.name }}</span>
-            </v-btn>
-            <div class="agent-actions ga-1">
-              <span class="drag-handle" :title="t('sidebar.move')"><v-icon size="12" class="icon-xs">mdi-drag</v-icon></span>
-              <v-btn variant="text" density="compact" size="x-small" class="action-btn" :title="t('sidebar.editAgent')" @click.stop="openEditAgent(agent)"><v-icon size="12" class="icon-sm">mdi-pencil</v-icon></v-btn>
-              <v-btn variant="text" density="compact" size="x-small" class="action-btn action-btn--launch" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><v-icon size="12" class="icon-sm">mdi-play</v-icon></v-btn>
+              <div class="agent-actions ga-1">
+                <span class="drag-handle" :title="t('sidebar.move')"><v-icon size="12">mdi-drag</v-icon></span>
+                <v-btn variant="text" density="compact" size="x-small" class="action-btn" :title="t('sidebar.editAgent')" @click.stop="openEditAgent(agent)"><v-icon size="12">mdi-pencil</v-icon></v-btn>
+                <v-btn variant="text" density="compact" size="x-small" class="action-btn action-btn--launch" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><v-icon size="12">mdi-play</v-icon></v-btn>
+              </div>
             </div>
-          </div>
+          </v-list-item>
         </div>
         <div v-if="groupAgents.length === 0 && dragOverGroupId !== group.id" class="empty-msg py-1 px-2 text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
-      </div>
+      </v-list>
     </div>
   </div>
 
@@ -283,19 +288,10 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   height: 10px;
   transition: transform var(--md-duration-short3) var(--md-easing-standard);
 }
+/* MD3 v-text-field for inline rename — flex: 1 to fill header */
 .rename-input {
   flex: 1;
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
-  border-radius: var(--shape-xs);
-  padding: 2px 6px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--content-primary);
-  outline: none;
-}
-.rename-input:focus {
-  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
+  min-width: 0;
 }
 .group-name {
   flex: 1;
@@ -329,21 +325,14 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   border: 1px dashed rgba(var(--v-theme-primary), 0.4);
   border-radius: var(--shape-xs);
 }
+/* MD3 v-text-field for subgroup creation */
 .subgroup-create-row {
   display: flex;
   align-items: center;
 }
 .group-name-input {
   flex: 1;
-  background: var(--surface-secondary);
-  border: 1px solid var(--edge-default);
-  border-radius: var(--shape-xs);
-  color: var(--content-primary);
-  outline: none;
-  font-weight: 600;
-}
-.group-name-input:focus {
-  box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
+  min-width: 0;
 }
 .icon-btn {
   width: 24px !important;
@@ -354,24 +343,17 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 }
 .icon-btn--confirm { color: rgb(var(--v-theme-secondary)) !important; }
 .icon-btn--cancel { color: var(--content-faint) !important; }
-.agents-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
 .agent-item { position: relative; }
-.agent-row-wrap { position: relative; }
-.agent-btn {
-  padding-right: 80px !important;
-  justify-content: flex-start !important;
-  gap: 12px !important;
+/* Flex row inside v-list-item default slot */
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
-.agent-btn--selected {
-  background: var(--surface-secondary) !important;
-  box-shadow: 0 0 0 1px var(--content-faint) !important;
-}
+/* Status indicator */
 .agent-status {
-  position: relative;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -403,7 +385,10 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+/* Agent name — takes remaining space */
 .agent-name {
+  flex: 1;
+  min-width: 0;
   font-size: 0.875rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -412,12 +397,11 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   color: var(--content-muted);
 }
 .agent-name--active { color: var(--content-primary); }
+/* Agent action buttons — shown on hover */
 .agent-actions {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
   display: flex;
+  align-items: center;
   opacity: 0;
   transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
@@ -443,6 +427,4 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   color: var(--content-dim);
   font-style: italic;
 }
-.icon-xs { width: 10px; height: 10px; }
-.icon-sm { width: 12px; height: 12px; }
 </style>

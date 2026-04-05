@@ -17,7 +17,7 @@ export function useSidebarGroups() {
   // ── Inline rename ───────────────────────────────────────────────────────────
   const renamingGroupId = ref<number | null>(null)
   const renameGroupName = ref('')
-  const renameGroupInputEl = ref<HTMLInputElement | null>(null)
+  const renameGroupInputEl = ref<{ focus(): void } | null>(null)
 
   async function startRename(group: { id: number; name: string }): Promise<void> {
     renamingGroupId.value = group.id
@@ -39,7 +39,7 @@ export function useSidebarGroups() {
   // ── Create top-level group ──────────────────────────────────────────────────
   const creatingGroup = ref(false)
   const newGroupName = ref('')
-  const createGroupInputEl = ref<HTMLInputElement | null>(null)
+  const createGroupInputEl = ref<{ focus(): void } | null>(null)
 
   async function startCreateGroup(): Promise<void> {
     creatingGroup.value = true
@@ -62,7 +62,7 @@ export function useSidebarGroups() {
   /** ID of the parent group for which a sub-group is being created. */
   const creatingSubgroupForId = ref<number | null>(null)
   const newSubgroupName = ref('')
-  const createSubgroupInputEl = ref<HTMLInputElement | null>(null)
+  const createSubgroupInputEl = ref<{ focus(): void } | null>(null)
 
   async function startCreateSubgroup(parentId: number): Promise<void> {
     creatingSubgroupForId.value = parentId
