@@ -210,7 +210,6 @@ async function save() {
             :hint="t('agent.autoLaunchDesc')"
             persistent-hint
             :color="agentAccent(agent.name)"
-            base-color="secondary"
             :style="{ '--switch-accent': agentAccent(agent.name) }"
             density="compact"
             inset
