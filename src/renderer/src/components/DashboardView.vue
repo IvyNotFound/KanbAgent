@@ -12,14 +12,15 @@ import DashboardOverview from './DashboardOverview.vue'
 const TopologyView = defineAsyncComponent(() => import('./TopologyView.vue'))
 const OrgChartView = defineAsyncComponent(() => import('./OrgChartView.vue'))
 const TelemetryView = defineAsyncComponent(() => import('./TelemetryView.vue'))
+const TimelineView = defineAsyncComponent(() => import('./TimelineView.vue'))
 
-type SubTab = 'overview' | 'tokenStats' | 'git' | 'hooks' | 'tools' | 'topology' | 'orgchart' | 'logs' | 'telemetry'
+type SubTab = 'overview' | 'tokenStats' | 'git' | 'hooks' | 'tools' | 'topology' | 'orgchart' | 'logs' | 'telemetry' | 'timeline'
 
 const { t } = useI18n()
 const store = useTasksStore()
 
 const STORAGE_KEY = 'dashboard.activeSubTab'
-const VALID_TABS: SubTab[] = ['overview', 'tokenStats', 'git', 'hooks', 'tools', 'topology', 'orgchart', 'logs', 'telemetry']
+const VALID_TABS: SubTab[] = ['overview', 'tokenStats', 'git', 'hooks', 'tools', 'topology', 'orgchart', 'logs', 'telemetry', 'timeline']
 const savedTab = localStorage.getItem(STORAGE_KEY) as SubTab | null
 const activeSubTab = ref<SubTab>(savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'overview')
 
@@ -68,6 +69,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
   { id: 'orgchart',   label: t('orgchart.tabLabel') },
   { id: 'logs',       label: t('tokenStats.logsTab') },
   { id: 'telemetry', label: t('dashboard.telemetryTab') },
+  { id: 'timeline',  label: t('timeline.title') },
 ])
 </script>
 
@@ -156,6 +158,9 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
 
     <!-- Telemetry -->
     <TelemetryView v-if="activeSubTab === 'telemetry'" class="tab-content" />
+
+    <!-- Timeline -->
+    <TimelineView v-if="activeSubTab === 'timeline'" class="tab-content" />
 
   </div>
 </template>

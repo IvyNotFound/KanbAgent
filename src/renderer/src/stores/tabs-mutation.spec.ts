@@ -59,7 +59,7 @@ describe('tabs — closeTab non-terminal fallback: Math.max(0, idx-1) arithmetic
     vi.setSystemTime(2000)
     store.openFile('/b.ts', 'b.ts')
 
-    // tabs: [backlog(0), dashboard(1), timeline(2), file-a(3), file-b(4)]
+    // tabs: [backlog(0), dashboard(1), file-a(2), file-b(3)]
     const fileA = store.tabs.find(t => t.filePath === '/a.ts')!
     const fileB = store.tabs.find(t => t.filePath === '/b.ts')!
     const idxB = store.tabs.findIndex(t => t.id === fileB.id)
@@ -73,15 +73,15 @@ describe('tabs — closeTab non-terminal fallback: Math.max(0, idx-1) arithmetic
     expect(store.activeTabId).toBe(fileA.id)
   })
 
-  it('falls back to timeline (idx-1) when only one file tab at position 3', () => {
+  it('falls back to dashboard (idx-1) when only one file tab at position 2', () => {
     const store = useTabsStore()
     vi.setSystemTime(5000)
     store.openFile('/only.ts', 'only.ts')
 
-    // tabs: [backlog(0), dashboard(1), timeline(2), file(3)]
+    // tabs: [backlog(0), dashboard(1), file(2)]
     const fileTab = store.tabs.find(t => t.type === 'file')!
     const idxFile = store.tabs.findIndex(t => t.id === fileTab.id)
-    // idx-1 = 2 = timeline
+    // idx-1 = 1 = dashboard
     const expectedFallback = store.tabs[Math.max(0, idxFile - 1)].id
 
     store.setActive(fileTab.id)
@@ -273,12 +273,6 @@ describe('tabs — closeTab permanent guard (EqualityOperator)', () => {
     const store = useTabsStore()
     store.closeTab('dashboard')
     expect(store.tabs.find(t => t.id === 'dashboard')).toBeDefined()
-  })
-
-  it('permanent timeline tab is NOT removed on closeTab', () => {
-    const store = useTabsStore()
-    store.closeTab('timeline')
-    expect(store.tabs.find(t => t.id === 'timeline')).toBeDefined()
   })
 
   it('non-permanent terminal tab IS removed on closeTab', () => {
