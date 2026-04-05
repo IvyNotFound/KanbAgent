@@ -215,7 +215,6 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
         <template v-if="!isGroupCollapsed(group.agentName)">
           <template v-for="tab in group.tabs" :key="tab.id">
             <button
-              v-if="isGroupActive(group)"
               class="tab-sub text-body-2"
               :style="tabStyleMap.get(tab.id)"
               :title="subTabLabel(tab)"
@@ -232,19 +231,6 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
               <span
                 style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px;"
                 :style="indicatorStyleMap.get(tab.id)"
-              ></span>
-            </button>
-            <button
-              v-else
-              class="tab-sub-dot"
-              :title="subTabLabel(tab)"
-              @click="store.setActive(tab.id)"
-              @mousedown="onMiddleClick($event, tab)"
-            >
-              <span
-                class="tab-dot"
-                :class="tab.dirty ? 'tab-dot--dirty' : ''"
-                :style="tab.dirty ? {} : indicatorStyleMap.get(tab.id)"
               ></span>
             </button>
           </template>
