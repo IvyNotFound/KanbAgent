@@ -270,7 +270,7 @@ function handleKeydown(e: KeyboardEvent) {
           <!-- Thinking mode -->
           <div>
             <div class="field-label text-label-medium mb-2">{{ t('launch.thinkingMode') }}</div>
-            <v-btn-toggle v-model="thinkingMode" mandatory color="primary" variant="outlined" density="compact">
+            <v-btn-toggle v-model="thinkingMode" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" variant="outlined" density="compact">
               <v-btn value="auto">{{ t('launch.auto') }}</v-btn>
               <v-btn value="disabled">{{ t('launch.disabled') }}</v-btn>
             </v-btn-toggle>
@@ -306,7 +306,7 @@ function handleKeydown(e: KeyboardEvent) {
           <!-- Worktree isolation (edit mode uniquement) -->
           <div v-if="isEditMode">
             <div class="field-label text-label-medium mb-2">{{ t('agent.worktreeEnabled') }}</div>
-            <v-btn-toggle v-model="worktreeToggleValue" mandatory color="primary" variant="outlined" density="compact">
+            <v-btn-toggle v-model="worktreeToggleValue" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" variant="outlined" density="compact">
               <v-btn value="inherit">{{ t('agent.worktreeInherit') }}</v-btn>
               <v-btn value="on">{{ t('agent.worktreeOn') }}</v-btn>
               <v-btn value="off">{{ t('agent.worktreeOff') }}</v-btn>
@@ -378,7 +378,7 @@ function handleKeydown(e: KeyboardEvent) {
               <span class="text-caption text-disabled">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
               <v-btn variant="text" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
               <v-btn
-                color="primary"
+                :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
                 data-testid="btn-submit"
                 :disabled="loading || !name.trim() || (isEditMode && maxSessionsInvalid)"
                 @click="submit"
