@@ -80,7 +80,6 @@
     "eslint-plugin-vue": "^10.8.0",
     "highlight.js": "^11.11.1",
     "jsdom": "^28.1.0",
-    "node-sqlite3-wasm": "^0.8.55",
     "marked": "^17.0.4",
     "pinia": "^3.0.4",
     "playwright": "^1.58.2",
