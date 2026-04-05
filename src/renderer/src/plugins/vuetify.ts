@@ -84,7 +84,7 @@ const vuetifyPlugin = createVuetify({
           // Surface tokens
           'surface-base': '#f4f4f5',       // zinc-100
           'surface-primary': '#ffffff',    // white
-          'surface-secondary': '#f4f4f5',  // zinc-100
+          'surface-secondary': '#e4e4e7',  // zinc-200 — distinct from surface-base for visible chat bubbles
           'surface-tertiary': '#e4e4e7',   // zinc-200
           'surface-dialog': '#ffffff',     // white — dialogs float on white in light mode
           // Content tokens

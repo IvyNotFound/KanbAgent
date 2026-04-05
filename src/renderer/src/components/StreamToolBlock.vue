@@ -67,7 +67,7 @@ function diffLines(input: Record<string, unknown> | undefined): DiffLine[] {
       result.push({ idx: idx++, type: 'add', prefix: '+', text: newLines[i] })
     }
     if (newLines.length > 50) {
-      result.push({ idx: idx++, type: 'add', prefix: '…', text: `(${newLines.length - 50} more lines)` })
+      result.push({ idx: idx, type: 'add', prefix: '…', text: `(${newLines.length - 50} more lines)` })
     }
   }
   return result
