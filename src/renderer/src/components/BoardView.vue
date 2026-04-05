@@ -133,23 +133,28 @@ const archivedGroupsSorted = computed(() => {
   <div class="board-root">
     <!-- Header -->
     <div class="board-header py-3 px-5">
-      <!-- Sub-tabs: MD3 Segmented Button -->
-      <v-btn-toggle
-        v-model="activeTab"
-        mandatory
-        density="compact"
-        class="board-tabs"
-      >
-        <v-btn value="backlog" size="small" variant="outlined">
-          {{ t('board.backlog') }}
-        </v-btn>
-        <v-btn value="archive" size="small" variant="outlined">
-          {{ t('board.archive', { count: store.stats.archived }) }}
-        </v-btn>
-      </v-btn-toggle>
+      <!-- Left spacer (grid balance) -->
+      <div class="header-spacer" />
 
-      <!-- Active filters -->
-      <div class="board-filters ga-2">
+      <!-- Center: MD3 Segmented Button -->
+      <div class="header-center">
+        <v-btn-toggle
+          v-model="activeTab"
+          mandatory
+          density="compact"
+          class="board-tabs"
+        >
+          <v-btn value="backlog" size="small" variant="outlined">
+            {{ t('board.backlog') }}
+          </v-btn>
+          <v-btn value="archive" size="small" variant="outlined">
+            {{ t('board.archive', { count: store.stats.archived }) }}
+          </v-btn>
+        </v-btn-toggle>
+      </div>
+
+      <!-- Right: active filters -->
+      <div class="header-right ga-2">
         <v-chip
           v-if="activeAgentName"
           size="small"
@@ -310,16 +315,21 @@ const archivedGroupsSorted = computed(() => {
   min-height: 0;
 }
 .board-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   border-bottom: 1px solid var(--edge-subtle);
   flex-shrink: 0;
 }
-.board-filters {
+.header-center {
+  display: flex;
+  justify-content: center;
+}
+.header-right {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .board-error {
   font-size: 0.75rem;
