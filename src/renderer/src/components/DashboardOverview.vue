@@ -451,6 +451,13 @@ function priorityColor(priority: string): string {
   gap: 16px;
 }
 
+/* Prevent flex-shrink from squishing bottom widgets when total content height
+   exceeds the container. Without this, AgentQualityPanel and WorkloadView
+   get compressed to height:0 instead of the container scrolling. */
+.overview-body > * {
+  flex-shrink: 0;
+}
+
 /* ── Metric cards ── */
 .metric-card {
   border: 1px solid var(--edge-default) !important;
