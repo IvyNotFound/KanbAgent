@@ -1,9 +1,9 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<v-chip data-v-0937c3c8="" size="x-small" variant="outlined" style="color: rgb(78, 52, 46); border-color: rgb(161, 136, 127); background-color: rgb(188, 170, 164);" title="review-master" class="agent-chip"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></v-chip>"`;
+exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<v-chip data-v-0937c3c8="" size="x-small" variant="outlined" style="color: rgb(78, 52, 46); border-color: rgb(188, 170, 164); background-color: rgb(215, 204, 200);" title="review-master" class="agent-chip"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></v-chip>"`;
 
 exports[`AgentBadge — snapshots > matches snapshot: inactive badge 1`] = `
-"<v-chip data-v-0937c3c8="" size="x-small" variant="outlined" style="color: rgb(78, 52, 46); border-color: rgb(161, 136, 127); background-color: rgb(188, 170, 164);" title="dev-front-vuejs" class="agent-chip">
+"<v-chip data-v-0937c3c8="" size="x-small" variant="outlined" style="color: rgb(78, 52, 46); border-color: rgb(188, 170, 164); background-color: rgb(215, 204, 200);" title="dev-front-vuejs" class="agent-chip">
   <!--v-if--><span data-v-0937c3c8="" class="badge-name">dev-front-vuejs</span>
 </v-chip>"
 `;
@@ -254,12 +254,12 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
     <!-- Onglets fichiers -->
     <!-- Groupe agent -->
     <div data-v-3c3dc65a="" class="tab-group">
-      <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="tab-agent text-body-2" style="color: rgb(28, 27, 31); background-color: rgb(255, 143, 0);">
+      <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="tab-agent text-body-2" style="color: rgb(0, 0, 0); background-color: rgb(255, 224, 130);">
         <v-icon data-v-3c3dc65a="" size="12" style="flex-shrink: 0;">mdi-console</v-icon><span data-v-3c3dc65a="" style="opacity: 0.5; user-select: none;">·</span><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span>
         <v-icon data-v-3c3dc65a="" class="tab-chevron" style="transform: rotate(-90deg);" size="10">mdi-chevron-down</v-icon>
         <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 3px; border-radius: 3px 3px 0 0; background-color: rgb(255, 213, 79);"></span>
-      </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub text-body-2" style="color: rgb(28, 27, 31); background-color: rgb(255, 143, 0);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
-        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-label-medium" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 3px; border-radius: 3px 3px 0 0; background-color: rgb(28, 27, 31);"></span>
+      </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub text-body-2" style="color: rgb(0, 0, 0); background-color: rgb(255, 224, 130);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
+        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-label-medium" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 3px; border-radius: 3px 3px 0 0; background-color: rgb(0, 0, 0);"></span>
       </button>
     </div>
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
@@ -289,7 +289,7 @@ exports[`TaskCard — snapshots > matches snapshot: critical in_progress task wi
       </div>
     </div><!-- Badges: perimeter + agent avatars -->
     <div data-v-8da3d041="" class="card-meta mt-3">
-      <v-chip data-v-8da3d041="" size="x-small" variant="tonal" rounded="sm" style="color: rgb(178, 223, 219); background-color: rgb(0, 105, 92);">back-electron</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
+      <v-chip data-v-8da3d041="" size="x-small" variant="tonal" rounded="sm" style="color: rgb(0, 77, 64); background-color: rgb(128, 203, 196);">back-electron</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-back" active="false"></agent-badge-stub>
     </div><!-- Description excerpt: up to 2 lines, fills body to balance footer -->
@@ -366,7 +366,7 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
       </div>
     </div><!-- Badges: perimeter + agent avatars -->
     <div data-v-8da3d041="" class="card-meta mt-3">
-      <v-chip data-v-8da3d041="" size="x-small" variant="tonal" rounded="sm" style="color: rgb(28, 27, 31); background-color: rgb(255, 143, 0);">front-vuejs</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
+      <v-chip data-v-8da3d041="" size="x-small" variant="tonal" rounded="sm" style="color: rgb(0, 0, 0); background-color: rgb(255, 224, 130);">front-vuejs</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-front" active="false"></agent-badge-stub>
     </div><!-- Description excerpt: up to 2 lines, fills body to balance footer -->

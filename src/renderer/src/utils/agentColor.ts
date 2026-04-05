@@ -218,19 +218,20 @@ function pickContrastingFg(
 
 /**
  * Primary foreground color for an agent (text, dots).
- * Uses shade escalation to guarantee WCAG AA (4.5:1) contrast against the badge background.
- * Dark bg (darken3): escalates lighten3 → lighten4 → lighten5 → #FFFFFF → #1C1B1F.
- * Light bg (lighten3): escalates darken2 → darken3 → darken4 → #000000.
+ * Pastel approach: badge bg is always light (lighten3/lighten4), so text uses dark shades.
+ * Dark bg (lighten3/200): escalates darken3 → darken4 → darken2 → #000000 for WCAG AA.
+ * Light bg (lighten4/100): same escalation — darken3 often passes here while failing on lighten3,
+ * which naturally produces different fg values between the two themes.
  */
 export function agentFg(name: string): string {
   void colorVersion.value // track reactive dependency
   let v = agentFgCache.get(name)
   if (v === undefined) {
     const family = agentFamily(name)
-    const bgHex = isDark() ? (family.darken3 ?? family.darken2) : (family.lighten3 ?? family.lighten4)
-    const candidates = isDark()
-      ? ['lighten3', 'lighten4', 'lighten5', '#FFFFFF', '#1C1B1F']
-      : ['darken2', 'darken3', 'darken4', '#000000']
+    const bgHex = isDark()
+      ? (family.lighten3 ?? family.lighten2)
+      : (family.lighten4 ?? family.lighten5)
+    const candidates = ['darken3', 'darken4', 'darken2', '#000000']
     v = pickContrastingFg(family, candidates, bgHex)
     cacheSet(agentFgCache, name, v)
   }
@@ -238,24 +239,27 @@ export function agentFg(name: string): string {
 }
 
 /**
- * Background color for agent badge.
- * Dark: MD darken3 (800 shade) · Light: MD lighten3 (200 shade).
+ * Background color for agent badge — pastel palette.
+ * Dark: MD lighten3 (200 shade) — pastel, visible on dark surfaces.
+ * Light: MD lighten4 (100 shade) — softer pastel on light surfaces.
  */
 export function agentBg(name: string): string {
   void colorVersion.value // track reactive dependency
   let v = agentBgCache.get(name)
   if (v === undefined) {
     const family = agentFamily(name)
-    v = isDark() ? (family.darken3 ?? family.darken2) : (family.lighten3 ?? family.lighten4)
+    v = isDark()
+      ? (family.lighten3 ?? family.lighten2)
+      : (family.lighten4 ?? family.lighten5)
     cacheSet(agentBgCache, name, v)
   }
   return v
 }
 
 /**
- * Border color for agent badge.
- * Dark: MD lighten1 (400 shade) — lighter accent on the darken2 bg.
- * Light: MD lighten2 (300 shade) — slightly darker than the lighten3 bg.
+ * Border color for agent badge — one shade more saturated than the bg.
+ * Dark: MD lighten2 (300 shade) — slightly richer than the lighten3 bg.
+ * Light: MD lighten3 (200 shade) — slightly richer than the lighten4 bg.
  */
 export function agentBorder(name: string): string {
   void colorVersion.value // track reactive dependency
@@ -263,8 +267,8 @@ export function agentBorder(name: string): string {
   if (v === undefined) {
     const family = agentFamily(name)
     v = isDark()
-      ? (family.lighten1 ?? family.lighten2 ?? family.base)
-      : (family.lighten2 ?? family.lighten1)
+      ? (family.lighten2 ?? family.lighten3)
+      : (family.lighten3 ?? family.lighten2)
     cacheSet(agentBorderCache, name, v)
   }
   return v
@@ -291,19 +295,19 @@ export function agentAccent(name: string): string {
 
 /**
  * Foreground color for perimeter badge (softer visual hierarchy than agentFg).
- * Uses shade escalation to guarantee WCAG AA (4.5:1) contrast against the badge background.
- * Dark bg (darken3): escalates lighten4 → lighten3 → lighten5 → #FFFFFF → #1C1B1F.
- * Light bg (lighten3): escalates darken1 → darken2 → darken3 → darken4 → #000000.
+ * Pastel approach: badge bg is always light (lighten3/lighten4), so text uses dark shades.
+ * Uses same escalation as agentFg — naturally returns different values per theme since
+ * darken3 contrast differs against lighten3 vs lighten4 backgrounds.
  */
 export function perimeterFg(name: string): string {
   void colorVersion.value // track reactive dependency
   let v = perimeterFgCache.get(name)
   if (v === undefined) {
     const family = agentFamily(name)
-    const bgHex = isDark() ? (family.darken3 ?? family.darken2) : (family.lighten3 ?? family.lighten4)
-    const candidates = isDark()
-      ? ['lighten4', 'lighten3', 'lighten5', '#FFFFFF', '#1C1B1F']
-      : ['darken1', 'darken2', 'darken3', 'darken4', '#000000']
+    const bgHex = isDark()
+      ? (family.lighten3 ?? family.lighten2)
+      : (family.lighten4 ?? family.lighten5)
+    const candidates = ['darken3', 'darken4', 'darken2', '#000000']
     v = pickContrastingFg(family, candidates, bgHex)
     cacheSet(perimeterFgCache, name, v)
   }
@@ -311,24 +315,27 @@ export function perimeterFg(name: string): string {
 }
 
 /**
- * Background color for perimeter badge.
- * Dark: MD darken3 (800 shade) · Light: MD lighten3 (200 shade).
+ * Background color for perimeter badge — pastel palette.
+ * Dark: MD lighten3 (200 shade) — pastel, visible on dark surfaces.
+ * Light: MD lighten4 (100 shade) — softer pastel on light surfaces.
  */
 export function perimeterBg(name: string): string {
   void colorVersion.value // track reactive dependency
   let v = perimeterBgCache.get(name)
   if (v === undefined) {
     const family = agentFamily(name)
-    v = isDark() ? (family.darken3 ?? family.darken2) : (family.lighten3 ?? family.lighten4)
+    v = isDark()
+      ? (family.lighten3 ?? family.lighten2)
+      : (family.lighten4 ?? family.lighten5)
     cacheSet(perimeterBgCache, name, v)
   }
   return v
 }
 
 /**
- * Border color for perimeter badge.
- * Dark: MD lighten2 (300 shade) — lighter accent on the darken2 bg.
- * Light: MD lighten1 (400 shade) — slightly darker than the lighten3 bg.
+ * Border color for perimeter badge — one shade more saturated than the bg.
+ * Dark: MD lighten2 (300 shade) — slightly richer than the lighten3 bg.
+ * Light: MD lighten3 (200 shade) — slightly richer than the lighten4 bg.
  */
 export function perimeterBorder(name: string): string {
   void colorVersion.value // track reactive dependency
@@ -336,8 +343,8 @@ export function perimeterBorder(name: string): string {
   if (v === undefined) {
     const family = agentFamily(name)
     v = isDark()
-      ? (family.lighten2 ?? family.lighten1)
-      : (family.lighten1 ?? family.lighten2)
+      ? (family.lighten2 ?? family.lighten3)
+      : (family.lighten3 ?? family.lighten2)
     cacheSet(perimeterBorderCache, name, v)
   }
   return v

@@ -115,8 +115,13 @@ describe('agentColor MD2 palette (T1467)', () => {
       expect(contrastRatio(agentFg('i'), agentBg('i'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('dark and light values always differ', () => {
-      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+    it('dark and light values differ for families where darken3 contrast differs across lighten3/lighten4', () => {
+      // Pastel approach: families where darken3 fails against lighten3 (dark bg) but passes
+      // against lighten4 (light bg) produce different fg values between themes.
+      // Families like blueGrey/brown/amber settle to the same shade — this is expected.
+      for (const name of ['a', 'b']) {
+        // 'a' → pink: darkFg=#000000, lightFg=#880e4f (differ)
+        // 'b' → purple: darkFg=darken4, lightFg=darken3 (differ)
         setDarkMode(false)
         const light = agentFg(name)
         setDarkMode(true)
@@ -135,26 +140,26 @@ describe('agentColor MD2 palette (T1467)', () => {
     })
   })
 
-  // ── agentBg() — darken3 dark / lighten3 light ────────────────────────────────
+  // ── agentBg() — pastel: lighten3 dark / lighten4 light ──────────────────────
   describe('agentBg() — exact MD2 hex values', () => {
-    it('"a" (pink idx=1) dark → pink darken3 #ad1457', () => {
+    it('"a" (pink idx=1) dark → pink lighten3 #f48fb1', () => {
       setDarkMode(true)
-      expect(agentBg('a')).toBe('#ad1457')
-    })
-
-    it('"a" (pink idx=1) light → pink lighten3 #f48fb1', () => {
-      setDarkMode(false)
       expect(agentBg('a')).toBe('#f48fb1')
     })
 
-    it('"i" (brown idx=9) dark → brown darken3 #4e342e', () => {
-      setDarkMode(true)
-      expect(agentBg('i')).toBe('#4e342e')
+    it('"a" (pink idx=1) light → pink lighten4 #f8bbd0', () => {
+      setDarkMode(false)
+      expect(agentBg('a')).toBe('#f8bbd0')
     })
 
-    it('"i" (brown idx=9) light → brown lighten3 #bcaaa4', () => {
-      setDarkMode(false)
+    it('"i" (brown idx=9) dark → brown lighten3 #bcaaa4', () => {
+      setDarkMode(true)
       expect(agentBg('i')).toBe('#bcaaa4')
+    })
+
+    it('"i" (brown idx=9) light → brown lighten4 #d7ccc8', () => {
+      setDarkMode(false)
+      expect(agentBg('i')).toBe('#d7ccc8')
     })
 
     it('agentBg dark differs from agentFg dark (different shades)', () => {
@@ -172,16 +177,16 @@ describe('agentColor MD2 palette (T1467)', () => {
     })
   })
 
-  // ── agentBorder() — lighten1 dark (accent on darken3 bg) / lighten2 light ────
+  // ── agentBorder() — lighten2 dark / lighten3 light (one shade richer than bg) ─
   describe('agentBorder() — exact MD2 hex values', () => {
-    it('"a" (pink idx=1) dark → pink lighten1 #ec407a', () => {
+    it('"a" (pink idx=1) dark → pink lighten2 #f06292', () => {
       setDarkMode(true)
-      expect(agentBorder('a')).toBe('#ec407a')
+      expect(agentBorder('a')).toBe('#f06292')
     })
 
-    it('"a" (pink idx=1) light → pink lighten2 #f06292', () => {
+    it('"a" (pink idx=1) light → pink lighten3 #f48fb1', () => {
       setDarkMode(false)
-      expect(agentBorder('a')).toBe('#f06292')
+      expect(agentBorder('a')).toBe('#f48fb1')
     })
 
     it('agentBorder dark differs from agentBg dark', () => {
@@ -220,8 +225,9 @@ describe('agentColor MD2 palette (T1467)', () => {
       }
     })
 
-    it('dark and light values always differ', () => {
-      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+    it('dark and light values differ for families where darken3 contrast differs across lighten3/lighten4', () => {
+      // Same rationale as agentFg: pastel bgs mean some families settle to the same candidate.
+      for (const name of ['a', 'b']) {
         setDarkMode(false)
         const light = perimeterFg(name)
         setDarkMode(true)
@@ -231,16 +237,16 @@ describe('agentColor MD2 palette (T1467)', () => {
     })
   })
 
-  // ── perimeterBg() — darken3 dark / lighten3 light (same as agentBg) ──────────
+  // ── perimeterBg() — pastel: lighten3 dark / lighten4 light (same as agentBg) ─
   describe('perimeterBg() — exact MD2 hex values', () => {
-    it('"a" (pink idx=1) dark → pink darken3 #ad1457', () => {
+    it('"a" (pink idx=1) dark → pink lighten3 #f48fb1', () => {
       setDarkMode(true)
-      expect(perimeterBg('a')).toBe('#ad1457')
+      expect(perimeterBg('a')).toBe('#f48fb1')
     })
 
-    it('"a" (pink idx=1) light → pink lighten3 #f48fb1', () => {
+    it('"a" (pink idx=1) light → pink lighten4 #f8bbd0', () => {
       setDarkMode(false)
-      expect(perimeterBg('a')).toBe('#f48fb1')
+      expect(perimeterBg('a')).toBe('#f8bbd0')
     })
 
     it('dark and light values always differ', () => {
@@ -254,22 +260,23 @@ describe('agentColor MD2 palette (T1467)', () => {
     })
   })
 
-  // ── perimeterBorder() — lighten2 dark / lighten1 light ────────────────────────
+  // ── perimeterBorder() — lighten2 dark / lighten3 light (same as agentBorder) ─
   describe('perimeterBorder() — exact MD2 hex values', () => {
     it('"a" (pink idx=1) dark → pink lighten2 #f06292', () => {
       setDarkMode(true)
       expect(perimeterBorder('a')).toBe('#f06292')
     })
 
-    it('"a" (pink idx=1) light → pink lighten1 #ec407a', () => {
+    it('"a" (pink idx=1) light → pink lighten3 #f48fb1', () => {
       setDarkMode(false)
-      expect(perimeterBorder('a')).toBe('#ec407a')
+      expect(perimeterBorder('a')).toBe('#f48fb1')
     })
 
-    it('perimeterBorder dark differs from agentBorder dark (different shade: lighten2 vs lighten1)', () => {
+    it('perimeterBorder differs from perimeterBg (border is one shade richer than bg)', () => {
+      // dark: border=lighten2 ≠ bg=lighten3; light: border=lighten3 ≠ bg=lighten4
       setDarkMode(true)
       for (const name of ['a', 'b', 'i', 'j', 'k']) {
-        expect(perimeterBorder(name)).not.toBe(agentBorder(name))
+        expect(perimeterBorder(name)).not.toBe(perimeterBg(name))
       }
     })
 

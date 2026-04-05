@@ -180,7 +180,8 @@ describe('agentColor', () => {
     })
 
     it('perimeterFg returns different value after switching dark→light', () => {
-      const name = 'front-vuejs'
+      // 'test-agent' → purple (idx=2): darken3 fails against lighten3 → dark=darken4, light=darken3
+      const name = 'test-agent'
       setDarkMode(true)
       const darkFg = perimeterFg(name)
       expect(darkFg).toMatch(HEX_PATTERN)

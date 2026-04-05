@@ -140,7 +140,7 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
       expect(agentBg(name)).not.toBe(agentFg(name))
     })
 
-    it('agentBorder dark differs from agentFg dark (lighten1 vs lighten3+)', () => {
+    it('agentBorder dark differs from agentFg dark (lighten2 vs darken shades)', () => {
       setDarkMode(true)
       const name = 'border-factor-check'
       expect(agentBorder(name)).not.toBe(agentFg(name))
@@ -173,10 +173,12 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
       expect(perimeterBg(name)).toMatch(HEX_PATTERN)
     })
 
-    it('perimeterBorder dark differs from agentBorder dark (lighten2 vs lighten1)', () => {
+    it('perimeterBorder dark differs from perimeterBg dark (border is one shade richer)', () => {
+      // Pastel: agentBorder and perimeterBorder both use lighten2 dark / lighten3 light.
+      // Meaningful invariant: border ≠ bg (lighten2 ≠ lighten3 for dark mode).
       setDarkMode(true)
       const name = 'pborder-factor-test'
-      expect(perimeterBorder(name)).not.toBe(agentBorder(name))
+      expect(perimeterBorder(name)).not.toBe(perimeterBg(name))
     })
   })
 
@@ -265,7 +267,9 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
     })
 
     it('all perimeter caches are invalidated on theme switch', () => {
-      const name = 'perimeter-cache-invalidation'
+      // 'perimeter-cache-5' → purple (idx=2): all three values differ between themes.
+      // Purple fg: darken3 fails against lighten3 (dark bg), passes against lighten4 (light bg).
+      const name = 'perimeter-cache-5'
       setDarkMode(false)
       const pfgLight = perimeterFg(name)
       const pbgLight = perimeterBg(name)
