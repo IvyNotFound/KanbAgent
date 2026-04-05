@@ -280,6 +280,7 @@ async function launch() {
                 density="compact"
                 hide-details
                 :color="agentAccent(agent.name)"
+                base-color="secondary"
                 :style="{ '--switch-accent': agentAccent(agent.name) }"
                 :label="t('launch.resume', { resume: '--resume' })"
                 class="launch-switch"
@@ -352,6 +353,7 @@ async function launch() {
               density="compact"
               hide-details
               :color="agentAccent(agent.name)"
+              base-color="secondary"
               :style="{ '--switch-accent': agentAccent(agent.name) }"
               :label="t('launch.multiInstance')"
               class="launch-switch"
