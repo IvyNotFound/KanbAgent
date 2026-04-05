@@ -145,7 +145,45 @@ export const opencodeAdapter: CliAdapter = {
         // May carry usage data — return as system event so extractTokenUsage can access it
         return { type: 'system', subtype: 'step_finish', usage: (parsed.usage ?? null) } as unknown as StreamEvent
       }
-      // tool_use, step_start, and other lifecycle metadata — not displayed
+      if (evType === 'tool_use') {
+        // Render tool calls as assistant content blocks (natively displayed by StreamToolBlock.vue)
+        // Field aliases: toolCallId is the SST/OpenCode convention; id is a fallback
+        return {
+          type: 'assistant',
+          message: {
+            role: 'assistant',
+            content: [{
+              type: 'tool_use',
+              name: typeof parsed.name === 'string' ? parsed.name : 'unknown',
+              input: (typeof parsed.input === 'object' && parsed.input !== null)
+                ? parsed.input as Record<string, unknown> : {},
+              tool_use_id: typeof parsed.toolCallId === 'string' ? parsed.toolCallId
+                : typeof parsed.id === 'string' ? parsed.id : undefined,
+            }],
+          },
+        } as StreamEvent
+      }
+      if (evType === 'tool_result') {
+        // Defensive field resolution: content > result > output > raw JSON
+        const content = typeof parsed.content === 'string' ? parsed.content
+          : typeof parsed.result === 'string' ? parsed.result
+          : typeof parsed.output === 'string' ? parsed.output
+          : JSON.stringify(parsed)
+        return {
+          type: 'assistant',
+          message: {
+            role: 'assistant',
+            content: [{
+              type: 'tool_result',
+              content,
+              tool_use_id: typeof parsed.toolCallId === 'string' ? parsed.toolCallId
+                : typeof parsed.id === 'string' ? parsed.id : undefined,
+              is_error: parsed.isError === true || parsed.is_error === true,
+            }],
+          },
+        } as StreamEvent
+      }
+      // step_start and other lifecycle metadata — not displayed
       return null
     } catch {
       // Non-JSON line (plain text or ANSI output) — surface as text

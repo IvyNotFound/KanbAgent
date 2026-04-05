@@ -294,9 +294,37 @@ describe('geminiAdapter.parseLine', () => {
     expect(result?.text).toContain('error')
   })
 
+  // tool_use events
+  it('converts type:tool_use to assistant event with tool_use block', () => {
+    const line = JSON.stringify({ type: 'tool_use', name: 'shell', input: { cmd: 'ls' } })
+    const event = geminiAdapter.parseLine(line)
+    expect(event?.type).toBe('assistant')
+    expect(event?.message?.content[0]?.type).toBe('tool_use')
+    expect(event?.message?.content[0]?.name).toBe('shell')
+    expect(event?.message?.content[0]?.input).toEqual({ cmd: 'ls' })
+  })
+
+  it('converts type:tool_use with id field to tool_use_id', () => {
+    const line = JSON.stringify({ type: 'tool_use', name: 'bash', input: {}, id: 'call_gemini_001' })
+    const event = geminiAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.tool_use_id).toBe('call_gemini_001')
+  })
+
+  it('converts type:tool_use with unknown name to "unknown" fallback', () => {
+    const line = JSON.stringify({ type: 'tool_use', input: {} })
+    const event = geminiAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.name).toBe('unknown')
+  })
+
+  it('converts type:tool_use with null input to empty object fallback', () => {
+    const line = JSON.stringify({ type: 'tool_use', name: 'shell', input: null })
+    const event = geminiAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.input).toEqual({})
+  })
+
   // Unknown type
   it('returns null for unknown event types (lifecycle metadata)', () => {
-    const line = JSON.stringify({ type: 'tool_use', name: 'shell' })
+    const line = JSON.stringify({ type: 'lifecycle_unknown', data: 'ignored' })
     expect(geminiAdapter.parseLine(line)).toBeNull()
   })
 

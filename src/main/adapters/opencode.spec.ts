@@ -197,9 +197,65 @@ describe('opencodeAdapter.parseLine', () => {
     expect(event).toEqual({ type: 'error', text: 'alt error' })
   })
 
-  it('returns null for type:tool_use (lifecycle event)', () => {
-    const event = opencodeAdapter.parseLine('{"type":"tool_use","name":"bash","input":{}}')
-    expect(event).toBeNull()
+  it('converts type:tool_use to assistant event with tool_use block', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_use","name":"bash","input":{"cmd":"ls -la"}}')
+    expect(event?.type).toBe('assistant')
+    expect(event?.message?.content[0]?.type).toBe('tool_use')
+    expect(event?.message?.content[0]?.name).toBe('bash')
+    expect(event?.message?.content[0]?.input).toEqual({ cmd: 'ls -la' })
+  })
+
+  it('converts type:tool_use with toolCallId to assistant event with tool_use_id', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_use","name":"bash","input":{},"toolCallId":"call_abc123"}')
+    expect(event?.message?.content[0]?.tool_use_id).toBe('call_abc123')
+  })
+
+  it('converts type:tool_use with id field (fallback) to assistant event with tool_use_id', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_use","name":"str_replace","input":{},"id":"tu_xyz"}')
+    expect(event?.message?.content[0]?.tool_use_id).toBe('tu_xyz')
+  })
+
+  it('converts type:tool_use with unknown name to "unknown" fallback', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_use","input":{}}')
+    expect(event?.message?.content[0]?.name).toBe('unknown')
+  })
+
+  it('converts type:tool_use with null input to empty object fallback', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_use","name":"bash","input":null}')
+    expect(event?.message?.content[0]?.input).toEqual({})
+  })
+
+  it('converts type:tool_result to assistant event with tool_result block (content field)', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_result","content":"file found","toolCallId":"call_abc"}')
+    expect(event?.type).toBe('assistant')
+    expect(event?.message?.content[0]?.type).toBe('tool_result')
+    expect(event?.message?.content[0]?.content).toBe('file found')
+    expect(event?.message?.content[0]?.tool_use_id).toBe('call_abc')
+  })
+
+  it('converts type:tool_result using result field when content is absent', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_result","result":"success output"}')
+    expect(event?.message?.content[0]?.content).toBe('success output')
+  })
+
+  it('converts type:tool_result using output field when content and result are absent', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_result","output":"command output"}')
+    expect(event?.message?.content[0]?.content).toBe('command output')
+  })
+
+  it('converts type:tool_result with isError:true to is_error block', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_result","content":"error msg","isError":true}')
+    expect(event?.message?.content[0]?.is_error).toBe(true)
+  })
+
+  it('converts type:tool_result with is_error:true to is_error block (snake_case variant)', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_result","content":"err","is_error":true}')
+    expect(event?.message?.content[0]?.is_error).toBe(true)
+  })
+
+  it('converts type:tool_result with no error flag to is_error:false', () => {
+    const event = opencodeAdapter.parseLine('{"type":"tool_result","content":"ok"}')
+    expect(event?.message?.content[0]?.is_error).toBe(false)
   })
 
   it('returns null for type:step_start (lifecycle event)', () => {

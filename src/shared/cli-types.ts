@@ -147,7 +147,20 @@ export interface StreamEvent {
   session_id?: string
   message?: {
     role: string
-    content: Array<{ type: string; text?: string }>
+    content: Array<{
+      type: string
+      text?: string
+      /** tool_use block: tool name */
+      name?: string
+      /** tool_use block: tool input arguments */
+      input?: Record<string, unknown>
+      /** tool_use / tool_result correlation ID */
+      tool_use_id?: string
+      /** tool_result block: result content string */
+      content?: string
+      /** tool_result block: whether the tool call failed */
+      is_error?: boolean
+    }>
   }
   /** Plain-text output line (non-JSONL CLIs). */
   text?: string

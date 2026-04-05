@@ -147,6 +147,22 @@ export const geminiAdapter: CliAdapter = {
         return { type: 'error', text: errMsg }
       }
 
+      if (evType === 'tool_use') {
+        // Render tool calls as assistant content blocks (natively displayed by StreamToolBlock.vue)
+        return {
+          type: 'assistant',
+          message: {
+            role: 'assistant',
+            content: [{
+              type: 'tool_use',
+              name: typeof parsed.name === 'string' ? parsed.name : 'unknown',
+              input: (typeof parsed.input === 'object' && parsed.input !== null)
+                ? parsed.input as Record<string, unknown> : {},
+              tool_use_id: typeof parsed.id === 'string' ? parsed.id : undefined,
+            }],
+          },
+        } as StreamEvent
+      }
       // Unknown type — ignore lifecycle metadata
       return null
     } catch {
