@@ -130,7 +130,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
           <v-btn
             variant="text"
             color="primary"
-            class="btn-change"
+            class="btn-change px-4"
             @click="handleChangeProject"
           >
             {{ t('project.changeProject') }}
@@ -139,7 +139,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
             v-if="store.projectPath"
             color="error"
             variant="tonal"
-            class="btn-close-project"
+            class="btn-close-project px-4"
             @click="handleCloseProject"
           >
             {{ t('project.close') }}
