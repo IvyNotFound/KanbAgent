@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
-import { agentFg, agentBorder } from '@renderer/utils/agentColor'
+import { agentBorder, agentAccent } from '@renderer/utils/agentColor'
 import type { Agent } from '@renderer/types'
 
 const { t } = useI18n()
@@ -138,11 +138,11 @@ async function save() {
         <!-- Header -->
         <div
           class="modal-header"
-          :style="{ borderLeftColor: agentFg(agent.name), borderLeftWidth: '3px' }"
+          :style="{ borderLeftColor: agentBorder(agent.name), borderLeftWidth: '3px' }"
         >
           <div>
             <p class="section-label mb-1">{{ t('agent.editTitle') }}</p>
-            <p class="agent-title" :style="{ color: agentFg(agent.name) }">
+            <p class="agent-title" :style="{ color: agentAccent(agent.name) }">
               {{ agent.name }}
             </p>
           </div>
@@ -287,7 +287,7 @@ async function save() {
             <v-btn variant="text" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
             <v-btn
               data-testid="btn-save"
-              :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name) }"
+              :style="{ backgroundColor: agentAccent(agent.name) + '22', color: agentAccent(agent.name), borderColor: agentBorder(agent.name) }"
               :disabled="saving || deleting || !name.trim() || maxSessionsInvalid"
               @click="save"
             >{{ saving ? t('common.saving') : t('common.save') }}</v-btn>

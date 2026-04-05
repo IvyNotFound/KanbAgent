@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentFg, agentBg } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentAccent } from '@renderer/utils/agentColor'
 import type { Task } from '@renderer/types'
 
 const props = defineProps<{ modelValue: boolean }>()
@@ -278,7 +278,7 @@ function effortColor(effort: number): string {
                     <span
                       v-if="task.agent_name"
                       class="task-agent"
-                      :style="{ color: agentFg(task.agent_name) }"
+                      :style="{ color: agentAccent(task.agent_name) }"
                     >{{ task.agent_name }}</span>
                     <span
                       v-if="task.scope"

@@ -7,7 +7,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, agentAccent } from '@renderer/utils/agentColor'
 import type { Perimetre } from '@renderer/types'
 
 const { t } = useI18n()
@@ -95,7 +95,7 @@ async function addPerimetre() {
           @click="store.togglePerimetreFilter(p.name)"
         >
           <div class="perimetre-row ga-2">
-            <span class="perimetre-name" :style="{ color: agentFg(p.name) }">{{ p.name }}</span>
+            <span class="perimetre-name" :style="{ color: agentAccent(p.name) }">{{ p.name }}</span>
             <div class="perimetre-badges">
               <span
                 v-if="(agentCountByPerimetre.get(p.name) ?? 0) > 0"

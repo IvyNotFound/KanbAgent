@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore, parseDefaultCliInstance } from '@renderer/stores/settings'
-import { agentFg, agentBorder } from '@renderer/utils/agentColor'
+import { agentBorder, agentAccent } from '@renderer/utils/agentColor'
 import { useModalEscape } from '@renderer/composables/useModalEscape'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useToast } from '@renderer/composables/useToast'
@@ -194,11 +194,11 @@ async function launch() {
         <!-- Header -->
         <div
           class="modal-header"
-          :style="{ borderLeftColor: agentFg(agent.name), borderLeftWidth: '3px' }"
+          :style="{ borderLeftColor: agentBorder(agent.name), borderLeftWidth: '3px' }"
         >
           <div>
             <p class="section-label mb-1 text-caption font-weight-medium">{{ t('launch.title') }}</p>
-            <p class="agent-title" :style="{ color: agentFg(agent.name) }">
+            <p class="agent-title" :style="{ color: agentAccent(agent.name) }">
               {{ agent.name }}
             </p>
           </div>
@@ -236,14 +236,14 @@ async function launch() {
                 class="instance-row"
                 :class="selectedInstance?.cli === inst.cli && selectedInstance?.distro === inst.distro ? '' : 'instance-row--idle'"
                 :style="selectedInstance?.cli === inst.cli && selectedInstance?.distro === inst.distro
-                  ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '15' }
+                  ? { borderColor: agentBorder(agent.name), backgroundColor: agentAccent(agent.name) + '15' }
                   : {}"
               >
                 <input
                   v-model="selectedInstance"
                   type="radio"
                   :value="inst"
-                  :style="{ accentColor: agentFg(agent.name) }"
+                  :style="{ accentColor: agentAccent(agent.name) }"
                 />
                 <!-- CLI badge -->
                 <span class="cli-badge">
@@ -282,7 +282,7 @@ async function launch() {
                 data-testid="switch-resume"
                 density="compact"
                 hide-details
-                :color="agentFg(agent.name)"
+                :color="agentAccent(agent.name)"
                 :label="t('launch.resume', { resume: '--resume' })"
                 class="launch-switch"
               />
@@ -312,7 +312,7 @@ async function launch() {
                   size="small"
                   flex-grow-1
                   class="flex-1"
-                  :style="thinkingMode === 'auto' ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name) } : {}"
+                  :style="thinkingMode === 'auto' ? { borderColor: agentBorder(agent.name), backgroundColor: agentAccent(agent.name) + '22', color: agentAccent(agent.name) } : {}"
                   @click="thinkingMode = 'auto'"
                 >
                   {{ t('launch.auto') }}
@@ -321,7 +321,7 @@ async function launch() {
                   value="disabled"
                   size="small"
                   class="flex-1"
-                  :style="thinkingMode === 'disabled' ? { borderColor: agentBorder(agent.name), backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name) } : {}"
+                  :style="thinkingMode === 'disabled' ? { borderColor: agentBorder(agent.name), backgroundColor: agentAccent(agent.name) + '22', color: agentAccent(agent.name) } : {}"
                   @click="thinkingMode = 'disabled'"
                 >
                   {{ t('launch.disabled') }}
@@ -345,8 +345,8 @@ async function launch() {
               variant="outlined"
               density="compact"
               hide-details="auto"
-              :base-color="agentFg(agent.name)"
-              :color="agentFg(agent.name)"
+              :base-color="agentAccent(agent.name)"
+              :color="agentAccent(agent.name)"
               class="launch-textarea"
             />
             <div class="d-flex align-center ga-2 mt-2">
@@ -362,7 +362,7 @@ async function launch() {
               data-testid="switch-worktree"
               density="compact"
               hide-details
-              :color="agentFg(agent.name)"
+              :color="agentAccent(agent.name)"
               :label="t('launch.multiInstance')"
               class="launch-switch"
             />
@@ -405,7 +405,7 @@ async function launch() {
                 data-testid="btn-launch"
                 size="default"
                 style="min-width: 80px;"
-                :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name) }"
+                :style="{ backgroundColor: agentAccent(agent.name) + '22', color: agentAccent(agent.name), borderColor: agentBorder(agent.name) }"
                 :disabled="loading || launching || allAvailableInstances.length === 0"
                 :loading="launching"
                 @click="launch"
