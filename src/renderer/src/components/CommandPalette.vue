@@ -423,7 +423,7 @@ function effortColor(effort: number): string {
   min-height: 0 !important;
 }
 .palette-item:hover {
-  background: rgba(var(--v-theme-on-surface, 255, 255, 255), 0.05) !important;
+  background: rgba(var(--v-theme-on-surface, 255, 255, 255), var(--md-state-hover)) !important;
   border-left-color: var(--content-faint) !important;
 }
 .palette-item--selected {

@@ -418,7 +418,7 @@ const {
   border-bottom: 1px solid rgba(var(--v-theme-surface-secondary), 0.4);
   transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
-.ts-tbody-row:hover { background: rgba(var(--v-theme-surface-secondary), 0.4); }
+.ts-tbody-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .ts-td { padding: 6px 8px; }
 .ts-td--right { text-align: right; }
 .ts-agent-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.6875rem; font-weight: 500; }

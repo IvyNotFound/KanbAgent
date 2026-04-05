@@ -82,6 +82,11 @@ body,
   --scrollbar-track:       rgb(var(--v-theme-scrollbar-track));
   --scrollbar-thumb:       rgb(var(--v-theme-scrollbar-thumb));
   --scrollbar-thumb-hover: rgb(var(--v-theme-scrollbar-thumb-hover));
+  /* MD3 State Layer opacities */
+  --md-state-hover:    0.08;
+  --md-state-focus:    0.12;
+  --md-state-pressed:  0.12;
+  --md-state-dragged:  0.16;
   /* Markdown code */
   --md-code-bg:     rgb(var(--v-theme-md-code-bg));
   --md-code-text:   rgb(var(--v-theme-md-code-text));

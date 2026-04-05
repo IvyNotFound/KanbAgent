@@ -86,7 +86,7 @@ function formatDate(iso: string): string {
   transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .commit-row:last-child { border-bottom: none; }
-.commit-row:hover { background: rgba(var(--v-theme-surface-tertiary), 0.3); }
+.commit-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .commit-hash {
   font-size: 10px;
   color: var(--content-faint);

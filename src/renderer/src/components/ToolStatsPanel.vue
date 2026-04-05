@@ -183,7 +183,7 @@ function sortIcon(key: SortKey): string {
   transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tool-stats-row:last-child { border-bottom: none; }
-.tool-stats-row:hover { background: rgba(var(--v-theme-surface-tertiary), 0.3); }
+.tool-stats-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .tool-stats-td--mono { font-family: ui-monospace, monospace; }
 .tool-stats-td--right { text-align: right; }
 .tool-stats-td--muted { color: var(--content-tertiary); }

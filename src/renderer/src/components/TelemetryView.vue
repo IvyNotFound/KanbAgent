@@ -427,7 +427,7 @@ onMounted(scan)
   transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .telem-tbody-row:last-child { border-bottom: none; }
-.telem-tbody-row:hover { background: rgba(var(--v-theme-surface-tertiary), 0.3); }
+.telem-tbody-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .telem-td { padding: 8px 16px; }
 .telem-td--lang { display: flex; align-items: center; }
 .telem-td--num { text-align: right; font-variant-numeric: tabular-nums; }

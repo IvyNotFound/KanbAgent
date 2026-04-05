@@ -153,8 +153,8 @@ defineExpose({ loadSidebarTree })
   height: auto !important;
   min-height: 0 !important;
 }
-.tree-btn--dir:hover { background: rgba(var(--v-theme-on-surface), 0.05); }
-.tree-btn--file:hover { background: rgba(var(--v-theme-on-surface), 0.04); }
+.tree-btn--dir:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
+.tree-btn--file:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .tree-icon {
   width: 16px;
   height: 16px;

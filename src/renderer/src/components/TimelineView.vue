@@ -433,7 +433,7 @@ const legendItems = computed(() => [
   border-bottom: 1px solid rgba(var(--v-theme-surface-secondary),0.4);
   transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
-.tl-row:hover { background: rgba(var(--v-theme-surface-secondary),0.5); }
+.tl-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .tl-row-label {
   width: 144px;
   flex-shrink: 0;

@@ -382,7 +382,7 @@ watch(() => props.initialAgentId, (v) => {
   transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .al-row--clickable { cursor: pointer; }
-.al-row--clickable:hover { background: rgba(var(--v-theme-surface-secondary),0.4); }
+.al-row--clickable:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 
 .al-row-main {
   display: flex;

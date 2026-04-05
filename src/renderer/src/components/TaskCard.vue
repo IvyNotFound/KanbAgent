@@ -221,7 +221,7 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   z-index: 0;
 }
 .task-card:hover::after {
-  background-color: rgba(var(--v-theme-on-surface), 0.06);
+  background-color: rgba(var(--v-theme-on-surface), var(--md-state-hover));
 }
 .card-top {
   display: flex;
