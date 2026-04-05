@@ -196,6 +196,7 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   border-radius: var(--shape-md) !important; /* MD3 medium shape (was 8px) */
   cursor: pointer;
   min-height: 96px;
+  flex-shrink: 0; /* prevent compression in flex column when many cards present */
   position: relative;
   overflow: hidden;
   transition: box-shadow var(--md-duration-short3) var(--md-easing-standard);
