@@ -206,7 +206,7 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   border: 1px solid var(--edge-subtle) !important; /* MD3: subtle at-rest border */
   border-radius: var(--shape-md) !important; /* MD3 medium shape (was 8px) */
   cursor: pointer;
-  min-height: 120px;
+  min-height: 148px;
   position: relative;
   overflow: hidden;
   transition: box-shadow var(--md-duration-short3) var(--md-easing-standard);
@@ -286,7 +286,7 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 }
 /* Description excerpt: max 2 lines, body-2 size (14sp), single opacity layer */
 .card-description {
-  color: var(--content-secondary);
+  color: var(--content-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
