@@ -151,14 +151,14 @@ pre {
 
 .tool-filepath {
   margin-bottom: 6px;
-  font-size: 0.85em;
+  font-size: 0.9em;
   font-family: monospace;
   color: var(--content-secondary);
 }
 
 .tool-key {
   opacity: 0.5;
-  font-size: 0.85em;
+  font-size: 0.9em;
   user-select: none;
   margin-right: 2px;
 }
@@ -225,7 +225,7 @@ pre {
 }
 
 .diff-section-label {
-  font-size: 0.75em;
+  font-size: 0.8em;
   font-weight: 600;
   text-transform: uppercase;
   opacity: 0.5;

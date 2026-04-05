@@ -89,7 +89,7 @@ function resultPreview(html: string | undefined): string {
     <v-btn
       variant="text"
       block
-      class="tool-header py-2 px-3 text-caption"
+      class="tool-header py-2 px-3 text-body-2"
       :style="{ backgroundColor: accentBg }"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), false)"
     >
@@ -103,7 +103,7 @@ function resultPreview(html: string | undefined): string {
     </v-btn>
     <div
       v-show="!isCollapsed(eventId, blockIdx, false)"
-      class="tool-body pt-3 px-4 pb-2 text-caption"
+      class="tool-body pt-3 px-4 pb-2 text-body-2"
     >
       <ToolInputView :tool-name="block.name" :tool-input="block.input ?? {}" />
     </div>
@@ -119,7 +119,7 @@ function resultPreview(html: string | undefined): string {
     <v-btn
       variant="text"
       block
-      class="tool-header tool-header--result py-2 px-3 text-caption"
+      class="tool-header tool-header--result py-2 px-3 text-body-2"
       :class="block.is_error ? 'tool-header--error' : ''"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), !block.is_error && !!block._isLong)"
     >
@@ -144,7 +144,7 @@ function resultPreview(html: string | undefined): string {
     <!-- eslint-disable vue/no-v-html -->
     <div
       v-show="!isCollapsed(eventId, blockIdx, !block.is_error && !!block._isLong)"
-      class="stream-markdown tool-body pt-3 px-4 pb-2 text-caption"
+      class="stream-markdown tool-body pt-3 px-4 pb-2 text-body-2"
       v-html="block._html ?? ''"
     />
     <!-- eslint-enable vue/no-v-html -->
@@ -215,7 +215,7 @@ function resultPreview(html: string | undefined): string {
 
 /* T1532: line count as pill badge, pushed to right via ml-auto on the span */
 .line-count {
-  font-size: 0.78em;
+  font-size: 0.8em;
   padding: 1px 8px;
   border-radius: var(--shape-sm);
   background: rgba(var(--v-theme-on-surface), 0.08);
@@ -226,7 +226,7 @@ function resultPreview(html: string | undefined): string {
 /* T1532: text preview of first ~80 chars below the header when collapsed */
 .tool-result-preview {
   font-family: monospace;
-  font-size: 0.78em;
+  font-size: 0.8em;
   color: var(--content-muted);
   opacity: 0.5;
   white-space: nowrap;
