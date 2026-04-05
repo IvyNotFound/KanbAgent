@@ -138,7 +138,7 @@ function formatTokens(n: number): string {
   border-radius: 4px !important;
   font-weight: 500 !important;
   color: var(--content-tertiary) !important;
-  transition: color 0.15s, background-color 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard), background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .token-tab:hover { color: var(--content-secondary) !important; }
 .token-tab--active {

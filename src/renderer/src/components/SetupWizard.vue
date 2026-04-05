@@ -262,7 +262,7 @@ async function handleSetup() {
 
 .option-box--clickable {
   cursor: pointer;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition: border-color var(--md-duration-short3) var(--md-easing-standard), background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 
 .option-box--selected {

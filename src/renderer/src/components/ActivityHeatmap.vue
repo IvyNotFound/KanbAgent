@@ -222,7 +222,7 @@ const maxCount = computed(() => Math.max(...Array.from(dayCountMap.value.values(
   height: 12px;
   border-radius: 2px;
   cursor: default;
-  transition: background-color 0.15s;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 /* Heat intensity levels */
 .heat-0 { background-color: rgba(var(--v-theme-surface-tertiary), 0.4); }

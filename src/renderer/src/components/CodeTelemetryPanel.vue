@@ -305,7 +305,7 @@ const testRatioVal = computed(() => data.value?.testRatio ?? null)
   width: 100%;
   gap: 1px; /* intentional: thin segment separator in bar chart, not layout spacing */
 }
-.telemetry-lang-segment { transition: width 0.3s; }
+.telemetry-lang-segment { transition: width var(--md-duration-medium2) var(--md-easing-standard); }
 .telemetry-lang-legend {
   display: flex;
   flex-direction: column;

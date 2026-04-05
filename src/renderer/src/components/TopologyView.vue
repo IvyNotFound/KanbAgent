@@ -175,7 +175,7 @@ function onAgentClick(row: TopologyRow): void {
 .tp-title { color: var(--content-primary); margin: 0; }
 .tp-refresh-btn {
   color: var(--content-subtle) !important;
-  transition: color 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tp-refresh-btn:hover { color: var(--content-secondary) !important; }
 .tp-state-center {
@@ -221,7 +221,7 @@ function onAgentClick(row: TopologyRow): void {
   border: 1px solid !important;
   padding: 10px 12px !important;
   overflow: hidden;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard), border-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tp-card :deep(.v-btn__content) {
   flex-direction: column;

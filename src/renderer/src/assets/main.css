@@ -43,6 +43,24 @@ body,
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
+  /* MD3 Motion — Easing */
+  --md-easing-standard:              cubic-bezier(0.2, 0, 0, 1);
+  --md-easing-standard-decelerate:   cubic-bezier(0, 0, 0, 1);
+  --md-easing-standard-accelerate:   cubic-bezier(0.3, 0, 1, 1);
+  --md-easing-emphasized:            cubic-bezier(0.2, 0, 0, 1);
+  --md-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* MD3 Motion — Duration */
+  --md-duration-short1:  50ms;
+  --md-duration-short2:  100ms;
+  --md-duration-short3:  150ms;
+  --md-duration-short4:  200ms;
+  --md-duration-medium1: 250ms;
+  --md-duration-medium2: 300ms;
+  --md-duration-medium3: 350ms;
+  --md-duration-medium4: 400ms;
+
   /* Surfaces (backgrounds) */
   --surface-base:      rgb(var(--v-theme-surface-base));
   --surface-primary:   rgb(var(--v-theme-surface-primary));
@@ -288,7 +306,7 @@ body,
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
   z-index: 1;
   font-family: inherit;
 }

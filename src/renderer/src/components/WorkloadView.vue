@@ -127,7 +127,7 @@ const maxEffort = computed(() =>
 .wl-title {}
 .wl-refresh-btn {
   color: var(--content-subtle) !important;
-  transition: color 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .wl-refresh-btn:hover { color: var(--content-secondary) !important; }
 .wl-state-center { display: flex; align-items: center; justify-content: center; padding: 32px; }
@@ -174,7 +174,7 @@ const maxEffort = computed(() =>
 .wl-bar-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.5s;
+  transition: width var(--md-duration-medium4) var(--md-easing-emphasized-decelerate);
 }
 .wl-current {
   color: var(--content-faint);

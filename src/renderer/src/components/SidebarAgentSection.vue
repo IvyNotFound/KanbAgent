@@ -292,7 +292,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   gap: 2px;
   margin-bottom: 2px;
   border-radius: 4px;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
 }
 .section-header.drag-target {
   background: rgba(var(--v-theme-primary), 0.1);
@@ -384,7 +384,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   transform: translateY(-50%);
   display: flex;
   opacity: 0;
-  transition: opacity 150ms;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
 .agent-item:hover .agent-actions { opacity: 1; }
 .drag-handle {

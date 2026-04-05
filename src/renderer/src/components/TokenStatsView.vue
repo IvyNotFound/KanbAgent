@@ -246,7 +246,7 @@ const {
   border: 1px solid var(--edge-default) !important;
   background: var(--surface-secondary) !important;
   color: var(--content-secondary) !important;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color var(--md-duration-short3) var(--md-easing-standard), color var(--md-duration-short3) var(--md-easing-standard);
 }
 .ts-period-btn:hover { border-color: rgb(var(--v-theme-primary)) !important; color: var(--content-primary) !important; }
 .ts-period-btn--active { background: rgb(var(--v-theme-primary)) !important; border-color: rgb(var(--v-theme-primary)) !important; color: #fff !important; }
@@ -325,7 +325,7 @@ const {
   width: 100%;
   border-radius: 2px 2px 0 0;
   background: rgba(var(--v-theme-secondary), 0.4);
-  transition: background 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .ts-spark-bar--hovered { background: rgb(var(--v-theme-primary)); }
 .ts-spark-zero { width: 100%; height: 2px; border-radius: 2px; background: var(--edge-subtle); }
@@ -386,7 +386,7 @@ const {
   height: 100%;
   border-radius: 4px;
   background: linear-gradient(to right, rgba(var(--v-theme-secondary),0.6), rgba(var(--v-theme-primary),0.6));
-  transition: width 0.3s;
+  transition: width var(--md-duration-medium2) var(--md-easing-standard);
 }
 .ts-bar-label {
   position: absolute;
@@ -416,7 +416,7 @@ const {
 .ts-th--right { text-align: right; }
 .ts-tbody-row {
   border-bottom: 1px solid rgba(var(--v-theme-surface-secondary), 0.4);
-  transition: background 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .ts-tbody-row:hover { background: rgba(var(--v-theme-surface-secondary), 0.4); }
 .ts-td { padding: 6px 8px; }
@@ -438,7 +438,7 @@ const {
   min-width: 24px !important;
   border-radius: 4px !important;
   color: var(--content-subtle) !important;
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard), background var(--md-duration-short3) var(--md-easing-standard);
 }
 .ts-refresh-btn:hover { color: var(--content-secondary) !important; background: var(--surface-secondary) !important; }
 .ts-refresh-btn--spinning { animation: tspin 1s linear infinite; }

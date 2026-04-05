@@ -392,7 +392,7 @@ const archivedGroupsSorted = computed(() => {
   font-size: 0.75rem;
   color: rgba(var(--v-theme-warning), 0.8);
   cursor: pointer;
-  transition: color 150ms;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .stale-task:hover {
   color: rgb(var(--v-theme-warning));
@@ -470,7 +470,7 @@ const archivedGroupsSorted = computed(() => {
   border: 1px solid var(--edge-subtle);
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 150ms, border-color 150ms;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard), border-color var(--md-duration-short3) var(--md-easing-standard);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -494,7 +494,7 @@ const archivedGroupsSorted = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.4;
-  transition: color 150ms;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .archive-card:hover .arc-title {
   color: var(--content-primary);

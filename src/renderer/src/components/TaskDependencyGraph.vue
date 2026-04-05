@@ -233,7 +233,7 @@ function typeBadgeLabel(link: TaskLink): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .dep-row:hover .dep-title {
   color: var(--content-primary);

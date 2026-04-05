@@ -382,7 +382,7 @@ const legendItems = computed(() => [
 }
 .tl-refresh-btn {
   color: var(--content-muted) !important;
-  transition: color 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tl-refresh-btn:hover:not(:disabled) { color: var(--content-primary) !important; }
 
@@ -398,13 +398,13 @@ const legendItems = computed(() => [
   padding: 2px 8px !important;
   border-radius: 9999px !important;
   border: 1px solid !important;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color var(--md-duration-short3) var(--md-easing-standard), color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tl-chip--inactive { border-color: var(--edge-subtle) !important; color: var(--content-muted) !important; }
 .tl-chip--inactive:hover { border-color: var(--edge-default) !important; }
 .tl-clear-btn {
   color: var(--content-muted) !important;
-  transition: color 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tl-clear-btn:hover { color: var(--content-primary) !important; }
 
@@ -431,7 +431,7 @@ const legendItems = computed(() => [
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid rgba(var(--v-theme-surface-secondary),0.4);
-  transition: background 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .tl-row:hover { background: rgba(var(--v-theme-surface-secondary),0.5); }
 .tl-row-label {
@@ -454,7 +454,7 @@ const legendItems = computed(() => [
   height: 24px;
   border-radius: 4px;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
 .tl-bar:hover { opacity: 0.8; }
 .tl-bar--pulse { animation: tlPulse 2s ease-in-out infinite; }

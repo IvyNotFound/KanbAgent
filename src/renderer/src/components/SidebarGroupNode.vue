@@ -262,7 +262,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   gap: 2px;
   margin-bottom: 2px;
   border-radius: 4px;
-  transition: background 150ms;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
   cursor: pointer;
 }
 .group-header.drag-target {
@@ -281,7 +281,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
 .chevron-icon {
   width: 10px;
   height: 10px;
-  transition: transform 150ms;
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
 }
 .rename-input {
   flex: 1;
@@ -419,7 +419,7 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   transform: translateY(-50%);
   display: flex;
   opacity: 0;
-  transition: opacity 150ms;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
 .agent-item:hover .agent-actions { opacity: 1; }
 .drag-handle {

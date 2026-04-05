@@ -174,13 +174,13 @@ function sortIcon(key: SortKey): string {
   position: sticky;
   top: 0;
   background: var(--surface-secondary);
-  transition: color 0.15s;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tool-stats-th:hover { color: var(--content-secondary); }
 .tool-stats-th--left { text-align: left; }
 .tool-stats-row {
   border-bottom: 1px solid rgba(var(--v-theme-surface-tertiary), 0.5);
-  transition: background-color 0.15s;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tool-stats-row:last-child { border-bottom: none; }
 .tool-stats-row:hover { background: rgba(var(--v-theme-surface-tertiary), 0.3); }

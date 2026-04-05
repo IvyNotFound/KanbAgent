@@ -455,7 +455,7 @@ function priorityColor(priority: string): string {
 .metric-card {
   border: 1px solid var(--edge-default) !important;
   background: var(--surface-secondary) !important;
-  transition: border-color 0.15s;
+  transition: border-color var(--md-duration-short3) var(--md-easing-standard);
 }
 
 .metric-card:hover {

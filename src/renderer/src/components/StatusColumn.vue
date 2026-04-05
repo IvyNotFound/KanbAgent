@@ -72,7 +72,7 @@ function onDrop(e: DragEvent): void {
   background-color: color-mix(in srgb, var(--surface-primary) 50%, transparent);
   border-radius: 12px;
   border: 1px solid var(--edge-subtle);
-  transition: border-color 150ms, background-color 150ms;
+  transition: border-color var(--md-duration-short3) var(--md-easing-standard), background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .column-wrap.drag-over {
   border-color: rgba(var(--v-theme-secondary), 0.6);

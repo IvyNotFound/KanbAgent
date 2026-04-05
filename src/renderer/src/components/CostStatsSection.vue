@@ -415,7 +415,7 @@ const hoveredBar = ref<number | null>(null)
   width: 100%;
   border-radius: 2px 2px 0 0;
   background: rgba(var(--v-theme-primary), 0.45);
-  transition: background-color 0.15s;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .cost-spark-bar--hover { background: rgb(var(--v-theme-primary)); }
 .cost-spark-zero {
@@ -471,7 +471,7 @@ const hoveredBar = ref<number | null>(null)
   height: 100%;
   border-radius: 4px;
   background: linear-gradient(to right, rgba(var(--v-theme-primary), 0.6), rgba(var(--v-theme-secondary), 0.6));
-  transition: width 0.3s;
+  transition: width var(--md-duration-medium2) var(--md-easing-standard);
 }
 .cost-bar-label {
   position: absolute;

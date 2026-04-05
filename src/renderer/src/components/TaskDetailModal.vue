@@ -411,7 +411,7 @@ onUnmounted(() => {
   min-width: 28px !important;
   border-radius: 6px !important;
   color: var(--content-subtle) !important;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
 }
 
 /* Body layout: 2 columns */
@@ -493,13 +493,13 @@ onUnmounted(() => {
 .commits-toggle {
   justify-content: space-between !important;
   height: auto !important;
-  transition: background 150ms;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .toggle-arrow {
   width: 12px;
   height: 12px;
   color: var(--content-faint);
-  transition: transform 150ms;
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
 }
 .toggle-arrow--open {
   transform: rotate(90deg);

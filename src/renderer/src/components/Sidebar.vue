@@ -238,7 +238,7 @@ function toggleSection(section: Section) {
 }
 .panel {
   overflow: hidden;
-  transition: width 200ms ease-in-out;
+  transition: width var(--md-duration-short4) var(--md-easing-emphasized-decelerate);
   flex-shrink: 0;
 }
 .panel-inner {

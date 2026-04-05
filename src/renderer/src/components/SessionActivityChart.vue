@@ -204,7 +204,7 @@ function tooltip(day: DayBars): string {
 .bar {
   width: 100%;
   border-radius: 2px;
-  transition: height 0.2s;
+  transition: height var(--md-duration-short4) var(--md-easing-standard);
 }
 
 .bar-completed { background-color: rgb(var(--v-theme-secondary)); }

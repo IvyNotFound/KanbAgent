@@ -83,7 +83,7 @@ function formatDate(iso: string): string {
   gap: 8px;
   padding: 8px 16px;
   border-bottom: 1px solid rgba(var(--v-theme-surface-tertiary), 0.5);
-  transition: background-color 0.15s;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .commit-row:last-child { border-bottom: none; }
 .commit-row:hover { background: rgba(var(--v-theme-surface-tertiary), 0.3); }

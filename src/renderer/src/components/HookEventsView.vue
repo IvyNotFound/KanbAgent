@@ -155,7 +155,7 @@ function relativeTime(ts: number): string {
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .he-event:hover { background: rgba(var(--v-theme-surface-secondary),0.4); }
 .he-event-icon {

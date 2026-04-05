@@ -422,7 +422,7 @@ function handleKeydown(e: KeyboardEvent) {
   justify-content: flex-start !important;
 }
 .prompt-arrow {
-  transition: transform 150ms;
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
 }
 .prompt-arrow--open {
   transform: rotate(90deg);

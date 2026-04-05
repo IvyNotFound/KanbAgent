@@ -292,7 +292,7 @@ async function create() {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 150ms;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .action-card:hover .action-icon-wrap { background: var(--content-faint); }
 .action-icon-wrap--primary { background: rgba(var(--v-theme-primary), 0.2); }
@@ -386,7 +386,7 @@ async function create() {
   border-radius: 8px;
   border: 1px solid var(--edge-default);
   cursor: pointer;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   background: rgba(var(--v-theme-on-surface), 0.02);
 }
 .instance-option:hover { border-color: var(--content-faint); background: var(--surface-secondary); }

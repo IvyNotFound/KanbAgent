@@ -291,7 +291,7 @@ watch(() => store.dbPath, fetchQuality)
 .quality-rate-bar-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.5s;
+  transition: width var(--md-duration-medium4) var(--md-easing-emphasized-decelerate);
 }
 .rate-bar--green { background: rgb(var(--v-theme-secondary)); }
 .rate-bar--orange { background: rgb(var(--v-theme-warning)); }

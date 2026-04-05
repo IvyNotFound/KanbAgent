@@ -150,7 +150,7 @@ onUnmounted(() => {
   background: rgba(var(--v-theme-on-surface), 0.06);
   border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   color: rgba(var(--v-theme-on-surface), 0.5);
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   width: 208px;
   cursor: pointer;
 }
@@ -186,7 +186,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   color: rgba(var(--v-theme-on-surface), 0.5);
-  transition: background 150ms, color 150ms;
+  transition: background var(--md-duration-short3) var(--md-easing-standard), color var(--md-duration-short3) var(--md-easing-standard);
   cursor: pointer;
   background: none;
   border: none;

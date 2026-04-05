@@ -485,7 +485,7 @@ async function launch() {
   border-radius: 8px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
 }
 .instance-row--idle {
   border-color: var(--edge-default);
@@ -550,7 +550,7 @@ async function launch() {
 
 /* Expand/collapse animation for conditional sections (replaces Tailwind Transition classes — T1389) */
 .expand-enter-active {
-  transition: all 200ms ease;
+  transition: all var(--md-duration-short4) var(--md-easing-standard);
   overflow: hidden;
 }
 .expand-enter-from {
@@ -562,7 +562,7 @@ async function launch() {
   max-height: 8rem;
 }
 .expand-leave-active {
-  transition: all 150ms ease;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   overflow: hidden;
 }
 .expand-leave-from {

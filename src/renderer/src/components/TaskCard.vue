@@ -207,7 +207,7 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   min-height: 120px;
   position: relative;
   overflow: hidden;
-  transition: box-shadow 150ms;
+  transition: box-shadow var(--md-duration-short3) var(--md-easing-standard);
 }
 /* MD3 state layer — translucent overlay on hover instead of border-color change */
 .task-card::after {
@@ -216,7 +216,7 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   inset: 0;
   border-radius: inherit;
   background-color: rgba(var(--v-theme-on-surface), 0);
-  transition: background-color 150ms ease;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
   pointer-events: none;
   z-index: 0;
 }

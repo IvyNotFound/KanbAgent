@@ -316,7 +316,7 @@ onMounted(scan)
   background: var(--surface-tertiary) !important;
   color: var(--content-secondary) !important;
   border-radius: 6px !important;
-  transition: background 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .telem-rescan-btn:hover:not(:disabled) { background: var(--surface-secondary) !important; }
 .telem-rescan-loading { display: flex; align-items: center; }
@@ -379,7 +379,7 @@ onMounted(scan)
   overflow: hidden;
   width: 100%;
 }
-.telem-lang-segment { transition: width 0.3s; }
+.telem-lang-segment { transition: width var(--md-duration-medium2) var(--md-easing-standard); }
 .telem-lang-legend {
   display: flex;
   flex-wrap: wrap;
@@ -424,7 +424,7 @@ onMounted(scan)
 .telem-th--right { text-align: right; }
 .telem-tbody-row {
   border-bottom: 1px solid rgba(var(--v-theme-surface-tertiary), 0.5);
-  transition: background 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .telem-tbody-row:last-child { border-bottom: none; }
 .telem-tbody-row:hover { background: rgba(var(--v-theme-surface-tertiary), 0.3); }

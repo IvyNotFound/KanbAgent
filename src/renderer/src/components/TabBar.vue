@@ -286,7 +286,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   gap: 8px;
   padding: 0 20px;
   font-weight: 600;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
   border: none;
   border-right: 1px solid rgba(var(--v-theme-on-surface), 0.08);
@@ -318,7 +318,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   background: none;
   border: none;
   cursor: pointer;
-  transition: background 150ms, color 150ms;
+  transition: background var(--md-duration-short3) var(--md-easing-standard), color var(--md-duration-short3) var(--md-easing-standard);
 }
 .scroll-arrow:hover {
   color: rgba(var(--v-theme-on-surface), 0.7);
@@ -345,7 +345,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   gap: 6px;
   padding: 0 12px;
   font-weight: 500;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
   border-radius: 4px 4px 0 0;
   flex-shrink: 0;
@@ -388,7 +388,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   opacity: 0.4;
   cursor: pointer;
   margin-left: 16px;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
 }
 .tab-close:hover {
   opacity: 1;
@@ -408,7 +408,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   gap: 6px;
   padding: 0 12px;
   font-weight: 600;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
   border-radius: 4px 4px 0 0;
   flex-shrink: 0;
@@ -426,7 +426,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   width: 10px;
   height: 10px;
   flex-shrink: 0;
-  transition: transform 150ms;
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
 }
 .tab-group-count {
   font-size: 10px;
@@ -442,7 +442,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   padding: 0 16px;
   min-width: 90px;
   font-weight: 500;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
   border-radius: 4px 4px 0 0;
   flex-shrink: 0;
@@ -465,7 +465,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   width: 16px;
   height: 24px;
   align-self: center;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
   border-radius: 3px;
   flex-shrink: 0;
@@ -478,7 +478,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   height: 6px;
   border-radius: 50%;
   opacity: 0.7;
-  transition: opacity 150ms;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
 .tab-dot:hover {
   opacity: 1;
@@ -498,7 +498,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   background: rgba(var(--v-theme-primary), 0.1);
   border: 1px solid rgba(var(--v-theme-primary), 0.3);
   border-radius: 4px;
-  transition: all 150ms;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
   margin-left: 4px;
   margin-right: 8px;
   flex-shrink: 0;

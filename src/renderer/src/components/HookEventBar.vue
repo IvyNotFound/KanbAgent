@@ -125,7 +125,7 @@ function rowLabel(e: HookEvent): string {
   align-items: center;
   padding: 6px 12px;
   user-select: none;
-  transition: background-color 0.15s;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .hook-header:hover {
   background-color: var(--surface-secondary);
@@ -190,7 +190,7 @@ function rowLabel(e: HookEvent): string {
   padding: 2px 4px;
   cursor: pointer;
   border-radius: 4px;
-  transition: background-color 0.15s;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
 .event-row:hover {
   background-color: var(--surface-secondary);

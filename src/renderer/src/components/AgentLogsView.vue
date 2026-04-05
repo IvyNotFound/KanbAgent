@@ -379,7 +379,7 @@ watch(() => props.initialAgentId, (v) => {
 /* log rows */
 .al-row {
   border-bottom: 1px solid rgba(var(--v-theme-surface-tertiary),0.5);
-  transition: background 0.15s;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .al-row--clickable { cursor: pointer; }
 .al-row--clickable:hover { background: rgba(var(--v-theme-surface-secondary),0.4); }
@@ -425,7 +425,7 @@ watch(() => props.initialAgentId, (v) => {
   width: 12px;
   height: 12px;
   color: var(--content-faint);
-  transition: transform 0.15s;
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
   margin-left: auto;
 }
 .al-chevron--open { transform: rotate(90deg); }
