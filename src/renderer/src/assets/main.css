@@ -397,7 +397,7 @@ body,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgb(var(--v-theme-on-surface-variant));
+  color: var(--content-muted);
 }
 .agent-name--active { color: var(--content-primary); }
 .agent-actions {

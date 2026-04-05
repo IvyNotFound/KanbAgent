@@ -305,9 +305,9 @@ const groupContextMenuItems = computed<ContextMenuItem[]>(() => [
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 2px 0;
-  color: rgb(var(--v-theme-on-surface-variant));
+  color: var(--content-subtle);
 }
-.group-name--deep { color: rgb(var(--v-theme-on-surface-variant)); }
+.group-name--deep { color: var(--content-faint); }
 .header-btn {
   width: 20px !important;
   min-width: 20px !important;

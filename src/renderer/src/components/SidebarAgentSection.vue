@@ -296,7 +296,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   min-height: 32px !important; /* MD3 list subheader standard */
   font-weight: 500; /* MD3 Label Large */
   letter-spacing: 0.00625em; /* MD3 Label Large: 0.1px / 16px */
-  color: rgb(var(--v-theme-on-surface-variant)) !important;
+  color: var(--content-subtle) !important;
   user-select: none;
 }
 .drop-hint {
