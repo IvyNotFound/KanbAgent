@@ -40,7 +40,7 @@ function stopAgent(): void {
 
 <template>
   <!-- ── Input zone (T681: items-end aligne boutons sur bas textarea) ─── -->
-  <div class="input-bar d-flex align-end ga-2 px-4 py-3">
+  <div class="input-bar d-flex align-end ga-2 px-5 py-4">
     <v-textarea
       v-model="inputText"
       rows="2"
@@ -52,24 +52,33 @@ function stopAgent(): void {
       class="flex-1-1 text-body-2"
       @keydown="handleKeydown"
     />
-    <!-- Stop button (T683) — visible only while agent is streaming and not yet stopped -->
+    <!-- Stop button (T683, T1536) — icon style consistent with Send.
+         Always in DOM (visibility) to prevent Send from shifting when Stop appears. -->
     <v-btn
-      v-if="isStreaming && ptyId && !agentStopped"
+      icon
+      rounded
+      variant="flat"
       color="error"
-      variant="tonal"
+      class="action-btn"
+      :style="isStreaming && ptyId && !agentStopped ? {} : { visibility: 'hidden', pointerEvents: 'none' }"
       data-testid="stop-button"
       @click="stopAgent"
-    >Stop</v-btn>
+    >
+      <v-icon icon="mdi-stop-circle" />
+    </v-btn>
     <!-- Send button — couleur agent quand actif (T680) -->
     <v-btn
       icon
       rounded
       variant="flat"
       :disabled="!inputText.trim() || !sessionId"
+      class="action-btn"
       data-testid="send-button"
       :style="inputText.trim() && sessionId ? { backgroundColor: accentFg } : {}"
       @click="sendMessage"
-    ><v-icon icon="mdi-send" /></v-btn>
+    >
+      <v-icon icon="mdi-send" />
+    </v-btn>
   </div>
 </template>
 
@@ -90,5 +99,9 @@ function stopAgent(): void {
 /* Prevent Vuetify's v-field overlay from intercepting pointer events */
 .input-bar :deep(.v-field__overlay) {
   pointer-events: none;
+}
+/* Smooth appearance transition for icon buttons (T1536) */
+.action-btn {
+  transition: all 150ms ease;
 }
 </style>
