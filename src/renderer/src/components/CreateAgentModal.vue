@@ -216,6 +216,7 @@ function handleKeydown(e: KeyboardEvent) {
             variant="text"
             size="small"
             data-testid="btn-close"
+            :color="isEditMode && agent ? agentAccent(agent.name) : undefined"
             @click="emit('close')"
           />
         </div>
@@ -396,7 +397,7 @@ function handleKeydown(e: KeyboardEvent) {
             <!-- Right: primary actions + shortcut hint near the submit button -->
             <div class="d-flex align-center ga-3">
               <span class="text-caption text-disabled">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
-              <v-btn variant="text" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
+              <v-btn variant="text" :color="isEditMode && agent ? agentAccent(agent.name) : undefined" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
               <v-btn
                 :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
                 data-testid="btn-submit"
