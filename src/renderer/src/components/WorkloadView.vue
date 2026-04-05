@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentFg } from '@renderer/utils/agentColor'
+import { agentAccent } from '@renderer/utils/agentColor'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -49,33 +49,30 @@ const maxEffort = computed(() =>
 </script>
 
 <template>
-  <div class="flex flex-col rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
+  <div class="wl-view">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
-      <h2 class="text-sm font-semibold text-content-secondary">{{ t('workload.title') }}</h2>
-      <button
-        class="text-xs text-content-subtle hover:text-content-secondary transition-colors"
-        @click="store.refresh()"
-      >{{ t('common.refresh') }}</button>
+    <div class="wl-header">
+      <h2 class="wl-title text-body-2 font-weight-medium">{{ t('workload.title') }}</h2>
+      <v-btn variant="text" size="small" class="wl-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</v-btn>
     </div>
 
     <!-- Loading -->
-    <div v-if="store.loading" class="flex items-center justify-center py-8">
-      <p class="text-sm text-content-faint animate-pulse">{{ t('common.loading') }}</p>
+    <div v-if="store.loading" class="wl-state-center">
+      <p class="wl-loading text-body-2">{{ t('common.loading') }}</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="rows.length === 0" class="flex items-center justify-center py-8">
-      <p class="text-sm text-content-faint italic">{{ t('workload.noAgents') }}</p>
+    <div v-else-if="rows.length === 0" class="wl-state-center">
+      <p class="wl-empty text-body-2">{{ t('workload.noAgents') }}</p>
     </div>
 
     <!-- Table -->
-    <div v-else class="px-5 py-4 space-y-3">
+    <div v-else class="wl-table">
       <!-- Column headers -->
-      <div class="grid grid-cols-[minmax(120px,1fr)_60px_60px_minmax(0,2fr)_minmax(0,1fr)] gap-3 text-[10px] font-semibold uppercase tracking-wider text-content-faint pb-1 border-b border-edge-subtle">
+      <div class="wl-cols wl-cols-head text-label-medium">
         <span>{{ t('workload.agent') }}</span>
-        <span class="text-right">{{ t('workload.tasks') }}</span>
-        <span class="text-right">{{ t('workload.effort') }}</span>
+        <span class="wl-right">{{ t('workload.tasks') }}</span>
+        <span class="wl-right">{{ t('workload.effort') }}</span>
         <span>{{ t('workload.bar') }}</span>
         <span>{{ t('workload.current') }}</span>
       </div>
@@ -84,39 +81,99 @@ const maxEffort = computed(() =>
       <div
         v-for="row in rows"
         :key="row.agentId"
-        class="grid grid-cols-[minmax(120px,1fr)_60px_60px_minmax(0,2fr)_minmax(0,1fr)] gap-3 items-center"
+        class="wl-cols wl-cols-row"
       >
-        <!-- Agent name -->
-        <span
-          class="text-xs font-mono font-semibold truncate"
-          :style="{ color: agentFg(row.agentName) }"
-        >{{ row.agentName }}</span>
-
-        <!-- Task count -->
-        <span class="text-xs text-content-tertiary text-right font-mono">{{ row.taskCount }}</span>
-
-        <!-- Total effort -->
-        <span class="text-xs text-content-tertiary text-right font-mono">{{ row.totalEffort }}</span>
-
-        <!-- Effort bar -->
-        <div class="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+        <span class="wl-agent-name text-caption font-mono" :style="{ color: agentAccent(row.agentName) }">{{ row.agentName }}</span>
+        <span class="wl-num wl-right text-caption font-mono">{{ row.taskCount }}</span>
+        <span class="wl-num wl-right text-caption font-mono">{{ row.totalEffort }}</span>
+        <div class="wl-bar-bg">
           <div
-            class="h-full rounded-full transition-all duration-500"
+            class="wl-bar-fill"
             :style="{
               width: maxEffort > 0 ? (row.totalEffort / maxEffort * 100) + '%' : '0%',
-              backgroundColor: agentFg(row.agentName)
+              backgroundColor: agentAccent(row.agentName)
             }"
-          ></div>
+          />
         </div>
-
-        <!-- Current in_progress task -->
         <span
           v-if="row.currentTask"
-          class="text-[10px] text-content-faint truncate"
+          class="wl-current text-label-medium"
           :title="row.currentTask"
         >{{ row.currentTask }}</span>
-        <span v-else class="text-[10px] text-content-faint opacity-40">—</span>
+        <span v-else class="wl-current wl-dash text-label-medium">—</span>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.wl-view {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--shape-sm);
+  background: var(--surface-primary);
+  border: 1px solid var(--edge-default);
+  overflow: hidden;
+}
+.wl-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.wl-title { color: var(--content-secondary); }
+.wl-refresh-btn {
+  color: var(--content-subtle) !important;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
+}
+.wl-refresh-btn:hover { color: var(--content-secondary) !important; }
+.wl-state-center { display: flex; align-items: center; justify-content: center; padding: 32px; }
+.wl-loading {}
+.wl-empty {}
+@keyframes wlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.wl-table { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+.wl-cols {
+  display: grid;
+  grid-template-columns: minmax(120px,1fr) 60px 60px minmax(0,2fr) minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+}
+.wl-cols-head {
+  color: var(--content-faint);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--edge-subtle);
+  align-items: end;
+}
+.wl-cols-row { }
+.wl-right { text-align: right; }
+.wl-agent-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-num {
+  color: var(--content-tertiary);
+}
+.wl-bar-bg {
+  height: 8px;
+  background: var(--surface-tertiary);
+  border-radius: var(--shape-full);
+  overflow: hidden;
+}
+.wl-bar-fill {
+  height: 100%;
+  border-radius: var(--shape-full);
+  transition: width var(--md-duration-medium4) var(--md-easing-emphasized-decelerate);
+}
+.wl-current {
+  color: var(--content-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-dash { opacity: 0.4; }
+</style>

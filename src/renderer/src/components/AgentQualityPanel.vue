@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentFg } from '@renderer/utils/agentColor'
+import { agentAccent } from '@renderer/utils/agentColor'
 import type { AgentQualityRow } from '@renderer/types'
 
 const { t } = useI18n()
@@ -18,6 +18,11 @@ const perimetres = computed<string[]>(() => {
   rows.value.forEach(r => { if (r.agent_scope) set.add(r.agent_scope) })
   return Array.from(set).sort()
 })
+
+const perimeterItems = computed<Array<{ title: string; value: string | null }>>(() => [
+  { title: t('quality.all'), value: null },
+  ...perimetres.value.map(p => ({ title: p, value: p }))
+])
 
 const filteredRows = computed(() =>
   filterPerimetre.value
@@ -55,15 +60,15 @@ async function fetchQuality(): Promise<void> {
 }
 
 function rateColor(rate: number): string {
-  if (rate === 0) return '#22c55e'    // green-500
-  if (rate < 20) return '#f97316'     // orange-500
-  return '#ef4444'                     // red-500
+  if (rate === 0) return 'rgb(var(--v-theme-secondary))'
+  if (rate < 20) return 'rgb(var(--v-theme-warning))'
+  return 'rgb(var(--v-theme-error))'
 }
 
 function rateBarClass(rate: number): string {
-  if (rate === 0) return 'bg-green-500'
-  if (rate < 20) return 'bg-orange-500'
-  return 'bg-red-500'
+  if (rate === 0) return 'rate-bar--green'
+  if (rate < 20) return 'rate-bar--orange'
+  return 'rate-bar--red'
 }
 
 onMounted(fetchQuality)
@@ -71,66 +76,64 @@ watch(() => store.dbPath, fetchQuality)
 </script>
 
 <template>
-  <div class="flex flex-col rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
+  <div class="quality-panel">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
-      <div class="flex items-center gap-3">
-        <h2 class="text-sm font-semibold text-content-secondary">{{ t('quality.title') }}</h2>
+    <div class="quality-header py-3 px-4">
+      <div class="quality-header-left ga-3">
+        <h2 class="quality-title text-body-2 font-weight-medium">{{ t('quality.title') }}</h2>
         <!-- Perimetre filter -->
-        <select
+        <v-select
           v-if="perimetres.length > 1"
           v-model="filterPerimetre"
-          class="text-xs bg-surface-secondary border border-edge-subtle rounded px-2 py-0.5 text-content-tertiary focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option :value="null">{{ t('quality.all') }}</option>
-          <option v-for="p in perimetres" :key="p" :value="p">{{ p }}</option>
-        </select>
+          :items="perimeterItems"
+          density="compact"
+          variant="outlined"
+          hide-details
+          style="max-width: 160px"
+        />
       </div>
-      <button
-        class="text-xs text-content-subtle hover:text-content-secondary transition-colors"
-        @click="fetchQuality"
-      >{{ t('quality.refresh') }}</button>
+      <v-btn variant="text" size="small" class="text-overline" @click="fetchQuality">{{ t('quality.refresh') }}</v-btn>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center py-8">
-      <p class="text-sm text-content-faint animate-pulse">{{ t('quality.loading') }}</p>
+    <div v-if="loading" class="quality-state pa-8">
+      <p class="quality-state-text quality-state-text--pulse text-caption">{{ t('quality.loading') }}</p>
     </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="flex items-center justify-center py-8">
-      <p class="text-sm text-red-400 italic">{{ t('quality.error', { msg: error }) }}</p>
+    <div v-else-if="error" class="quality-state pa-8">
+      <p class="quality-state-text quality-state-text--error text-caption">{{ t('quality.error', { msg: error }) }}</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="filteredRows.length === 0" class="flex items-center justify-center py-8">
-      <p class="text-sm text-content-faint italic">{{ t('quality.empty') }}</p>
+    <div v-else-if="filteredRows.length === 0" class="quality-state pa-8">
+      <p class="quality-state-text text-caption">{{ t('quality.empty') }}</p>
     </div>
 
     <template v-else>
       <!-- Global indicator -->
-      <div class="shrink-0 px-5 py-3 border-b border-edge-subtle bg-surface-base/60">
-        <div class="flex items-center gap-4">
-          <span class="text-[11px] text-content-faint uppercase tracking-wider font-semibold">{{ t('quality.rejectionRate') }}</span>
+      <div class="quality-global py-3 px-4">
+        <div class="quality-global-rate ga-4">
+          <span class="quality-rate-label text-label-medium">{{ t('quality.rejectionRate') }}</span>
           <span
-            class="text-lg font-mono font-bold"
+            class="quality-rate-value font-mono"
             :style="{ color: rateColor(globalRejectionRate) }"
           >{{ globalRejectionRate }}%</span>
-          <span v-if="!hasRejections" class="text-[11px] text-green-400 italic">{{ t('quality.noRejections') }}</span>
+          <span v-if="!hasRejections" class="quality-no-rejections text-overline">{{ t('quality.noRejections') }}</span>
         </div>
-        <p class="text-[10px] text-content-faint mt-1 italic">
+        <p class="quality-heuristic-note text-caption font-italic mt-1">
           {{ t('quality.heuristicNote') }}
         </p>
       </div>
 
       <!-- Table -->
-      <div class="px-5 py-4 space-y-2">
+      <div class="quality-table py-3 px-4 ga-2">
         <!-- Column headers -->
-        <div class="grid grid-cols-[minmax(130px,1fr)_70px_60px_50px_minmax(0,2fr)] gap-3 text-[10px] font-semibold uppercase tracking-wider text-content-faint pb-1 border-b border-edge-subtle">
+        <div class="quality-row ga-3 quality-header-row text-label-medium pb-1">
           <span>Agent</span>
-          <span class="text-right">{{ t('quality.colTotal') }}</span>
-          <span class="text-right">{{ t('quality.colRejected') }}</span>
-          <span class="text-right">{{ t('quality.colRate') }}</span>
+          <span class="quality-col-right">{{ t('quality.colTotal') }}</span>
+          <span class="quality-col-right">{{ t('quality.colRejected') }}</span>
+          <span class="quality-col-right">{{ t('quality.colRate') }}</span>
           <span>{{ t('quality.colBar') }}</span>
         </div>
 
@@ -138,40 +141,143 @@ watch(() => store.dbPath, fetchQuality)
         <div
           v-for="row in filteredRows"
           :key="row.agent_id"
-          class="grid grid-cols-[minmax(130px,1fr)_70px_60px_50px_minmax(0,2fr)] gap-3 items-center py-0.5"
+          class="quality-row ga-3 quality-data-row"
         >
           <!-- Agent name -->
           <span
-            class="text-xs font-mono font-semibold truncate"
-            :style="{ color: agentFg(row.agent_name) }"
+            class="quality-agent-name text-caption font-mono"
+            :style="{ color: agentAccent(row.agent_name) }"
             :title="row.agent_name"
           >{{ row.agent_name }}</span>
 
           <!-- Total tasks -->
-          <span class="text-xs text-content-tertiary text-right font-mono">{{ row.total_tasks }}</span>
+          <span class="quality-col-mono quality-col-right quality-col-muted text-caption font-mono">{{ row.total_tasks }}</span>
 
           <!-- Rejected tasks -->
           <span
-            class="text-xs text-right font-mono font-semibold"
+            class="quality-col-mono quality-col-right quality-col-bold text-caption font-mono"
             :style="{ color: row.rejected_tasks > 0 ? rateColor(row.rejection_rate) : 'inherit' }"
           >{{ row.rejected_tasks }}</span>
 
           <!-- Rate -->
           <span
-            class="text-xs text-right font-mono"
+            class="quality-col-mono quality-col-right text-caption font-mono"
             :style="{ color: rateColor(row.rejection_rate) }"
           >{{ row.rejection_rate }}%</span>
 
           <!-- Rate bar -->
-          <div class="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+          <div class="quality-rate-bar-track">
             <div
-              class="h-full rounded-full transition-all duration-500"
+              class="quality-rate-bar-fill"
               :class="rateBarClass(row.rejection_rate)"
               :style="{ width: row.rejection_rate + '%' }"
-            ></div>
+            />
           </div>
         </div>
       </div>
     </template>
   </div>
 </template>
+
+<style scoped>
+.quality-panel {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--shape-sm);
+  background: var(--surface-primary);
+  border: 1px solid var(--edge-default);
+  overflow: hidden;
+}
+.quality-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.quality-header-left {
+  display: flex;
+  align-items: center;
+}
+.quality-title {
+  color: var(--content-secondary);
+  margin: 0;
+}
+.quality-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quality-state-text {
+  color: var(--content-faint);
+  font-style: italic;
+  margin: 0;
+}
+.quality-state-text--pulse { animation: quality-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.quality-state-text--error { color: rgb(var(--v-theme-error)); }
+@keyframes quality-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.quality-global {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.quality-global-rate {
+  display: flex;
+  align-items: center;
+}
+.quality-rate-label {
+  color: var(--content-faint);
+}
+.quality-rate-value {
+  font-size: 18px; /* display metric — above MD3 type scale, kept intentionally */
+  font-weight: 700;
+}
+.quality-no-rejections {
+  color: rgb(var(--v-theme-secondary));
+  font-style: italic;
+}
+.quality-heuristic-note {
+  color: var(--content-faint);
+  margin: 0;
+}
+.quality-table {
+  display: flex;
+  flex-direction: column;
+}
+.quality-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) 70px 60px 50px minmax(0, 2fr);
+  align-items: center;
+}
+.quality-header-row {
+  color: var(--content-faint);
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.quality-data-row { padding: 2px 0; }
+.quality-col-right { text-align: right; }
+.quality-agent-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quality-col-mono { }
+.quality-col-muted { color: var(--content-tertiary); }
+.quality-col-bold { font-weight: 600; }
+.quality-rate-bar-track {
+  height: 6px;
+  background: var(--surface-tertiary);
+  border-radius: var(--shape-full);
+  overflow: hidden;
+}
+.quality-rate-bar-fill {
+  height: 100%;
+  border-radius: var(--shape-full);
+  transition: width var(--md-duration-medium4) var(--md-easing-emphasized-decelerate);
+}
+.rate-bar--green { background: rgb(var(--v-theme-secondary)); }
+.rate-bar--orange { background: rgb(var(--v-theme-warning)); }
+.rate-bar--red { background: rgb(var(--v-theme-error)); }
+</style>

@@ -1,98 +1,119 @@
-@import 'tailwindcss';
+/* Prevent Vuetify's `html { overflow-y: scroll }` from leaking scroll to the
+   root in Electron (no layout-shift risk here; no browser scrollbar to reserve). */
+html {
+  overflow: hidden;
+}
+
+/* ── MD3 Typography — global font stack ──────────────────────────────────────
+   Inter is not bundled; system-ui resolves to the OS native UI font
+   (Segoe UI on Windows, SF Pro on macOS, Roboto on Android/ChromeOS).
+   This matches MD3's recommendation of using the platform system font.
+   ────────────────────────────────────────────────────────────────────────── */
+body,
+.v-application {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ── MD3 Typography — Label Medium role ──────────────────────────────────────
+   Vuetify 3 utility classes use MD2 names (text-caption, text-body-2, etc.).
+   The MD3 role "Label Medium" (12px / 500 / 0.031em) maps exactly to the
+   combination `text-caption font-weight-medium` used throughout the project.
+   This single class replaces that pair everywhere.
+   ────────────────────────────────────────────────────────────────────────── */
+.text-label-medium {
+  font-size: 0.75rem;     /* 12px */
+  font-weight: 500;
+  line-height: 1rem;      /* 16px */
+  letter-spacing: 0.031em;
+}
+
+/* Constrain Vuetify app wrap to viewport height — required for the flex scroll chain.
+   Vuetify's default is min-height:100dvh (grows with content). Without an explicit height,
+   height:100% on .v-main__scroller resolves to auto, causing .stream-scroll to grow with
+   content instead of scrolling. T1522 regression fix. */
+.v-application__wrap {
+  height: 100dvh;
+  overflow: hidden;
+}
 
 /* ── Theme tokens ────────────────────────────────────────────────────────────
-   Light mode = default (:root).  Dark mode = .dark on <html>.
-   Tailwind utilities: bg-surface-base, text-content-primary, border-edge-default…
+   Derived from Vuetify theme CSS vars (--v-theme-*).
+   Vuetify sets --v-theme-* as RGB triplets on [data-v-theme="dark/light"].
+   These mappings work in both themes without any .dark class on <html>.
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Surfaces (backgrounds) */
-  --surface-base: #f4f4f5;       /* zinc-100 — deepest bg, titlebar */
-  --surface-primary: #ffffff;    /* white — main content bg */
-  --surface-secondary: #f4f4f5;  /* zinc-100 — cards, inputs, elevated */
-  --surface-tertiary: #e4e4e7;   /* zinc-200 — hover states */
-  /* Content (text) */
-  --content-primary: #18181b;    /* zinc-900 */
-  --content-secondary: #27272a;  /* zinc-800 */
-  --content-tertiary: #3f3f46;   /* zinc-700 */
-  --content-muted: #52525b;      /* zinc-600 */
-  --content-subtle: #71717a;     /* zinc-500 */
-  --content-faint: #a1a1aa;      /* zinc-400 */
-  --content-dim: #d4d4d8;        /* zinc-300 */
-  /* Edges (borders) */
-  --edge-default: #d4d4d8;       /* zinc-300 */
-  --edge-subtle: #e4e4e7;        /* zinc-200 */
-  /* Scrollbar */
-  --scrollbar-track: #e4e4e7;
-  --scrollbar-thumb: #a1a1aa;
-  --scrollbar-thumb-hover: #71717a;
-  /* Markdown code */
-  --md-code-bg: #f4f4f5;
-  --md-code-text: #3f3f46;
-  --md-pre-bg: #fafafa;
-  --md-pre-border: #d4d4d8;
-  --md-pre-text: #52525b;
-  --md-bq-border: #a1a1aa;
-  --md-bq-text: #52525b;
-  --md-hr: #d4d4d8;
-}
+  /* MD3 Motion — Easing */
+  --md-easing-standard:              cubic-bezier(0.2, 0, 0, 1);
+  --md-easing-standard-decelerate:   cubic-bezier(0, 0, 0, 1);
+  --md-easing-standard-accelerate:   cubic-bezier(0.3, 0, 1, 1);
+  --md-easing-emphasized:            cubic-bezier(0.2, 0, 0, 1);
+  --md-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
 
-.dark {
-  --surface-base: #09090b;       /* zinc-950 */
-  --surface-primary: #18181b;    /* zinc-900 */
-  --surface-secondary: #27272a;  /* zinc-800 */
-  --surface-tertiary: #3f3f46;   /* zinc-700 */
-  --content-primary: #f4f4f5;    /* zinc-100 */
-  --content-secondary: #e4e4e7;  /* zinc-200 */
-  --content-tertiary: #d4d4d8;   /* zinc-300 */
-  --content-muted: #a1a1aa;      /* zinc-400 */
-  --content-subtle: #71717a;     /* zinc-500 */
-  --content-faint: #52525b;      /* zinc-600 */
-  --content-dim: #3f3f46;        /* zinc-700 */
-  --edge-default: #3f3f46;       /* zinc-700 */
-  --edge-subtle: #27272a;        /* zinc-800 */
-  --scrollbar-track: #27272a;
-  --scrollbar-thumb: #52525b;
-  --scrollbar-thumb-hover: #71717a;
-  --md-code-bg: #27272a;
-  --md-code-text: #d4d4d8;
-  --md-pre-bg: #18181b;
-  --md-pre-border: #3f3f46;
-  --md-pre-text: #a1a1aa;
-  --md-bq-border: #52525b;
-  --md-bq-text: #a1a1aa;
-  --md-hr: #3f3f46;
+  /* MD3 Motion — Duration */
+  --md-duration-short1:  50ms;
+  --md-duration-short2:  100ms;
+  --md-duration-short3:  150ms;
+  --md-duration-short4:  200ms;
+  --md-duration-medium1: 250ms;
+  --md-duration-medium2: 300ms;
+  --md-duration-medium3: 350ms;
+  --md-duration-medium4: 400ms;
+
+  /* Surfaces (backgrounds) */
+  --surface-base:      rgb(var(--v-theme-surface-base));
+  --surface-primary:   rgb(var(--v-theme-surface-primary));
+  --surface-secondary: rgb(var(--v-theme-surface-secondary));
+  --surface-tertiary:  rgb(var(--v-theme-surface-tertiary));
+  --surface-dialog:    rgb(var(--v-theme-surface-dialog));
+  /* Content (text) */
+  --content-primary:   rgb(var(--v-theme-content-primary));
+  --content-secondary: rgb(var(--v-theme-content-secondary));
+  --content-tertiary:  rgb(var(--v-theme-content-tertiary));
+  --content-muted:     rgb(var(--v-theme-content-muted));
+  --content-subtle:    rgb(var(--v-theme-content-subtle));
+  --content-faint:     rgb(var(--v-theme-content-faint));
+  --content-dim:       rgb(var(--v-theme-content-dim));
+  /* Edges (borders) */
+  --edge-default: rgb(var(--v-theme-edge-default));
+  --edge-subtle:  rgb(var(--v-theme-edge-subtle));
+  /* Scrollbar */
+  --scrollbar-track:       rgb(var(--v-theme-scrollbar-track));
+  --scrollbar-thumb:       rgb(var(--v-theme-scrollbar-thumb));
+  --scrollbar-thumb-hover: rgb(var(--v-theme-scrollbar-thumb-hover));
+  /* MD3 Shape Scale */
+  --shape-none: 0px;
+  --shape-xs:   4px;
+  --shape-sm:   8px;
+  --shape-md:   12px;
+  --shape-lg:   16px;
+  --shape-xl:   28px;
+  --shape-full: 9999px;
+
+  /* MD3 State Layer opacities */
+  --md-state-hover:    0.08;
+  --md-state-focus:    0.12;
+  --md-state-pressed:  0.12;
+  --md-state-dragged:  0.16;
+  /* Markdown code */
+  --md-code-bg:     rgb(var(--v-theme-md-code-bg));
+  --md-code-text:   rgb(var(--v-theme-md-code-text));
+  --md-pre-bg:      rgb(var(--v-theme-md-pre-bg));
+  --md-pre-border:  rgb(var(--v-theme-md-pre-border));
+  --md-pre-text:    rgb(var(--v-theme-md-pre-text));
+  --md-bq-border:   rgb(var(--v-theme-md-bq-border));
+  --md-bq-text:     rgb(var(--v-theme-md-bq-text));
+  --md-hr:          rgb(var(--v-theme-md-hr));
 }
 
 /* ── Dev mode — slightly purple surface tint to distinguish dev from prod ──── */
-.dark.dev-mode {
-  --surface-base:      #090611;  /* zinc-950 + purple tint */
-  --surface-primary:   #0d0a14;  /* zinc-900 + purple tint */
-  --surface-secondary: #16112a;  /* zinc-800 + purple tint */
+[data-v-theme="dark"][data-dev-mode] {
+  --v-theme-surface-base:      9,6,17;   /* zinc-950 + purple tint */
+  --v-theme-surface-primary:   13,10,20; /* zinc-900 + purple tint */
+  --v-theme-surface-secondary: 22,17,42; /* zinc-800 + purple tint */
 }
 
-@theme inline {
-  --color-surface-base: var(--surface-base);
-  --color-surface-primary: var(--surface-primary);
-  --color-surface-secondary: var(--surface-secondary);
-  --color-surface-tertiary: var(--surface-tertiary);
-  --color-content-primary: var(--content-primary);
-  --color-content-secondary: var(--content-secondary);
-  --color-content-tertiary: var(--content-tertiary);
-  --color-content-muted: var(--content-muted);
-  --color-content-subtle: var(--content-subtle);
-  --color-content-faint: var(--content-faint);
-  --color-content-dim: var(--content-dim);
-  --color-edge-default: var(--edge-default);
-  --color-edge-subtle: var(--edge-subtle);
-}
-
-@theme {
-  --color-brand-violet: #8b5cf6;
-  --color-brand-emerald: #10b981;
-  --color-brand-amber: #f59e0b;
-  --color-brand-zinc: #71717a;
-}
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -163,7 +184,7 @@
   & pre {
     background-color: var(--md-pre-bg);
     border: 1px solid var(--md-pre-border);
-    border-radius: 6px;
+    border-radius: var(--shape-xs);
     padding: 0.6em 0.75em;
     overflow-x: auto;
     margin: 0.5em 0;
@@ -190,7 +211,7 @@
 
   /* links */
   & a {
-    color: #7c3aed; /* violet-600 — good contrast on light bg */
+    color: #6d3bd7; /* MD3 primary light — tone 40 */
     text-decoration: underline;
   }
 
@@ -203,10 +224,10 @@
 }
 
 /* Dark mode link color override */
-.dark {
+[data-v-theme="dark"] {
   .md-content a,
   .md-bubble a {
-    color: #a78bfa; /* violet-400 — bright for dark bg */
+    color: #d0bcff; /* MD3 primary dark — tone 80 */
   }
 }
 
@@ -225,7 +246,7 @@
   & pre code { color: inherit; }
   & blockquote { border-left-color: rgba(0, 0, 0, 0.2); }
 }
-.dark .md-bubble {
+[data-v-theme="dark"] .md-bubble {
   & code:not(pre code) {
     background-color: rgba(0, 0, 0, 0.3);
   }
@@ -240,7 +261,7 @@
    Non-scoped: injected via v-html so Vue scoped attributes won't match.
    ────────────────────────────────────────────────────────────────────────── */
 
-.stream-markdown { line-height: 1.65; }
+.stream-markdown { font-size: 0.875rem; line-height: 1.65; }
 .stream-markdown p { margin: 0.5em 0; }
 .stream-markdown p:first-child { margin-top: 0; }
 .stream-markdown p:last-child { margin-bottom: 0; }
@@ -256,14 +277,14 @@
   background: var(--md-code-bg); border-radius: 3px;
   padding: 0.1em 0.35em; font-size: 0.85em; color: var(--md-code-text);
 }
-.stream-markdown pre { margin: 0.6em 0; border-radius: 6px; overflow-x: auto; }
+.stream-markdown pre { margin: 0.6em 0; border-radius: var(--shape-xs); overflow-x: auto; }
 .stream-markdown pre code { font-size: 0.8em; padding: 0.85em 1em; display: block; }
 .stream-markdown blockquote {
   border-left: 3px solid var(--md-bq-border);
   padding-left: 0.8em; margin: 0.4em 0; color: var(--md-bq-text);
 }
-.stream-markdown a { color: #7c3aed; text-decoration: underline; }
-.dark .stream-markdown a { color: #818cf8; }
+.stream-markdown a { color: #6d3bd7; text-decoration: underline; } /* MD3 primary light — tone 40 */
+[data-v-theme="dark"] .stream-markdown a { color: #d0bcff; } /* MD3 primary dark — tone 80 */
 .stream-markdown strong { font-weight: 600; }
 .stream-markdown em { font-style: italic; }
 .stream-markdown hr { border: none; border-top: 1px solid var(--md-hr); margin: 0.8em 0; }
@@ -275,4 +296,164 @@
   border: 1px solid var(--edge-default); padding: 0.4em 0.75em; text-align: left;
 }
 .stream-markdown th { background: var(--surface-secondary); font-weight: 600; color: var(--content-secondary); }
-.stream-markdown tr:nth-child(even) td { background: var(--surface-secondary); }
+.stream-markdown tr:nth-child(odd) td { background: transparent; }
+.stream-markdown tr:nth-child(even) td { background: rgba(var(--v-theme-on-surface), 0.04); }
+
+/* ── Copy code button (T1516) ─────────────────────────────────────────────────
+   .code-block-wrapper wraps every <pre> injected by renderMarkdown.ts.
+   Button is hidden by default and revealed on hover.
+   ────────────────────────────────────────────────────────────────────────── */
+.code-block-wrapper {
+  position: relative;
+}
+
+.copy-code-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  border-radius: var(--shape-xs);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
+  z-index: 1;
+  font-family: inherit;
+}
+
+.code-block-wrapper:hover .copy-code-btn {
+  opacity: 1;
+}
+
+.copy-code-btn.copied {
+  color: #4caf50;
+  border-color: #4caf50;
+}
+
+[data-v-theme="light"] .copy-code-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-v-theme="light"] .copy-code-btn.copied {
+  color: #2e7d32;
+  border-color: #2e7d32;
+}
+
+/* ── Sidebar Agent Item — shared styles (SidebarGroupNode + SidebarAgentSection) ─
+   Centralized here to avoid drift between the two components. All MD3-aligned.
+   ────────────────────────────────────────────────────────────────────────────── */
+.agent-item { position: relative; }
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+/* MD3 status indicator — 12×12 container, 8×8 dot (50% ratio, centered) */
+.agent-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+.status-spinner {
+  width: 12px;
+  height: 12px;
+  animation: spin 1s linear infinite;
+}
+.status-pulse {
+  width: 12px;
+  height: 12px;
+  animation: pulse 2s ease-in-out infinite;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: block;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+/* MD3 Body Small (13px) — no monospace per MD3 nav conventions */
+.agent-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem; /* 13px — MD3 Body Small */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--content-muted);
+}
+.agent-name--active { color: var(--content-primary); }
+.agent-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
+}
+.agent-item:hover .agent-actions { opacity: 1; }
+.drag-handle {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: var(--content-dim);
+}
+.action-btn {
+  width: 20px !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  color: var(--content-subtle) !important;
+}
+.action-btn--launch:hover { filter: brightness(1.15); }
+.empty-msg {
+  color: var(--content-dim);
+  font-style: italic;
+}
+
+/* MD3 dialog depth — backdrop blur + elevated surface tint (v-dialog only, not menus/tooltips) */
+.v-dialog .v-overlay__scrim {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+/* MD3 elevation tint: dialog cards float above the app base surface */
+.v-dialog .v-card {
+  background-color: rgb(var(--v-theme-surface-dialog)) !important;
+}
+
+/* ── MD3 compliance — remove MD2 uppercase on all buttons ────────────────────
+   Vuetify 3 still inherits the MD2 button text-transform: uppercase.
+   MD3 spec requires sentence case (no uppercase transform) on button labels.
+   letter-spacing: 0.00625em matches MD3 Label Large spec.
+   ────────────────────────────────────────────────────────────────────────── */
+.v-btn {
+  text-transform: none;
+  letter-spacing: 0.00625em;
+}
+
+/* ── Utility — monospace font stack ─────────────────────────────────────────
+   Used alongside text-caption / text-label-medium for numeric/code values.
+   Vuetify 3 does not provide a font-mono utility out of the box.
+   ────────────────────────────────────────────────────────────────────────── */
+.font-mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
