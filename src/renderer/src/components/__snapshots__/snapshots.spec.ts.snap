@@ -292,8 +292,10 @@ exports[`TaskCard — snapshots > matches snapshot: critical in_progress task wi
       <v-chip data-v-8da3d041="" size="x-small" variant="tonal" rounded="sm" style="color: rgb(187, 222, 251); background-color: rgb(13, 71, 161);">back-electron</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-back" active="false"></agent-badge-stub>
-    </div><!-- Description excerpt: up to 2 lines, fills body to balance footer -->
-    <p data-v-8da3d041="" class="card-description text-body-2 mt-3">Description</p>
+    </div><!-- Description zone: always rendered with fixed height to guarantee uniform card height -->
+    <div data-v-8da3d041="" class="card-description-zone mt-2">
+      <p data-v-8da3d041="" class="card-description text-body-2">Description</p>
+    </div>
   </v-card-text><!-- Footer: dates left, #id right -->
   <v-card-text data-v-8da3d041="" class="card-footer-section mt-auto card-footer-bordered">
     <div data-v-8da3d041="" class="card-footer ga-2">
@@ -329,8 +331,10 @@ exports[`TaskCard — snapshots > matches snapshot: done task without agent or p
       </div>
     </div><!-- Badges: perimeter + agent avatars -->
     <!--v-if-->
-    <!-- Description excerpt: up to 2 lines, fills body to balance footer -->
-    <p data-v-8da3d041="" class="card-description text-body-2 mt-3">Description</p>
+    <!-- Description zone: always rendered with fixed height to guarantee uniform card height -->
+    <div data-v-8da3d041="" class="card-description-zone mt-2">
+      <p data-v-8da3d041="" class="card-description text-body-2">Description</p>
+    </div>
   </v-card-text><!-- Footer: dates left, #id right -->
   <v-card-text data-v-8da3d041="" class="card-footer-section mt-auto">
     <div data-v-8da3d041="" class="card-footer ga-2">
@@ -369,8 +373,10 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
       <v-chip data-v-8da3d041="" size="x-small" variant="tonal" rounded="sm" style="color: rgb(178, 223, 219); background-color: rgb(0, 77, 64);">front-vuejs</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-front" active="false"></agent-badge-stub>
-    </div><!-- Description excerpt: up to 2 lines, fills body to balance footer -->
-    <p data-v-8da3d041="" class="card-description text-body-2 mt-3">Description</p>
+    </div><!-- Description zone: always rendered with fixed height to guarantee uniform card height -->
+    <div data-v-8da3d041="" class="card-description-zone mt-2">
+      <p data-v-8da3d041="" class="card-description text-body-2">Description</p>
+    </div>
   </v-card-text><!-- Footer: dates left, #id right -->
   <v-card-text data-v-8da3d041="" class="card-footer-section mt-auto card-footer-bordered">
     <div data-v-8da3d041="" class="card-footer ga-2">
