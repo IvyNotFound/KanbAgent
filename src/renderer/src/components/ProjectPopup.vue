@@ -83,7 +83,7 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
         <div class="popup-header py-4 px-5">
           <div class="popup-header-left">
             <div class="popup-icon">
-              <v-icon class="icon-sm" size="16">mdi-folder-outline</v-icon>
+              <v-icon size="16" color="on-surface-variant">mdi-folder-outline</v-icon>
             </div>
             <h2 class="popup-title text-subtitle-2">{{ t('project.activeTitle') }}</h2>
           </div>
@@ -181,7 +181,6 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .popup-title {
