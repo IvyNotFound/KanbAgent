@@ -2,7 +2,7 @@
 /**
  * StreamToolBlock — renders a single tool_use or tool_result block from a stream event.
  *
- * For tool_use blocks, provides per-tool structured display:
+ * For tool_use blocks, delegates per-tool structured display to ToolInputView:
  *   - Edit: inline diff view (old/new lines, capped at 50 lines each)
  *   - Bash: command block
  *   - Read: file path + optional offset/limit metadata
@@ -19,6 +19,7 @@
  */
 import { useI18n } from 'vue-i18n'
 import type { StreamContentBlock } from '@renderer/types/stream'
+import ToolInputView from './ToolInputView.vue'
 
 const { t } = useI18n()
 
@@ -58,82 +59,6 @@ function collapseKey(eventId: number, blockIdx: number): string {
 function isCollapsed(eventId: number, blockIdx: number, defaultCollapsed = false): boolean {
   const key = collapseKey(eventId, blockIdx)
   return props.collapsed[key] ?? defaultCollapsed
-}
-
-/**
- * Serializes a tool input object to an indented JSON string for display.
- * Used as fallback for tool types without a dedicated structured view.
- * @param input - Raw tool input object from the stream event.
- * @returns Formatted JSON string, or empty string if input is falsy.
- */
-function toolInputPreview(input: Record<string, unknown> | undefined): string {
-  if (!input) return ''
-  try {
-    return JSON.stringify(input, null, 2)
-  } catch {
-    return String(input)
-  }
-}
-
-interface DiffLine {
-  idx: number
-  type: 'remove' | 'add' | 'separator'
-  prefix: string
-  text: string
-  label?: string
-}
-
-/**
- * Builds a flat list of diff lines from an Edit tool input for display.
- * Old lines are prefixed with `-` (remove), new lines with `+` (add).
- * Each group is preceded by a separator row labeled `old` or `new`.
- * Truncates each group to 50 lines and appends a count row when over the limit.
- * @param input - Tool input containing `old_string` and/or `new_string`.
- * @returns Ordered array of DiffLine entries ready for template rendering.
- */
-function diffLines(input: Record<string, unknown> | undefined): DiffLine[] {
-  if (!input) return []
-  const oldLines = String(input.old_string ?? '').split('\n')
-  const newLines = String(input.new_string ?? '').split('\n')
-  const result: DiffLine[] = []
-  let idx = 0
-  if (input.old_string) {
-    result.push({ idx: idx++, type: 'separator', prefix: '', text: '', label: 'old' })
-    const removeLimit = Math.min(oldLines.length, 50)
-    for (let i = 0; i < removeLimit; i++) {
-      result.push({ idx: idx++, type: 'remove', prefix: '-', text: oldLines[i] })
-    }
-    if (oldLines.length > 50) {
-      result.push({ idx: idx++, type: 'remove', prefix: '…', text: `(${oldLines.length - 50} more lines)` })
-    }
-  }
-  if (input.new_string) {
-    result.push({ idx: idx++, type: 'separator', prefix: '', text: '', label: 'new' })
-    const addLimit = Math.min(newLines.length, 50)
-    for (let i = 0; i < addLimit; i++) {
-      result.push({ idx: idx++, type: 'add', prefix: '+', text: newLines[i] })
-    }
-    if (newLines.length > 50) {
-      result.push({ idx: idx, type: 'add', prefix: '…', text: `(${newLines.length - 50} more lines)` })
-    }
-  }
-  return result
-}
-
-function writeLines(input: Record<string, unknown> | undefined): DiffLine[] {
-  if (!input?.content) return []
-  const lines = String(input.content).split('\n')
-  const limit = Math.min(lines.length, 50)
-  const result: DiffLine[] = lines.slice(0, limit).map((text, i) => ({
-    idx: i,
-    type: 'add' as const,
-    prefix: '+',
-    text,
-  }))
-  if (lines.length > limit) {
-    result.push({ idx: limit, type: 'add', prefix: '…', text: `(${lines.length - limit} more lines)` })
-  }
-  return result
 }
 
 // T1532: extract plain-text preview from rendered HTML (strip tags + decode entities)
@@ -180,131 +105,7 @@ function resultPreview(html: string | undefined): string {
       v-show="!isCollapsed(eventId, blockIdx, false)"
       class="tool-body pt-3 px-4 pb-2 text-caption"
     >
-      <!-- Edit: diff view (T1514) -->
-      <template v-if="block.name === 'Edit'">
-        <div
-          v-if="block.input?.file_path"
-          class="tool-filepath"
-        >
-          {{ block.input.file_path }}
-        </div>
-        <div class="diff-view">
-          <template
-            v-for="line in diffLines(block.input)"
-            :key="line.idx"
-          >
-            <div
-              v-if="line.type === 'separator'"
-              :class="line.label === 'old' ? 'diff-section-label diff-section-label--remove' : 'diff-section-label diff-section-label--add'"
-            >
-              {{ line.label }}
-            </div>
-            <div
-              v-else
-              :class="line.type === 'remove' ? 'diff-remove' : 'diff-add'"
-            >
-              <span class="diff-prefix">{{ line.prefix }}</span>{{ line.text }}
-            </div>
-          </template>
-        </div>
-      </template>
-
-      <!-- Bash: command block (T1514) -->
-      <template v-else-if="block.name === 'Bash'">
-        <pre class="tool-command">{{ block.input?.command ?? '' }}</pre>
-      </template>
-
-      <!-- Read: file_path + optional offset/limit (T1514) -->
-      <template v-else-if="block.name === 'Read'">
-        <div
-          v-if="block.input?.file_path"
-          class="tool-filepath"
-        >
-          {{ block.input.file_path }}
-        </div>
-        <div
-          v-if="block.input?.offset != null || block.input?.limit != null"
-          class="tool-meta"
-        >
-          <span v-if="block.input?.offset != null"><span class="tool-key">offset:</span> {{ block.input.offset }}</span>
-          <span
-            v-if="block.input?.limit != null"
-            class="tool-meta-sep"
-          ><span class="tool-key">limit:</span> {{ block.input.limit }}</span>
-        </div>
-      </template>
-
-      <!-- Write: file_path header + all-green diff (T1529) -->
-      <template v-else-if="block.name === 'Write'">
-        <div
-          v-if="block.input?.file_path"
-          class="tool-filepath"
-        >
-          {{ block.input.file_path }}
-        </div>
-        <div class="diff-view">
-          <div
-            v-for="line in writeLines(block.input)"
-            :key="line.idx"
-            class="diff-add"
-          >
-            <span class="diff-prefix">{{ line.prefix }}</span>{{ line.text }}
-          </div>
-        </div>
-      </template>
-
-      <!-- Grep: pattern highlight + path (T1514) -->
-      <template v-else-if="block.name === 'Grep'">
-        <div
-          v-if="block.input?.pattern"
-          class="tool-pattern"
-        >
-          {{ block.input.pattern }}
-        </div>
-        <div
-          v-if="block.input?.path"
-          class="tool-filepath"
-        >
-          <span class="tool-key">path:</span> {{ block.input.path }}
-        </div>
-      </template>
-
-      <!-- Glob: pattern + path (T1514) -->
-      <template v-else-if="block.name === 'Glob'">
-        <div
-          v-if="block.input?.pattern"
-          class="tool-pattern"
-        >
-          {{ block.input.pattern }}
-        </div>
-        <div
-          v-if="block.input?.path"
-          class="tool-filepath"
-        >
-          <span class="tool-key">path:</span> {{ block.input.path }}
-        </div>
-      </template>
-
-      <!-- Agent: description + subagent_type (T1514) -->
-      <template v-else-if="block.name === 'Agent'">
-        <div
-          v-if="block.input?.subagent_type"
-          class="tool-pattern"
-        >
-          {{ block.input.subagent_type }}
-        </div>
-        <div
-          v-if="block.input?.description"
-          class="tool-meta"
-        >
-          {{ block.input.description }}
-        </div>
-      </template>
-
-      <!-- Fallback: raw JSON for unknown tools -->
-      <template v-else>
-        <pre>{{ toolInputPreview(block.input) }}</pre>
-      </template>
+      <ToolInputView :tool-name="block.name" :tool-input="block.input ?? {}" />
     </div>
   </div>
 
@@ -446,98 +247,4 @@ function resultPreview(html: string | undefined): string {
 .tool-block--use .tool-body {
   background: var(--surface-secondary);
 }
-
-.tool-body pre {
-  white-space: pre-wrap;
-  margin: 0;
-}
-
-/* Per-tool structured display (T1514, T1520) */
-/* T1639: primary elements override --content-muted inherited from .tool-body */
-.tool-filepath {
-  margin-bottom: 6px;
-  font-size: 0.85em;
-  font-family: monospace;
-  color: var(--content-secondary);
-}
-
-.tool-key {
-  opacity: 0.5;
-  font-size: 0.85em;
-  user-select: none;
-  margin-right: 2px;
-}
-
-.tool-pattern {
-  font-family: monospace;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: var(--content-secondary);
-}
-
-.tool-meta {
-  opacity: 0.8;
-  margin-top: 4px;
-}
-
-.tool-meta-sep {
-  margin-left: 8px;
-}
-
-.tool-command {
-  background: rgba(var(--v-theme-on-surface), 0.06);
-  padding: 8px 12px;
-  border-radius: var(--shape-xs);
-  white-space: pre-wrap;
-  margin: 0;
-  word-break: break-all;
-  color: var(--content-primary);
-}
-
-/* Diff view for Edit tool */
-.diff-view {
-  font-family: monospace;
-  font-size: 0.9em;
-  border-radius: var(--shape-xs);
-  overflow: hidden;
-}
-
-.diff-remove {
-  background: rgba(239, 68, 68, 0.18);
-  color: rgb(248, 113, 113);
-  padding: 1px 4px;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.diff-add {
-  background: rgba(34, 197, 94, 0.18);
-  color: rgb(74, 222, 128);
-  padding: 1px 4px;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-/* T1570: adapt diff text colors for light theme (neutral bg) */
-:global(.v-theme--light) .diff-remove { color: rgb(185, 28, 28); }
-:global(.v-theme--light) .diff-add    { color: rgb(21, 128, 61); }
-
-.diff-prefix {
-  user-select: none;
-  opacity: 0.7;
-  margin-right: 4px;
-  font-weight: bold;
-}
-
-.diff-section-label {
-  font-size: 0.75em;
-  font-weight: 600;
-  text-transform: uppercase;
-  opacity: 0.5;
-  padding: 2px 4px;
-  margin-top: 4px;
-  user-select: none;
-}
-.diff-section-label--remove { color: rgb(248, 113, 113); }
-.diff-section-label--add    { color: rgb(74, 222, 128); }
 </style>
