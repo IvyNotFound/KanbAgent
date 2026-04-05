@@ -1,18 +1,18 @@
 /**
- * Mutation-focused tests for agentColor.ts (T1286 + T1467, updated T1623)
+ * Mutation-focused tests for agentColor.ts (T1286 + T1467, updated T1625)
  *
  * Kills surviving mutants in:
  * - hash(): h * 31 + charCodeAt(0) — exact palette indices for known names
- * - agentHue(): hash(name) % 13 (palette size) — kills off-by-one on modulo
+ * - agentHue(): hash(name) % 12 (palette size) — kills off-by-one on modulo
  * - cacheSet(): FIFO eviction at exactly CACHE_MAX boundary (>= not >)
  * - setDarkMode(): no-op guard — kills removal of the isDark() early return
  *
- * Pre-computed palette indices (hash(name) % 13):
- *   'a'   → hash=97,   97  % 13 = 6
- *   'ab'  → hash=3105, 3105% 13 = 11
- *   'aa'  → hash=3104, 3104% 13 = 10
- *   'z'   → hash=122,  122 % 13 = 5
- *   'bc'  → hash=3137, 3137% 13 = 4
+ * Pre-computed palette indices (hash(name) % 12):
+ *   'a'   → hash=97,   97  % 12 = 1
+ *   'ab'  → hash=3105, 3105% 12 = 9
+ *   'aa'  → hash=3104, 3104% 12 = 8
+ *   'z'   → hash=122,  122 % 12 = 2
+ *   'bc'  → hash=3137, 3137% 12 = 5
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import {
@@ -44,38 +44,38 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
 
   // ── Hash arithmetic — exact palette indices ───────────────────────────────────
   describe('hash arithmetic — exact palette indices', () => {
-    it('agentHue("a") = 6 (hash=97, 97%13=6)', () => {
-      // hash("a") = charCode('a') = 97; 97 % 13 = 6
-      expect(agentHue('a')).toBe(6)
+    it('agentHue("a") = 1 (hash=97, 97%12=1)', () => {
+      // hash("a") = charCode('a') = 97; 97 % 12 = 1
+      expect(agentHue('a')).toBe(1)
     })
 
-    it('agentHue("ab") = 11 — verifies h*31 multiplier (not h+ch or h*32)', () => {
+    it('agentHue("ab") = 9 — verifies h*31 multiplier (not h+ch or h*32)', () => {
       // hash("ab"):
       //   after 'a': h = (0 * 31 + 97) & 0xffffffff = 97
       //   after 'b': h = (97 * 31 + 98) & 0xffffffff = 3105
-      //   3105 % 13 = 11
-      expect(agentHue('ab')).toBe(11)
+      //   3105 % 12 = 9
+      expect(agentHue('ab')).toBe(9)
     })
 
-    it('agentHue("z") = 5 (hash=122, 122%13=5)', () => {
-      // charCode('z') = 122; 122 % 13 = 5
-      expect(agentHue('z')).toBe(5)
+    it('agentHue("z") = 2 (hash=122, 122%12=2)', () => {
+      // charCode('z') = 122; 122 % 12 = 2
+      expect(agentHue('z')).toBe(2)
     })
 
-    it('agentHue("aa") = 10 — verifies multiplier 31 vs alternatives', () => {
+    it('agentHue("aa") = 8 — verifies multiplier 31 vs alternatives', () => {
       // hash("aa"):
       //   h = 97 after 'a'
       //   h = (97 * 31 + 97) & 0xffffffff = 3104 after second 'a'
-      //   3104 % 13 = 10
-      expect(agentHue('aa')).toBe(10)
+      //   3104 % 12 = 8
+      expect(agentHue('aa')).toBe(8)
     })
 
-    it('agentHue("bc") = 4 — verifies exact hash chain', () => {
+    it('agentHue("bc") = 5 — verifies exact hash chain', () => {
       // charCode('b') = 98, charCode('c') = 99
       // h = 98 after 'b'
       // h = (98 * 31 + 99) & 0xffffffff = 3137 after 'c'
-      // 3137 % 13 = 4
-      expect(agentHue('bc')).toBe(4)
+      // 3137 % 12 = 5
+      expect(agentHue('bc')).toBe(5)
     })
 
     it('agentHue("") = 0 (hash returns 0 for empty string)', () => {
@@ -89,7 +89,7 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
       for (let i = 0; i < 100; i++) {
         const idx = agentHue(`lru-boundary-${i}`)
         expect(idx).toBeGreaterThanOrEqual(0)
-        expect(idx).toBeLessThan(13)
+        expect(idx).toBeLessThan(12)
       }
     })
 
@@ -97,11 +97,11 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
       for (let i = 0; i < 101; i++) {
         const idx = agentHue(`lru-trigger-${i}`)
         expect(idx).toBeGreaterThanOrEqual(0)
-        expect(idx).toBeLessThan(13)
+        expect(idx).toBeLessThan(12)
       }
       const idx101 = agentHue('lru-trigger-101')
       expect(idx101).toBeGreaterThanOrEqual(0)
-      expect(idx101).toBeLessThan(15)
+      expect(idx101).toBeLessThan(12)
     })
 
     it('agentFg eviction at boundary — 100 entries then 101st returns valid hex', () => {
@@ -229,8 +229,8 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
   })
 
   // ── Palette coverage ─────────────────────────────────────────────────────────
-  describe('palette coverage — all 13 indices reachable', () => {
-    it('all names produce palette index from [0, 12]', () => {
+  describe('palette coverage — all 12 indices reachable', () => {
+    it('all names produce palette index from [0, 11]', () => {
       const names = [
         'a', 'b', 'ab', 'review', 'dev-front', 'test-back',
         'doc', 'arch', 'setup', 'devops', 'infra-prod', 'ux-front',
@@ -238,16 +238,16 @@ describe('agentColor mutation coverage (T1286 + T1467)', () => {
       for (const name of names) {
         const idx = agentHue(name)
         expect(idx).toBeGreaterThanOrEqual(0)
-        expect(idx).toBeLessThanOrEqual(12)
+        expect(idx).toBeLessThanOrEqual(11)
       }
     })
 
-    it('single-char names a-m cover all 13 palette indices', () => {
+    it('single-char names a-l cover all 12 palette indices', () => {
       const found = new Set<number>()
-      for (const ch of 'abcdefghijklm') {
+      for (const ch of 'abcdefghijkl') {
         found.add(agentHue(ch))
       }
-      expect(found.size).toBe(13)
+      expect(found.size).toBe(12)
     })
   })
 

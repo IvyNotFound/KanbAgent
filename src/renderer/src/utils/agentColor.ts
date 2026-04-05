@@ -1,10 +1,15 @@
 /**
  * Agent color utilities for KanbAgent.
  *
- * Maps agent names to deterministic colors from a 13-family Material Design 2 palette
+ * Maps agent names to deterministic colors from a 12-family Material Design 2 palette
  * (imported from `vuetify/util/colors`). Each agent always resolves to the same family
- * (index 0–12) via a string hash, ensuring a consistent visual identity across all
+ * (index 0–11) via a string hash, ensuring a consistent visual identity across all
  * UI surfaces: badges, borders, sidebar dots, tab accents.
+ *
+ * Green families (teal, green, lightGreen, lime) and harsh warm families (orange,
+ * deepOrange) are excluded. Orange and deepOrange produce visually aggressive badges
+ * and have luminance values (~0.15–0.30) that make WCAG AA text contrast unreliable
+ * in dark mode. Teal (blue-green, distinct from pure green) replaces them.
  *
  * Four public color functions cover all use cases:
  *   - `agentFg`     — text / icon color on badge background (WCAG AA contrast guaranteed)
@@ -23,9 +28,14 @@ import { ref } from 'vue'
 import colors from 'vuetify/util/colors'
 
 /**
- * Material Design 2 palette — 13 color families, deterministically indexed.
- * Green families (teal, green, lightGreen, lime) are excluded to avoid unreadable
- * low-contrast greens in dark mode and dominant greens in light mode.
+ * Material Design 2 palette — 12 color families, deterministically indexed.
+ * Excluded families:
+ * - Green families (teal excluded as a green lookalike — actually blue-green, so included;
+ *   green, lightGreen, lime excluded for low-contrast issues in dark mode)
+ * - orange (darken4 #E65100): extremely saturated, visually aggressive badge in dark mode;
+ *   luminance ~0.23 makes WCAG AA text contrast unreliable
+ * - deepOrange (darken4 #BF360C): same issue, even more violet-red
+ * Teal replaces them: teal.darken4 (#004D40) is a calm blue-green, visually distinct.
  */
 const MD_PALETTE = [
   colors.red,        // 0
@@ -36,11 +46,10 @@ const MD_PALETTE = [
   colors.blue,       // 5
   colors.lightBlue,  // 6
   colors.cyan,       // 7
-  colors.brown,      // 8
-  colors.blueGrey,   // 9
-  colors.amber,      // 10
-  colors.orange,     // 11
-  colors.deepOrange, // 12
+  colors.teal,       // 8
+  colors.brown,      // 9
+  colors.blueGrey,   // 10
+  colors.amber,      // 11
 ]
 
 type ColorFamily = (typeof MD_PALETTE)[number]
@@ -154,7 +163,7 @@ export function getOnColor(bgHex: string): string {
 }
 
 /**
- * Returns a deterministic palette index (0–12) for a given agent name.
+ * Returns a deterministic palette index (0–11) for a given agent name.
  * Results are cached for performance.
  * @param name - Agent name.
  * @returns Palette index (0 to MD_PALETTE.length - 1).

@@ -23,7 +23,7 @@ describe('agentColor', () => {
       for (let i = 0; i < 110; i++) {
         const idx = agentHue(`cache-test-name-${i}`)
         expect(idx).toBeGreaterThanOrEqual(0)
-        expect(idx).toBeLessThan(13)
+        expect(idx).toBeLessThan(12)
       }
     })
 

@@ -1,18 +1,18 @@
 /**
- * MD2 palette correctness tests for agentColor.ts (T1467, updated T1623)
+ * MD2 palette correctness tests for agentColor.ts (T1467, updated T1625)
  *
  * Verifies that the Material Design 2 color migration is correct:
- * - agentHue returns palette indices 0–12 (13-family palette, no green families)
+ * - agentHue returns palette indices 0–11 (12-family palette, no green/orange/deepOrange)
  * - Each color function picks the right shade for dark/light mode
  * - Exact hex values for known names (palette index deterministic from hash)
  * - Cache eviction continues to work with hex output
  *
- * Pre-computed palette indices (hash(name) % 13):
- *   'a'  → idx=6  (lightBlue)
- *   'b'  → idx=7  (cyan)
- *   'i'  → idx=1  (pink)
- *   'j'  → idx=2  (purple)
- *   'k'  → idx=3  (deepPurple)
+ * Pre-computed palette indices (hash(name) % 12):
+ *   'a'  → idx=1  (pink)
+ *   'b'  → idx=2  (purple)
+ *   'i'  → idx=9  (brown)
+ *   'j'  → idx=10 (blueGrey)
+ *   'k'  → idx=11 (amber)
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import {
@@ -53,64 +53,64 @@ describe('agentColor MD2 palette (T1467)', () => {
   afterEach(() => setDarkMode(false))
 
   // ── Palette index range ───────────────────────────────────────────────────────
-  describe('agentHue() — palette index 0–12', () => {
-    it('returns index 6 for "a" (hash=97, 97%13=6)', () => {
-      expect(agentHue('a')).toBe(6)
+  describe('agentHue() — palette index 0–11', () => {
+    it('returns index 1 for "a" (hash=97, 97%12=1)', () => {
+      expect(agentHue('a')).toBe(1)
     })
 
-    it('returns index 7 for "b" (hash=98, 98%13=7)', () => {
-      expect(agentHue('b')).toBe(7)
+    it('returns index 2 for "b" (hash=98, 98%12=2)', () => {
+      expect(agentHue('b')).toBe(2)
     })
 
-    it('returns index 1 for "i" (hash=105, 105%13=1)', () => {
-      expect(agentHue('i')).toBe(1)
+    it('returns index 9 for "i" (hash=105, 105%12=9)', () => {
+      expect(agentHue('i')).toBe(9)
     })
 
-    it('returns index 2 for "j" (hash=106, 106%13=2)', () => {
-      expect(agentHue('j')).toBe(2)
+    it('returns index 10 for "j" (hash=106, 106%12=10)', () => {
+      expect(agentHue('j')).toBe(10)
     })
 
-    it('returns index 3 for "k" (hash=107, 107%13=3)', () => {
-      expect(agentHue('k')).toBe(3)
+    it('returns index 11 for "k" (hash=107, 107%12=11)', () => {
+      expect(agentHue('k')).toBe(11)
     })
 
-    it('all results are in range [0, 12]', () => {
-      const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm']
+    it('all results are in range [0, 11]', () => {
+      const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']
       for (const name of names) {
         const idx = agentHue(name)
         expect(idx).toBeGreaterThanOrEqual(0)
-        expect(idx).toBeLessThanOrEqual(12)
+        expect(idx).toBeLessThanOrEqual(11)
       }
     })
 
-    it('all 13 palette indices are reachable', () => {
+    it('all 12 palette indices are reachable', () => {
       const found = new Set<number>()
-      for (const name of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm']) {
+      for (const name of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']) {
         found.add(agentHue(name))
       }
-      // Single-char ASCII letters a-m span exactly indices 6-12 then wraps to 0-5 (13 total)
-      expect(found.size).toBe(13)
+      // Single-char ASCII letters a-l span exactly indices 1-11 then wraps to 0 (12 total)
+      expect(found.size).toBe(12)
     })
   })
 
   // ── agentFg() — WCAG AA ratio >= 4.5:1 (T1510: shade escalation replaces fixed shades) ────
   describe('agentFg() — WCAG AA contrast ratio >= 4.5:1', () => {
-    it('"a" (cyan idx=7) dark meets WCAG AA', () => {
+    it('"a" (pink idx=1) dark meets WCAG AA', () => {
       setDarkMode(true)
       expect(contrastRatio(agentFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('"a" (cyan idx=7) light meets WCAG AA', () => {
+    it('"a" (pink idx=1) light meets WCAG AA', () => {
       setDarkMode(false)
       expect(contrastRatio(agentFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('"i" (red idx=0) dark meets WCAG AA', () => {
+    it('"i" (brown idx=9) dark meets WCAG AA', () => {
       setDarkMode(true)
       expect(contrastRatio(agentFg('i'), agentBg('i'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('"i" (red idx=0) light meets WCAG AA', () => {
+    it('"i" (brown idx=9) light meets WCAG AA', () => {
       setDarkMode(false)
       expect(contrastRatio(agentFg('i'), agentBg('i'))).toBeGreaterThanOrEqual(4.5)
     })
@@ -137,24 +137,24 @@ describe('agentColor MD2 palette (T1467)', () => {
 
   // ── agentBg() — darken4 dark / lighten5 light ────────────────────────────────
   describe('agentBg() — exact MD2 hex values', () => {
-    it('"a" (lightBlue idx=6) dark → lightBlue darken4 #01579b', () => {
+    it('"a" (pink idx=1) dark → pink darken4 #880e4f', () => {
       setDarkMode(true)
-      expect(agentBg('a')).toBe('#01579b')
+      expect(agentBg('a')).toBe('#880e4f')
     })
 
-    it('"a" (lightBlue idx=6) light → lightBlue lighten5 #e1f5fe', () => {
+    it('"a" (pink idx=1) light → pink lighten5 #fce4ec', () => {
       setDarkMode(false)
-      expect(agentBg('a')).toBe('#e1f5fe')
+      expect(agentBg('a')).toBe('#fce4ec')
     })
 
-    it('"i" (pink idx=1) dark → pink darken4 #880e4f', () => {
+    it('"i" (brown idx=9) dark → brown darken4 #3e2723', () => {
       setDarkMode(true)
-      expect(agentBg('i')).toBe('#880e4f')
+      expect(agentBg('i')).toBe('#3e2723')
     })
 
-    it('"i" (pink idx=1) light → pink lighten5 #fce4ec', () => {
+    it('"i" (brown idx=9) light → brown lighten5 #efebe9', () => {
       setDarkMode(false)
-      expect(agentBg('i')).toBe('#fce4ec')
+      expect(agentBg('i')).toBe('#efebe9')
     })
 
     it('agentBg dark differs from agentFg dark (different shades)', () => {
@@ -174,14 +174,14 @@ describe('agentColor MD2 palette (T1467)', () => {
 
   // ── agentBorder() — darken2 dark / lighten2 light ────────────────────────────
   describe('agentBorder() — exact MD2 hex values', () => {
-    it('"a" (lightBlue idx=6) dark → lightBlue darken2 #0288d1', () => {
+    it('"a" (pink idx=1) dark → pink darken2 #c2185b', () => {
       setDarkMode(true)
-      expect(agentBorder('a')).toBe('#0288d1')
+      expect(agentBorder('a')).toBe('#c2185b')
     })
 
-    it('"a" (lightBlue idx=6) light → lightBlue lighten2 #4fc3f7', () => {
+    it('"a" (pink idx=1) light → pink lighten2 #f06292', () => {
       setDarkMode(false)
-      expect(agentBorder('a')).toBe('#4fc3f7')
+      expect(agentBorder('a')).toBe('#f06292')
     })
 
     it('agentBorder dark differs from agentBg dark', () => {
@@ -233,14 +233,14 @@ describe('agentColor MD2 palette (T1467)', () => {
 
   // ── perimeterBg() — darken4 dark / lighten5 light (same as agentBg) ──────────
   describe('perimeterBg() — exact MD2 hex values', () => {
-    it('"a" (lightBlue idx=6) dark → lightBlue darken4 #01579b', () => {
+    it('"a" (pink idx=1) dark → pink darken4 #880e4f', () => {
       setDarkMode(true)
-      expect(perimeterBg('a')).toBe('#01579b')
+      expect(perimeterBg('a')).toBe('#880e4f')
     })
 
-    it('"a" (lightBlue idx=6) light → lightBlue lighten5 #e1f5fe', () => {
+    it('"a" (pink idx=1) light → pink lighten5 #fce4ec', () => {
       setDarkMode(false)
-      expect(perimeterBg('a')).toBe('#e1f5fe')
+      expect(perimeterBg('a')).toBe('#fce4ec')
     })
 
     it('dark and light values always differ', () => {
@@ -256,14 +256,14 @@ describe('agentColor MD2 palette (T1467)', () => {
 
   // ── perimeterBorder() — darken3 dark / lighten3 light ────────────────────────
   describe('perimeterBorder() — exact MD2 hex values', () => {
-    it('"a" (lightBlue idx=6) dark → lightBlue darken3 #0277bd', () => {
+    it('"a" (pink idx=1) dark → pink darken3 #ad1457', () => {
       setDarkMode(true)
-      expect(perimeterBorder('a')).toBe('#0277bd')
+      expect(perimeterBorder('a')).toBe('#ad1457')
     })
 
-    it('"a" (lightBlue idx=6) light → lightBlue lighten3 #81d4fa', () => {
+    it('"a" (pink idx=1) light → pink lighten3 #f48fb1', () => {
       setDarkMode(false)
-      expect(perimeterBorder('a')).toBe('#81d4fa')
+      expect(perimeterBorder('a')).toBe('#f48fb1')
     })
 
     it('perimeterBorder dark differs from agentBorder dark (different shade: darken3 vs darken2)', () => {
@@ -337,12 +337,11 @@ describe('agentColor MD2 palette (T1467)', () => {
   })
 })
 
-// ─── T1510: WCAG AA compliance — all 13 families × 2 themes ──────────────────
-// Single-char names a–m map to palette indices 6–12 then 0–5, covering all 13.
-//   a=lightBlue(6) b=cyan(7) c=brown(8) d=blueGrey(9) e=amber(10) f=orange(11)
-//   g=deepOrange(12) h=red(0) i=pink(1) j=purple(2) k=deepPurple(3)
-//   l=indigo(4) m=blue(5)
-const ALL_FAMILIES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm']
+// ─── T1510: WCAG AA compliance — all 12 families × 2 themes ──────────────────
+// Single-char names a–l map to palette indices 1–11 then 0, covering all 12.
+//   a=pink(1) b=purple(2) c=deepPurple(3) d=indigo(4) e=blue(5) f=lightBlue(6)
+//   g=cyan(7) h=teal(8) i=brown(9) j=blueGrey(10) k=amber(11) l=red(0)
+const ALL_FAMILIES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']
 
 function setDarkModeForWcag(enabled: boolean) {
   if (enabled) document.documentElement.classList.add('dark')
@@ -350,10 +349,10 @@ function setDarkModeForWcag(enabled: boolean) {
   setDarkModeReactive(enabled)
 }
 
-describe('WCAG AA compliance — all 13 families × 2 themes (T1510, updated T1623)', () => {
+describe('WCAG AA compliance — all 12 families × 2 themes (T1510, updated T1625)', () => {
   afterEach(() => setDarkModeForWcag(false))
 
-  it('agentFg dark mode: all 13 families meet 4.5:1 against agentBg', () => {
+  it('agentFg dark mode: all 12 families meet 4.5:1 against agentBg', () => {
     setDarkModeForWcag(true)
     for (const name of ALL_FAMILIES) {
       const ratio = contrastRatio(agentFg(name), agentBg(name))
@@ -361,7 +360,7 @@ describe('WCAG AA compliance — all 13 families × 2 themes (T1510, updated T16
     }
   })
 
-  it('agentFg light mode: all 13 families meet 4.5:1 against agentBg', () => {
+  it('agentFg light mode: all 12 families meet 4.5:1 against agentBg', () => {
     setDarkModeForWcag(false)
     for (const name of ALL_FAMILIES) {
       const ratio = contrastRatio(agentFg(name), agentBg(name))
@@ -369,7 +368,7 @@ describe('WCAG AA compliance — all 13 families × 2 themes (T1510, updated T16
     }
   })
 
-  it('perimeterFg dark mode: all 13 families meet 4.5:1 against agentBg', () => {
+  it('perimeterFg dark mode: all 12 families meet 4.5:1 against agentBg', () => {
     setDarkModeForWcag(true)
     for (const name of ALL_FAMILIES) {
       const ratio = contrastRatio(perimeterFg(name), agentBg(name))
@@ -377,7 +376,7 @@ describe('WCAG AA compliance — all 13 families × 2 themes (T1510, updated T16
     }
   })
 
-  it('perimeterFg light mode: all 13 families meet 4.5:1 against agentBg', () => {
+  it('perimeterFg light mode: all 12 families meet 4.5:1 against agentBg', () => {
     setDarkModeForWcag(false)
     for (const name of ALL_FAMILIES) {
       const ratio = contrastRatio(perimeterFg(name), agentBg(name))

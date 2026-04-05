@@ -17,10 +17,10 @@ describe('agentColor', () => {
   afterEach(() => setDarkMode(false))
 
   describe('agentHue', () => {
-    it('should return a palette index between 0 and 14', () => {
+    it('should return a palette index between 0 and 11', () => {
       const idx = agentHue('test-agent')
       expect(idx).toBeGreaterThanOrEqual(0)
-      expect(idx).toBeLessThan(13)
+      expect(idx).toBeLessThan(12)
     })
 
     it('should return consistent value for same input (determinism)', () => {
@@ -48,20 +48,20 @@ describe('agentColor', () => {
     it('should handle empty string without crashing', () => {
       const idx = agentHue('')
       expect(idx).toBeGreaterThanOrEqual(0)
-      expect(idx).toBeLessThan(13)
+      expect(idx).toBeLessThan(12)
     })
 
     it('should handle names with dashes and underscores', () => {
       const idx = agentHue('dev-front-vuejs_v2')
       expect(typeof idx).toBe('number')
       expect(idx).toBeGreaterThanOrEqual(0)
-      expect(idx).toBeLessThan(13)
+      expect(idx).toBeLessThan(12)
     })
 
     it('should handle unicode characters without crashing', () => {
       const idx = agentHue('agent-🤖')
       expect(idx).toBeGreaterThanOrEqual(0)
-      expect(idx).toBeLessThan(13)
+      expect(idx).toBeLessThan(12)
     })
 
     it('should be case-sensitive (uppercase ≠ lowercase)', () => {
@@ -76,7 +76,7 @@ describe('agentColor', () => {
       const longName = 'a'.repeat(200)
       const idx = agentHue(longName)
       expect(idx).toBeGreaterThanOrEqual(0)
-      expect(idx).toBeLessThan(13)
+      expect(idx).toBeLessThan(12)
     })
   })
 
@@ -239,7 +239,7 @@ describe('agentColor', () => {
     it('single character produces non-zero palette index', () => {
       const idx = agentHue('a')
       expect(idx).toBeGreaterThan(0)
-      expect(idx).toBeLessThan(13)
+      expect(idx).toBeLessThan(12)
     })
   })
 
