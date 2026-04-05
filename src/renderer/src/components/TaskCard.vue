@@ -102,10 +102,6 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 <template>
   <v-card
     class="task-card"
-    :class="{
-      'card--in-progress': task.status === 'in_progress',
-      'card--critical': task.priority === 'critical',
-    }"
     variant="flat"
     :ripple="false"
     :draggable="task.status === 'todo' || task.status === 'in_progress'"
@@ -173,7 +169,11 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
     <!-- Footer: dates left, #id right -->
     <v-card-text
       class="pa-3 pt-2 mt-auto"
-      :class="{ 'card-footer-bordered': task.scope || task.agent_name }"
+      :class="{
+        'card-footer-bordered': task.scope || task.agent_name,
+        'card-footer--critical': task.priority === 'critical',
+        'card-footer--in-progress': task.status === 'in_progress' && task.priority !== 'critical',
+      }"
     >
       <div class="card-footer ga-2">
         <div class="card-dates">
@@ -222,16 +222,6 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 }
 .task-card:hover::after {
   background-color: rgba(var(--v-theme-on-surface), 0.06);
-}
-/* in_progress: left border accent (emerald) */
-.card--in-progress {
-  border-left-color: rgba(var(--v-theme-secondary), 0.85) !important;
-  border-left-width: 3px !important;
-}
-/* critical priority: top stripe (error red) */
-.card--critical {
-  border-top-color: rgb(var(--v-theme-error)) !important;
-  border-top-width: 2px !important;
 }
 .card-top {
   display: flex;
@@ -295,6 +285,16 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 }
 .card-footer-bordered {
   border-top: 1px solid color-mix(in srgb, var(--edge-subtle) 50%, transparent);
+}
+/* MD3 tonal footer accent — critical (errorContainer) takes priority */
+.card-footer--critical {
+  background-color: rgb(var(--v-theme-error-container));
+  border-top-color: rgba(var(--v-theme-on-error-container), 0.20);
+}
+/* MD3 tonal footer accent — in_progress (secondaryContainer) */
+.card-footer--in-progress {
+  background-color: rgb(var(--v-theme-secondary-container));
+  border-top-color: rgba(var(--v-theme-on-secondary-container), 0.20);
 }
 .card-dates {
   display: flex;

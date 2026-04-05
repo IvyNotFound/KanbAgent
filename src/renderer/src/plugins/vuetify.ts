@@ -68,6 +68,11 @@ const vuetifyPlugin = createVuetify({
           'md-bq-border': '#52525b',
           'md-bq-text': '#a1a1aa',
           'md-hr': '#3f3f46',
+          // MD3 tonal containers
+          'secondary-container': '#0d3d2e',    // secondaryContainer dark (emerald tonal, deep)
+          'on-secondary-container': '#6ee7b7', // onSecondaryContainer dark (emerald-200)
+          'error-container': '#4c1d1d',        // errorContainer dark (red tonal, deep)
+          'on-error-container': '#fca5a5',     // onErrorContainer dark (red-300)
         },
       },
       light: {
@@ -111,6 +116,11 @@ const vuetifyPlugin = createVuetify({
           'md-bq-border': '#a1a1aa',
           'md-bq-text': '#52525b',
           'md-hr': '#d4d4d8',
+          // MD3 tonal containers
+          'secondary-container': '#d1fae5',    // secondaryContainer light (emerald-100)
+          'on-secondary-container': '#065f46', // onSecondaryContainer light (emerald-800)
+          'error-container': '#fee2e2',        // errorContainer light (red-100)
+          'on-error-container': '#991b1b',     // onErrorContainer light (red-800)
         },
       },
     },
