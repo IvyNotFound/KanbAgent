@@ -1,3 +1,9 @@
+/* Prevent Vuetify's `html { overflow-y: scroll }` from leaking scroll to the
+   root in Electron (no layout-shift risk here; no browser scrollbar to reserve). */
+html {
+  overflow: hidden;
+}
+
 /* ── Theme tokens ────────────────────────────────────────────────────────────
    Derived from Vuetify theme CSS vars (--v-theme-*).
    Vuetify sets --v-theme-* as RGB triplets on [data-v-theme="dark/light"].

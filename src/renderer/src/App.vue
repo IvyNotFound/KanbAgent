@@ -148,8 +148,9 @@ defineExpose({
 </template>
 
 <style scoped>
-/* Force v-main wrap to be a flex column filling available space */
-.app-main :deep(.v-main__wrap) {
+/* Force v-main scroller to be a flex column filling available space.
+   Vuetify 3.12 renamed .v-main__wrap → .v-main__scroller (confirmed in vuetify@3.12.4). */
+.app-main :deep(.v-main__scroller) {
   height: 100%;
   overflow: hidden;
   display: flex;
