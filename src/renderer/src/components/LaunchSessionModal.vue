@@ -210,7 +210,7 @@ async function launch() {
         </div>
 
         <!-- Loading bar -->
-        <v-progress-linear v-if="loading" indeterminate color="primary" height="2" />
+        <v-progress-linear v-if="loading" indeterminate :color="agentAccent(agent.name)" height="2" />
 
         <!-- Body -->
         <div class="modal-body">
@@ -299,27 +299,17 @@ async function launch() {
               <p class="section-title mb-2 text-body-2">{{ t('launch.thinkingMode') }}</p>
               <v-btn-toggle
                 v-model="thinkingMode"
+                mandatory
+                :color="agentAccent(agent.name)"
+                variant="outlined"
                 density="compact"
                 rounded="lg"
                 class="w-100"
               >
-                <v-btn
-                  value="auto"
-                  size="small"
-                  flex-grow-1
-                  class="flex-1"
-                  :style="thinkingMode === 'auto' ? { borderColor: agentBorder(agent.name), backgroundColor: agentAccent(agent.name) + '22', color: agentAccent(agent.name) } : {}"
-                  @click="thinkingMode = 'auto'"
-                >
+                <v-btn value="auto" size="small" class="flex-1">
                   {{ t('launch.auto') }}
                 </v-btn>
-                <v-btn
-                  value="disabled"
-                  size="small"
-                  class="flex-1"
-                  :style="thinkingMode === 'disabled' ? { borderColor: agentBorder(agent.name), backgroundColor: agentAccent(agent.name) + '22', color: agentAccent(agent.name) } : {}"
-                  @click="thinkingMode = 'disabled'"
-                >
+                <v-btn value="disabled" size="small" class="flex-1">
                   {{ t('launch.disabled') }}
                 </v-btn>
               </v-btn-toggle>

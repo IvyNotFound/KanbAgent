@@ -164,7 +164,7 @@ async function save() {
             :label="t('sidebar.name')"
             placeholder="nom-de-l-agent"
             variant="outlined"
-            color="primary"
+            :color="agentAccent(agent.name)"
             @keydown.enter="save"
             @keydown.esc="emit('close')"
           />
@@ -172,7 +172,7 @@ async function save() {
           <!-- Thinking mode -->
           <div>
             <div class="field-label text-label-medium mb-2">{{ t('launch.thinkingMode') }}</div>
-            <v-btn-toggle v-model="thinkingMode" mandatory color="primary" variant="outlined" density="compact">
+            <v-btn-toggle v-model="thinkingMode" mandatory :color="agentAccent(agent.name)" variant="outlined" density="compact">
               <v-btn value="auto">{{ t('launch.auto') }}</v-btn>
               <v-btn value="disabled">{{ t('launch.disabled') }}</v-btn>
             </v-btn-toggle>
@@ -187,7 +187,7 @@ async function save() {
             :hint="t('agent.preferredModelNote')"
             persistent-hint
             variant="outlined"
-            color="primary"
+            :color="agentAccent(agent.name)"
           />
 
           <!-- Tâches autorisées (--allowedTools) -->
@@ -199,7 +199,7 @@ async function save() {
             :hint="t('agent.allowedToolsNote')"
             persistent-hint
             variant="outlined"
-            color="primary"
+            :color="agentAccent(agent.name)"
           />
 
           <!-- Auto-launch toggle -->
@@ -208,7 +208,7 @@ async function save() {
             :label="t('agent.autoLaunch')"
             :hint="t('agent.autoLaunchDesc')"
             persistent-hint
-            color="primary"
+            :color="agentAccent(agent.name)"
             density="compact"
             inset
           />
@@ -223,13 +223,13 @@ async function save() {
             :hint="t('agent.maxSessionsNote')"
             persistent-hint
             variant="outlined"
-            color="primary"
+            :color="agentAccent(agent.name)"
           />
 
           <!-- Permission mode -->
           <div>
             <div class="field-label text-label-medium mb-2">{{ t('agent.permissionMode') }}</div>
-            <v-btn-toggle v-model="permissionMode" mandatory color="primary" variant="outlined" density="compact">
+            <v-btn-toggle v-model="permissionMode" mandatory :color="agentAccent(agent.name)" variant="outlined" density="compact">
               <v-btn value="default">{{ t('agent.permissionModeDefault') }}</v-btn>
               <v-btn value="auto">{{ t('agent.permissionModeAuto') }}</v-btn>
             </v-btn-toggle>
@@ -241,7 +241,7 @@ async function save() {
           <!-- Worktree isolation (T1143) -->
           <div>
             <div class="field-label text-label-medium mb-2">{{ t('agent.worktreeEnabled') }}</div>
-            <v-btn-toggle v-model="worktreeToggleValue" mandatory color="primary" variant="outlined" density="compact">
+            <v-btn-toggle v-model="worktreeToggleValue" mandatory :color="agentAccent(agent.name)" variant="outlined" density="compact">
               <v-btn value="inherit">{{ t('agent.worktreeInherit') }}</v-btn>
               <v-btn value="on">{{ t('agent.worktreeOn') }}</v-btn>
               <v-btn value="off">{{ t('agent.worktreeOff') }}</v-btn>
@@ -299,7 +299,7 @@ async function save() {
             <v-btn variant="text" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
             <v-btn
               data-testid="btn-save"
-              color="primary"
+              :color="agentAccent(agent.name)"
               variant="outlined"
               :disabled="saving || deleting || !name.trim() || maxSessionsInvalid"
               @click="save"
