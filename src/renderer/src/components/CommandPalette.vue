@@ -326,6 +326,7 @@ function effortColor(effort: number): string {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: 72vh;
   max-height: 72vh;
 }
 
@@ -395,7 +396,6 @@ function effortColor(effort: number): string {
 .palette-results {
   flex: 1;
   overflow-y: auto;
-  min-height: 240px; /* ~3-4 items, prevents height jump when filters reduce results */
 }
 .palette-empty {
   display: flex;
