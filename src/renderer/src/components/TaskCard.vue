@@ -102,6 +102,10 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 <template>
   <v-card
     class="task-card"
+    :class="{
+      'card--in-progress': task.status === 'in_progress',
+      'card--critical': task.priority === 'critical',
+    }"
     variant="flat"
     :ripple="false"
     :draggable="task.status === 'todo' || task.status === 'in_progress'"
@@ -174,10 +178,10 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
       <div class="card-footer ga-2">
         <div class="card-dates">
           <p class="card-date text-caption">
-            <span class="date-label">{{ t('taskDetail.created') }}</span> {{ formattedCreatedAt }}
+            <v-icon size="10">mdi-clock-plus-outline</v-icon> {{ formattedCreatedAt }}
           </p>
           <p class="card-date text-caption">
-            <span class="date-label">{{ t('taskDetail.updated') }}</span> {{ formattedUpdatedAt }}
+            <v-icon size="10">mdi-clock-edit-outline</v-icon> {{ formattedUpdatedAt }}
           </p>
         </div>
         <span class="card-id">#{{ task.id }}</span>
@@ -197,14 +201,37 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 <style scoped>
 .task-card {
   background-color: var(--surface-secondary) !important; /* override Vuetify theme surface */
-  border: 1px solid var(--edge-default) !important;
-  border-radius: 8px !important;
+  border: 1px solid var(--edge-subtle) !important; /* MD3: subtle at-rest border */
+  border-radius: 12px !important; /* MD3 medium shape (was 8px) */
   cursor: pointer;
   min-height: 120px;
-  transition: border-color 150ms;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 150ms;
 }
-.task-card:hover {
-  border-color: var(--content-faint) !important;
+/* MD3 state layer — translucent overlay on hover instead of border-color change */
+.task-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgba(var(--v-theme-on-surface), 0);
+  transition: background-color 150ms ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.task-card:hover::after {
+  background-color: rgba(var(--v-theme-on-surface), 0.06);
+}
+/* in_progress: left border accent (emerald) */
+.card--in-progress {
+  border-left-color: rgba(var(--v-theme-secondary), 0.85) !important;
+  border-left-width: 3px !important;
+}
+/* critical priority: top stripe (error red) */
+.card--critical {
+  border-top-color: rgb(var(--v-theme-error)) !important;
+  border-top-width: 2px !important;
 }
 .card-top {
   display: flex;
@@ -217,6 +244,8 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   gap: 6px;
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 .card-pulse {
   flex-shrink: 0;
@@ -251,7 +280,13 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 .card-avatars {
   display: flex;
   align-items: center;
-  gap: 2px;
+}
+/* MD3 avatar group: overlapping stack */
+.card-avatars :deep(.v-avatar + .v-avatar) {
+  margin-left: -6px;
+}
+.card-avatars :deep(.v-avatar) {
+  border: 1.5px solid var(--surface-secondary);
 }
 .card-footer {
   display: flex;
@@ -259,7 +294,7 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   justify-content: space-between;
 }
 .card-footer-bordered {
-  border-top: 1px solid color-mix(in srgb, var(--edge-default) 50%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--edge-subtle) 50%, transparent);
 }
 .card-dates {
   display: flex;
@@ -268,9 +303,9 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 }
 .card-date {
   color: var(--content-subtle);
-}
-.date-label {
-  color: var(--content-muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 .card-id {
   font-size: 0.75rem;

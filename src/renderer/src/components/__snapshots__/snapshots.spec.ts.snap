@@ -249,7 +249,7 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
       <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="tab-agent text-body-2" style="color: rgb(128, 203, 196); background-color: rgb(0, 77, 64);">
         <v-icon data-v-3c3dc65a="" size="12" style="flex-shrink: 0;">mdi-console</v-icon><span data-v-3c3dc65a="" style="opacity: 0.5; user-select: none;">·</span><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span>
         <v-icon data-v-3c3dc65a="" class="tab-chevron" style="transform: rotate(-90deg);" size="10">mdi-chevron-down</v-icon>
-        <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(128, 203, 196);"></span>
+        <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(77, 182, 172);"></span>
       </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub text-body-2" style="color: rgb(128, 203, 196); background-color: rgb(0, 77, 64);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
         <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-caption font-weight-medium" title="Fermer">✕</span><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 2px; background-color: rgb(128, 203, 196);"></span>
       </button>
@@ -264,7 +264,7 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
 `;
 
 exports[`TaskCard — snapshots > matches snapshot: critical in_progress task with all badges 1`] = `
-"<v-card data-v-8da3d041="" class="task-card" variant="flat" ripple="false" draggable="true">
+"<v-card data-v-8da3d041="" class="task-card card--in-progress card--critical" variant="flat" ripple="false" draggable="true">
   <!-- Top row: title + effort/priority badges -->
   <v-card-text data-v-8da3d041="" class="pa-3 pb-0">
     <div data-v-8da3d041="" class="card-top ga-2">
@@ -290,8 +290,12 @@ exports[`TaskCard — snapshots > matches snapshot: critical in_progress task wi
   <v-card-text data-v-8da3d041="" class="pa-3 pt-2 mt-auto card-footer-bordered">
     <div data-v-8da3d041="" class="card-footer ga-2">
       <div data-v-8da3d041="" class="card-dates">
-        <p data-v-8da3d041="" class="card-date text-caption"><span data-v-8da3d041="" class="date-label">Créé</span> 01/01/26 00:00</p>
-        <p data-v-8da3d041="" class="card-date text-caption"><span data-v-8da3d041="" class="date-label">Modifié</span> 01/01/26 00:00</p>
+        <p data-v-8da3d041="" class="card-date text-caption">
+          <v-icon data-v-8da3d041="" size="10">mdi-clock-plus-outline</v-icon> 01/01/26 00:00
+        </p>
+        <p data-v-8da3d041="" class="card-date text-caption">
+          <v-icon data-v-8da3d041="" size="10">mdi-clock-edit-outline</v-icon> 01/01/26 00:00
+        </p>
       </div><span data-v-8da3d041="" class="card-id">#42</span>
     </div>
   </v-card-text>
@@ -322,8 +326,12 @@ exports[`TaskCard — snapshots > matches snapshot: done task without agent or p
   <v-card-text data-v-8da3d041="" class="pa-3 pt-2 mt-auto">
     <div data-v-8da3d041="" class="card-footer ga-2">
       <div data-v-8da3d041="" class="card-dates">
-        <p data-v-8da3d041="" class="card-date text-caption"><span data-v-8da3d041="" class="date-label">Créé</span> 01/01/26 00:00</p>
-        <p data-v-8da3d041="" class="card-date text-caption"><span data-v-8da3d041="" class="date-label">Modifié</span> 01/01/26 00:00</p>
+        <p data-v-8da3d041="" class="card-date text-caption">
+          <v-icon data-v-8da3d041="" size="10">mdi-clock-plus-outline</v-icon> 01/01/26 00:00
+        </p>
+        <p data-v-8da3d041="" class="card-date text-caption">
+          <v-icon data-v-8da3d041="" size="10">mdi-clock-edit-outline</v-icon> 01/01/26 00:00
+        </p>
       </div><span data-v-8da3d041="" class="card-id">#99</span>
     </div>
   </v-card-text>
@@ -359,8 +367,12 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
   <v-card-text data-v-8da3d041="" class="pa-3 pt-2 mt-auto card-footer-bordered">
     <div data-v-8da3d041="" class="card-footer ga-2">
       <div data-v-8da3d041="" class="card-dates">
-        <p data-v-8da3d041="" class="card-date text-caption"><span data-v-8da3d041="" class="date-label">Créé</span> 01/01/26 00:00</p>
-        <p data-v-8da3d041="" class="card-date text-caption"><span data-v-8da3d041="" class="date-label">Modifié</span> 01/01/26 00:00</p>
+        <p data-v-8da3d041="" class="card-date text-caption">
+          <v-icon data-v-8da3d041="" size="10">mdi-clock-plus-outline</v-icon> 01/01/26 00:00
+        </p>
+        <p data-v-8da3d041="" class="card-date text-caption">
+          <v-icon data-v-8da3d041="" size="10">mdi-clock-edit-outline</v-icon> 01/01/26 00:00
+        </p>
       </div><span data-v-8da3d041="" class="card-id">#10</span>
     </div>
   </v-card-text>
