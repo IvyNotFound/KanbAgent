@@ -109,8 +109,9 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
     @dragstart="onDragStart"
     @contextmenu="onContextMenu"
   >
-    <!-- Top row: title + effort/priority badges -->
-    <v-card-text class="pa-3 pb-0">
+    <!-- Card body: unified section with consistent gap between zones -->
+    <v-card-text class="card-body pa-3 pb-0">
+      <!-- Top row: title + effort/priority badges -->
       <div class="card-top ga-2">
         <div class="card-title-area">
           <span
@@ -129,11 +130,9 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
           <v-chip v-if="task.effort" size="x-small" variant="tonal" :color="EFFORT_COLOR[task.effort]">{{ EFFORT_LABEL[task.effort] }}</v-chip>
         </div>
       </div>
-    </v-card-text>
 
-    <!-- Badges: perimeter + agent avatars -->
-    <v-card-text v-if="task.scope || task.agent_name || assigneeAvatars.length > 0" class="pa-3 pt-0 pb-0">
-      <div class="card-meta ga-1">
+      <!-- Badges: perimeter + agent avatars -->
+      <div v-if="task.scope || task.agent_name || assigneeAvatars.length > 0" class="card-meta mt-2">
         <v-chip
           v-if="task.scope"
           size="x-small"
@@ -164,11 +163,9 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
         <!-- Fallback: single agent badge when no task_agents rows -->
         <AgentBadge v-else-if="task.agent_name" :name="task.agent_name" :perimetre="task.agent_scope" />
       </div>
-    </v-card-text>
 
-    <!-- Description excerpt: up to 2 lines, fills body to balance footer -->
-    <v-card-text v-if="task.description" class="pa-3 pt-1 pb-0">
-      <p class="card-description text-caption">{{ task.description }}</p>
+      <!-- Description excerpt: up to 2 lines, fills body to balance footer -->
+      <p v-if="task.description" class="card-description text-body-2 mt-2">{{ task.description }}</p>
     </v-card-text>
 
     <!-- Footer: dates left, #id right -->
@@ -287,15 +284,14 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 .card-footer-section {
   padding: 6px 12px 8px;
 }
-/* Description excerpt: max 2 lines, fades out, body text feel */
+/* Description excerpt: max 2 lines, body-2 size (14sp), single opacity layer */
 .card-description {
-  color: var(--content-subtle);
+  color: var(--content-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.4;
-  opacity: 0.75;
   margin: 0;
 }
 .card-footer {

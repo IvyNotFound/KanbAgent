@@ -265,8 +265,9 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
 
 exports[`TaskCard — snapshots > matches snapshot: critical in_progress task with all badges 1`] = `
 "<v-card data-v-8da3d041="" class="task-card" variant="flat" ripple="false" draggable="true">
-  <!-- Top row: title + effort/priority badges -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pb-0">
+  <!-- Card body: unified section with consistent gap between zones -->
+  <v-card-text data-v-8da3d041="" class="card-body pa-3 pb-0">
+    <!-- Top row: title + effort/priority badges -->
     <div data-v-8da3d041="" class="card-top ga-2">
       <div data-v-8da3d041="" class="card-title-area"><span data-v-8da3d041="" class="card-pulse mt-1" title="Tâche en cours d'exécution" aria-label="Tâche en cours d'exécution"></span>
         <p data-v-8da3d041="" class="card-title text-body-2">Urgent Fix</p>
@@ -278,17 +279,13 @@ exports[`TaskCard — snapshots > matches snapshot: critical in_progress task wi
         <!--v-if-->
         <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="error">L</v-chip>
       </div>
-    </div>
-  </v-card-text><!-- Badges: perimeter + agent avatars -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pt-0 pb-0">
-    <div data-v-8da3d041="" class="card-meta ga-1">
+    </div><!-- Badges: perimeter + agent avatars -->
+    <div data-v-8da3d041="" class="card-meta mt-2">
       <v-chip data-v-8da3d041="" size="x-small" variant="outlined" rounded="sm" style="color: rgb(187, 222, 251); border-color: rgb(21, 101, 192); background-color: rgb(13, 71, 161);">back-electron</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-back" active="false"></agent-badge-stub>
-    </div>
-  </v-card-text><!-- Description excerpt: up to 2 lines, fills body to balance footer -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pt-1 pb-0">
-    <p data-v-8da3d041="" class="card-description text-caption">Description</p>
+    </div><!-- Description excerpt: up to 2 lines, fills body to balance footer -->
+    <p data-v-8da3d041="" class="card-description text-body-2 mt-2">Description</p>
   </v-card-text><!-- Footer: dates left, #id right -->
   <v-card-text data-v-8da3d041="" class="card-footer-section mt-auto card-footer-bordered card-footer--critical">
     <div data-v-8da3d041="" class="card-footer ga-2">
@@ -308,8 +305,9 @@ exports[`TaskCard — snapshots > matches snapshot: critical in_progress task wi
 
 exports[`TaskCard — snapshots > matches snapshot: done task without agent or perimetre 1`] = `
 "<v-card data-v-8da3d041="" class="task-card" variant="flat" ripple="false" draggable="false">
-  <!-- Top row: title + effort/priority badges -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pb-0">
+  <!-- Card body: unified section with consistent gap between zones -->
+  <v-card-text data-v-8da3d041="" class="card-body pa-3 pb-0">
+    <!-- Top row: title + effort/priority badges -->
     <div data-v-8da3d041="" class="card-top ga-2">
       <div data-v-8da3d041="" class="card-title-area">
         <!--v-if-->
@@ -322,12 +320,10 @@ exports[`TaskCard — snapshots > matches snapshot: done task without agent or p
         <!--v-if-->
         <!--v-if-->
       </div>
-    </div>
-  </v-card-text><!-- Badges: perimeter + agent avatars -->
-  <!--v-if-->
-  <!-- Description excerpt: up to 2 lines, fills body to balance footer -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pt-1 pb-0">
-    <p data-v-8da3d041="" class="card-description text-caption">Description</p>
+    </div><!-- Badges: perimeter + agent avatars -->
+    <!--v-if-->
+    <!-- Description excerpt: up to 2 lines, fills body to balance footer -->
+    <p data-v-8da3d041="" class="card-description text-body-2 mt-2">Description</p>
   </v-card-text><!-- Footer: dates left, #id right -->
   <v-card-text data-v-8da3d041="" class="card-footer-section mt-auto">
     <div data-v-8da3d041="" class="card-footer ga-2">
@@ -347,8 +343,9 @@ exports[`TaskCard — snapshots > matches snapshot: done task without agent or p
 
 exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
 "<v-card data-v-8da3d041="" class="task-card" variant="flat" ripple="false" draggable="true">
-  <!-- Top row: title + effort/priority badges -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pb-0">
+  <!-- Card body: unified section with consistent gap between zones -->
+  <v-card-text data-v-8da3d041="" class="card-body pa-3 pb-0">
+    <!-- Top row: title + effort/priority badges -->
     <div data-v-8da3d041="" class="card-top ga-2">
       <div data-v-8da3d041="" class="card-title-area">
         <!--v-if-->
@@ -361,17 +358,13 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
         <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="default">—</v-chip>
         <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="secondary">S</v-chip>
       </div>
-    </div>
-  </v-card-text><!-- Badges: perimeter + agent avatars -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pt-0 pb-0">
-    <div data-v-8da3d041="" class="card-meta ga-1">
+    </div><!-- Badges: perimeter + agent avatars -->
+    <div data-v-8da3d041="" class="card-meta mt-2">
       <v-chip data-v-8da3d041="" size="x-small" variant="outlined" rounded="sm" style="color: rgb(178, 223, 219); border-color: rgb(0, 105, 92); background-color: rgb(0, 77, 64);">front-vuejs</v-chip><!-- Multi-agent avatars (≤3 + overflow badge) -->
       <!-- Fallback: single agent badge when no task_agents rows -->
       <agent-badge-stub data-v-8da3d041="" name="dev-front" active="false"></agent-badge-stub>
-    </div>
-  </v-card-text><!-- Description excerpt: up to 2 lines, fills body to balance footer -->
-  <v-card-text data-v-8da3d041="" class="pa-3 pt-1 pb-0">
-    <p data-v-8da3d041="" class="card-description text-caption">Description</p>
+    </div><!-- Description excerpt: up to 2 lines, fills body to balance footer -->
+    <p data-v-8da3d041="" class="card-description text-body-2 mt-2">Description</p>
   </v-card-text><!-- Footer: dates left, #id right -->
   <v-card-text data-v-8da3d041="" class="card-footer-section mt-auto card-footer-bordered">
     <div data-v-8da3d041="" class="card-footer ga-2">
