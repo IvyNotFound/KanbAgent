@@ -276,7 +276,7 @@ async function create() {
   width: 36px;
   height: 36px;
   border-radius: var(--shape-sm);
-  background: var(--surface-tertiary);
+  background: rgba(var(--v-theme-secondary), 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -288,7 +288,7 @@ async function create() {
 .action-icon {
   width: 20px;
   height: 20px;
-  color: var(--content-tertiary);
+  color: rgb(var(--v-theme-secondary));
 }
 .action-icon--primary { color: rgb(var(--v-theme-primary)); }
 .action-label {
