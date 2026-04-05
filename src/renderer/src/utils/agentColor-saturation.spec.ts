@@ -24,7 +24,19 @@ import {
   perimeterBg,
   perimeterBorder,
   setDarkMode as setDarkModeReactive,
+  hexToRgb,
 } from '@renderer/utils/agentColor'
+
+function lum(hex: string): number {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return 0
+  const lin = (c: number) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4) }
+  return 0.2126 * lin(rgb.r) + 0.7152 * lin(rgb.g) + 0.0722 * lin(rgb.b)
+}
+function contrastRatio(fg: string, bg: string): number {
+  const l1 = lum(fg); const l2 = lum(bg)
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
+}
 
 function setDarkMode(enabled: boolean) {
   if (enabled) {
@@ -81,26 +93,26 @@ describe('agentColor MD2 palette (T1467)', () => {
     })
   })
 
-  // ── agentFg() — lighten3 dark / darken2 light ─────────────────────────────────
-  describe('agentFg() — exact MD2 hex values', () => {
-    it('"a" (cyan idx=7) dark → cyan lighten3 #80deea', () => {
+  // ── agentFg() — WCAG AA ratio >= 4.5:1 (T1510: shade escalation replaces fixed shades) ────
+  describe('agentFg() — WCAG AA contrast ratio >= 4.5:1', () => {
+    it('"a" (cyan idx=7) dark meets WCAG AA', () => {
       setDarkMode(true)
-      expect(agentFg('a')).toBe('#80deea')
+      expect(contrastRatio(agentFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('"a" (cyan idx=7) light → cyan darken2 #0097a7', () => {
+    it('"a" (cyan idx=7) light meets WCAG AA', () => {
       setDarkMode(false)
-      expect(agentFg('a')).toBe('#0097a7')
+      expect(contrastRatio(agentFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('"i" (red idx=0) dark → red lighten3 #ef9a9a', () => {
+    it('"i" (red idx=0) dark meets WCAG AA', () => {
       setDarkMode(true)
-      expect(agentFg('i')).toBe('#ef9a9a')
+      expect(contrastRatio(agentFg('i'), agentBg('i'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('"i" (red idx=0) light → red darken2 #d32f2f', () => {
+    it('"i" (red idx=0) light meets WCAG AA', () => {
       setDarkMode(false)
-      expect(agentFg('i')).toBe('#d32f2f')
+      expect(contrastRatio(agentFg('i'), agentBg('i'))).toBeGreaterThanOrEqual(4.5)
     })
 
     it('dark and light values always differ', () => {
@@ -189,22 +201,22 @@ describe('agentColor MD2 palette (T1467)', () => {
     })
   })
 
-  // ── perimeterFg() — lighten4 dark / darken1 light ────────────────────────────
-  describe('perimeterFg() — exact MD2 hex values', () => {
-    it('"a" (cyan idx=7) dark → cyan lighten4 #b2ebf2', () => {
+  // ── perimeterFg() — WCAG AA ratio >= 4.5:1 (T1510: shade escalation replaces fixed shades) ──
+  describe('perimeterFg() — WCAG AA contrast ratio >= 4.5:1', () => {
+    it('"a" (cyan idx=7) dark meets WCAG AA', () => {
       setDarkMode(true)
-      expect(perimeterFg('a')).toBe('#b2ebf2')
+      expect(contrastRatio(perimeterFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('"a" (cyan idx=7) light → cyan darken1 #00acc1', () => {
+    it('"a" (cyan idx=7) light meets WCAG AA', () => {
       setDarkMode(false)
-      expect(perimeterFg('a')).toBe('#00acc1')
+      expect(contrastRatio(perimeterFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('perimeterFg dark differs from agentFg dark (different shade: lighten4 vs lighten3)', () => {
+    it('perimeterFg dark meets WCAG AA for all tested families', () => {
       setDarkMode(true)
       for (const name of ['a', 'b', 'i', 'j', 'k']) {
-        expect(perimeterFg(name)).not.toBe(agentFg(name))
+        expect(contrastRatio(perimeterFg(name), agentBg(name))).toBeGreaterThanOrEqual(4.5)
       }
     })
 
@@ -322,5 +334,54 @@ describe('agentColor MD2 palette (T1467)', () => {
       const result = agentBorder(`${prefix}100`)
       expect(result).toMatch(HEX_PATTERN)
     })
+  })
+})
+
+// ─── T1510: WCAG AA compliance — all 15 families × 2 themes ──────────────────
+// Single-char names a–o map to palette indices 7–14 then 0–6, covering all 15.
+//   a=cyan(7) b=teal(8) c=green(9) d=lightGreen(10) e=lime(11) f=amber(12)
+//   g=orange(13) h=deepOrange(14) i=red(0) j=pink(1) k=purple(2)
+//   l=deepPurple(3) m=indigo(4) n=blue(5) o=lightBlue(6)
+const ALL_FAMILIES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o']
+
+function setDarkModeForWcag(enabled: boolean) {
+  if (enabled) document.documentElement.classList.add('dark')
+  else document.documentElement.classList.remove('dark')
+  setDarkModeReactive(enabled)
+}
+
+describe('WCAG AA compliance — all 15 families × 2 themes (T1510)', () => {
+  afterEach(() => setDarkModeForWcag(false))
+
+  it('agentFg dark mode: all 15 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(true)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(agentFg(name), agentBg(name))
+      expect(ratio, `agentFg('${name}') dark: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('agentFg light mode: all 15 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(false)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(agentFg(name), agentBg(name))
+      expect(ratio, `agentFg('${name}') light: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('perimeterFg dark mode: all 15 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(true)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(perimeterFg(name), agentBg(name))
+      expect(ratio, `perimeterFg('${name}') dark: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('perimeterFg light mode: all 15 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(false)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(perimeterFg(name), agentBg(name))
+      expect(ratio, `perimeterFg('${name}') light: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
   })
 })

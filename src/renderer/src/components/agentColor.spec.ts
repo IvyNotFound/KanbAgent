@@ -1,5 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder, isDark, setDarkMode, agentHue, colorVersion } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder, isDark, setDarkMode, agentHue, colorVersion, hexToRgb } from '@renderer/utils/agentColor'
+
+function luminance(hex: string): number {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return 0
+  const lin = (c: number) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4) }
+  return 0.2126 * lin(rgb.r) + 0.7152 * lin(rgb.g) + 0.0722 * lin(rgb.b)
+}
+function contrastRatio(fg: string, bg: string): number {
+  const l1 = luminance(fg); const l2 = luminance(bg)
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
+}
 
 const HEX_PATTERN = /^#[0-9a-f]{6}$/i
 
@@ -127,14 +138,14 @@ describe('agentColor — MD2 shade exact values (T1319 + T1467)', () => {
     expect(agentBorder('test-agent')).toBe('#ba68c8')
   })
 
-  it('perimeterFg dark mode (test-agent: purple lighten4 #e1bee7)', () => {
+  it('perimeterFg dark mode — WCAG AA ratio >= 4.5:1 (test-agent: purple)', () => {
     setDarkMode(true)
-    expect(perimeterFg('test-agent')).toBe('#e1bee7')
+    expect(contrastRatio(perimeterFg('test-agent'), agentBg('test-agent'))).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('perimeterFg light mode (test-agent: purple darken1 #8e24aa)', () => {
+  it('perimeterFg light mode — WCAG AA ratio >= 4.5:1 (test-agent: purple)', () => {
     setDarkMode(false)
-    expect(perimeterFg('test-agent')).toBe('#8e24aa')
+    expect(contrastRatio(perimeterFg('test-agent'), agentBg('test-agent'))).toBeGreaterThanOrEqual(4.5)
   })
 
   it('perimeterBg dark mode (test-agent: purple darken4 #4a148c)', () => {
@@ -157,28 +168,28 @@ describe('agentColor — MD2 shade exact values (T1319 + T1467)', () => {
     expect(perimeterBorder('test-agent')).toBe('#ce93d8')
   })
 
-  it('hello dark agentFg (cyan lighten3 #80deea)', () => {
+  it('hello dark agentFg — WCAG AA ratio >= 4.5:1 (cyan family)', () => {
     setDarkMode(true)
-    expect(agentFg('hello')).toBe('#80deea')
+    expect(contrastRatio(agentFg('hello'), agentBg('hello'))).toBeGreaterThanOrEqual(4.5)
   })
 })
 
-describe('agentColor — agentFg exact dark/light shades (T1319 + T1467)', () => {
+describe('agentColor — agentFg WCAG AA contrast (T1319 + T1467 + T1510)', () => {
   afterEach(() => setDarkMode(false))
 
-  it('agentFg dark mode (test-agent: purple lighten3 #ce93d8)', () => {
+  it('agentFg dark mode meets WCAG AA (test-agent: purple family)', () => {
     setDarkMode(true)
-    expect(agentFg('test-agent')).toBe('#ce93d8')
+    expect(contrastRatio(agentFg('test-agent'), agentBg('test-agent'))).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('agentFg light mode (test-agent: purple darken2 #7b1fa2)', () => {
+  it('agentFg light mode meets WCAG AA (test-agent: purple family)', () => {
     setDarkMode(false)
-    expect(agentFg('test-agent')).toBe('#7b1fa2')
+    expect(contrastRatio(agentFg('test-agent'), agentBg('test-agent'))).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('agentFg light mode (hello: cyan darken2 #0097a7)', () => {
+  it('agentFg light mode meets WCAG AA (hello: cyan family)', () => {
     setDarkMode(false)
-    expect(agentFg('hello')).toBe('#0097a7')
+    expect(contrastRatio(agentFg('hello'), agentBg('hello'))).toBeGreaterThanOrEqual(4.5)
   })
 })
 

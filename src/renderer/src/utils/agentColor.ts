@@ -163,15 +163,55 @@ function agentFamily(name: string): ColorFamily {
 }
 
 /**
+ * Picks the first candidate that achieves at least `minContrast` against `bgHex`.
+ * Returns the last candidate as ultimate fallback if none passes.
+ *
+ * Candidates are either ColorFamily shade keys ('lighten3', 'darken2', etc.)
+ * or direct hex strings ('#FFFFFF'). Uses getRelativeLuminance() from this module.
+ *
+ * @param family - MD2 color family to resolve shade keys from.
+ * @param candidates - Ordered shade keys or hex strings, tried in sequence.
+ * @param bgHex - Background hex color to check contrast against.
+ * @param minContrast - Minimum WCAG contrast ratio (default 4.5 for AA).
+ * @returns First candidate hex meeting minContrast, or last candidate as fallback.
+ */
+function pickContrastingFg(
+  family: ColorFamily,
+  candidates: string[],
+  bgHex: string,
+  minContrast = 4.5
+): string {
+  const bgL = getRelativeLuminance(bgHex)
+  const record = family as Record<string, string>
+  for (const candidate of candidates) {
+    const hex = candidate.startsWith('#') ? candidate : record[candidate]
+    if (!hex) continue
+    const fgL = getRelativeLuminance(hex)
+    const lighter = Math.max(bgL, fgL)
+    const darker = Math.min(bgL, fgL)
+    if ((lighter + 0.05) / (darker + 0.05) >= minContrast) return hex
+  }
+  // Last candidate as ultimate fallback
+  const last = candidates[candidates.length - 1]
+  return last.startsWith('#') ? last : (record[last] ?? last)
+}
+
+/**
  * Primary foreground color for an agent (text, dots).
- * Dark: MD lighten3 (200 shade) · Light: MD darken2 (700 shade).
+ * Uses shade escalation to guarantee WCAG AA (4.5:1) contrast against the badge background.
+ * Dark bg (darken4): escalates lighten3 → lighten4 → lighten5 → #FFFFFF → #1C1B1F.
+ * Light bg (lighten5): escalates darken2 → darken3 → darken4 → #000000.
  */
 export function agentFg(name: string): string {
   void colorVersion.value // track reactive dependency
   let v = agentFgCache.get(name)
   if (v === undefined) {
     const family = agentFamily(name)
-    v = isDark() ? family.lighten3 : family.darken2
+    const bgHex = isDark() ? family.darken4 : family.lighten5
+    const candidates = isDark()
+      ? ['lighten3', 'lighten4', 'lighten5', '#FFFFFF', '#1C1B1F']
+      : ['darken2', 'darken3', 'darken4', '#000000']
+    v = pickContrastingFg(family, candidates, bgHex)
     cacheSet(agentFgCache, name, v)
   }
   return v
@@ -208,15 +248,21 @@ export function agentBorder(name: string): string {
 }
 
 /**
- * Foreground color for perimeter badge (softer variant of agentFg).
- * Dark: MD lighten4 (100 shade) · Light: MD darken1 (600 shade).
+ * Foreground color for perimeter badge (softer visual hierarchy than agentFg).
+ * Uses shade escalation to guarantee WCAG AA (4.5:1) contrast against the badge background.
+ * Dark bg (darken4): escalates lighten4 → lighten3 → lighten5 → #FFFFFF → #1C1B1F.
+ * Light bg (lighten5): escalates darken1 → darken2 → darken3 → darken4 → #000000.
  */
 export function perimeterFg(name: string): string {
   void colorVersion.value // track reactive dependency
   let v = perimeterFgCache.get(name)
   if (v === undefined) {
     const family = agentFamily(name)
-    v = isDark() ? family.lighten4 : family.darken1
+    const bgHex = isDark() ? family.darken4 : family.lighten5
+    const candidates = isDark()
+      ? ['lighten4', 'lighten3', 'lighten5', '#FFFFFF', '#1C1B1F']
+      : ['darken1', 'darken2', 'darken3', 'darken4', '#000000']
+    v = pickContrastingFg(family, candidates, bgHex)
     cacheSet(perimeterFgCache, name, v)
   }
   return v
