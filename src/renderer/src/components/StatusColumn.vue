@@ -56,7 +56,7 @@ function onDrop(e: DragEvent): void {
       </div>
       <span class="column-count text-caption">{{ tasks.length }}</span>
     </div>
-    <div class="column-body pa-2 ga-2" style="contain: content;">
+    <div class="column-body pa-2 ga-2">
       <TaskCard v-for="task in tasks" :key="task.id" :task="task" />
       <div v-if="tasks.length === 0" class="column-empty py-8 text-caption">{{ t('statusColumn.noTasks') }}</div>
     </div>

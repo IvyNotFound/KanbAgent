@@ -195,7 +195,6 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
   border: 1px solid var(--edge-default) !important; /* MD3: default border — visible against surface-primary column bg */
   border-radius: var(--shape-md) !important; /* MD3 medium shape (was 8px) */
   cursor: pointer;
-  min-height: 180px;
   position: relative;
   overflow: hidden;
   transition: box-shadow var(--md-duration-short3) var(--md-easing-standard);
@@ -260,13 +259,8 @@ const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 
 .card-footer-section {
   padding: 8px 16px 10px;
 }
-/* Description excerpt: max 2 lines, body-2 size (14sp), single opacity layer */
 .card-description {
   color: var(--content-muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   line-height: 1.4;
   margin: 0;
 }
