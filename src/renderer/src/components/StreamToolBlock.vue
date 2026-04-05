@@ -30,6 +30,7 @@ const props = defineProps<{
   accentFg: string
   accentBg: string
   accentBorder: string
+  accentOnColor: string
 }>()
 
 const emit = defineEmits<{
@@ -177,6 +178,7 @@ function resultPreview(html: string | undefined): string {
     <div
       v-show="!isCollapsed(eventId, blockIdx, false)"
       class="tool-body pt-3 px-4 pb-2 text-caption"
+      :style="{ color: accentOnColor }"
     >
       <!-- Edit: diff view (T1514) -->
       <template v-if="block.name === 'Edit'">
@@ -450,7 +452,6 @@ function resultPreview(html: string | undefined): string {
   margin-bottom: 6px;
   font-size: 0.85em;
   font-family: monospace;
-  color: var(--content-default);
 }
 
 .tool-key {
@@ -464,7 +465,6 @@ function resultPreview(html: string | undefined): string {
   font-family: monospace;
   font-weight: 600;
   margin-bottom: 4px;
-  color: var(--content-default);
 }
 
 .tool-meta {
@@ -483,7 +483,6 @@ function resultPreview(html: string | undefined): string {
   white-space: pre-wrap;
   margin: 0;
   word-break: break-all;
-  color: var(--content-default);
 }
 
 /* Diff view for Edit tool */

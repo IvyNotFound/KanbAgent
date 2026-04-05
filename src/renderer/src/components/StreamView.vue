@@ -17,7 +17,7 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useAgentsStore } from '@renderer/stores/agents'
-import { agentFg, agentBg, agentBorder, colorVersion, getOnColor } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, colorVersion, getOnColor, isDark } from '@renderer/utils/agentColor'
 import { useStreamEvents } from '@renderer/composables/useStreamEvents'
 import { useCopyCode } from '@renderer/composables/useCopyCode'
 import HookEventBar from './HookEventBar.vue'
@@ -91,6 +91,13 @@ const accentBg = computed(() => { void colorVersion.value; return agentName.valu
 const accentBorder = computed(() => { void colorVersion.value; return agentName.value ? agentBorder(agentName.value) : 'rgba(var(--v-theme-secondary), 0.3)' })
 // MD3 on-color: dark text on light agent backgrounds, white on dark — ensures 4.5:1 contrast (T1500).
 const userBubbleTextColor = computed(() => getOnColor(accentFg.value))
+// On-color for text inside tool_use blocks (colored accentBg background) — T1544.
+const accentOnColor = computed(() => {
+  void colorVersion.value
+  const bg = accentBg.value
+  if (bg.startsWith('#')) return getOnColor(bg)
+  return isDark() ? '#FFFFFF' : '#1C1B1F'
+})
 
 // Suppresses empty user bubbles from autonomous Claude reasoning (T679).
 const displayEvents = computed(() =>
@@ -357,6 +364,7 @@ onUnmounted(() => {
                 :accent-fg="accentFg"
                 :accent-bg="accentBg"
                 :accent-border="accentBorder"
+                :accent-on-color="accentOnColor"
                 @toggle-collapsed="toggleCollapsed"
               />
             </template>
