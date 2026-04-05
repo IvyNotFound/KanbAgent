@@ -157,8 +157,9 @@ let pendingContent: string | null = null
 
 async function initEditor(): Promise<void> {
   if (!editorEl.value) return
+  const extensions = await buildExtensions()
   view = new EditorView({
-    state: EditorState.create({ doc: pendingContent ?? '', extensions: await buildExtensions() }),
+    state: EditorState.create({ doc: pendingContent ?? '', extensions }),
     parent: editorEl.value,
   })
   pendingContent = null
