@@ -20,20 +20,23 @@ const {
     <div class="ts-period-bar ga-2">
       <h2 class="ts-title text-h6 font-weight-medium">{{ t('tokenStats.title') }}</h2>
       <span class="ts-period-label text-label-medium">{{ t('tokenStats.period.label') }}</span>
-      <div class="ts-period-btns ga-1">
+      <v-btn-toggle
+        v-model="selectedPeriod"
+        mandatory
+        density="compact"
+        variant="outlined"
+        class="ts-period-toggle"
+      >
         <v-btn
           v-for="period in PERIODS"
           :key="period.key"
-          variant="text"
+          :value="period.key"
           size="x-small"
-          density="compact"
-          class="ts-period-btn text-label-medium"
-          :class="selectedPeriod === period.key ? 'ts-period-btn--active' : ''"
-          @click="selectedPeriod = period.key"
+          class="text-label-medium"
         >
           {{ t(period.labelKey) }}
         </v-btn>
-      </div>
+      </v-btn-toggle>
     </div>
 
     <!-- ── Summary cards ──────────────────────────────────────────────── -->
@@ -239,17 +242,7 @@ const {
 }
 .ts-title { color: var(--content-primary); margin: 0; margin-right: 8px; }
 .ts-period-label { letter-spacing: 0.02em; color: var(--content-faint); }
-.ts-period-btns { display: flex; }
-.ts-period-btn {
-  padding: 2px 10px !important;
-  border-radius: var(--shape-full) !important;
-  border: 1px solid var(--edge-default) !important;
-  background: var(--surface-secondary) !important;
-  color: var(--content-secondary) !important;
-  transition: border-color var(--md-duration-short3) var(--md-easing-standard), color var(--md-duration-short3) var(--md-easing-standard);
-}
-.ts-period-btn:hover { border-color: rgb(var(--v-theme-primary)) !important; color: var(--content-primary) !important; }
-.ts-period-btn--active { background: rgb(var(--v-theme-primary)) !important; border-color: rgb(var(--v-theme-primary)) !important; color: #fff !important; }
+.ts-period-toggle { height: 28px; }
 
 /* summary cards */
 .ts-cards-row {
