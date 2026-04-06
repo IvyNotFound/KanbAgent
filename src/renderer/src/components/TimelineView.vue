@@ -28,22 +28,69 @@ const tasks = ref<TimelineTask[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const selectedAgents = ref<string[]>([])
-const daysBack = ref(30)
+const daysBack = ref(180) // DB fetch range — not the zoom level
 const now = ref(Date.now())
+
+// Viewport: defines the visible time window (independent of the fetch range)
+const viewportStart = ref<number>(now.value - 7 * 86_400_000)
+const viewportEnd = ref<number>(now.value)
+const viewportDuration = computed(() => viewportEnd.value - viewportStart.value)
+
+// Period chip presets — tracks the last clicked preset for visual state only
+const selectedPeriod = ref<number>(7)
+
+function setViewportPeriod(days: number): void {
+  selectedPeriod.value = days
+  viewportEnd.value = now.value
+  viewportStart.value = now.value - days * 86_400_000
+}
 
 let nowTimer: ReturnType<typeof setInterval> | null = null
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
+// Drag pan state
+const bodyRef = ref<HTMLElement | null>(null)
+let dragStartX = 0
+let dragStartViewportStart = 0
+let isDragging = false
+
+function onMouseDown(event: MouseEvent): void {
+  dragStartX = event.clientX
+  dragStartViewportStart = viewportStart.value
+  isDragging = true
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function onMouseMove(event: MouseEvent): void {
+  if (!isDragging || !bodyRef.value) return
+  const canvasWidth = bodyRef.value.clientWidth - 144 // subtract label column width
+  if (canvasWidth <= 0) return
+  const pxPerMs = canvasWidth / viewportDuration.value
+  const deltaMs = -(event.clientX - dragStartX) / pxPerMs
+  viewportStart.value = dragStartViewportStart + deltaMs
+  viewportEnd.value = viewportStart.value + viewportDuration.value
+}
+
+function onMouseUp(): void {
+  isDragging = false
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
+}
+
 onMounted(() => {
   nowTimer = setInterval(() => { now.value = Date.now() }, 60_000)
-  // Poll every 60s while tab is open instead of reacting to every lastRefresh (T1116)
   refreshTimer = setInterval(fetchTasks, 60_000)
   fetchTasks()
+  window.addEventListener('blur', onMouseUp)
 })
 
 onUnmounted(() => {
   if (nowTimer) clearInterval(nowTimer)
   if (refreshTimer) clearInterval(refreshTimer)
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
+  window.removeEventListener('blur', onMouseUp)
 })
 
 async function fetchTasks(): Promise<void> {
@@ -74,7 +121,14 @@ async function fetchTasks(): Promise<void> {
 watch(() => store.dbPath, fetchTasks)
 watch(daysBack, fetchTasks)
 
-const ZOOM_STEPS = [1, 3, 7, 14, 30, 60, 90, 180]
+// Expand DB fetch range if the user pans/zooms beyond fetched data
+watch(viewportStart, (newStart) => {
+  const cutoff = now.value - daysBack.value * 86_400_000
+  if (newStart < cutoff) {
+    const daysNeeded = Math.ceil((now.value - newStart) / 86_400_000)
+    daysBack.value = Math.min(Math.max(daysNeeded + 30, daysBack.value), 365)
+  }
+})
 
 const periodItems = computed(() => [
   { title: '1d', value: 1 },
@@ -88,17 +142,20 @@ const periodItems = computed(() => [
 ])
 
 function onCanvasWheel(event: WheelEvent): void {
-  const idx = ZOOM_STEPS.indexOf(daysBack.value)
-  if (event.deltaY < 0 && idx > 0) {
-    // Zoom in — scroll up
-    event.preventDefault()
-    daysBack.value = ZOOM_STEPS[idx - 1]
-  } else if (event.deltaY > 0 && idx < ZOOM_STEPS.length - 1) {
-    // Zoom out — scroll down
-    event.preventDefault()
-    daysBack.value = ZOOM_STEPS[idx + 1]
-  }
-  // At bounds: do NOT call preventDefault — let native vertical scroll pass through
+  const el = event.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  // Compute cursor fraction within the bars area (skip 144px label column)
+  const cursorX = event.clientX - rect.left - 144
+  const barsWidth = rect.width - 144
+  const cursorFraction = barsWidth > 0 ? Math.max(0, Math.min(1, cursorX / barsWidth)) : 0.5
+  const cursorTime = viewportStart.value + cursorFraction * viewportDuration.value
+  const factor = event.deltaY > 0 ? 1.15 : 1 / 1.15
+  const newDuration = Math.min(
+    Math.max(viewportDuration.value * factor, 60_000),  // min: 1 minute
+    365 * 86_400_000                                    // max: 1 year
+  )
+  viewportStart.value = cursorTime - cursorFraction * newDuration
+  viewportEnd.value = cursorTime + (1 - cursorFraction) * newDuration
 }
 
 const unassignedLabel = computed(() => t('timeline.unassigned'))
@@ -124,28 +181,14 @@ function taskEndMs(task: TimelineTask): number {
   return taskStartMs(task) + 1_800_000
 }
 
-const rangeStart = computed(() => {
-  if (filteredTasks.value.length === 0) return Date.now() - daysBack.value * 86_400_000
-  return filteredTasks.value.reduce(
-    (min, t) => Math.min(min, new Date(t.created_at).getTime()),
-    Infinity
-  )
-})
-
-const rangeEnd = computed(() => {
-  return Math.max(now.value, rangeStart.value + 3_600_000)
-})
-
-const rangeDuration = computed(() => Math.max(rangeEnd.value - rangeStart.value, 1))
-
-const isHourly = computed(() => rangeDuration.value < 2 * 86_400_000)
-const isWeekly = computed(() => rangeDuration.value > 60 * 86_400_000)
+const isHourly = computed(() => viewportDuration.value < 2 * 86_400_000)
+const isWeekly = computed(() => viewportDuration.value > 60 * 86_400_000)
 
 const axisTicks = computed(() => {
   const ticks: { label: string; pct: number }[] = []
   const count = 7
   for (let i = 0; i <= count; i++) {
-    const ts = rangeStart.value + (rangeDuration.value / count) * i
+    const ts = viewportStart.value + (viewportDuration.value / count) * i
     const d = new Date(ts)
     let label: string
     if (isHourly.value) {
@@ -171,14 +214,11 @@ const groups = computed((): AgentGroup[] => {
 })
 
 function barLeft(task: TimelineTask): string {
-  const start = Math.max(taskStartMs(task), rangeStart.value)
-  return ((start - rangeStart.value) / rangeDuration.value * 100).toFixed(3) + '%'
+  return ((taskStartMs(task) - viewportStart.value) / viewportDuration.value * 100).toFixed(3) + '%'
 }
 
 function barWidth(task: TimelineTask): string {
-  const start = Math.max(taskStartMs(task), rangeStart.value)
-  const end = Math.min(taskEndMs(task), rangeEnd.value)
-  const w = Math.max((end - start) / rangeDuration.value * 100, 0.3)
+  const w = Math.max((taskEndMs(task) - taskStartMs(task)) / viewportDuration.value * 100, 0.3)
   return w.toFixed(3) + '%'
 }
 
@@ -241,16 +281,16 @@ const legendItems = computed(() => [
 
 <template>
   <div class="tl-view" @mousemove="moveTooltip">
-    <!-- Header — simplified, period selector moved to filters bar -->
+    <!-- Header -->
     <div class="tl-header">
       <h2 class="tl-title text-h6 font-weight-medium">{{ t('timeline.title') }}</h2>
       <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchTasks" />
     </div>
 
-    <!-- Filters bar — period chips always shown, agent chips when data is present -->
+    <!-- Filters bar — period presets (zoom shortcuts) + agent filter chips -->
     <div class="tl-filters py-2 px-4">
-      <!-- Period selector as MD3 filter chips -->
-      <v-chip-group v-model="daysBack" mandatory class="flex-shrink-0">
+      <!-- Period presets: clicking resets the viewport to that range -->
+      <v-chip-group v-model="selectedPeriod" mandatory class="flex-shrink-0">
         <v-chip
           v-for="item in periodItems"
           :key="item.value"
@@ -258,6 +298,7 @@ const legendItems = computed(() => [
           size="small"
           filter
           variant="tonal"
+          @click="setViewportPeriod(item.value)"
         >
           {{ item.title }}
         </v-chip>
@@ -286,15 +327,15 @@ const legendItems = computed(() => [
       </template>
     </div>
 
-    <!-- Timeline body — @wheel without .prevent so native vertical scroll passes through at zoom bounds -->
-    <div class="tl-body" @wheel="onCanvasWheel">
+    <!-- Timeline body — wheel zooms viewport continuously, mousedown pans -->
+    <div ref="bodyRef" class="tl-body" @wheel.prevent="onCanvasWheel" @mousedown="onMouseDown">
       <div v-if="loading" class="tl-state-center">
         <v-progress-circular indeterminate :size="32" :width="3" />
       </div>
       <div v-else-if="error" class="tl-state-center tl-error text-body-2">{{ error }}</div>
       <div v-else-if="groups.length === 0" class="tl-state-center tl-muted-sm text-body-2">{{ t('timeline.noData') }}</div>
       <div v-else class="tl-canvas">
-        <!-- Time axis -->
+        <!-- Time axis — reflects visible viewport in real time -->
         <div class="tl-axis">
           <div class="tl-axis-spacer" />
           <div class="tl-axis-ticks">
@@ -316,6 +357,7 @@ const legendItems = computed(() => [
           <div class="tl-row-label py-2 px-3">
             <span class="tl-agent-name text-caption" :style="{ color: agentAccent(group.name) }">{{ group.name }}</span>
           </div>
+          <!-- overflow:hidden clips bars that extend outside the viewport -->
           <div class="tl-row-bars">
             <div
               v-for="task in group.tasks"
@@ -408,7 +450,13 @@ const legendItems = computed(() => [
 .tl-muted-xs { color: var(--content-muted); }
 .tl-muted-sm { color: var(--content-muted); }
 
-.tl-body { flex: 1; overflow: auto; }
+.tl-body {
+  flex: 1;
+  overflow: auto;
+  cursor: grab;
+  user-select: none;
+}
+.tl-body:active { cursor: grabbing; }
 .tl-state-center { display: flex; align-items: center; justify-content: center; height: 128px; }
 .tl-error { color: rgb(var(--v-theme-error)); }
 
@@ -450,7 +498,12 @@ const legendItems = computed(() => [
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tl-row-bars { flex: 1; position: relative; min-height: 40px; }
+.tl-row-bars {
+  flex: 1;
+  position: relative;
+  min-height: 40px;
+  overflow: hidden;
+}
 .tl-bar {
   position: absolute;
   top: 8px;
