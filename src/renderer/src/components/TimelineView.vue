@@ -235,9 +235,7 @@ const legendItems = computed(() => [
           :label="t('timeline.period')"
           style="max-width: 160px;"
         />
-        <v-btn variant="text" size="small" color="primary" :loading="loading" prepend-icon="mdi-refresh" @click="fetchTasks">
-          {{ t('common.refresh') }}
-        </v-btn>
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchTasks" />
       </div>
     </div>
 

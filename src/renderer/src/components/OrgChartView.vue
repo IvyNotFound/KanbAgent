@@ -211,7 +211,7 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
           </span>
         </div>
         <v-btn variant="tonal" size="small" class="oc-btn text-caption" @click="fitView">Fit</v-btn>
-        <v-btn variant="text" size="small" class="oc-btn text-caption" @click="fetchData">&#8635;</v-btn>
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchData" />
       </div>
     </div>
 

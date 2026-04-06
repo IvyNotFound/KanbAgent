@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
@@ -75,6 +75,12 @@ function onAgentClick(row: TopologyRow): void {
   store.selectedAgentId = row.id
   tabsStore.setActive('backlog')
 }
+
+const loading = ref(false)
+async function refresh(): Promise<void> {
+  loading.value = true
+  try { await store.refresh() } finally { loading.value = false }
+}
 </script>
 
 <template>
@@ -82,7 +88,7 @@ function onAgentClick(row: TopologyRow): void {
     <!-- Header -->
     <div class="tp-header">
       <h2 class="tp-title text-h6 font-weight-medium">{{ t('topology.title') }}</h2>
-      <v-btn variant="text" size="small" class="tp-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</v-btn>
+      <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
     </div>
 
     <!-- Loading -->
@@ -173,11 +179,6 @@ function onAgentClick(row: TopologyRow): void {
   border-bottom: 1px solid var(--edge-subtle);
 }
 .tp-title { color: var(--content-primary); margin: 0; }
-.tp-refresh-btn {
-  color: var(--content-subtle) !important;
-  transition: color var(--md-duration-short3) var(--md-easing-standard);
-}
-.tp-refresh-btn:hover { color: var(--content-secondary) !important; }
 .tp-state-center {
   display: flex;
   align-items: center;

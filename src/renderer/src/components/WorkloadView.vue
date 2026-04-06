@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentAccent } from '@renderer/utils/agentColor'
@@ -46,6 +46,12 @@ const rows = computed<WorkloadRow[]>(() => {
 const maxEffort = computed(() =>
   rows.value.reduce((max, r) => Math.max(max, r.totalEffort), 1)
 )
+
+const loading = ref(false)
+async function refresh(): Promise<void> {
+  loading.value = true
+  try { await store.refresh() } finally { loading.value = false }
+}
 </script>
 
 <template>
@@ -53,7 +59,7 @@ const maxEffort = computed(() =>
     <!-- Header -->
     <div class="wl-header">
       <h2 class="wl-title text-body-2 font-weight-medium">{{ t('workload.title') }}</h2>
-      <v-btn variant="text" size="small" class="wl-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</v-btn>
+      <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
     </div>
 
     <!-- Loading -->
@@ -124,11 +130,6 @@ const maxEffort = computed(() =>
   border-bottom: 1px solid var(--edge-subtle);
 }
 .wl-title { color: var(--content-secondary); }
-.wl-refresh-btn {
-  color: var(--content-subtle) !important;
-  transition: color var(--md-duration-short3) var(--md-easing-standard);
-}
-.wl-refresh-btn:hover { color: var(--content-secondary) !important; }
 .wl-state-center { display: flex; align-items: center; justify-content: center; padding: 32px; }
 .wl-loading {}
 .wl-empty {}

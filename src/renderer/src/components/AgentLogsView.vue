@@ -252,10 +252,10 @@ watch(() => props.initialAgentId, (v) => {
 
       <v-btn
         icon="mdi-refresh"
-        size="x-small"
         variant="text"
-        :title="t('logs.refresh')"
-        :class="{ 'al-refresh-btn--spinning': loading }"
+        size="small"
+        :loading="loading"
+        :title="t('common.refresh')"
         @click="fetchLogs"
       />
     </div>
@@ -355,8 +355,6 @@ watch(() => props.initialAgentId, (v) => {
 .al-pagination { display: flex; align-items: center; gap: 4px; }
 .al-page-info { color: var(--content-faint); }
 .al-count { color: var(--content-faint); }
-.al-refresh-btn--spinning { animation: alSpin 1s linear infinite; }
-@keyframes alSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* log list */
 .al-list { flex: 1; overflow-y: auto; min-height: 0; contain: strict; }

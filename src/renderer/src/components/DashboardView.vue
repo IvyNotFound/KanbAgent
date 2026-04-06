@@ -102,15 +102,13 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
       <div class="git-toolbar d-flex align-center justify-space-between px-4">
         <h2 class="git-title text-h6 font-weight-medium">Git</h2>
         <v-btn
+          icon="mdi-refresh"
           variant="text"
           size="small"
-          density="compact"
           :loading="gitLoading"
-          prepend-icon="mdi-refresh"
+          :title="t('common.refresh')"
           @click="fetchGitCommits"
-        >
-          {{ t('common.refresh') }}
-        </v-btn>
+        />
       </div>
       <!-- Loading -->
       <div v-if="gitLoading" class="d-flex align-center justify-center flex-1 pa-8">

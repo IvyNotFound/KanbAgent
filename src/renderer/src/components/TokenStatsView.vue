@@ -266,16 +266,13 @@ const {
     <!-- Refresh button -->
     <div class="ts-footer py-2 px-4">
       <v-btn
-        icon
+        icon="mdi-refresh"
         variant="text"
-        density="compact"
-        class="ts-refresh-btn"
-        :class="{ 'ts-refresh-btn--spinning': loading }"
-        :title="t('logs.refresh')"
+        size="small"
+        :loading="loading"
+        :title="t('common.refresh')"
         @click="refresh"
-      >
-        <v-icon size="14">mdi-refresh</v-icon>
-      </v-btn>
+      />
     </div>
   </div>
 </template>
@@ -498,15 +495,4 @@ const {
   border-top: 1px solid var(--edge-subtle);
   background: var(--surface-base);
 }
-.ts-refresh-btn {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  border-radius: var(--shape-xs) !important;
-  color: var(--content-subtle) !important;
-  transition: color var(--md-duration-short3) var(--md-easing-standard), background var(--md-duration-short3) var(--md-easing-standard);
-}
-.ts-refresh-btn:hover { color: var(--content-secondary) !important; background: var(--surface-secondary) !important; }
-.ts-refresh-btn--spinning { animation: tspin 1s linear infinite; }
-@keyframes tspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
