@@ -187,7 +187,14 @@ onUnmounted(() => {
               >{{ EFFORT_LABEL[task.effort] }}</v-chip>
             </div>
           </div>
-          <v-btn icon="mdi-close" variant="text" size="small" class="btn-close" @click="store.closeTask()" />
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="x-small"
+            class="btn-close"
+            :style="{ borderRadius: 'var(--shape-xs)', color: 'var(--content-subtle)' }"
+            @click="store.closeTask()"
+          />
         </div>
 
         <!-- Body : 2 colonnes -->
@@ -397,11 +404,7 @@ onUnmounted(() => {
 }
 .btn-close {
   flex-shrink: 0;
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  border-radius: var(--shape-xs) !important;
-  color: var(--content-subtle) !important;
+  /* size="x-small" sets 28×28px — border-radius and color via :style binding */
   transition: all var(--md-duration-short3) var(--md-easing-standard);
 }
 
@@ -482,8 +485,8 @@ onUnmounted(() => {
 
 /* Commits collapsible */
 .commits-toggle {
-  justify-content: space-between !important;
-  height: auto !important;
+  justify-content: space-between !important; /* override Vuetify v-btn default center — no prop available */
+  height: auto !important; /* override Vuetify v-btn fixed height — content drives height here */
   transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .toggle-arrow {

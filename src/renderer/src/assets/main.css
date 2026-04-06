@@ -408,11 +408,11 @@ body,
   color: var(--content-dim);
 }
 .action-btn {
-  width: 20px !important;
-  min-width: 20px !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  color: var(--content-subtle) !important;
+  width: 20px !important; /* override Vuetify v-btn size — global rule, no scope hash boost */
+  min-width: 20px !important; /* same */
+  height: 20px !important; /* same */
+  min-height: 20px !important; /* same */
+  color: var(--content-subtle) !important; /* override Vuetify v-btn theme color — global rule */
 }
 .action-btn--launch:hover { filter: brightness(1.15); }
 .empty-msg {
@@ -427,7 +427,7 @@ body,
 }
 /* MD3 elevation tint: dialog cards float above the app base surface */
 .v-dialog .v-card {
-  background-color: rgb(var(--v-theme-surface-dialog)) !important;
+  background-color: rgb(var(--v-theme-surface-dialog)) !important; /* override Vuetify internal surface — global selector, no scope hash */
 }
 /* Vertical centering for v-card inside a v-dialog overlay content.
    .v-overlay__content is a flex column. When the dialog has a fixed height prop
@@ -445,11 +445,11 @@ body,
    Vuetify's .v-overlay__content sizes to its content by default (no height guarantee).
    Isolated via .palette-dialog class to avoid impacting other dialogs. */
 .palette-dialog > .v-overlay__content {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  margin: 0 !important;
+  width: 100% !important; /* override Vuetify overlay content sizing — required for full-viewport layout */
+  height: 100% !important; /* same */
+  max-width: 100% !important; /* same */
+  max-height: 100% !important; /* same */
+  margin: 0 !important; /* same */
   align-self: stretch;
 }
 

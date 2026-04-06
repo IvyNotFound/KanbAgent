@@ -122,6 +122,11 @@ const plainDescription = computed(() => {
     variant="flat"
     :ripple="false"
     :draggable="task.status === 'todo' || task.status === 'in_progress'"
+    :style="{
+      backgroundColor: 'var(--surface-secondary)',
+      border: '1px solid var(--edge-default)',
+      borderRadius: 'var(--shape-md)',
+    }"
     @click="store.openTask(task)"
     @dragstart="onDragStart"
     @contextmenu="onContextMenu"
@@ -208,9 +213,7 @@ const plainDescription = computed(() => {
 
 <style scoped>
 .task-card {
-  background-color: var(--surface-secondary) !important; /* override Vuetify theme surface */
-  border: 1px solid var(--edge-default) !important; /* MD3: default border — visible against surface-primary column bg */
-  border-radius: var(--shape-md) !important; /* MD3 medium shape (was 8px) */
+  /* background / border / border-radius set via :style binding — overrides Vuetify without !important */
   cursor: pointer;
   min-height: 96px;
   flex-shrink: 0; /* prevent compression in flex column when many cards present */
@@ -279,17 +282,18 @@ const plainDescription = computed(() => {
 .card-footer-section {
   padding: 8px 16px 10px;
 }
-.card-description {
+/* Increased specificity beats Vuetify v-card-text flex/display overrides (T1607) */
+.task-card .card-description {
   color: var(--content-muted);
   line-height: 1.4;
   margin: 0;
   /* T1607: pure max-height + overflow approach — more reliable in Electron/Chromium than -webkit-line-clamp
      which can be defeated by Vuetify v-card-text flex/display overrides on todo/done columns */
-  overflow: hidden !important;
-  max-height: calc(2 * 1.4 * 0.875rem) !important; /* 2 lines × line-height × text-body-2 font-size */
-  display: -webkit-box !important;
+  overflow: hidden;
+  max-height: calc(2 * 1.4 * 0.875rem); /* 2 lines × line-height × text-body-2 font-size */
+  display: -webkit-box;
   -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical !important;
+  -webkit-box-orient: vertical;
 }
 .card-footer {
   display: flex;
