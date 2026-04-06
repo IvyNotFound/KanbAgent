@@ -450,6 +450,19 @@ body,
   margin-block: auto;
 }
 
+/* CommandPalette — force overlay content to cover the full viewport so that
+   .palette-backdrop's padding-top: 12vh is relative to the window, not the content box.
+   Vuetify's .v-overlay__content sizes to its content by default (no height guarantee).
+   Isolated via .palette-dialog class to avoid impacting other dialogs. */
+.palette-dialog > .v-overlay__content {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  align-self: stretch;
+}
+
 /* ── MD3 compliance — remove MD2 uppercase on all buttons ────────────────────
    Vuetify 3 still inherits the MD2 button text-transform: uppercase.
    MD3 spec requires sentence case (no uppercase transform) on button labels.

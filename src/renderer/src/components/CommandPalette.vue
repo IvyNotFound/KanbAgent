@@ -130,7 +130,7 @@ function effortColor(effort: number): string {
 </script>
 
 <template>
-  <v-dialog :model-value="modelValue" max-width="672" @update:model-value="close">
+  <v-dialog class="palette-dialog" :model-value="modelValue" max-width="672" @update:model-value="close">
     <!-- <Transition> wraps v-if to animate entry/exit per MD3 motion spec -->
     <!-- v-if="modelValue" ensures content is not rendered when closed (test compat for shallowMount) -->
     <!-- data-testid="palette-backdrop" allows @click.self backdrop test -->
