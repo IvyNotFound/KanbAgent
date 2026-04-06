@@ -156,7 +156,7 @@ async function addPerimetre() {
   <!-- Modal édition périmètre — MD3 v-dialog + v-card -->
   <v-dialog v-model="showEditDialog" max-width="384">
     <v-card v-if="editPerimetre" rounded="xl" color="surface-container-high">
-      <v-card-title class="text-title-large pt-6 px-6 pb-0">{{ t('sidebar.editPerimeter') }}</v-card-title>
+      <v-card-title class="text-title-large pt-6 px-6 pb-0" :style="{ color: agentAccent(editPerimetre.name) }">{{ t('sidebar.editPerimeter') }}</v-card-title>
       <v-card-text class="d-flex flex-column ga-4 px-6 pt-4">
         <v-text-field
           v-model="editPerimetreName"
@@ -164,6 +164,7 @@ async function addPerimetre() {
           variant="outlined"
           autofocus
           hide-details="auto"
+          :color="agentAccent(editPerimetre.name)"
           :label="t('sidebar.name')"
           :placeholder="t('sidebar.namePlaceholder')"
           @keydown.esc="editPerimetre = null"
@@ -175,6 +176,7 @@ async function addPerimetre() {
           hide-details="auto"
           rows="3"
           auto-grow
+          :color="agentAccent(editPerimetre.name)"
           :label="t('sidebar.description')"
           :placeholder="t('sidebar.descriptionPlaceholder')"
           @keydown.esc="editPerimetre = null"
@@ -182,7 +184,7 @@ async function addPerimetre() {
       </v-card-text>
       <v-card-actions class="px-6 pb-6 pt-2">
         <v-spacer />
-        <v-btn variant="text" @click="editPerimetre = null">{{ t('common.cancel') }}</v-btn>
+        <v-btn variant="text" :color="agentAccent(editPerimetre.name)" @click="editPerimetre = null">{{ t('common.cancel') }}</v-btn>
         <v-btn
           :color="agentAccent(editPerimetre.name)"
           variant="elevated"
