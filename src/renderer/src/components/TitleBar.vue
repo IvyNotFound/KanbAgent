@@ -151,7 +151,9 @@ onUnmounted(() => {
   border: none;
   color: rgba(var(--v-theme-on-surface), 0.6);
   transition: all var(--md-duration-short3) var(--md-easing-standard);
-  width: 300px;
+  min-width: 200px;
+  max-width: 320px;
+  width: 280px;
   cursor: pointer;
 }
 .search-btn:hover {
