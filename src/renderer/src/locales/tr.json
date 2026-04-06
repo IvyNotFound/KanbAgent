@@ -470,7 +470,10 @@
     "empty": "Tamamlanmış/arşivlenmiş görev bulunamadı.",
     "rejectionRate": "Proje red oranı",
     "noRejections": "Red tespit edilmedi",
-    "heuristicNote": "Buluşsal tespit — 'reject', 'return', 'todo' içeren inceleme yorumlarını algılar"
+    "heuristicNote": "Buluşsal tespit — 'reject', 'return', 'todo' içeren inceleme yorumlarını algılar",
+    "colAgent": "Ajan",
+    "colRejections": "Red./Toplam",
+    "colRate": "Oran"
   },
   "sessionActivityChart": {
     "title": "Oturum Aktivitesi — Son 14 Gün",

@@ -470,7 +470,10 @@
     "empty": "Nenhuma tarefa concluída/arquivada encontrada.",
     "rejectionRate": "Taxa de rejeição do projeto",
     "noRejections": "Nenhuma rejeição detetada",
-    "heuristicNote": "Deteção heurística — comentários de revisão contendo \"reject\", \"return\" ou \"todo\""
+    "heuristicNote": "Deteção heurística — comentários de revisão contendo \"reject\", \"return\" ou \"todo\"",
+    "colAgent": "Agente",
+    "colRejections": "Rej./Total",
+    "colRate": "Taxa"
   },
   "sessionActivityChart": {
     "title": "Atividade de sessões — últimos 14 dias",

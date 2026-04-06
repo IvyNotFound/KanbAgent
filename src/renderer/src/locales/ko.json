@@ -470,7 +470,10 @@
     "empty": "완료/보관된 작업을 찾을 수 없습니다.",
     "rejectionRate": "프로젝트 반려율",
     "noRejections": "반려가 감지되지 않았습니다",
-    "heuristicNote": "휴리스틱 감지 — 'reject', 'return', 'todo'를 포함하는 검토 댓글을 감지"
+    "heuristicNote": "휴리스틱 감지 — 'reject', 'return', 'todo'를 포함하는 검토 댓글을 감지",
+    "colAgent": "에이전트",
+    "colRejections": "거절/총",
+    "colRate": "비율"
   },
   "sessionActivityChart": {
     "title": "세션 활동 — 최근 14일",

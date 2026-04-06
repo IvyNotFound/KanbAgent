@@ -470,7 +470,10 @@
     "empty": "Inga klara/arkiverade uppgifter hittades.",
     "rejectionRate": "Projektets avslagsfrekevens",
     "noRejections": "Inga avslag hittades",
-    "heuristicNote": "Heuristisk detektering — granskarkommentarer med \"reject\", \"return\" eller \"todo\""
+    "heuristicNote": "Heuristisk detektering — granskarkommentarer med \"reject\", \"return\" eller \"todo\"",
+    "colAgent": "Agent",
+    "colRejections": "Avv./Total",
+    "colRate": "Andel"
   },
   "sessionActivityChart": {
     "title": "Sessionsaktivitet — senaste 14 dagarna",

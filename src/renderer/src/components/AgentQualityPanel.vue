@@ -56,7 +56,7 @@ watch(() => store.dbPath, fetchQuality)
     <!-- Header -->
     <div class="quality-header py-3 px-4">
       <h2 class="quality-title text-body-2 font-weight-medium">{{ t('quality.title') }}</h2>
-      <v-btn variant="text" size="small" class="text-overline" @click="fetchQuality">{{ t('quality.refresh') }}</v-btn>
+      <v-btn variant="text" size="small" class="quality-refresh-btn" @click="fetchQuality">{{ t('quality.refresh') }}</v-btn>
     </div>
 
     <!-- Loading -->
@@ -77,46 +77,56 @@ watch(() => store.dbPath, fetchQuality)
     <template v-else>
       <!-- Global indicator -->
       <div class="quality-global py-3 px-4">
-        <div class="quality-global-rate ga-4">
-          <span class="quality-rate-label text-overline">{{ t('quality.rejectionRate') }}</span>
+        <div class="quality-global-rate">
+          <span class="quality-rate-label text-body-2">{{ t('quality.rejectionRate') }}</span>
           <span
-            class="quality-rate-value"
+            class="quality-rate-value text-h6"
             :style="{ color: rateColor(globalRejectionRate) }"
           >{{ globalRejectionRate }}%</span>
-          <span v-if="!hasRejections" class="quality-no-rejections text-overline">{{ t('quality.noRejections') }}</span>
+          <span v-if="!hasRejections" class="quality-no-rejections text-body-2">{{ t('quality.noRejections') }}</span>
         </div>
-        <p class="quality-heuristic-note text-overline mt-1">
+        <p class="quality-heuristic-note text-body-2 mt-1">
           {{ t('quality.heuristicNote') }}
         </p>
       </div>
 
-      <!-- Agent list -->
-      <v-list density="compact" class="pa-0">
-        <v-list-item v-for="row in rows" :key="row.agent_id" class="px-4 py-2">
-          <div class="d-flex align-center justify-space-between mb-1">
-            <span
-              class="text-caption font-weight-medium"
-              :style="{ color: agentAccent(row.agent_name) }"
-            >{{ row.agent_name }}</span>
-            <div class="d-flex align-center ga-2">
-              <span class="text-caption text-disabled">
-                {{ row.rejected_tasks }}/{{ row.total_tasks }}
-              </span>
-              <span
-                class="text-caption font-weight-medium"
-                :style="{ color: rateColor(row.rejection_rate) }"
-              >{{ row.rejection_rate }}%</span>
-            </div>
+      <!-- Per-agent table -->
+      <div class="quality-table">
+        <!-- Column headers -->
+        <div class="quality-cols quality-cols-head text-label-medium">
+          <span>{{ t('quality.colAgent') }}</span>
+          <span class="quality-right">{{ t('quality.colRejections') }}</span>
+          <span></span>
+          <span class="quality-right">{{ t('quality.colRate') }}</span>
+        </div>
+
+        <!-- Rows -->
+        <div
+          v-for="row in rows"
+          :key="row.agent_id"
+          class="quality-cols quality-cols-row"
+        >
+          <span
+            class="quality-agent-name"
+            :style="{ color: agentAccent(row.agent_name) }"
+            :title="row.agent_name"
+          >{{ row.agent_name }}</span>
+          <span class="quality-count quality-right">{{ row.rejected_tasks }}/{{ row.total_tasks }}</span>
+          <div class="quality-bar-bg">
+            <div
+              class="quality-bar-fill"
+              :style="{
+                width: row.rejection_rate + '%',
+                backgroundColor: rateColor(row.rejection_rate)
+              }"
+            />
           </div>
-          <v-progress-linear
-            :model-value="row.rejection_rate"
-            :color="rateColor(row.rejection_rate)"
-            bg-color="rgba(var(--v-border-color), var(--v-border-opacity))"
-            rounded
-            height="3"
-          />
-        </v-list-item>
-      </v-list>
+          <span
+            class="quality-rate quality-right"
+            :style="{ color: rateColor(row.rejection_rate) }"
+          >{{ row.rejection_rate }}%</span>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -141,6 +151,11 @@ watch(() => store.dbPath, fetchQuality)
   color: var(--content-secondary);
   margin: 0;
 }
+.quality-refresh-btn {
+  color: var(--content-subtle) !important;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
+}
+.quality-refresh-btn:hover { color: var(--content-secondary) !important; }
 .quality-state {
   display: flex;
   align-items: center;
@@ -164,15 +179,12 @@ watch(() => store.dbPath, fetchQuality)
 .quality-global-rate {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 .quality-rate-label {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: var(--content-faint);
-  font-weight: 600;
 }
 .quality-rate-value {
-  font-size: 18px; /* display metric — above MD3 type scale, kept intentionally */
   font-family: ui-monospace, monospace;
   font-weight: 700;
 }
@@ -184,5 +196,52 @@ watch(() => store.dbPath, fetchQuality)
   color: var(--content-faint);
   margin: 0;
   font-style: italic;
+}
+
+/* Per-agent table — mirrors .wl-table pattern from WorkloadView */
+.quality-table { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+.quality-cols {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 80px minmax(0, 2fr) 60px;
+  gap: 12px;
+  align-items: center;
+}
+.quality-cols-head {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--content-faint);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--edge-subtle);
+  align-items: end;
+}
+.quality-right { text-align: right; }
+.quality-agent-name {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quality-count {
+  font-size: 12px;
+  color: var(--content-tertiary);
+  font-family: ui-monospace, monospace;
+}
+.quality-rate {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+}
+.quality-bar-bg {
+  height: 8px;
+  background: var(--surface-tertiary);
+  border-radius: var(--shape-full);
+  overflow: hidden;
+}
+.quality-bar-fill {
+  height: 100%;
+  border-radius: var(--shape-full);
+  transition: width var(--md-duration-medium4) var(--md-easing-emphasized-decelerate);
 }
 </style>

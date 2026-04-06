@@ -470,7 +470,10 @@
     "empty": "Ingen færdige/arkiverede opgaver fundet.",
     "rejectionRate": "Projektafvisningsrate",
     "noRejections": "Ingen afvisninger fundet",
-    "heuristicNote": "Heuristisk detektion — reviewerkommentarer indeholdende \"reject\", \"return\" eller \"todo\""
+    "heuristicNote": "Heuristisk detektion — reviewerkommentarer indeholdende \"reject\", \"return\" eller \"todo\"",
+    "colAgent": "Agent",
+    "colRejections": "Afv./Total",
+    "colRate": "Rate"
   },
   "sessionActivityChart": {
     "title": "Sessionaktivitet — seneste 14 dage",

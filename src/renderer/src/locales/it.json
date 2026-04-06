@@ -470,7 +470,10 @@
     "empty": "Nessuna attività completata/archiviata trovata.",
     "rejectionRate": "Tasso di rifiuto del progetto",
     "noRejections": "Nessun rifiuto rilevato",
-    "heuristicNote": "Rilevamento euristico — commenti del revisore contenenti \"reject\", \"return\" o \"todo\""
+    "heuristicNote": "Rilevamento euristico — commenti del revisore contenenti \"reject\", \"return\" o \"todo\"",
+    "colAgent": "Agente",
+    "colRejections": "Rif./Tot.",
+    "colRate": "Tasso"
   },
   "sessionActivityChart": {
     "title": "Attività sessioni — ultimi 14 giorni",

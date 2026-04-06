@@ -470,7 +470,10 @@
     "empty": "Aucune tâche done/archived trouvée.",
     "rejectionRate": "Taux de rejet projet",
     "noRejections": "Aucun rejet détecté",
-    "heuristicNote": "Détection heuristique — commentaires reviewer contenant \"rejet\", \"retour\" ou \"todo\""
+    "heuristicNote": "Détection heuristique — commentaires reviewer contenant \"rejet\", \"retour\" ou \"todo\"",
+    "colAgent": "Agent",
+    "colRejections": "Rej./Total",
+    "colRate": "Taux"
   },
   "sessionActivityChart": {
     "title": "Activité des sessions — 14 derniers jours",

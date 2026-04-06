@@ -470,7 +470,10 @@
     "empty": "Ingen ferdige/arkiverte oppgaver funnet.",
     "rejectionRate": "Prosjektavslagsrate",
     "noRejections": "Ingen avslag funnet",
-    "heuristicNote": "Heuristisk deteksjon — gjennomgangskommentarer som inneholder \"reject\", \"return\" eller \"todo\""
+    "heuristicNote": "Heuristisk deteksjon — gjennomgangskommentarer som inneholder \"reject\", \"return\" eller \"todo\"",
+    "colAgent": "Agent",
+    "colRejections": "Avsl./Total",
+    "colRate": "Rate"
   },
   "sessionActivityChart": {
     "title": "Øktaktivitet — siste 14 dager",

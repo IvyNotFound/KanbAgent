@@ -470,7 +470,10 @@
     "empty": "Nie znaleziono gotowych/zarchiwizowanych zadań.",
     "rejectionRate": "Wskaźnik odrzuceń projektu",
     "noRejections": "Nie wykryto odrzuceń",
-    "heuristicNote": "Detekcja heurystyczna — komentarze recenzenta zawierające \"reject\", \"return\" lub \"todo\""
+    "heuristicNote": "Detekcja heurystyczna — komentarze recenzenta zawierające \"reject\", \"return\" lub \"todo\"",
+    "colAgent": "Agent",
+    "colRejections": "Odrzuc./Łącz.",
+    "colRate": "Wsk."
   },
   "sessionActivityChart": {
     "title": "Aktywność sesji — ostatnie 14 dni",

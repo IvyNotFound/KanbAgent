@@ -470,7 +470,10 @@
     "empty": "完了/アーカイブ済みタスクが見つかりません。",
     "rejectionRate": "プロジェクト差し戻し率",
     "noRejections": "差し戻しは検出されませんでした",
-    "heuristicNote": "ヒューリスティック検出 — 「reject」「return」「todo」を含むレビューコメントを検出"
+    "heuristicNote": "ヒューリスティック検出 — 「reject」「return」「todo」を含むレビューコメントを検出",
+    "colAgent": "エージェント",
+    "colRejections": "却下/合計",
+    "colRate": "率"
   },
   "sessionActivityChart": {
     "title": "セッションアクティビティ — 直近14日間",

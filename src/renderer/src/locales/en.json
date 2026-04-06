@@ -478,7 +478,10 @@
     "empty": "No done/archived tasks found.",
     "rejectionRate": "Project rejection rate",
     "noRejections": "No rejections detected",
-    "heuristicNote": "Heuristic detection — reviewer comments containing \"reject\", \"return\" or \"todo\""
+    "heuristicNote": "Heuristic detection — reviewer comments containing \"reject\", \"return\" or \"todo\"",
+    "colAgent": "Agent",
+    "colRejections": "Rej./Total",
+    "colRate": "Rate"
   },
   "sessionActivityChart": {
     "title": "Session activity — last 14 days",

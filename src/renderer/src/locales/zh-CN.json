@@ -470,7 +470,10 @@
     "empty": "未找到已完成/已归档的任务。",
     "rejectionRate": "项目拒绝率",
     "noRejections": "未检测到拒绝",
-    "heuristicNote": "启发式检测 — 检测包含\"reject\"、\"return\"或\"todo\"的审核评论"
+    "heuristicNote": "启发式检测 — 检测包含\"reject\"、\"return\"或\"todo\"的审核评论",
+    "colAgent": "代理",
+    "colRejections": "拒绝/总计",
+    "colRate": "比率"
   },
   "sessionActivityChart": {
     "title": "会话活动 — 最近14天",
