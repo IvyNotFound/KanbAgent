@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Tab } from '@renderer/stores/tabs'
 import { agentAccent } from '@renderer/utils/agentColor'
@@ -12,6 +12,17 @@ const { t } = useI18n()
 const { confirm } = useConfirmDialog()
 
 const scrollContainer = ref<HTMLDivElement | null>(null)
+
+// ── Fixed tab active state ────────────────────────────────────────────────────
+const fixedActiveTab = computed<string | undefined>(() => {
+  if (store.activeTabId === 'backlog') return 'backlog'
+  if (store.activeTabId === 'dashboard') return 'dashboard'
+  return undefined
+})
+
+function onFixedTabChange(val: string | null | undefined) {
+  if (val) store.setActive(val)
+}
 
 const {
   store, terminalTabs, fileTabs,
@@ -103,34 +114,24 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 <template>
   <div class="tabbar">
 
-    <!-- Onglet Backlog (fixe) -->
-    <button
-      class="text-body-2"
-      :class="['tab-fixed', store.activeTabId === 'backlog' && 'tab-fixed--active']"
-      @click="store.setActive('backlog')"
+    <!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
+    <v-tabs
+      :model-value="fixedActiveTab"
+      density="compact"
+      height="48"
+      color="primary"
+      class="tabbar-fixed-tabs"
+      @update:model-value="onFixedTabChange"
     >
-      <v-icon size="14">mdi-view-list</v-icon>
-      <span>{{ t('sidebar.backlog') }}</span>
-      <!-- .absolute.bottom-0 preserved for TabBar.spec.ts test -->
-      <span
-        v-if="store.activeTabId === 'backlog'"
-        class="tab-indicator"
-      ></span>
-    </button>
-
-    <!-- Onglet Stat (fixe) -->
-    <button
-      class="text-body-2"
-      :class="['tab-fixed', store.activeTabId === 'dashboard' && 'tab-fixed--active']"
-      @click="store.setActive('dashboard')"
-    >
-      <v-icon size="14">mdi-chart-line</v-icon>
-      <span>{{ t('sidebar.dashboard') }}</span>
-      <span
-        v-if="store.activeTabId === 'dashboard'"
-        class="tab-indicator"
-      ></span>
-    </button>
+      <v-tab value="backlog">
+        <v-icon size="14" class="mr-2">mdi-view-list</v-icon>
+        {{ t('sidebar.backlog') }}
+      </v-tab>
+      <v-tab value="dashboard">
+        <v-icon size="14" class="mr-2">mdi-chart-line</v-icon>
+        {{ t('sidebar.dashboard') }}
+      </v-tab>
+    </v-tabs>
 
     <!-- Scroll left arrow -->
     <button
@@ -182,6 +183,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       >
         <!-- Onglet-agent (bouton principal du groupe) -->
         <button
+          v-ripple
           class="tab-agent text-body-2"
           :style="agentTabStyleMap.get(group.agentName)"
           @click="activateAgentGroup(group)"
@@ -210,6 +212,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
         <template v-if="!isGroupCollapsed(group.agentName)">
           <template v-for="tab in group.tabs" :key="tab.id">
             <button
+              v-ripple
               class="tab-sub text-body-2"
               :style="tabStyleMap.get(tab.id)"
               :title="subTabLabel(tab)"
@@ -264,32 +267,9 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   background: rgb(var(--v-theme-surface));
 }
-.tab-fixed {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 24px;
-  font-weight: 500;
-  transition: all var(--md-duration-short3) var(--md-easing-standard);
-  user-select: none;
-  border: none;
-  flex-shrink: 0;
-  cursor: pointer;
-  background: none;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-}
-.tab-fixed:hover {
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  background: rgba(var(--v-theme-on-surface), 0.06);
-}
-.tab-fixed--active {
-  color: rgb(var(--v-theme-primary));
-  background: transparent;
-}
-.tab-icon {
-  width: 14px;
-  height: 14px;
+/* tabbar-fixed-tabs: v-tabs wrapper for Backlog + Dashboard (MD3 Secondary Tabs).
+   flex-shrink: 0 prevents compression by adjacent scrollable area. */
+.tabbar-fixed-tabs {
   flex-shrink: 0;
 }
 .scroll-arrow {

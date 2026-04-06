@@ -218,13 +218,15 @@ exports[`StatusColumn — snapshots > matches snapshot: in_progress column (drop
 
 exports[`TabBar — snapshots > matches snapshot: empty tab bar (no tabs) 1`] = `
 "<div data-v-3c3dc65a="" class="tabbar">
-  <!-- Onglet Backlog (fixe) --><button data-v-3c3dc65a="" class="text-body-2 tab-fixed">
-    <v-icon data-v-3c3dc65a="" size="14">mdi-view-list</v-icon><span data-v-3c3dc65a="">Backlog</span><!-- .absolute.bottom-0 preserved for TabBar.spec.ts test -->
-    <!--v-if-->
-  </button><!-- Onglet Stat (fixe) --><button data-v-3c3dc65a="" class="text-body-2 tab-fixed">
-    <v-icon data-v-3c3dc65a="" size="14">mdi-chart-line</v-icon><span data-v-3c3dc65a="">Dashboard</span>
-    <!--v-if-->
-  </button><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
+  <!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
+  <v-tabs data-v-3c3dc65a="" density="compact" height="48" color="primary" class="tabbar-fixed-tabs">
+    <v-tab data-v-3c3dc65a="" value="backlog">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-view-list</v-icon> Backlog
+    </v-tab>
+    <v-tab data-v-3c3dc65a="" value="dashboard">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-chart-line</v-icon> Dashboard
+    </v-tab>
+  </v-tabs><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-left</v-icon>
   </button><!-- Onglets (scrollable) -->
   <div data-v-3c3dc65a="" class="scroll-container">
@@ -240,13 +242,15 @@ exports[`TabBar — snapshots > matches snapshot: empty tab bar (no tabs) 1`] = 
 
 exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 1`] = `
 "<div data-v-3c3dc65a="" class="tabbar">
-  <!-- Onglet Backlog (fixe) --><button data-v-3c3dc65a="" class="text-body-2 tab-fixed">
-    <v-icon data-v-3c3dc65a="" size="14">mdi-view-list</v-icon><span data-v-3c3dc65a="">Backlog</span><!-- .absolute.bottom-0 preserved for TabBar.spec.ts test -->
-    <!--v-if-->
-  </button><!-- Onglet Stat (fixe) --><button data-v-3c3dc65a="" class="text-body-2 tab-fixed">
-    <v-icon data-v-3c3dc65a="" size="14">mdi-chart-line</v-icon><span data-v-3c3dc65a="">Dashboard</span>
-    <!--v-if-->
-  </button><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
+  <!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
+  <v-tabs data-v-3c3dc65a="" density="compact" height="48" color="primary" class="tabbar-fixed-tabs">
+    <v-tab data-v-3c3dc65a="" value="backlog">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-view-list</v-icon> Backlog
+    </v-tab>
+    <v-tab data-v-3c3dc65a="" value="dashboard">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-chart-line</v-icon> Dashboard
+    </v-tab>
+  </v-tabs><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-left</v-icon>
   </button><!-- Onglets (scrollable) -->
   <div data-v-3c3dc65a="" class="scroll-container">

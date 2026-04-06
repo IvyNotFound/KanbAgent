@@ -68,9 +68,9 @@ function toggleSection(section: Section) {
           <v-btn
             :title="t('sidebar.agents')"
             icon
-            variant="text"
+            :variant="activeSection === 'agents' ? 'tonal' : 'text'"
+            :color="activeSection === 'agents' ? 'primary' : undefined"
             class="rail-btn"
-            :class="{ 'rail-btn-active': activeSection === 'agents' }"
             @click="toggleSection('agents')"
           >
             <v-icon size="18">mdi-account-group</v-icon>
@@ -82,9 +82,9 @@ function toggleSection(section: Section) {
           <v-btn
             :title="t('sidebar.perimeters')"
             icon
-            variant="text"
+            :variant="activeSection === 'perimetres' ? 'tonal' : 'text'"
+            :color="activeSection === 'perimetres' ? 'primary' : undefined"
             class="rail-btn"
-            :class="{ 'rail-btn-active': activeSection === 'perimetres' }"
             @click="toggleSection('perimetres')"
           >
             <v-icon size="18">mdi-layers-outline</v-icon>
@@ -96,9 +96,9 @@ function toggleSection(section: Section) {
           <v-btn
             :title="t('sidebar.tree')"
             icon
-            variant="text"
+            :variant="activeSection === 'tree' ? 'tonal' : 'text'"
+            :color="activeSection === 'tree' ? 'primary' : undefined"
             class="rail-btn"
-            :class="{ 'rail-btn-active': activeSection === 'tree' }"
             @click="toggleSection('tree')"
           >
             <v-icon size="18">mdi-file-tree</v-icon>
@@ -112,9 +112,9 @@ function toggleSection(section: Section) {
           <v-btn
             :title="t('sidebar.project')"
             icon
-            variant="text"
+            :variant="isProjectPopupOpen ? 'tonal' : 'text'"
+            :color="isProjectPopupOpen ? 'primary' : undefined"
             class="rail-btn"
-            :class="{ 'rail-btn-active': isProjectPopupOpen }"
             @click="isProjectPopupOpen = true"
           >
             <v-icon size="18">mdi-folder-outline</v-icon>
@@ -126,9 +126,9 @@ function toggleSection(section: Section) {
           <v-btn
             :title="t('sidebar.settings')"
             icon
-            variant="text"
+            :variant="isSettingsOpen ? 'tonal' : 'text'"
+            :color="isSettingsOpen ? 'primary' : undefined"
             class="rail-btn"
-            :class="{ 'rail-btn-active': isSettingsOpen }"
             @click="isSettingsOpen = true"
           >
             <v-icon size="18">mdi-cog-outline</v-icon>
@@ -224,11 +224,6 @@ function toggleSection(section: Section) {
   min-width: 40px !important;
   height: 40px !important;
   border-radius: 50% !important;
-}
-/* Active indicator: primaryContainer (purple-tonal) — harmonizes with primary seed #8b5cf6 */
-.rail-btn-active {
-  background: rgb(var(--v-theme-primary-container)) !important;
-  color: rgb(var(--v-theme-on-primary-container)) !important;
 }
 .rail-divider {
   flex: none;
