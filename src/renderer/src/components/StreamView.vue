@@ -18,6 +18,7 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useAgentsStore } from '@renderer/stores/agents'
 import { agentFg, agentBg, agentBorder, colorVersion, getOnColor, isDark } from '@renderer/utils/agentColor'
+import { renderMarkdown } from '@renderer/utils/renderMarkdown'
 import { useStreamEvents } from '@renderer/composables/useStreamEvents'
 import { useCopyCode } from '@renderer/composables/useCopyCode'
 import HookEventBar from './HookEventBar.vue'
@@ -337,7 +338,11 @@ onUnmounted(() => {
             :style="{ background: accentFg, color: userBubbleTextColor }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
-              <span v-if="block.type === 'text'">{{ parsePromptContext(block.text ?? '').base }}</span>
+              <div
+                v-if="block.type === 'text'"
+                class="stream-markdown user-markdown"
+                v-html="renderMarkdown(parsePromptContext(block.text ?? '').base)"
+              />
             </template>
           </div>
         </div>
@@ -543,12 +548,20 @@ onUnmounted(() => {
 .user-bubble {
   border-radius: 20px 20px 4px 20px;
   max-width: 70%;
-  white-space: pre-wrap;
   overflow-wrap: break-word;
   font-size: 0.875rem;
   line-height: 1.625;
   user-select: text;
   cursor: text;
+}
+/* Markdown overrides for colored bubble background */
+.user-bubble :deep(code:not(pre code)) {
+  background: rgba(0, 0, 0, 0.15);
+  color: inherit;
+}
+.user-bubble :deep(a) {
+  color: inherit;
+  opacity: 0.85;
 }
 
 /* assistant wrapper — left-aligned flex column */
