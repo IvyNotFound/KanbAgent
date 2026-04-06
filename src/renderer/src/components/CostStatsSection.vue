@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, agentAccent } from '@renderer/utils/agentColor'
 
 /**
  * @property dbPath  - Path to the active SQLite database (null = no project open).
@@ -309,7 +309,7 @@ const hoveredBar = ref<number | null>(null)
           <div class="cost-bar-track">
             <div
               class="cost-bar-fill"
-              :style="{ width: barWidth(row.total_cost) }"
+              :style="{ width: barWidth(row.total_cost), backgroundColor: agentAccent(row.agent_name) }"
             />
             <span class="cost-bar-label px-2">
               {{ formatCost(row.total_cost) }}
@@ -414,10 +414,10 @@ const hoveredBar = ref<number | null>(null)
 .cost-spark-bar {
   width: 100%;
   border-radius: 2px 2px 0 0;
-  background: rgba(var(--v-theme-primary), 0.45);
+  background: rgba(var(--v-theme-secondary), 0.5);
   transition: background-color var(--md-duration-short3) var(--md-easing-standard);
 }
-.cost-spark-bar--hover { background: rgb(var(--v-theme-primary)); }
+.cost-spark-bar--hover { background: rgb(var(--v-theme-secondary)); }
 .cost-spark-zero {
   width: 100%;
   height: 2px;
@@ -470,7 +470,6 @@ const hoveredBar = ref<number | null>(null)
 .cost-bar-fill {
   height: 100%;
   border-radius: var(--shape-xs);
-  background: linear-gradient(to right, rgba(var(--v-theme-primary),0.35), rgba(var(--v-theme-primary),0.75));
   transition: width var(--md-duration-medium2) var(--md-easing-standard);
 }
 .cost-bar-label {
