@@ -574,7 +574,9 @@
     "waitingMessages": "等待消息…",
     "turns": "{n} 轮 | {n} 轮",
     "ctx": "ctx",
-    "inputPlaceholder": "发送消息…"
+    "inputPlaceholder": "发送消息…",
+    "askQuestion": "代理问题",
+    "replyPlaceholder": "回复代理…"
   },
   "task": {
     "running": "任务进行中",

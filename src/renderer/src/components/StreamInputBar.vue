@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -10,7 +10,13 @@ const props = defineProps<{
   agentStopped: boolean
   sessionId: string | null
   accentFg: string
+  /** T1707: pending AskUserQuestion text — changes placeholder and shows banner */
+  pendingQuestion?: string
 }>()
+
+const inputPlaceholder = computed(() =>
+  props.pendingQuestion ? t('stream.replyPlaceholder') : t('stream.inputPlaceholder')
+)
 
 const emit = defineEmits<{
   send: [text: string]
@@ -44,15 +50,24 @@ function stopAgent(): void {
 <template>
   <!-- MD3 divider replaces the border-top CSS (T1687) -->
   <v-divider />
+  <!-- T1707: pending question banner — shown when agent awaits a reply -->
+  <div
+    v-if="pendingQuestion"
+    class="pending-question-banner px-5 pt-3 pb-0 d-flex align-center ga-2"
+    data-testid="pending-question-banner"
+  >
+    <v-icon icon="mdi-help-circle-outline" size="small" class="pending-question-icon" />
+    <span class="pending-question-text text-caption text-truncate">{{ pendingQuestion }}</span>
+  </div>
   <!-- ── Input zone (T681: items-end aligne boutons sur bas textarea) ─── -->
-  <div class="input-bar d-flex align-end ga-2 px-5 py-4">
+  <div class="input-bar d-flex align-end ga-2 px-5 py-4" :class="{ 'pt-2': pendingQuestion }">
     <v-textarea
       v-model="inputText"
       rows="3"
       auto-grow
       variant="outlined"
       rounded="lg"
-      :placeholder="t('stream.inputPlaceholder')"
+      :placeholder="inputPlaceholder"
       hide-details
       color="primary"
       base-color="outline"
@@ -92,6 +107,21 @@ function stopAgent(): void {
 </template>
 
 <style scoped>
+/* T1707: pending question indicator above the input field */
+.pending-question-banner {
+  background: var(--surface-secondary);
+  max-width: 100%;
+}
+.pending-question-icon {
+  color: rgba(var(--v-theme-info), 0.8) !important;
+  flex-shrink: 0;
+}
+.pending-question-text {
+  color: var(--content-muted);
+  font-style: italic;
+  min-width: 0;
+}
+
 .input-bar {
   background: var(--surface-secondary);
   /* Override user-select:none inherited from .main-wrap (App.vue).

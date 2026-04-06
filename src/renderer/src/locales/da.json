@@ -574,7 +574,9 @@
     "waitingMessages": "Venter på beskeder…",
     "turns": "{n} tur | {n} ture",
     "ctx": "ctx",
-    "inputPlaceholder": "Send en besked…"
+    "inputPlaceholder": "Send en besked…",
+    "askQuestion": "Agentspørgsmål",
+    "replyPlaceholder": "Svar til agent…"
   },
   "task": {
     "running": "Opgave i gang",

@@ -79,9 +79,24 @@ function resultPreview(html: string | undefined): string {
 </script>
 
 <template>
+  <!-- AskUserQuestion — dedicated question card, always visible, no agent color (T1707) -->
+  <div
+    v-if="block.type === 'tool_use' && block.name === 'AskUserQuestion'"
+    class="ask-question-block mb-2"
+    data-testid="block-ask-question"
+  >
+    <div class="ask-question-header px-3 py-2 d-flex align-center ga-2">
+      <v-icon icon="mdi-help-circle-outline" size="small" class="ask-question-icon" />
+      <span class="ask-question-label text-caption">{{ t('stream.askQuestion') }}</span>
+    </div>
+    <div class="ask-question-body px-4 py-3 text-body-2">
+      {{ block.input?.question }}
+    </div>
+  </div>
+
   <!-- tool_use block — inline action bar couleur agent, déplié par défaut (T680, T1530) -->
   <div
-    v-if="block.type === 'tool_use'"
+    v-else-if="block.type === 'tool_use'"
     class="tool-block tool-block--use mb-2"
     :style="{ borderLeftColor: accentFg }"
     data-testid="block-tool-use"
@@ -152,6 +167,33 @@ function resultPreview(html: string | undefined): string {
 </template>
 
 <style scoped>
+/* T1707: AskUserQuestion — neutral card, distinct from technical tool blocks */
+.ask-question-block {
+  border-left: 3px solid rgba(var(--v-theme-info), 0.6);
+  border-radius: 0 4px 4px 0;
+  background: var(--surface-secondary);
+  overflow: hidden;
+}
+.ask-question-header {
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.ask-question-icon {
+  color: rgba(var(--v-theme-info), 0.8) !important;
+}
+.ask-question-label {
+  color: var(--content-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ask-question-body {
+  color: var(--content-primary);
+  user-select: text;
+  cursor: text;
+  font-style: italic;
+  line-height: 1.6;
+}
+
 /* T1530: redesign — left-accent bar (code-block pattern) instead of card */
 .tool-block {
   border-left: 3px solid var(--edge-default);

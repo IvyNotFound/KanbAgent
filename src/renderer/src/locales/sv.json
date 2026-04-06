@@ -574,7 +574,9 @@
     "waitingMessages": "Väntar på meddelanden…",
     "turns": "{n} varv | {n} varv",
     "ctx": "ctx",
-    "inputPlaceholder": "Skicka ett meddelande…"
+    "inputPlaceholder": "Skicka ett meddelande…",
+    "askQuestion": "Agentfråga",
+    "replyPlaceholder": "Svara till agent…"
   },
   "task": {
     "running": "Uppgift pågår",

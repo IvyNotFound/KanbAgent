@@ -574,7 +574,9 @@
     "waitingMessages": "In attesa di messaggi…",
     "turns": "{n} turno | {n} turni",
     "ctx": "ctx",
-    "inputPlaceholder": "Invia un messaggio…"
+    "inputPlaceholder": "Invia un messaggio…",
+    "askQuestion": "Domanda dell'agente",
+    "replyPlaceholder": "Rispondi all'agente…"
   },
   "task": {
     "running": "Attività in corso",

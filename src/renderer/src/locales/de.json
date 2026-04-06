@@ -574,7 +574,9 @@
     "waitingMessages": "Warten auf Nachrichten…",
     "turns": "{n} Runde | {n} Runden",
     "ctx": "ctx",
-    "inputPlaceholder": "Nachricht senden…"
+    "inputPlaceholder": "Nachricht senden…",
+    "askQuestion": "Agent-Frage",
+    "replyPlaceholder": "An Agent antworten…"
   },
   "task": {
     "running": "Aufgabe in Bearbeitung",

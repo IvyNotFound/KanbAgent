@@ -574,7 +574,9 @@
     "waitingMessages": "Ожидание сообщений…",
     "turns": "{n} ход | {n} ходов",
     "ctx": "ctx",
-    "inputPlaceholder": "Отправить сообщение…"
+    "inputPlaceholder": "Отправить сообщение…",
+    "askQuestion": "Вопрос агента",
+    "replyPlaceholder": "Ответить агенту…"
   },
   "task": {
     "running": "Задача выполняется",

@@ -574,7 +574,9 @@
     "waitingMessages": "Odotetaan viestejä…",
     "turns": "{n} kierros | {n} kierrosta",
     "ctx": "ctx",
-    "inputPlaceholder": "Lähetä viesti…"
+    "inputPlaceholder": "Lähetä viesti…",
+    "askQuestion": "Agentin kysymys",
+    "replyPlaceholder": "Vastaa agentille…"
   },
   "task": {
     "running": "Tehtävä käynnissä",

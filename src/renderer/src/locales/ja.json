@@ -574,7 +574,9 @@
     "waitingMessages": "メッセージを待っています…",
     "turns": "{n} ターン | {n} ターン",
     "ctx": "ctx",
-    "inputPlaceholder": "メッセージを送信…"
+    "inputPlaceholder": "メッセージを送信…",
+    "askQuestion": "エージェントからの質問",
+    "replyPlaceholder": "エージェントに返信…"
   },
   "task": {
     "running": "タスク進行中",

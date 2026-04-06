@@ -582,7 +582,9 @@
     "waitingMessages": "Waiting for messages…",
     "turns": "{n} turn | {n} turns",
     "ctx": "ctx",
-    "inputPlaceholder": "Send a message…"
+    "inputPlaceholder": "Send a message…",
+    "askQuestion": "Agent question",
+    "replyPlaceholder": "Reply to agent…"
   },
   "task": {
     "running": "Task in progress",

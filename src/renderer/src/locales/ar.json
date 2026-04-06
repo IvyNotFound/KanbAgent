@@ -574,7 +574,9 @@
     "waitingMessages": "في انتظار الرسائل…",
     "turns": "{n} دور | {n} أدوار",
     "ctx": "ctx",
-    "inputPlaceholder": "إرسال رسالة…"
+    "inputPlaceholder": "إرسال رسالة…",
+    "askQuestion": "سؤال الوكيل",
+    "replyPlaceholder": "الرد على الوكيل…"
   },
   "task": {
     "running": "المهمة قيد التنفيذ",

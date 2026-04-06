@@ -574,7 +574,9 @@
     "waitingMessages": "Oczekiwanie na wiadomości…",
     "turns": "{n} ruch | {n} ruchy",
     "ctx": "ctx",
-    "inputPlaceholder": "Wyślij wiadomość…"
+    "inputPlaceholder": "Wyślij wiadomość…",
+    "askQuestion": "Pytanie agenta",
+    "replyPlaceholder": "Odpowiedz agentowi…"
   },
   "task": {
     "running": "Zadanie w toku",
