@@ -39,50 +39,52 @@ function relativeTime(ts: number): string {
 
 <template>
   <div class="he-view">
-    <!-- Header -->
-    <div class="he-header">
-      <h2 class="he-title text-h6 font-weight-medium">{{ t('sidebar.hooks') }}</h2>
-    </div>
-    <!-- Filters bar -->
-    <div class="he-filters">
-      <span class="he-filter-label text-label-medium text-medium-emphasis">{{ t('hooks.filters') }}</span>
-      <v-chip-group v-model="filterTypes" multiple column>
-        <v-chip
-          v-for="eventType in ALL_TYPES"
-          :key="eventType"
-          :value="eventType"
-          filter
-          size="small"
-          color="primary"
-          class="he-chip-item"
-        >{{ EVENT_ICON[eventType] }} {{ eventType }}</v-chip>
-      </v-chip-group>
-      <div class="he-spacer" />
-      <span class="he-count">{{ filtered.length }} event{{ filtered.length !== 1 ? 's' : '' }}</span>
-    </div>
-
-    <!-- Event list -->
-    <div class="he-list">
-      <div v-if="filtered.length === 0" class="he-empty text-caption">{{ t('hooks.noEvents') }}</div>
-      <div
-        v-for="e in filtered"
-        :key="e.id"
-        class="he-event"
-        @click="selectedEvent = e"
-      >
-        <span class="he-event-icon">{{ eventIcon(e.event) }}</span>
-        <span
-          class="he-event-type"
-          :style="{ color: ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event)
-            ? toolColor(toolName(e.payload))
-            : eventColor(e.event) }"
-        >
-          {{ ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event) ? toolName(e.payload) : e.event }}
-        </span>
-        <span class="he-session-id">{{ e.sessionId ? e.sessionId.slice(0, 8) : '—' }}</span>
-        <span class="he-time">{{ relativeTime(e.ts) }}</span>
+    <v-card elevation="0" class="section-card">
+      <!-- Header -->
+      <div class="section-header">
+        <span class="text-body-2 font-weight-medium section-title">{{ t('sidebar.hooks') }}</span>
       </div>
-    </div>
+      <!-- Filters bar -->
+      <div class="he-filters">
+        <span class="he-filter-label text-label-medium text-medium-emphasis">{{ t('hooks.filters') }}</span>
+        <v-chip-group v-model="filterTypes" multiple column>
+          <v-chip
+            v-for="eventType in ALL_TYPES"
+            :key="eventType"
+            :value="eventType"
+            filter
+            size="small"
+            color="primary"
+            class="he-chip-item"
+          >{{ EVENT_ICON[eventType] }} {{ eventType }}</v-chip>
+        </v-chip-group>
+        <div class="he-spacer" />
+        <span class="he-count">{{ filtered.length }} event{{ filtered.length !== 1 ? 's' : '' }}</span>
+      </div>
+
+      <!-- Event list -->
+      <div class="he-list">
+        <div v-if="filtered.length === 0" class="he-empty text-caption">{{ t('hooks.noEvents') }}</div>
+        <div
+          v-for="e in filtered"
+          :key="e.id"
+          class="he-event"
+          @click="selectedEvent = e"
+        >
+          <span class="he-event-icon">{{ eventIcon(e.event) }}</span>
+          <span
+            class="he-event-type"
+            :style="{ color: ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event)
+              ? toolColor(toolName(e.payload))
+              : eventColor(e.event) }"
+          >
+            {{ ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event) ? toolName(e.payload) : e.event }}
+          </span>
+          <span class="he-session-id">{{ e.sessionId ? e.sessionId.slice(0, 8) : '—' }}</span>
+          <span class="he-time">{{ relativeTime(e.ts) }}</span>
+        </div>
+      </div>
+    </v-card>
   </div>
 
   <!-- Payload modal -->
@@ -101,18 +103,27 @@ function relativeTime(ts: number): string {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--surface-primary);
+  background: var(--surface-base);
+  padding: 16px;
 }
-.he-header {
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.section-header {
   flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-default);
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 44px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--edge-subtle);
+  gap: 8px;
 }
-.he-title { color: var(--content-primary); margin: 0; }
+.section-title { color: var(--content-secondary); }
 
 .he-filters {
   display: flex;

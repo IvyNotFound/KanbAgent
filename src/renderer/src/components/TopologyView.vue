@@ -85,79 +85,86 @@ async function refresh(): Promise<void> {
 
 <template>
   <div class="tp-view">
-    <!-- Header -->
-    <div class="tp-header">
-      <h2 class="tp-title text-h6 font-weight-medium">{{ t('topology.title') }}</h2>
-      <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
-    </div>
+    <v-card elevation="0" class="section-card">
+      <!-- Header -->
+      <div class="section-header">
+        <span class="text-body-2 font-weight-medium section-title">{{ t('topology.title') }}</span>
+        <div class="ml-auto">
+          <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
+        </div>
+      </div>
 
-    <!-- Loading -->
-    <div v-if="store.loading && rows.length === 0" class="tp-state-center">
-      <p class="tp-loading text-body-2">{{ t('common.loading') }}</p>
-    </div>
+      <!-- Body -->
+      <div class="tp-body">
+        <!-- Loading -->
+        <div v-if="store.loading && rows.length === 0" class="tp-state-center">
+          <p class="tp-loading text-body-2">{{ t('common.loading') }}</p>
+        </div>
 
-    <!-- Empty -->
-    <div v-else-if="!store.loading && rows.length === 0" class="tp-state-center">
-      <p class="tp-empty text-body-2">{{ t('topology.noAgents') }}</p>
-    </div>
+        <!-- Empty -->
+        <div v-else-if="!store.loading && rows.length === 0" class="tp-state-center">
+          <p class="tp-empty text-body-2">{{ t('topology.noAgents') }}</p>
+        </div>
 
-    <!-- Columns by perimeter -->
-    <div v-else class="tp-scroll">
-      <div class="tp-columns">
-        <div
-          v-for="[perimetre, perimAgents] in grouped"
-          :key="perimetre"
-          class="tp-column"
-        >
-          <!-- Column header -->
-          <div class="tp-col-header">
-            <v-chip
-              v-if="perimetre !== '__global__'"
-              size="small"
-              variant="outlined"
-              :style="{ color: agentAccent(perimetre), borderColor: agentBorder(perimetre) }"
-              class="tp-scope-chip"
-            >{{ perimetre }}</v-chip>
-            <v-chip
-              v-else
-              size="small"
-              variant="outlined"
-              class="tp-scope-chip tp-scope-chip--global"
-            >{{ t('topology.global') }}</v-chip>
-            <span class="tp-col-count">{{ perimAgents.length }}</span>
-          </div>
-
-          <!-- Agent cards -->
-          <div class="tp-cards">
-            <v-card
-              v-for="agent in perimAgents"
-              :key="agent.id"
-              :variant="agentStatus(agent) === 'idle' ? 'outlined' : 'tonal'"
-              :color="agentStatus(agent) === 'active' ? 'primary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
-              class="tp-card"
-              @click="onAgentClick(agent)"
+        <!-- Columns by perimeter -->
+        <div v-else class="tp-scroll">
+          <div class="tp-columns">
+            <div
+              v-for="[perimetre, perimAgents] in grouped"
+              :key="perimetre"
+              class="tp-column"
             >
-              <div class="tp-card-inner" :title="t('topology.filterByAgent', { name: agent.name })">
-                <div class="tp-card-top">
-                  <span class="tp-agent-name" :style="{ color: agentAccent(agent.name) }">{{ agent.name }}</span>
-                  <v-chip
-                    :color="agentStatus(agent) === 'active' ? 'primary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
-                    size="x-small"
-                    variant="tonal"
-                    class="tp-status-chip"
-                  ><span class="tp-status-dot mr-1" :class="`tp-dot--${agentStatus(agent)}`"></span>{{ t(`topology.status.${agentStatus(agent)}`) }}</v-chip>
-                </div>
-                <p class="tp-agent-type">{{ agent.type }}</p>
-                <p v-if="agent.current_task" class="tp-task text-label-medium" :title="agent.current_task">{{ agent.current_task }}</p>
-                <p v-if="agent.session_tokens != null && agent.session_tokens > 0" class="tp-tokens">
-                  {{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}
-                </p>
+              <!-- Column header -->
+              <div class="tp-col-header">
+                <v-chip
+                  v-if="perimetre !== '__global__'"
+                  size="small"
+                  variant="outlined"
+                  :style="{ color: agentAccent(perimetre), borderColor: agentBorder(perimetre) }"
+                  class="tp-scope-chip"
+                >{{ perimetre }}</v-chip>
+                <v-chip
+                  v-else
+                  size="small"
+                  variant="outlined"
+                  class="tp-scope-chip tp-scope-chip--global"
+                >{{ t('topology.global') }}</v-chip>
+                <span class="tp-col-count">{{ perimAgents.length }}</span>
               </div>
-            </v-card>
+
+              <!-- Agent cards -->
+              <div class="tp-cards">
+                <v-card
+                  v-for="agent in perimAgents"
+                  :key="agent.id"
+                  :variant="agentStatus(agent) === 'idle' ? 'outlined' : 'tonal'"
+                  :color="agentStatus(agent) === 'active' ? 'primary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
+                  class="tp-card"
+                  @click="onAgentClick(agent)"
+                >
+                  <div class="tp-card-inner" :title="t('topology.filterByAgent', { name: agent.name })">
+                    <div class="tp-card-top">
+                      <span class="tp-agent-name" :style="{ color: agentAccent(agent.name) }">{{ agent.name }}</span>
+                      <v-chip
+                        :color="agentStatus(agent) === 'active' ? 'primary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
+                        size="x-small"
+                        variant="tonal"
+                        class="tp-status-chip"
+                      ><span class="tp-status-dot mr-1" :class="`tp-dot--${agentStatus(agent)}`"></span>{{ t(`topology.status.${agentStatus(agent)}`) }}</v-chip>
+                    </div>
+                    <p class="tp-agent-type">{{ agent.type }}</p>
+                    <p v-if="agent.current_task" class="tp-task text-label-medium" :title="agent.current_task">{{ agent.current_task }}</p>
+                    <p v-if="agent.session_tokens != null && agent.session_tokens > 0" class="tp-tokens">
+                      {{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}
+                    </p>
+                  </div>
+                </v-card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </v-card>
   </div>
 </template>
 
@@ -166,19 +173,35 @@ async function refresh(): Promise<void> {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-primary);
+  background: var(--surface-base);
   overflow: hidden;
+  padding: 16px;
 }
-.tp-header {
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.section-header {
   flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-default);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 44px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--edge-subtle);
+  gap: 8px;
 }
-.tp-title { color: var(--content-primary); margin: 0; }
+.section-title { color: var(--content-secondary); }
+.tp-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
 .tp-state-center {
   display: flex;
   align-items: center;

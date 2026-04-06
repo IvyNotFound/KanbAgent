@@ -281,16 +281,19 @@ const legendItems = computed(() => [
 
 <template>
   <div class="tl-view" @mousemove="moveTooltip">
-    <!-- Header -->
-    <div class="tl-header">
-      <h2 class="tl-title text-h6 font-weight-medium">{{ t('timeline.title') }}</h2>
-      <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchTasks" />
-    </div>
+    <v-card elevation="0" class="section-card">
+      <!-- Header -->
+      <div class="section-header">
+        <span class="text-body-2 font-weight-medium section-title">{{ t('timeline.title') }}</span>
+        <div class="ml-auto">
+          <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchTasks" />
+        </div>
+      </div>
 
-    <!-- Filters bar — period presets (zoom shortcuts) + agent filter chips -->
-    <div class="tl-filters py-2 px-4">
-      <!-- Period presets: clicking resets the viewport to that range -->
-      <v-chip-group v-model="selectedPeriod" mandatory class="flex-shrink-0">
+      <!-- Filters bar — period presets (zoom shortcuts) + agent filter chips -->
+      <div class="tl-filters py-2 px-4">
+        <!-- Period presets: clicking resets the viewport to that range -->
+        <v-chip-group v-model="selectedPeriod" mandatory class="flex-shrink-0">
         <v-chip
           v-for="item in periodItems"
           :key="item.value"
@@ -407,6 +410,7 @@ const legendItems = computed(() => [
         </div>
       </div>
     </Teleport>
+    </v-card>
   </div>
 </template>
 
@@ -415,19 +419,28 @@ const legendItems = computed(() => [
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-primary);
+  background: var(--surface-base);
   overflow: hidden;
+  padding: 16px;
 }
-.tl-header {
-  height: 44px;
-  padding: 0 16px;
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.section-header {
   flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-default);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--edge-subtle);
+  gap: 8px;
 }
-.tl-title { color: var(--content-primary); margin: 0; }
+.section-title { color: var(--content-secondary); }
 
 .tl-filters {
   flex-shrink: 0;

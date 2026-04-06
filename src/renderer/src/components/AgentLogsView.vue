@@ -187,14 +187,15 @@ watch(() => props.initialAgentId, (v) => {
 
 <template>
   <div class="al-view">
+    <v-card elevation="0" class="section-card">
 
-    <!-- ── Title ──────────────────────────────────────────────────────────── -->
-    <div class="al-title-bar">
-      <h2 class="al-title text-h6 font-weight-medium">{{ t('tokenStats.logsTab') }}</h2>
-    </div>
+      <!-- ── Title ──────────────────────────────────────────────────────────── -->
+      <div class="section-header">
+        <span class="text-body-2 font-weight-medium section-title">{{ t('tokenStats.logsTab') }}</span>
+      </div>
 
-    <!-- ── Filter bar ──────────────────────────────────────────────────── -->
-    <div class="al-filter-bar">
+      <!-- ── Filter bar ──────────────────────────────────────────────────── -->
+      <div class="al-filter-bar">
       <div class="al-level-btns">
         <v-btn
           v-for="lvl in levels"
@@ -317,8 +318,8 @@ watch(() => props.initialAgentId, (v) => {
           </div>
         </div>
       </div>
-    </div>
 
+    </v-card>
   </div>
 </template>
 
@@ -327,18 +328,28 @@ watch(() => props.initialAgentId, (v) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-primary);
+  background: var(--surface-base);
+  min-height: 0;
+  padding: 16px;
+}
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   min-height: 0;
 }
-.al-title-bar {
+.section-header {
   flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-default);
   display: flex;
   align-items: center;
-  height: 44px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--edge-subtle);
+  gap: 8px;
 }
-.al-title { color: var(--content-primary); margin: 0; }
+.section-title { color: var(--content-secondary); }
 
 /* filter bar */
 .al-filter-bar {
