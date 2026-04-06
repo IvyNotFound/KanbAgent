@@ -49,7 +49,7 @@ const vuetifyPlugin = createVuetify({
           warning: '#f59e0b',              // brand-amber
           error: '#ef4444',               // brand-red
           info: '#3b82f6',                // blue-500
-          success: '#22c55e',             // green-500
+          success: '#40c4ff',             // light-blue-A200 — non-green, avoids app-wide green bleed
           surface: '#141316',             // neutral tone 6
           background: '#141316',          // neutral tone 6
           'on-surface': '#e6e1e6',        // neutral tone 90
@@ -104,7 +104,7 @@ const vuetifyPlugin = createVuetify({
           warning: '#f59e0b',              // brand-amber
           error: '#ef4444',               // brand-red
           info: '#3b82f6',                // blue-500
-          success: '#16a34a',             // green-600
+          success: '#0288d1',             // material blue-700 — non-green, avoids app-wide green bleed
           surface: '#fdf8fd',             // neutral tone 98
           background: '#f2ecf1',          // neutral tone 94
           'on-surface': '#1c1b1e',        // neutral tone 10

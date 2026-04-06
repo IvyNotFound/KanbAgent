@@ -26,7 +26,7 @@ const LINK_TYPE_STYLE: Record<string, { color: string; background: string; borde
 
 const STATUS_STYLE: Record<string, { color: string; background: string; border: string }> = {
   todo:        { color: 'rgb(var(--v-theme-warning))',   background: 'rgba(var(--v-theme-warning),0.12)',   border: 'rgba(var(--v-theme-warning),0.3)' },
-  in_progress: { color: 'rgb(var(--v-theme-success))', background: 'rgba(var(--v-theme-success),0.12)', border: 'rgba(var(--v-theme-success),0.3)' },
+  in_progress: { color: 'rgb(var(--v-theme-secondary))', background: 'rgba(var(--v-theme-secondary),0.12)', border: 'rgba(var(--v-theme-secondary),0.3)' },
   done:        { color: 'rgb(var(--v-theme-content-muted))', background: 'rgba(var(--v-theme-content-subtle),0.12)', border: 'rgba(var(--v-theme-content-subtle),0.3)' },
   archived:    { color: 'rgb(var(--v-theme-content-subtle))', background: 'rgba(var(--v-theme-content-faint),0.12)', border: 'rgba(var(--v-theme-content-faint),0.3)' },
 }
