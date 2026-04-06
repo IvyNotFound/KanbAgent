@@ -317,7 +317,7 @@ const {
 .ts-spark-bar {
   width: 100%;
   border-radius: 2px 2px 0 0;
-  background: rgba(var(--v-theme-primary), 0.3);
+  background: rgba(var(--v-theme-primary), 0.55);
   transition: background var(--md-duration-short3) var(--md-easing-standard);
 }
 .ts-spark-bar--hovered { background: rgb(var(--v-theme-primary)); }
@@ -378,7 +378,7 @@ const {
 .ts-bar-fill {
   height: 100%;
   border-radius: var(--shape-xs);
-  background: linear-gradient(to right, rgba(var(--v-theme-primary),0.35), rgba(var(--v-theme-primary),0.75));
+  background: linear-gradient(to right, rgba(var(--v-theme-secondary),0.65), rgba(var(--v-theme-primary),0.9));
   transition: width var(--md-duration-medium2) var(--md-easing-standard);
 }
 .ts-bar-label {
