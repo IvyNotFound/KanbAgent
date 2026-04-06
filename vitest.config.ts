@@ -9,7 +9,11 @@ export default defineConfig({
         compilerOptions: {
           // Suppress "Failed to resolve component: v-xxx" warnings in tests
           // by treating all Vuetify components (v-*) as known custom elements.
-          isCustomElement: (tag) => tag.startsWith('v-'),
+          // Exception: v-treeview must NOT be treated as a custom element —
+          // Vue's compiler uses a different (broken) code path for custom elements
+          // with named slots (#item, #header), causing "Codegen node is missing" errors.
+          // T1668: v-treeview with named slots requires proper component slot compilation.
+          isCustomElement: (tag) => tag.startsWith('v-') && tag !== 'v-treeview',
         },
       },
     }),

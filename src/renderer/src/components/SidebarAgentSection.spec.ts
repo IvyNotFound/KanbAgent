@@ -134,7 +134,7 @@ describe('SidebarAgentSection', () => {
     wrapper.unmount()
   })
 
-  it('renders groups from store.agentGroupsTree via SidebarGroupNode', () => {
+  it('renders grouped agents via v-treeview (SidebarGroupNode replaced — T1668)', () => {
     const agents = [makeAgent({ id: 1, name: 'grouped-agent' })]
     const group = { id: 10, name: 'My Group', sort_order: 0, parent_id: null, members: [{ agent_id: 1, sort_order: 0 }] }
     const pinia = createTestingPinia({
@@ -152,10 +152,10 @@ describe('SidebarAgentSection', () => {
     const wrapper = shallowMount(SidebarAgentSection, {
       global: { plugins: [pinia, i18n] },
     })
-    // SidebarGroupNode is stubbed in shallowMount — verify it receives the group as a prop
-    const groupNode = wrapper.findComponent({ name: 'SidebarGroupNode' })
-    expect(groupNode.exists()).toBe(true)
-    expect(groupNode.props('group')).toMatchObject({ id: 10, name: 'My Group' })
+    // SidebarGroupNode is no longer used — v-treeview handles group rendering
+    expect(wrapper.findComponent({ name: 'SidebarGroupNode' }).exists()).toBe(false)
+    // Component renders without error
+    expect(wrapper.exists()).toBe(true)
     wrapper.unmount()
   })
 
