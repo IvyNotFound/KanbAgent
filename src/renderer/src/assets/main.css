@@ -271,7 +271,9 @@ body,
 .stream-markdown li { margin: 0.2em 0; }
 .stream-markdown code:not(pre code) {
   background: var(--md-code-bg); border-radius: 3px;
-  padding: 0.1em 0.35em; font-size: 0.85em; color: var(--md-code-text);
+  padding: 0.1em 0.35em; font-size: 0.85em;
+  /* Tinted with agent accent when available, fallback to default code text */
+  color: var(--stream-accent-fg, var(--md-code-text));
 }
 .stream-markdown pre { margin: 0.6em 0; border-radius: var(--shape-xs); overflow-x: auto; }
 .stream-markdown pre code { font-size: 0.8em; padding: 0.85em 1em; display: block; }
@@ -293,6 +295,49 @@ body,
 .stream-markdown th { background: var(--surface-secondary); font-weight: 600; color: var(--content-secondary); }
 .stream-markdown tr:nth-child(odd) td { background: transparent; }
 .stream-markdown tr:nth-child(even) td { background: rgba(var(--v-theme-on-surface), 0.04); }
+
+/* ── User bubble markdown (T1701) — prose + code adapted for colored bg ───────
+   Applied on user bubbles instead of stream-markdown to avoid stream-markdown's
+   link/code/heading color tokens bleeding onto the agent-colored background.
+   Code uses dark semi-transparent overlays to stay readable on any accent.
+   ────────────────────────────────────────────────────────────────────────── */
+.stream-markdown-user { font-size: 0.875rem; line-height: 1.65; }
+.stream-markdown-user p { margin: 0.5em 0; }
+.stream-markdown-user p:first-child { margin-top: 0; }
+.stream-markdown-user p:last-child { margin-bottom: 0; }
+.stream-markdown-user h1, .stream-markdown-user h2,
+.stream-markdown-user h3, .stream-markdown-user h4 {
+  font-weight: 600; margin: 0.85em 0 0.35em; color: inherit;
+}
+.stream-markdown-user h1 { font-size: 1.25em; }
+.stream-markdown-user h2 { font-size: 1.1em; }
+.stream-markdown-user h3 { font-size: 1em; }
+.stream-markdown-user ul, .stream-markdown-user ol { padding-left: 1.4em; margin: 0.4em 0; }
+.stream-markdown-user li { margin: 0.2em 0; }
+.stream-markdown-user code:not(pre code) {
+  background-color: rgba(0, 0, 0, 0.15);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+[data-v-theme="dark"] .stream-markdown-user code:not(pre code) {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+.stream-markdown-user pre {
+  margin: 0.6em 0; border-radius: var(--shape-xs); overflow-x: auto;
+  background-color: rgba(0, 0, 0, 0.1); border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.stream-markdown-user pre code { font-size: 0.8em; padding: 0.85em 1em; display: block; color: inherit; }
+.stream-markdown-user blockquote {
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  padding-left: 0.8em; margin: 0.4em 0;
+}
+.stream-markdown-user a { color: inherit; text-decoration: underline; opacity: 0.85; }
+.stream-markdown-user strong { font-weight: 600; }
+.stream-markdown-user em { font-style: italic; }
+.stream-markdown-user hr { border: none; border-top: 1px solid rgba(0, 0, 0, 0.2); margin: 0.8em 0; }
 
 /* ── Copy code button (T1516) ─────────────────────────────────────────────────
    .code-block-wrapper wraps every <pre> injected by renderMarkdown.ts.

@@ -275,7 +275,7 @@ onUnmounted(() => {
     <div v-if="agentName" class="stream-accent-bar" :style="{ background: accentFg }" />
 
     <!-- Messages scroll area -->
-    <div ref="scrollContainer" class="stream-scroll pa-4 ga-3">
+    <div ref="scrollContainer" class="stream-scroll pa-4 ga-3" :style="{ '--stream-accent-fg': accentFg }">
       <div
         v-if="displayEvents.length === 0 && !isStreaming"
         class="stream-empty text-caption"
@@ -334,15 +334,11 @@ onUnmounted(() => {
           data-testid="block-user"
         >
           <div
-            class="user-bubble py-3 px-4 text-body-2"
+            class="user-bubble stream-markdown-user py-3 px-4 text-body-2"
             :style="{ background: accentFg, color: userBubbleTextColor }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
-              <div
-                v-if="block.type === 'text'"
-                class="stream-markdown user-markdown"
-                v-html="renderMarkdown(parsePromptContext(block.text ?? '').base)"
-              />
+              <div v-if="block.type === 'text'" v-html="renderMarkdown(parsePromptContext(block.text ?? '').base)" />
             </template>
           </div>
         </div>
