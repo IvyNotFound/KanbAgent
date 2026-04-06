@@ -122,45 +122,48 @@ const {
       <CostStatsSection :db-path="store.dbPath" :period="costPeriod" />
 
       <!-- Per-agent table with bars -->
-      <section>
-        <h3 class="ts-section-title mb-2 text-label-medium">{{ t('tokenStats.perAgent') }}</h3>
+      <v-card elevation="0" class="ts-section-card">
+        <div class="ts-section-header">
+          <span class="text-body-2 font-weight-medium ts-section-title">{{ t('tokenStats.perAgent') }}</span>
+        </div>
+        <div class="pa-3">
+          <div v-if="agentRows.length === 0" class="ts-empty py-4 text-body-2">{{ t('tokenStats.noData') }}</div>
 
-        <div v-if="agentRows.length === 0" class="ts-empty py-4 text-body-2">{{ t('tokenStats.noData') }}</div>
+          <div v-else class="ts-agent-rows">
+            <div
+              v-for="row in agentRows"
+              :key="row.agent_id"
+              class="ts-agent-row ga-3"
+            >
+              <span
+                v-if="row.agent_name"
+                class="ts-agent-name"
+                :style="agentStyles.get(row.agent_name)"
+                :title="row.agent_name"
+              >{{ row.agent_name }}</span>
+              <span v-else class="ts-agent-name ts-dim">—</span>
 
-        <div v-else class="ts-agent-rows">
-          <div
-            v-for="row in agentRows"
-            :key="row.agent_id"
-            class="ts-agent-row ga-3"
-          >
-            <span
-              v-if="row.agent_name"
-              class="ts-agent-name"
-              :style="agentStyles.get(row.agent_name)"
-              :title="row.agent_name"
-            >{{ row.agent_name }}</span>
-            <span v-else class="ts-agent-name ts-dim">—</span>
+              <div class="ts-bar-wrap">
+                <div class="ts-bar-fill" :style="{ width: barWidth(row.total) }" />
+                <span class="ts-bar-label ts-mono text-label-medium">{{ formatNumber(row.total) }}</span>
+              </div>
 
-            <div class="ts-bar-wrap">
-              <div class="ts-bar-fill" :style="{ width: barWidth(row.total) }" />
-              <span class="ts-bar-label ts-mono text-label-medium">{{ formatNumber(row.total) }}</span>
-            </div>
-
-            <div class="ts-agent-totals ga-2 ts-mono text-label-medium">
-              <span class="ts-in">↓{{ formatNumber(row.tokens_in) }}</span>
-              <span class="ts-out">↑{{ formatNumber(row.tokens_out) }}</span>
-              <span class="ts-faint">{{ row.session_count }}s</span>
+              <div class="ts-agent-totals ga-2 ts-mono text-label-medium">
+                <span class="ts-in">↓{{ formatNumber(row.tokens_in) }}</span>
+                <span class="ts-out">↑{{ formatNumber(row.tokens_out) }}</span>
+                <span class="ts-faint">{{ row.session_count }}s</span>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </v-card>
 
       <!-- Per-session table -->
-      <section>
-        <h3 class="ts-section-title mb-2 text-label-medium">{{ t('tokenStats.perSession') }}</h3>
-
-        <div v-if="sessionRows.length === 0" class="ts-empty py-4">{{ t('tokenStats.noData') }}</div>
-
+      <v-card elevation="0" class="ts-section-card">
+        <div class="ts-section-header">
+          <span class="text-body-2 font-weight-medium ts-section-title">{{ t('tokenStats.perSession') }}</span>
+        </div>
+        <div v-if="sessionRows.length === 0" class="ts-empty pa-4 text-body-2">{{ t('tokenStats.noData') }}</div>
         <table v-else class="ts-table text-label-medium">
           <thead>
             <tr class="ts-thead-row">
@@ -202,7 +205,7 @@ const {
             </tr>
           </tbody>
         </table>
-      </section>
+      </v-card>
     </div>
 
     <!-- Refresh button -->
@@ -345,11 +348,21 @@ const {
   display: flex;
   flex-direction: column;
 }
-.ts-section-title {
-  letter-spacing: 0.02em;
-  color: var(--content-faint);
-  margin: 0;
+/* widget section cards */
+.ts-section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  transition: border-color var(--md-duration-short3) var(--md-easing-standard);
 }
+.ts-section-header {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-default);
+}
+.ts-section-title {
+  color: var(--content-secondary);
+}
+
 .ts-empty { color: var(--content-faint); text-align: center; }
 
 /* agent bar rows */
