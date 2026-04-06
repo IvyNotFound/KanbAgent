@@ -14,16 +14,6 @@ const emit = defineEmits<{
   (e: 'navigate', taskId: number): void
 }>()
 
-/** Link type values as stored in the DB. */
-type LinkType = 'blocks' | 'depends_on' | 'related_to' | 'duplicates'
-
-const LINK_TYPE_STYLE: Record<string, { color: string; background: string; border: string }> = {
-  blocks:     { color: 'rgb(var(--v-theme-error))',    background: 'rgba(var(--v-theme-error),0.12)',    border: 'rgba(var(--v-theme-error),0.3)' },
-  depends_on: { color: 'rgb(var(--v-theme-warning))', background: 'rgba(var(--v-theme-warning),0.12)',  border: 'rgba(var(--v-theme-warning),0.3)' },
-  related_to: { color: 'rgb(var(--v-theme-primary))', background: 'rgba(var(--v-theme-primary),0.12)',  border: 'rgba(var(--v-theme-primary),0.3)' },
-  duplicates: { color: 'rgb(var(--v-theme-content-muted))', background: 'rgba(var(--v-theme-content-subtle),0.12)', border: 'rgba(var(--v-theme-content-subtle),0.3)' },
-}
-
 const STATUS_STYLE: Record<string, { color: string; background: string; border: string }> = {
   todo:        { color: 'rgb(var(--v-theme-warning))',   background: 'rgba(var(--v-theme-warning),0.12)',   border: 'rgba(var(--v-theme-warning),0.3)' },
   in_progress: { color: 'rgb(var(--v-theme-secondary))', background: 'rgba(var(--v-theme-secondary),0.12)', border: 'rgba(var(--v-theme-secondary),0.3)' },
@@ -31,7 +21,6 @@ const STATUS_STYLE: Record<string, { color: string; background: string; border: 
   archived:    { color: 'rgb(var(--v-theme-content-subtle))', background: 'rgba(var(--v-theme-content-faint),0.12)', border: 'rgba(var(--v-theme-content-faint),0.3)' },
 }
 
-const fallbackLink   = LINK_TYPE_STYLE.related_to
 const fallbackStatus = STATUS_STYLE.todo
 
 /** Tasks this task blocks or that this task depends on (outgoing) */
@@ -74,15 +63,6 @@ function linkedTaskStatus(link: TaskLink): string {
   return link.from_task === props.taskId ? link.to_status : link.from_status
 }
 
-function typeBadgeLabel(link: TaskLink): string {
-  const type = link.type as LinkType
-  const isSource = link.from_task === props.taskId
-  if (type === 'blocks') return isSource ? t('taskDetail.blocks') : t('taskDetail.blockedBy')
-  if (type === 'depends_on') return isSource ? t('taskDetail.blockedBy') : t('taskDetail.blocks')
-  if (type === 'related_to') return t('taskDetail.relatedTo')
-  if (type === 'duplicates') return 'duplicates'
-  return type
-}
 </script>
 
 <template>
@@ -106,16 +86,12 @@ function typeBadgeLabel(link: TaskLink): string {
             @click="emit('navigate', linkedTaskId(link))"
           >
             <span
-              class="dep-badge"
-              :style="{ color: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).color, backgroundColor: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).background, borderColor: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).border }"
-            >{{ typeBadgeLabel(link) }}</span>
-            <span
-              class="dep-badge dep-badge--mono"
-              :style="{ color: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color, backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).background, borderColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).border }"
-            >{{ linkedTaskStatus(link) }}</span>
-            <span class="dep-title text-caption">
-              #{{ linkedTaskId(link) }} {{ linkedTaskTitle(link) }}
-            </span>
+              class="dep-status-dot"
+              :style="{ backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color }"
+              :title="linkedTaskStatus(link)"
+            ></span>
+            <span class="dep-id">#{{ linkedTaskId(link) }}</span>
+            <span class="dep-title text-caption">{{ linkedTaskTitle(link) }}</span>
           </v-btn>
         </div>
       </div>
@@ -133,16 +109,12 @@ function typeBadgeLabel(link: TaskLink): string {
             @click="emit('navigate', linkedTaskId(link))"
           >
             <span
-              class="dep-badge"
-              :style="{ color: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).color, backgroundColor: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).background, borderColor: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).border }"
-            >{{ typeBadgeLabel(link) }}</span>
-            <span
-              class="dep-badge dep-badge--mono"
-              :style="{ color: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color, backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).background, borderColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).border }"
-            >{{ linkedTaskStatus(link) }}</span>
-            <span class="dep-title text-caption">
-              #{{ linkedTaskId(link) }} {{ linkedTaskTitle(link) }}
-            </span>
+              class="dep-status-dot"
+              :style="{ backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color }"
+              :title="linkedTaskStatus(link)"
+            ></span>
+            <span class="dep-id">#{{ linkedTaskId(link) }}</span>
+            <span class="dep-title text-caption">{{ linkedTaskTitle(link) }}</span>
           </v-btn>
         </div>
       </div>
@@ -160,16 +132,12 @@ function typeBadgeLabel(link: TaskLink): string {
             @click="emit('navigate', linkedTaskId(link))"
           >
             <span
-              class="dep-badge"
-              :style="{ color: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).color, backgroundColor: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).background, borderColor: (LINK_TYPE_STYLE[link.type] ?? fallbackLink).border }"
-            >{{ link.type }}</span>
-            <span
-              class="dep-badge dep-badge--mono"
-              :style="{ color: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color, backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).background, borderColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).border }"
-            >{{ linkedTaskStatus(link) }}</span>
-            <span class="dep-title text-caption">
-              #{{ linkedTaskId(link) }} {{ linkedTaskTitle(link) }}
-            </span>
+              class="dep-status-dot"
+              :style="{ backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color }"
+              :title="linkedTaskStatus(link)"
+            ></span>
+            <span class="dep-id">#{{ linkedTaskId(link) }}</span>
+            <span class="dep-title text-caption">{{ linkedTaskTitle(link) }}</span>
           </v-btn>
         </div>
       </div>
@@ -215,17 +183,20 @@ function typeBadgeLabel(link: TaskLink): string {
   padding: 6px 10px !important;
 }
 
-.dep-badge {
-  font-size: 0.6875rem;
-  padding: 3px 10px;
-  border-radius: var(--shape-full);
-  border: 1px solid;
-  font-weight: 500;
+.dep-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
-.dep-badge--mono {
-  border-radius: 4px;
+
+.dep-id {
   font-family: ui-monospace, monospace;
+  font-size: 0.6875rem;
+  color: var(--content-muted);
+  flex-shrink: 0;
+  min-width: 36px;
+  text-align: right;
 }
 
 .dep-title {
