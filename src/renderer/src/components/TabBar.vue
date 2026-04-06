@@ -203,7 +203,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
           >{{ group.tabs.length }}</span>
           <span
             v-if="isGroupActive(group)"
-            style="position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 3px 3px 0 0;"
+            class="tab-agent-indicator"
             :style="group.agentName ? { backgroundColor: agentAccent(group.agentName) } : { backgroundColor: 'rgb(var(--v-theme-primary))' }"
           ></span>
         </button>
@@ -227,7 +227,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
                 @click.stop="handleCloseTab(tab)"
               >✕</span>
               <span
-                style="position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 3px 3px 0 0;"
+                class="tab-sub-indicator"
                 :style="indicatorStyleMap.get(tab.id)"
               ></span>
             </button>
@@ -388,6 +388,19 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 .tab-agent:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
 }
+/* Pressed — MD3 state layer 12% */
+.tab-agent:active {
+  background: rgba(var(--v-theme-on-surface), 0.12);
+}
+/* Active indicator — positioning extracted from inline style */
+.tab-agent-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+}
 .tab-agent-name {
   max-width: 80px;
   overflow: hidden;
@@ -424,6 +437,19 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 }
 .tab-sub:hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
+}
+/* Pressed — MD3 state layer 12% */
+.tab-sub:active {
+  background: rgba(var(--v-theme-on-surface), 0.12);
+}
+/* Active indicator — positioning extracted from inline style */
+.tab-sub-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
 }
 .tab-sub-label {
   font-size: 12px;
