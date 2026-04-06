@@ -151,6 +151,7 @@ async function save() {
             variant="text"
             size="small"
             data-testid="btn-close"
+            :style="{ color: agentAccent(agent.name) }"
             @click="emit('close')"
           />
         </div>
