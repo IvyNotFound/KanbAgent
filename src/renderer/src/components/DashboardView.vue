@@ -198,7 +198,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
 .git-panel {
   display: flex;
   flex-direction: column;
-  background: var(--surface-base);
+  background: var(--surface-primary);
 }
 
 .git-toolbar {

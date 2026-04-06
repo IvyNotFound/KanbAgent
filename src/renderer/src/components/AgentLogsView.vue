@@ -327,7 +327,7 @@ watch(() => props.initialAgentId, (v) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-base);
+  background: var(--surface-primary);
   min-height: 0;
 }
 .al-title-bar {

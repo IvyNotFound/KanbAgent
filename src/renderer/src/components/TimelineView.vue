@@ -373,7 +373,7 @@ const legendItems = computed(() => [
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-base);
+  background: var(--surface-primary);
   overflow: hidden;
 }
 .tl-header {

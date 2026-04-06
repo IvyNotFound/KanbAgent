@@ -166,7 +166,7 @@ async function refresh(): Promise<void> {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-base);
+  background: var(--surface-primary);
   overflow: hidden;
 }
 .tp-header {

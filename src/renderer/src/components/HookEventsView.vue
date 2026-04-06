@@ -101,7 +101,7 @@ function relativeTime(ts: number): string {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--surface-base);
+  background: var(--surface-primary);
 }
 .he-header {
   flex-shrink: 0;
