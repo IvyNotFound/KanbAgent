@@ -155,12 +155,12 @@ async function addPerimetre() {
 
   <!-- Modal édition périmètre — MD3 v-dialog + v-card -->
   <v-dialog v-model="showEditDialog" max-width="384">
-    <v-card v-if="editPerimetre" rounded="xl">
-      <v-card-title class="text-subtitle-1 font-weight-medium pt-4 pb-0 px-5">{{ t('sidebar.editPerimeter') }}</v-card-title>
-      <v-card-text class="d-flex flex-column ga-3 pt-2">
+    <v-card v-if="editPerimetre" rounded="xl" color="surface-container-high">
+      <v-card-title class="text-title-large pt-6 px-6 pb-0">{{ t('sidebar.editPerimeter') }}</v-card-title>
+      <v-card-text class="d-flex flex-column ga-4 px-6 pt-4">
         <v-text-field
           v-model="editPerimetreName"
-          density="compact"
+          density="comfortable"
           variant="outlined"
           autofocus
           hide-details="auto"
@@ -168,21 +168,27 @@ async function addPerimetre() {
           :placeholder="t('sidebar.namePlaceholder')"
           @keydown.esc="editPerimetre = null"
         />
-        <v-text-field
+        <v-textarea
           v-model="editPerimetreDesc"
-          density="compact"
+          density="comfortable"
           variant="outlined"
           hide-details="auto"
+          rows="3"
+          auto-grow
           :label="t('sidebar.description')"
           :placeholder="t('sidebar.descriptionPlaceholder')"
-          @keydown.enter="savePerimetre"
           @keydown.esc="editPerimetre = null"
         />
       </v-card-text>
-      <v-card-actions>
+      <v-card-actions class="px-6 pb-6 pt-2">
         <v-spacer />
-        <v-btn variant="text" size="small" @click="editPerimetre = null">{{ t('common.cancel') }}</v-btn>
-        <v-btn color="primary" variant="tonal" size="small" :disabled="savingPerimetre || !editPerimetreName.trim()" @click="savePerimetre">
+        <v-btn variant="text" @click="editPerimetre = null">{{ t('common.cancel') }}</v-btn>
+        <v-btn
+          :color="agentAccent(editPerimetre.name)"
+          variant="elevated"
+          :disabled="savingPerimetre || !editPerimetreName.trim()"
+          @click="savePerimetre"
+        >
           {{ savingPerimetre ? t('common.saving') : t('common.save') }}
         </v-btn>
       </v-card-actions>
