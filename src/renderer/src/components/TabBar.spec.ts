@@ -96,17 +96,4 @@ describe('TabBar', () => {
     expect(tabsStore.setActive).toHaveBeenCalledWith('backlog')
   })
 
-  it('renders + WSL button for new terminal', () => {
-    const wrapper = shallowMount(TabBar, {
-      global: {
-        plugins: [createTestingPinia({
-          initialState: { tabs: {
-            tabs: [{ id: 'backlog', type: 'board', title: 'Backlog', permanent: true }],
-            activeTabId: 'backlog',
-          } },
-        }), i18n],
-      },
-    })
-    expect(wrapper.text()).toContain('WSL')
-  })
 })

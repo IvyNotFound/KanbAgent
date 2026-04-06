@@ -313,7 +313,6 @@
     "maximize": "最大化"
   },
   "tabBar": {
-    "openWslTerminal": "打开 WSL 终端",
     "closeTab": "关闭",
     "unsaved": "有未保存的更改",
     "closeFileTitle": "关闭文件",

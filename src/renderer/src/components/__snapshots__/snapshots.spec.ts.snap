@@ -232,8 +232,7 @@ exports[`TabBar — snapshots > matches snapshot: empty tab bar (no tabs) 1`] = 
     <!-- Groupe agent -->
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
-  </button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="btn-wsl text-body-2" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="btn-wsl-plus text-body-1">+</span><span data-v-3c3dc65a="">WSL</span></button>
-  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0; pointer-events: none;"></div>
+  </button>
 </div>
 <!-- Menu contextuel groupe d'onglets -->
 <!--v-if-->"
@@ -255,7 +254,7 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
     <!-- Groupe agent -->
     <div data-v-3c3dc65a="" class="tab-group">
       <!-- Onglet-agent (bouton principal du groupe) --><button data-v-3c3dc65a="" class="tab-agent text-body-2" style="color: rgb(0, 0, 0); background-color: rgb(255, 224, 130);">
-        <v-icon data-v-3c3dc65a="" size="12" style="flex-shrink: 0;">mdi-console</v-icon><span data-v-3c3dc65a="" style="opacity: 0.5; user-select: none;">·</span><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span>
+        <v-icon data-v-3c3dc65a="" size="12" style="flex-shrink: 0;">mdi-console</v-icon><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span>
         <v-icon data-v-3c3dc65a="" class="tab-chevron" style="transform: rotate(-90deg);" size="10">mdi-chevron-down</v-icon>
         <!--v-if--><span data-v-3c3dc65a="" style="position: absolute; bottom: 0px; left: 0px; right: 0px; height: 3px; border-radius: 3px 3px 0 0; background-color: rgb(255, 213, 79);"></span>
       </button><!-- Sous-onglets session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub text-body-2" style="color: rgb(0, 0, 0); background-color: rgb(255, 224, 130);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
@@ -264,8 +263,7 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
     </div>
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
-  </button><!-- Bouton + WSL --><button data-v-3c3dc65a="" class="btn-wsl text-body-2" title="Ouvrir un terminal WSL"><span data-v-3c3dc65a="" class="btn-wsl-plus text-body-1">+</span><span data-v-3c3dc65a="">WSL</span></button>
-  <div data-v-3c3dc65a="" style="width: 12px; flex-shrink: 0; pointer-events: none;"></div>
+  </button>
 </div>
 <!-- Menu contextuel groupe d'onglets -->
 <!--v-if-->"

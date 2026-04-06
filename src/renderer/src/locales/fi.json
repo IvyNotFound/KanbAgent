@@ -313,7 +313,6 @@
     "maximize": "Suurenna"
   },
   "tabBar": {
-    "openWslTerminal": "Avaa WSL-pääte",
     "closeTab": "Sulje",
     "unsaved": "Tallentamattomat muutokset",
     "closeFileTitle": "Sulje tiedosto",

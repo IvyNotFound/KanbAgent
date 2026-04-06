@@ -313,7 +313,6 @@
     "maximize": "Büyüt"
   },
   "tabBar": {
-    "openWslTerminal": "WSL terminali aç",
     "closeTab": "Kapat",
     "unsaved": "Kaydedilmemiş değişiklikler",
     "closeFileTitle": "Dosyayı kapat",

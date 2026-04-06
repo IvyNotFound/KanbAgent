@@ -313,7 +313,6 @@
     "maximize": "최대화"
   },
   "tabBar": {
-    "openWslTerminal": "WSL 터미널 열기",
     "closeTab": "닫기",
     "unsaved": "저장되지 않은 변경 사항",
     "closeFileTitle": "파일 닫기",

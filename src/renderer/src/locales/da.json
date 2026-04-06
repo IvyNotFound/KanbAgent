@@ -313,7 +313,6 @@
     "maximize": "Maksimer"
   },
   "tabBar": {
-    "openWslTerminal": "Åbn WSL-terminal",
     "closeTab": "Luk",
     "unsaved": "Ikke-gemte ændringer",
     "closeFileTitle": "Luk fil",

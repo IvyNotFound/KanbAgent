@@ -20,10 +20,6 @@ const {
   tabStyleMap, agentTabStyleMap, indicatorStyleMap, subTabLabel,
 } = useTabBarGroups(scrollContainer)
 
-async function openWslTerminal(): Promise<void> {
-  await window.electronAPI.openWslTerminal()
-}
-
 // ── Scroll state ─────────────────────────────────────────────────────────────
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
@@ -246,16 +242,6 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       <v-icon size="12">mdi-chevron-right</v-icon>
     </button>
 
-    <!-- Bouton + WSL -->
-    <button
-      class="btn-wsl text-body-2"
-      :title="t('tabBar.openWslTerminal')"
-      @click="openWslTerminal()"
-    >
-      <span class="btn-wsl-plus text-body-1">+</span>
-      <span>WSL</span>
-    </button>
-    <div style="width: 12px; flex-shrink: 0; pointer-events: none;"></div>
 
   </div>
 
@@ -494,31 +480,6 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 }
 .tab-dot--dirty {
   background: rgb(var(--v-theme-warning));
-}
-.btn-wsl {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  height: 28px;
-  align-self: center;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-  background: rgba(var(--v-theme-primary), 0.1);
-  border: 1px solid rgba(var(--v-theme-primary), 0.3);
-  border-radius: var(--shape-xs);
-  transition: all var(--md-duration-short3) var(--md-easing-standard);
-  margin-left: 4px;
-  margin-right: 8px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-.btn-wsl:hover {
-  background: rgba(var(--v-theme-primary), 0.2);
-  border-color: rgba(var(--v-theme-primary), 0.5);
-}
-.btn-wsl-plus {
-  line-height: 1;
 }
 .tab-indicator {
   position: absolute;

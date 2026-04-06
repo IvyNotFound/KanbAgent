@@ -313,7 +313,6 @@
     "maximize": "Maximizar"
   },
   "tabBar": {
-    "openWslTerminal": "Abrir terminal WSL",
     "closeTab": "Fechar",
     "unsaved": "Alterações não salvas",
     "closeFileTitle": "Fechar arquivo",

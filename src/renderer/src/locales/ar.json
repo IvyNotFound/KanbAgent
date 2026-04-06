@@ -313,7 +313,6 @@
     "maximize": "تكبير"
   },
   "tabBar": {
-    "openWslTerminal": "فتح طرفية WSL",
     "closeTab": "إغلاق",
     "unsaved": "تغييرات غير محفوظة",
     "closeFileTitle": "إغلاق الملف",

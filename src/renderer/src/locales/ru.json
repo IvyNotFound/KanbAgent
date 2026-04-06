@@ -313,7 +313,6 @@
     "maximize": "Развернуть"
   },
   "tabBar": {
-    "openWslTerminal": "Открыть терминал WSL",
     "closeTab": "Закрыть",
     "unsaved": "Несохранённые изменения",
     "closeFileTitle": "Закрыть файл",

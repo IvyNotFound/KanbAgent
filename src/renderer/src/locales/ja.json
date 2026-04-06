@@ -313,7 +313,6 @@
     "maximize": "最大化"
   },
   "tabBar": {
-    "openWslTerminal": "WSL ターミナルを開く",
     "closeTab": "閉じる",
     "unsaved": "未保存の変更",
     "closeFileTitle": "ファイルを閉じる",
