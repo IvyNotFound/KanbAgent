@@ -85,15 +85,16 @@ async function refresh(): Promise<void> {
 
 <template>
   <div class="tp-view">
-    <v-card elevation="0" class="section-card">
-      <!-- Header -->
-      <div class="section-header">
-        <span class="text-body-2 font-weight-medium section-title">{{ t('topology.title') }}</span>
-        <div class="ml-auto">
-          <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
-        </div>
+    <!-- Fixed header outside card -->
+    <div class="tp-header">
+      <h2 class="text-h6 font-weight-medium tp-title">{{ t('topology.title') }}</h2>
+      <div class="ml-auto">
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
       </div>
-
+    </div>
+    <!-- Body wrapper -->
+    <div class="tp-body-wrapper">
+    <v-card elevation="0" class="section-card">
       <!-- Body -->
       <div class="tp-body">
         <!-- Loading -->
@@ -165,6 +166,7 @@ async function refresh(): Promise<void> {
         </div>
       </div>
     </v-card>
+    </div>
   </div>
 </template>
 
@@ -175,8 +177,30 @@ async function refresh(): Promise<void> {
   height: 100%;
   background: var(--surface-base);
   overflow: hidden;
-  padding: 16px;
 }
+
+.tp-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.tp-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.tp-body-wrapper {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
 .section-card {
   border: 1px solid var(--edge-default) !important;
   background: var(--surface-primary) !important;
@@ -186,15 +210,7 @@ async function refresh(): Promise<void> {
   overflow: hidden;
   min-height: 0;
 }
-.section-header {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--edge-default);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.section-title { color: var(--content-secondary); }
+
 .tp-body {
   flex: 1;
   display: flex;

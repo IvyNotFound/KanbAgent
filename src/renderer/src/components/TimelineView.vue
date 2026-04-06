@@ -281,17 +281,16 @@ const legendItems = computed(() => [
 
 <template>
   <div class="tl-view" @mousemove="moveTooltip">
-    <v-card elevation="0" class="section-card">
-      <!-- Header -->
-      <div class="section-header">
-        <span class="text-body-2 font-weight-medium section-title">{{ t('timeline.title') }}</span>
-        <div class="ml-auto">
-          <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchTasks" />
-        </div>
+    <!-- Fixed header outside card -->
+    <div class="tl-header">
+      <h2 class="text-h6 font-weight-medium tl-title">{{ t('timeline.title') }}</h2>
+      <div class="ml-auto">
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchTasks" />
       </div>
+    </div>
 
-      <!-- Filters bar — period presets (zoom shortcuts) + agent filter chips -->
-      <div class="tl-filters py-2 px-4">
+    <!-- Filters bar outside card — period presets + agent filter chips -->
+    <div class="tl-filters py-2 px-4">
         <!-- Period presets: clicking resets the viewport to that range -->
         <v-chip-group v-model="selectedPeriod" mandatory class="flex-shrink-0">
         <v-chip
@@ -330,6 +329,9 @@ const legendItems = computed(() => [
       </template>
     </div>
 
+    <!-- Card body wrapper -->
+    <div class="tl-body-wrapper">
+    <v-card elevation="0" class="section-card">
     <!-- Timeline body — wheel zooms viewport continuously, mousedown pans -->
     <div ref="bodyRef" class="tl-body" @wheel.prevent="onCanvasWheel" @mousedown="onMouseDown">
       <div v-if="loading" class="tl-state-center">
@@ -411,6 +413,7 @@ const legendItems = computed(() => [
       </div>
     </Teleport>
     </v-card>
+    </div>
   </div>
 </template>
 
@@ -421,8 +424,30 @@ const legendItems = computed(() => [
   height: 100%;
   background: var(--surface-base);
   overflow: hidden;
-  padding: 16px;
 }
+
+.tl-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.tl-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.tl-body-wrapper {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
 .section-card {
   border: 1px solid var(--edge-default) !important;
   background: var(--surface-primary) !important;
@@ -432,15 +457,6 @@ const legendItems = computed(() => [
   overflow: hidden;
   min-height: 0;
 }
-.section-header {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--edge-default);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.section-title { color: var(--content-secondary); }
 
 .tl-filters {
   flex-shrink: 0;

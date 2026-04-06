@@ -99,53 +99,55 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
 
     <!-- Git -->
     <div v-if="activeSubTab === 'git'" class="tab-content git-root">
-      <v-card elevation="0" class="section-card">
-        <!-- Header -->
-        <div class="section-header">
-          <span class="text-body-2 font-weight-medium section-title">Git</span>
-          <div class="ml-auto">
-            <v-btn
-              icon="mdi-refresh"
-              variant="text"
-              size="small"
-              :loading="gitLoading"
-              :title="t('common.refresh')"
-              @click="fetchGitCommits"
-            />
-          </div>
-        </div>
-        <!-- Body -->
-        <div class="git-body">
-          <!-- Loading -->
-          <div v-if="gitLoading" class="d-flex align-center justify-center flex-1 pa-8">
-            <v-progress-circular indeterminate :size="32" :width="3" />
-          </div>
-          <!-- Error states -->
-          <div v-else-if="gitError" class="d-flex flex-column align-center justify-center flex-1 pa-8 ga-3">
-            <v-icon size="32" color="medium-emphasis">{{ gitError === 'error' ? 'mdi-alert-circle-outline' : 'mdi-source-commit' }}</v-icon>
-            <p class="text-caption text-medium-emphasis font-italic">
-              <template v-if="gitError === 'no-project'">{{ t('common.noProject') }}</template>
-              <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
-              <template v-else>{{ t('dashboard.gitError') }}</template>
-            </p>
-            <v-btn
-              v-if="gitError === 'error'"
-              variant="tonal"
-              size="small"
-              @click="fetchGitCommits"
-            >
-              {{ t('common.retry') }}
-            </v-btn>
-          </div>
-          <!-- Commit list -->
-          <GitCommitList
-            v-else
-            :commits="gitCommits"
-            class="flex-1"
-            @open-task="(id) => { const task = store.tasks.find(x => x.id === id); if (task) store.openTask(task) }"
+      <!-- Fixed header outside card -->
+      <div class="git-header">
+        <h2 class="text-h6 font-weight-medium git-title">Git</h2>
+        <div class="ml-auto">
+          <v-btn
+            icon="mdi-refresh"
+            variant="text"
+            size="small"
+            :loading="gitLoading"
+            :title="t('common.refresh')"
+            @click="fetchGitCommits"
           />
         </div>
-      </v-card>
+      </div>
+      <!-- Scrollable body -->
+      <div class="git-body-wrapper">
+        <v-card elevation="0" class="section-card">
+          <div class="git-body">
+            <!-- Loading -->
+            <div v-if="gitLoading" class="d-flex align-center justify-center flex-1 pa-8">
+              <v-progress-circular indeterminate :size="32" :width="3" />
+            </div>
+            <!-- Error states -->
+            <div v-else-if="gitError" class="d-flex flex-column align-center justify-center flex-1 pa-8 ga-3">
+              <v-icon size="32" color="medium-emphasis">{{ gitError === 'error' ? 'mdi-alert-circle-outline' : 'mdi-source-commit' }}</v-icon>
+              <p class="text-caption text-medium-emphasis font-italic">
+                <template v-if="gitError === 'no-project'">{{ t('common.noProject') }}</template>
+                <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
+                <template v-else>{{ t('dashboard.gitError') }}</template>
+              </p>
+              <v-btn
+                v-if="gitError === 'error'"
+                variant="tonal"
+                size="small"
+                @click="fetchGitCommits"
+              >
+                {{ t('common.retry') }}
+              </v-btn>
+            </div>
+            <!-- Commit list -->
+            <GitCommitList
+              v-else
+              :commits="gitCommits"
+              class="flex-1"
+              @open-task="(id) => { const task = store.tasks.find(x => x.id === id); if (task) store.openTask(task) }"
+            />
+          </div>
+        </v-card>
+      </div>
     </div>
 
     <!-- Hooks -->
@@ -207,8 +209,30 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
 .git-root {
   display: flex;
   flex-direction: column;
+  height: 100%;
   background: var(--surface-base);
+}
+
+.git-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.git-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.git-body-wrapper {
+  flex: 1;
+  min-height: 0;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .section-card {
@@ -220,17 +244,6 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
   overflow: hidden;
   min-height: 0;
 }
-
-.section-header {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--edge-default);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.section-title { color: var(--content-secondary); }
 
 .git-body {
   flex: 1;

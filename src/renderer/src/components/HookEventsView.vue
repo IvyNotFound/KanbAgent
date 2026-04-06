@@ -39,11 +39,13 @@ function relativeTime(ts: number): string {
 
 <template>
   <div class="he-view">
+    <!-- Fixed header outside card -->
+    <div class="he-header">
+      <h2 class="text-h6 font-weight-medium he-title">{{ t('sidebar.hooks') }}</h2>
+    </div>
+    <!-- Body -->
+    <div class="he-body">
     <v-card elevation="0" class="section-card">
-      <!-- Header -->
-      <div class="section-header">
-        <span class="text-body-2 font-weight-medium section-title">{{ t('sidebar.hooks') }}</span>
-      </div>
       <!-- Filters bar -->
       <div class="he-filters">
         <span class="he-filter-label text-label-medium text-medium-emphasis">{{ t('hooks.filters') }}</span>
@@ -85,6 +87,7 @@ function relativeTime(ts: number): string {
         </div>
       </div>
     </v-card>
+    </div>
   </div>
 
   <!-- Payload modal -->
@@ -104,8 +107,30 @@ function relativeTime(ts: number): string {
   height: 100%;
   overflow: hidden;
   background: var(--surface-base);
-  padding: 16px;
 }
+
+.he-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.he-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.he-body {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
 .section-card {
   border: 1px solid var(--edge-default) !important;
   background: var(--surface-primary) !important;
@@ -115,15 +140,6 @@ function relativeTime(ts: number): string {
   overflow: hidden;
   min-height: 0;
 }
-.section-header {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--edge-default);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.section-title { color: var(--content-secondary); }
 
 .he-filters {
   display: flex;
