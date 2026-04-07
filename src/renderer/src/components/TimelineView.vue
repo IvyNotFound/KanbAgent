@@ -2,7 +2,8 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentAccent, agentFg, agentBg } from '@renderer/utils/agentColor'
+import { agentFg, agentBg } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -359,7 +360,7 @@ const legendItems = computed(() => [
           class="tl-row"
         >
           <div class="tl-row-label py-2 px-3">
-            <span class="tl-agent-name text-caption" :style="{ color: agentAccent(group.name) }">{{ group.name }}</span>
+            <AgentBadge :name="group.name" />
           </div>
           <!-- overflow:hidden clips bars that extend outside the viewport -->
           <div class="tl-row-bars">
@@ -515,12 +516,6 @@ const legendItems = computed(() => [
   display: flex;
   align-items: center;
   border-right: 1px solid rgba(var(--v-theme-surface-secondary),0.4);
-}
-.tl-agent-name {
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .tl-row-bars {
   flex: 1;

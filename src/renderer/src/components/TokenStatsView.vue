@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CostStatsSection from '@renderer/components/CostStatsSection.vue'
+import AgentBadge from '@renderer/components/AgentBadge.vue'
 import { useTokenStats, estimateSessionCost } from '@renderer/composables/useTokenStats'
 
 const {
@@ -10,7 +11,6 @@ const {
   formatNumber, formatDate, formatCost, barWidth,
   avgPerSession, estimatedCost, cacheHitRate, cacheHitColor,
   sparkBars, sparkBarHeight, hoveredSparkBar,
-  agentStyles,
 } = useTokenStats()
 </script>
 
@@ -203,13 +203,8 @@ const {
               :key="row.agent_id"
               class="ts-agent-row ga-3"
             >
-              <span
-                v-if="row.agent_name"
-                class="ts-agent-name"
-                :style="agentStyles.get(row.agent_name)"
-                :title="row.agent_name"
-              >{{ row.agent_name }}</span>
-              <span v-else class="ts-agent-name ts-dim">—</span>
+              <AgentBadge v-if="row.agent_name" :name="row.agent_name" />
+              <span v-else class="ts-dim">—</span>
 
               <div class="ts-bar-wrap">
                 <div class="ts-bar-fill" :style="{ width: barWidth(row.total) }" />
@@ -252,11 +247,7 @@ const {
             >
               <td class="ts-td ts-faint">#{{ s.id }}</td>
               <td class="ts-td">
-                <span
-                  v-if="s.agent_name"
-                  class="ts-agent-badge"
-                  :style="agentStyles.get(s.agent_name)"
-                >{{ s.agent_name }}</span>
+                <AgentBadge v-if="s.agent_name" :name="s.agent_name" />
                 <span v-else class="ts-dim">—</span>
               </td>
               <td class="ts-td ts-subtle">{{ formatDate(s.started_at) }}</td>
@@ -275,7 +266,6 @@ const {
         </table>
       </v-card>
     </div>
-
   </div>
 </template>
 
@@ -433,18 +423,7 @@ const {
 /* agent bar rows */
 .ts-agent-rows { display: flex; flex-direction: column; gap: 6px; }
 .ts-agent-row { display: flex; align-items: center; }
-.ts-agent-name {
-  flex-shrink: 0;
-  width: 128px;
-  font-size: 0.6875rem;
-  padding: 2px 6px;
-  border-radius: var(--shape-xs);
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
-}
+
 .ts-bar-wrap {
   flex: 1;
   height: 20px;
@@ -492,6 +471,5 @@ const {
 .ts-tbody-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
 .ts-td { padding: 6px 8px; }
 .ts-td--right { text-align: right; }
-.ts-agent-badge { padding: 2px 6px; border-radius: var(--shape-xs); font-size: 0.6875rem; font-weight: 500; }
 
 </style>

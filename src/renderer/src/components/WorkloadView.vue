@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentAccent } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -89,7 +90,7 @@ async function refresh(): Promise<void> {
         :key="row.agentId"
         class="wl-cols wl-cols-row"
       >
-        <span class="wl-agent-name" :style="{ color: agentAccent(row.agentName) }">{{ row.agentName }}</span>
+        <AgentBadge :name="row.agentName" />
         <span class="wl-num wl-right">{{ row.taskCount }}</span>
         <span class="wl-num wl-right">{{ row.totalEffort }}</span>
         <div class="wl-bar-bg">
@@ -152,14 +153,6 @@ async function refresh(): Promise<void> {
 }
 .wl-cols-row { }
 .wl-right { text-align: right; }
-.wl-agent-name {
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .wl-num {
   font-size: 12px;
   color: var(--content-tertiary);

@@ -5,7 +5,7 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { parseUtcDate } from '@renderer/utils/parseDate'
 import { usePolledData } from '@renderer/composables/usePolledData'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 import type { AgentLog } from '@renderer/types'
 
 const props = defineProps<{
@@ -288,15 +288,7 @@ watch(() => props.initialAgentId, (v) => {
             class="al-level-chip"
           >{{ log.level }}</v-chip>
           <span class="al-time text-label-medium" :title="absoluteTime(log.created_at)">{{ formatTime(log.created_at) }}</span>
-          <span
-            v-if="log.agent_name"
-            class="al-agent-badge text-label-medium"
-            :style="{
-              color: agentFg(log.agent_name),
-              backgroundColor: agentBg(log.agent_name),
-              boxShadow: `0 0 0 1px ${agentBorder(log.agent_name)}`
-            }"
-          >{{ log.agent_name }}</span>
+          <AgentBadge v-if="log.agent_name" :name="log.agent_name" />
           <span v-else class="al-agent-badge al-agent-badge--none text-label-medium">—</span>
           <span class="al-action text-body-2">{{ log.action }}</span>
           <v-icon

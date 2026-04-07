@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentAccent } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 import type { AgentQualityRow } from '@renderer/types'
 
 const { t } = useI18n()
@@ -106,11 +106,7 @@ watch(() => store.dbPath, fetchQuality)
           :key="row.agent_id"
           class="quality-cols quality-cols-row"
         >
-          <span
-            class="quality-agent-name"
-            :style="{ color: agentAccent(row.agent_name) }"
-            :title="row.agent_name"
-          >{{ row.agent_name }}</span>
+          <AgentBadge :name="row.agent_name" />
           <span class="quality-count quality-right quality-col-span">{{ row.rejected_tasks }}/{{ row.total_tasks }}</span>
           <div class="quality-bar-bg">
             <div
@@ -212,14 +208,6 @@ watch(() => store.dbPath, fetchQuality)
   align-items: end;
 }
 .quality-right { text-align: right; }
-.quality-agent-name {
-  font-size: 12px;
-  font-family: ui-monospace, monospace;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .quality-count {
   font-size: 12px;
   color: var(--content-tertiary);

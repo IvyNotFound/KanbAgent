@@ -10,7 +10,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentAccent } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 import ActivityHeatmap from './ActivityHeatmap.vue'
 import SessionActivityChart from './SessionActivityChart.vue'
 import SuccessRateChart from './SuccessRateChart.vue'
@@ -308,11 +308,7 @@ function priorityColor(priority: string): string {
                   <div class="task-meta-inner">
                     <p class="text-caption text-truncate">{{ task.title }}</p>
                     <div class="d-flex align-center ga-1 mt-1">
-                      <span
-                        v-if="task.agent_name"
-                        class="text-label-medium"
-                        :style="{ color: agentAccent(task.agent_name) }"
-                      >{{ task.agent_name }}</span>
+                      <AgentBadge v-if="task.agent_name" :name="task.agent_name" />
                       <span
                         v-if="task.priority && task.priority !== 'normal'"
                         class="text-caption"
@@ -350,11 +346,7 @@ function priorityColor(priority: string): string {
                 class="activity-list-item"
               >
                 <div class="d-flex align-start ga-2 py-1">
-                  <span
-                    v-if="entry.agent_name"
-                    class="text-label-medium font-mono agent-label shrink-0"
-                    :style="{ color: agentAccent(entry.agent_name) }"
-                  >{{ entry.agent_name }}</span>
+                  <AgentBadge v-if="entry.agent_name" :name="entry.agent_name" class="shrink-0" />
                   <span v-else class="text-caption text-disabled agent-label shrink-0">—</span>
                   <div class="task-meta-inner">
                     <p class="text-caption font-mono">{{ entry.action }}</p>

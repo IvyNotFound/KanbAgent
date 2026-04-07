@@ -8,7 +8,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { agentFg, agentBg, agentBorder, agentAccent } from '@renderer/utils/agentColor'
+import { agentAccent } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 
 /**
  * @property dbPath  - Path to the active SQLite database (null = no project open).
@@ -189,23 +190,6 @@ function formatCost(usd: number): string {
   return '$' + usd.toFixed(2)
 }
 
-// ── Agent styles ───────────────────────────────────────────────────────────
-
-interface AgentStyle { color: string; backgroundColor: string; boxShadow: string }
-
-const agentStyles = computed<Map<string, AgentStyle>>(() => {
-  const m = new Map<string, AgentStyle>()
-  for (const row of byAgent.value) {
-    if (!m.has(row.agent_name)) {
-      m.set(row.agent_name, {
-        color: agentFg(row.agent_name),
-        backgroundColor: agentBg(row.agent_name),
-        boxShadow: `0 0 0 1px ${agentBorder(row.agent_name)}`,
-      })
-    }
-  }
-  return m
-})
 
 // ── Sparkline hover ────────────────────────────────────────────────────────
 
@@ -299,11 +283,7 @@ const hoveredBar = ref<number | null>(null)
           class="cost-agent-row ga-3"
         >
           <!-- Agent badge -->
-          <span
-            class="cost-agent-badge"
-            :style="agentStyles.get(row.agent_name)"
-            :title="row.agent_name"
-          >{{ row.agent_name }}</span>
+          <AgentBadge :name="row.agent_name" />
 
           <!-- Cost bar -->
           <div class="cost-bar-track">
@@ -447,18 +427,7 @@ const hoveredBar = ref<number | null>(null)
   display: flex;
   align-items: center;
 }
-.cost-agent-badge {
-  flex-shrink: 0;
-  width: 128px;
-  font-size: 0.6875rem;
-  padding: 4px 8px;
-  border-radius: var(--shape-xs);
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
-}
+
 .cost-bar-track {
   flex: 1;
   height: 20px;
