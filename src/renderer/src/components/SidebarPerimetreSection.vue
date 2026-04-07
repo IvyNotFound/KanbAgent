@@ -7,7 +7,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
-import { agentAccent } from '@renderer/utils/agentColor'
+import { agentFg, agentAccent } from '@renderer/utils/agentColor'
 import type { Perimetre } from '@renderer/types'
 
 const { t } = useI18n()
@@ -110,7 +110,7 @@ async function addPerimetre() {
                   v-if="(agentCountByPerimetre.get(p.name) ?? 0) > 0"
                   size="x-small"
                   variant="tonal"
-                  :color="agentAccent(p.name)"
+                  :color="agentFg(p.name)"
                   :title="t('sidebar.nbAgents', agentCountByPerimetre.get(p.name) ?? 0, { named: { n: agentCountByPerimetre.get(p.name) ?? 0 } })"
                 >
                   <v-icon size="9" start>mdi-account</v-icon>
@@ -120,7 +120,7 @@ async function addPerimetre() {
                   v-if="(taskCountByPerimetre.get(p.name) ?? 0) > 0"
                   size="x-small"
                   variant="tonal"
-                  :color="agentAccent(p.name)"
+                  :color="agentFg(p.name)"
                   :title="t('sidebar.nbActiveTasks', taskCountByPerimetre.get(p.name) ?? 0, { named: { n: taskCountByPerimetre.get(p.name) ?? 0 } })"
                 >
                   <v-icon size="9" start>mdi-format-list-checks</v-icon>
