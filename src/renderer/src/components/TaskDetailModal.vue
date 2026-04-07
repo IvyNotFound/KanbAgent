@@ -28,20 +28,21 @@ const statusLabel = (key: string) => ({
 }[key] ?? key)
 
 const STATUS_COLOR: Record<string, string | undefined> = {
-  todo:        'warning',
-  in_progress: 'info',
-  done:        'success',
-  archived:    undefined,
+  todo:        'chip-todo',
+  in_progress: 'chip-in-progress',
+  done:        'chip-done',
+  archived:    'chip-archived',
+  rejected:    'chip-rejected',
 }
 
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
-const EFFORT_COLOR: Record<number, string> = { 1: 'info', 2: 'warning', 3: 'error' }
+const EFFORT_COLOR: Record<number, string> = { 1: 'chip-effort-s', 2: 'chip-effort-m', 3: 'chip-effort-l' }
 
 const PRIORITY_COLOR: Record<string, string | undefined> = {
   low:      undefined,
   normal:   undefined,
-  high:     'warning',
-  critical: 'error',
+  high:     'chip-priority-high',
+  critical: 'chip-priority-critical',
 }
 
 const PRIORITY_LABEL: Record<string, string> = {

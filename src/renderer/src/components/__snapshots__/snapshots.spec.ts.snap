@@ -284,9 +284,10 @@ exports[`TaskCard — snapshots > matches snapshot: critical in_progress task wi
       </div>
       <div data-v-8da3d041="" class="card-badge-row ga-1">
         <!--v-if-->
-        <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="error">!!</v-chip>
+        <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="chip-priority-critical">!!</v-chip>
         <!--v-if-->
-        <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="error">L</v-chip>
+        <!--v-if-->
+        <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="chip-effort-l">L</v-chip>
       </div>
     </div><!-- Badges: perimeter + agent avatars -->
     <div data-v-8da3d041="" class="card-meta mt-3">
@@ -361,7 +362,8 @@ exports[`TaskCard — snapshots > matches snapshot: minimal todo task 1`] = `
         <!--v-if-->
         <!--v-if-->
         <!--v-if-->
-        <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="info">S</v-chip>
+        <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="default">—</v-chip>
+        <v-chip data-v-8da3d041="" size="x-small" variant="tonal" color="chip-effort-s">S</v-chip>
       </div>
     </div><!-- Badges: perimeter + agent avatars -->
     <div data-v-8da3d041="" class="card-meta mt-3">

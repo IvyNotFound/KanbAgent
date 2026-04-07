@@ -77,6 +77,17 @@ const vuetifyPlugin = createVuetify({
           // Edge tokens
           'edge-default': '#363438',       // neutral T22
           'edge-subtle': '#2b292d',        // neutral T17
+          // Chip tokens — pastel desaturated (T1723)
+          'chip-todo':              '#fcd34d',  // amber-300 — sandy yellow
+          'chip-in-progress':       '#7dd3fc',  // sky-300 — soft sky blue
+          'chip-done':              '#6ee7b7',  // emerald-300 — mint green (clearly distinct from blue)
+          'chip-archived':          '#a8a29e',  // stone-400 — neutral grey
+          'chip-rejected':          '#fca5a5',  // red-300 — soft rose red
+          'chip-effort-s':          '#67e8f9',  // cyan-300 — teal soft
+          'chip-effort-m':          '#fcd34d',  // amber-300 — warm
+          'chip-effort-l':          '#fda4af',  // rose-300 — secondary brand
+          'chip-priority-high':     '#fcd34d',  // amber-300
+          'chip-priority-critical': '#fca5a5',  // red-300
           // Scrollbar tokens
           'scrollbar-track': '#2b292d',
           'scrollbar-thumb': '#605d62',
@@ -132,6 +143,17 @@ const vuetifyPlugin = createVuetify({
           // Edge tokens
           'edge-default': '#cac5ca',       // neutral T80
           'edge-subtle': '#e6e1e6',        // neutral T90
+          // Chip tokens — darker tones for light bg contrast (T1723)
+          'chip-todo':              '#b45309',  // amber-700
+          'chip-in-progress':       '#1d4ed8',  // blue-700
+          'chip-done':              '#15803d',  // green-700
+          'chip-archived':          '#57534e',  // stone-600
+          'chip-rejected':          '#b91c1c',  // red-700
+          'chip-effort-s':          '#0e7490',  // cyan-700
+          'chip-effort-m':          '#b45309',  // amber-700
+          'chip-effort-l':          '#be185d',  // pink-700
+          'chip-priority-high':     '#b45309',  // amber-700
+          'chip-priority-critical': '#b91c1c',  // red-700
           // Scrollbar tokens
           'scrollbar-track': '#e6e1e6',
           'scrollbar-thumb': '#938f94',
