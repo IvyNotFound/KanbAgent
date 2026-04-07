@@ -154,14 +154,14 @@ function stopAgent(): void {
     >
       <v-icon icon="mdi-stop-circle" size="28" />
     </v-btn>
-    <!-- Send button — T1743: inline style overrides Vuetify flat variant background -->
+    <!-- Send button — T1750: :color prop is the only reliable way to set Vuetify button background -->
     <v-btn
       icon
       rounded="lg"
       variant="flat"
       size="x-large"
       :disabled="(!inputText.trim() && attachments.length === 0) || !sessionId"
-      :style="{ backgroundColor: accentFg }"
+      :color="accentFg"
       class="action-btn send-btn flex-shrink-0"
       aria-label="Send"
       data-testid="send-button"
@@ -234,7 +234,7 @@ function stopAgent(): void {
   min-width: 52px !important;
   min-height: 52px !important;
 }
-/* T1743: background set via inline :style — no CSS rule needed */
+/* T1750: background set via :color prop — Vuetify handles the surface/state layers */
 /* T1739: apply on-color to icon for legibility on light agent accents */
 .send-btn {
   --send-on-accent: v-bind(accentOnFg);
