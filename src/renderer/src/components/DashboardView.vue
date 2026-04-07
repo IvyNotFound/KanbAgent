@@ -186,6 +186,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
 .dashboard-tabs {
   flex-shrink: 0;
   border-bottom: 1px solid var(--edge-subtle);
+  --v-tabs-height: 48px;
 }
 
 /* Uniform vertical alignment for all tab titles — text-caption interferes with
@@ -196,7 +197,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
   font-weight: 500;
   line-height: 1;
   align-items: center;
-  min-height: 36px;
+  min-height: 48px;
   padding-inline: 16px;
   text-transform: none;
 }
