@@ -144,8 +144,8 @@ function resultPreview(html: string | undefined): string {
       <v-chip
         v-for="option in firstQuestion.options"
         :key="option.label"
-        variant="tonal"
-        :color="selectedOptions.includes(option.label) ? 'info' : 'surface-variant'"
+        :variant="selectedOptions.includes(option.label) ? 'tonal' : 'outlined'"
+        :color="selectedOptions.includes(option.label) ? 'info' : undefined"
         class="text-caption ask-question-chip"
         :title="option.description"
         @click="handleOptionClick(option.label)"
