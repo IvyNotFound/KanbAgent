@@ -16,10 +16,14 @@ const {
 
 <template>
   <div class="ts-view">
-    <!-- ── Period selector ────────────────────────────────────────────── -->
-    <div class="ts-period-bar ga-2">
+    <!-- ── Header: title only ───────────────────────────────────────── -->
+    <div class="ts-header">
       <h2 class="ts-title text-h6 font-weight-medium">{{ t('tokenStats.title') }}</h2>
-      <span class="ts-period-label text-label-medium">{{ t('tokenStats.period.label') }}</span>
+    </div>
+
+    <!-- ── Filter bar: period selector ──────────────────────────────── -->
+    <div class="ts-filter-bar">
+      <span class="ts-filter-label text-label-medium">{{ t('tokenStats.period.label') }}</span>
       <v-btn-toggle
         v-model="selectedPeriod"
         mandatory
@@ -286,17 +290,28 @@ const {
   min-height: 0;
 }
 
-/* period selector */
-.ts-period-bar {
+/* header — title only, matches telem-header height */
+.ts-header {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  height: 44px;
+  min-height: 44px;
   padding: 0 16px;
   border-bottom: 1px solid var(--edge-subtle);
 }
-.ts-title { color: var(--content-primary); margin: 0; margin-right: 8px; }
-.ts-period-label { letter-spacing: 0.02em; color: var(--content-faint); }
+.ts-title { color: var(--content-primary); margin: 0; }
+
+/* filter bar — period selector below header */
+.ts-filter-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-wrap: wrap;
+}
+.ts-filter-label { letter-spacing: 0.02em; color: var(--content-faint); }
 .ts-period-toggle { height: 28px; }
 
 /* summary cards grid */
