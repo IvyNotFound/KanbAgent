@@ -119,10 +119,14 @@ function onDefaultCliChange(v: string) {
 <template>
   <v-dialog model-value width="760" height="560" @update:model-value="emit('close')">
     <v-card class="d-flex flex-column" height="100%" @keydown="handleKeydown">
-
-      <!-- Header -->
-      <div class="d-flex align-center justify-space-between px-5 py-3" style="flex-shrink: 0;">
-        <span class="text-subtitle-1 font-weight-medium">{{ t('settings.title') }}</span>
+      <!-- ── Header ──
+           Note: <template #append> on v-toolbar triggers Vue 3.5.31 codegen bug.
+           Using v-spacer in default slot instead. -->
+      <v-toolbar density="compact" flat class="flex-shrink-0">
+        <v-toolbar-title class="text-subtitle-1 font-weight-medium">
+          {{ t('settings.title') }}
+        </v-toolbar-title>
+        <v-spacer />
         <v-btn
           icon="mdi-close"
           variant="text"
@@ -131,19 +135,18 @@ function onDefaultCliChange(v: string) {
           data-testid="close-btn"
           @click="emit('close')"
         />
-      </div>
+      </v-toolbar>
       <v-divider />
 
-      <!-- Body: nav rail + content panel -->
-      <div class="d-flex flex-grow-1" style="min-height: 0; overflow: hidden;">
-
-        <!-- Nav rail -->
+      <!-- ── Body ── -->
+      <div class="d-flex flex-grow-1 overflow-hidden settings-body">
+<!-- Nav rail -->
         <v-list
           nav
           density="compact"
           bg-color="transparent"
-          style="width: 200px; flex-shrink: 0;"
-          class="pa-2"
+          :width="200"
+          class="pa-2 flex-shrink-0 overflow-y-auto"
         >
           <v-list-item
             v-for="s in sections"
@@ -161,10 +164,9 @@ function onDefaultCliChange(v: string) {
         <v-divider vertical />
 
         <!-- Content panel -->
-        <div style="flex: 1; overflow-y: auto;" class="pa-4 d-flex flex-column ga-3">
-
-          <!-- Appearance: Language + Theme -->
-          <template v-if="activeSection === 'appearance'">
+        <div class="flex-grow-1 overflow-y-auto pa-4">
+<!-- ── appearance ── -->
+          <div v-show="activeSection === 'appearance'" class="d-flex flex-column ga-3">
             <v-sheet rounded="lg" border class="pa-4">
               <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.language') }}</p>
               <v-select
@@ -194,10 +196,12 @@ function onDefaultCliChange(v: string) {
                 <v-btn value="light">{{ t('settings.light') }}</v-btn>
               </v-btn-toggle>
             </v-sheet>
-          </template>
+          </div>
 
-          <!-- Automation: Auto-launch + Auto-review + Worktree -->
-          <template v-else-if="activeSection === 'automation'">
+          <!-- ── automation ──
+               Note: <template #append> on v-list-item triggers Vue 3.5.31 codegen bug.
+               Using v-sheet + d-flex layout for switches. -->
+          <div v-show="activeSection === 'automation'" class="d-flex flex-column ga-3">
             <v-sheet rounded="lg" border class="pa-4">
               <div class="d-flex align-center justify-space-between ga-4">
                 <div>
@@ -213,6 +217,7 @@ function onDefaultCliChange(v: string) {
                 />
               </div>
             </v-sheet>
+
             <v-sheet rounded="lg" border class="pa-4">
               <div class="d-flex align-center justify-space-between ga-4">
                 <div>
@@ -237,11 +242,12 @@ function onDefaultCliChange(v: string) {
                   variant="outlined"
                   density="compact"
                   hide-details
-                  style="width: 80px"
+                  class="threshold-input"
                   @update:model-value="(v) => settingsStore.setAutoReviewThreshold(Number(v))"
                 />
               </div>
             </v-sheet>
+
             <v-sheet rounded="lg" border class="pa-4">
               <div class="d-flex align-center justify-space-between ga-4">
                 <div>
@@ -257,10 +263,10 @@ function onDefaultCliChange(v: string) {
                 />
               </div>
             </v-sheet>
-          </template>
+          </div>
 
-          <!-- Editor: Max file lines -->
-          <template v-else-if="activeSection === 'editor'">
+          <!-- ── editor ── -->
+          <div v-show="activeSection === 'editor'" class="d-flex flex-column ga-3">
             <v-sheet rounded="lg" border class="pa-4">
               <div class="d-flex align-center justify-space-between ga-4">
                 <div>
@@ -285,16 +291,16 @@ function onDefaultCliChange(v: string) {
                   variant="outlined"
                   density="compact"
                   hide-details
-                  style="width: 96px"
+                  class="count-input"
                   data-testid="max-file-lines-count"
                   @update:model-value="(v) => settingsStore.setMaxFileLinesCount(Number(v))"
                 />
               </div>
             </v-sheet>
-          </template>
+          </div>
 
-          <!-- CLI & Agents -->
-          <template v-else-if="activeSection === 'cli'">
+          <!-- ── cli ── -->
+          <div v-show="activeSection === 'cli'" class="d-flex flex-column ga-3">
             <v-sheet rounded="lg" border class="pa-4">
               <p class="text-body-2 font-weight-medium mb-1">{{ t('settings.aiCodingAssistants') }}</p>
               <p class="text-body-2 text-medium-emphasis mb-3">{{ t('settings.aiCodingAssistantsDesc') }}</p>
@@ -308,7 +314,7 @@ function onDefaultCliChange(v: string) {
             </v-sheet>
             <v-sheet rounded="lg" border class="pa-4">
               <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.defaultCliInstance') }}</p>
-              <div v-if="availableDistros.length === 0" class="text-body-2 text-medium-emphasis">—</div>
+              <p v-if="availableDistros.length === 0" class="text-body-2 text-medium-emphasis">—</p>
               <v-select
                 v-else
                 :model-value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
@@ -331,10 +337,10 @@ function onDefaultCliChange(v: string) {
                 @blur="(e: FocusEvent) => store.dbPath && settingsStore.setOpencodeDefaultModel(store.dbPath, (e.target as HTMLInputElement).value)"
               />
             </v-sheet>
-          </template>
+          </div>
 
-          <!-- Notifications -->
-          <template v-else-if="activeSection === 'notifications'">
+          <!-- ── notifications ── -->
+          <div v-show="activeSection === 'notifications'" class="d-flex flex-column ga-3">
             <v-sheet rounded="lg" border class="pa-4">
               <div class="d-flex align-center justify-space-between ga-4">
                 <div>
@@ -350,10 +356,10 @@ function onDefaultCliChange(v: string) {
                 />
               </div>
             </v-sheet>
-          </template>
+          </div>
 
-          <!-- Application: Updates + About + Export + DB -->
-          <template v-else-if="activeSection === 'application'">
+          <!-- ── application ── -->
+          <div v-show="activeSection === 'application'" class="d-flex flex-column ga-3">
             <v-sheet rounded="lg" border class="pa-4">
               <p class="text-body-2 font-weight-medium mb-3">{{ t('settings.updates') }}</p>
               <div class="d-flex align-center justify-space-between">
@@ -364,28 +370,32 @@ function onDefaultCliChange(v: string) {
                   color="primary"
                   :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
                   @click="checkUpdaterNow"
-                >{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}</v-btn>
+                >
+                  {{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}
+                </v-btn>
               </div>
               <div v-if="updaterStatus !== 'idle' && updaterStatus !== 'checking'" class="mt-2">
                 <span
-                  :class="[
-                    'text-body-2 font-weight-medium',
-                    (updaterStatus === 'available' || updaterStatus === 'downloaded') ? 'text-warning' :
-                    updaterStatus === 'up-to-date' ? 'text-secondary' :
-                    updaterStatus === 'error' ? 'text-error' : ''
-                  ]"
-                >
-                  <template v-if="updaterStatus === 'up-to-date'">{{ t('settings.upToDate') }}</template>
-                  <template v-else-if="updaterStatus === 'available'">{{ t('settings.updateAvailable') }}</template>
-                  <template v-else-if="updaterStatus === 'downloading'">{{ t('settings.downloading') }}</template>
-                  <template v-else-if="updaterStatus === 'downloaded'">{{ t('settings.downloaded') }}</template>
-                  <template v-else-if="updaterStatus === 'error'">{{ t('settings.updateError') }}</template>
-                </span>
+                  class="text-body-2 font-weight-medium"
+                  :class="{
+                    'text-warning': updaterStatus === 'available' || updaterStatus === 'downloaded' || updaterStatus === 'downloading',
+                    'text-secondary': updaterStatus === 'up-to-date',
+                    'text-error': updaterStatus === 'error',
+                  }"
+                >{{
+                  updaterStatus === 'up-to-date' ? t('settings.upToDate') :
+                  updaterStatus === 'available' ? t('settings.updateAvailable') :
+                  updaterStatus === 'downloading' ? t('settings.downloading') :
+                  updaterStatus === 'downloaded' ? t('settings.downloaded') :
+                  updaterStatus === 'error' ? t('settings.updateError') : ''
+                }}</span>
               </div>
             </v-sheet>
             <v-sheet rounded="lg" border class="pa-4">
               <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.about') }}</p>
-              <p class="text-body-2 text-medium-emphasis">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
+              <p class="text-body-2 text-medium-emphasis">
+                {{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}
+              </p>
               <p class="text-body-2 text-medium-emphasis mt-1">{{ t('settings.aboutDesc') }}</p>
             </v-sheet>
             <v-sheet v-if="store.dbPath" rounded="lg" border class="pa-4">
@@ -395,29 +405,51 @@ function onDefaultCliChange(v: string) {
                 prepend-icon="mdi-download"
                 :disabled="exporting"
                 @click="showExportConfirm = true"
-              >{{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}</v-btn>
+              >
+                {{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}
+              </v-btn>
             </v-sheet>
             <v-sheet v-if="store.dbPath" rounded="lg" border class="pa-4">
               <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.database') }}</p>
-              <p class="text-body-2 text-medium-emphasis" style="font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace; word-break: break-all;">{{ store.dbPath }}</p>
+              <p
+                class="text-body-2 text-medium-emphasis"
+                style="font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace; word-break: break-all;"
+              >
+{{ store.dbPath }}
+</p>
             </v-sheet>
-          </template>
-
-        </div>
+          </div>
+</div>
       </div>
-    </v-card>
+</v-card>
   </v-dialog>
 
-  <!-- Export confirmation dialog -->
+  <!-- ── Export confirmation dialog ── -->
   <v-dialog v-model="showExportConfirm" max-width="360">
-    <v-card class="pa-5">
-      <h3 class="text-body-1 font-weight-medium mb-2">{{ t('settings.exportConfirmTitle') }}</h3>
-      <p class="text-body-2 text-medium-emphasis mb-2">{{ t('settings.exportConfirmMsg') }}</p>
-      <p class="text-caption text-warning mb-4">{{ t('settings.exportConfirmWarn') }}</p>
-      <div class="d-flex ga-2 justify-end">
-        <v-btn variant="text" @click="showExportConfirm = false">{{ t('settings.exportCancel') }}</v-btn>
-        <v-btn color="primary" @click="exportZip">{{ t('settings.exportConfirm') }}</v-btn>
-      </div>
+    <v-card>
+      <v-card-title class="text-body-1 font-weight-medium">
+        {{ t('settings.exportConfirmTitle') }}
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-medium-emphasis mb-2">{{ t('settings.exportConfirmMsg') }}</p>
+        <p class="text-caption text-warning">{{ t('settings.exportConfirmWarn') }}</p>
+      </v-card-text>
+      <v-card-actions class="justify-end">
+        <v-btn variant="text" @click="showExportConfirm = false">
+          {{ t('settings.exportCancel') }}
+        </v-btn>
+        <v-btn color="primary" @click="exportZip">
+          {{ t('settings.exportConfirm') }}
+        </v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+/* Flex overflow fix — no Vuetify utility for min-height: 0 */
+.settings-body { min-height: 0; }
+/* Narrow numeric inputs — no fixed-pixel class in Vuetify */
+.threshold-input { max-width: 80px; }
+.count-input { max-width: 96px; }
+</style>
