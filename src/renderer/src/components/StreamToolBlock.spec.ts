@@ -12,6 +12,8 @@ describe('StreamToolBlock (T842)', () => {
     accentFg: '#00ff00',
     accentBg: '#003300',
     accentBorder: '#00aa00',
+    accentOnColor: '#ffffff',
+    accentText: '#66bb6a',
   }
 
   it('renders tool_use block with tool name', () => {

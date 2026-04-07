@@ -17,7 +17,7 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useAgentsStore } from '@renderer/stores/agents'
-import { agentFg, agentBg, agentBorder, colorVersion, getOnColor, isDark } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, agentAccent, colorVersion, getOnColor, isDark } from '@renderer/utils/agentColor'
 import { renderMarkdown } from '@renderer/utils/renderMarkdown'
 import { useStreamEvents } from '@renderer/composables/useStreamEvents'
 import { useCopyCode } from '@renderer/composables/useCopyCode'
@@ -144,6 +144,12 @@ const accentOnColor = computed(() => {
   const bg = accentBg.value
   if (bg.startsWith('#')) return getOnColor(bg)
   return isDark() ? '#FFFFFF' : '#1C1B1F'
+})
+// Text/dot color for agent accent on neutral dark surface — agentAccent() (lighten2 dark / darken1 light)
+// Use this instead of accentFg when agent color is displayed ON the surface, not on a badge bg (T1738)
+const accentText = computed(() => {
+  void colorVersion.value
+  return agentName.value ? agentAccent(agentName.value) : 'rgb(var(--v-theme-secondary))'
 })
 
 // Suppresses empty user bubbles from autonomous Claude reasoning (T679).
@@ -424,6 +430,7 @@ onUnmounted(() => {
                 :accent-bg="accentBg"
                 :accent-border="accentBorder"
                 :accent-on-color="accentOnColor"
+                :accent-text="accentText"
                 @toggle-collapsed="toggleCollapsed"
               />
             </template>
@@ -472,13 +479,13 @@ onUnmounted(() => {
       <div
         v-if="isStreaming"
         class="streaming-indicator ga-2 text-caption"
-        :style="{ color: accentFg }"
+        :style="{ color: accentText }"
         data-testid="streaming-indicator"
       >
         <span class="bounce-dots">
-          <span class="bounce-dot" :style="{ backgroundColor: accentFg }" />
-          <span class="bounce-dot bounce-dot--d1" :style="{ backgroundColor: accentFg }" />
-          <span class="bounce-dot bounce-dot--d2" :style="{ backgroundColor: accentFg }" />
+          <span class="bounce-dot" :style="{ backgroundColor: accentText }" />
+          <span class="bounce-dot bounce-dot--d1" :style="{ backgroundColor: accentText }" />
+          <span class="bounce-dot bounce-dot--d2" :style="{ backgroundColor: accentText }" />
         </span>
         <span v-if="activeThinkingText" class="thinking-text ga-1">
           <span class="thinking-label" data-testid="thinking-label">{{ t('stream.thinking') }}</span>

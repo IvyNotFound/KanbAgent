@@ -32,6 +32,8 @@ const props = defineProps<{
   accentBg: string
   accentBorder: string
   accentOnColor: string
+  /** Accent color for text/icons on neutral dark surface (agentAccent — lighten2 dark/darken1 light). T1738 */
+  accentText: string
 }>()
 
 const emit = defineEmits<{
@@ -105,15 +107,15 @@ function resultPreview(html: string | undefined): string {
       variant="text"
       block
       class="tool-header py-2 px-3 text-body-2"
-      :style="{ backgroundColor: accentBg }"
+      :style="{ backgroundColor: accentBg, borderLeftColor: accentText }"
       @click="emit('toggleCollapsed', collapseKey(eventId, blockIdx), false)"
     >
       <v-icon
         :icon="isCollapsed(eventId, blockIdx, false) ? 'mdi-chevron-right' : 'mdi-chevron-down'"
         size="small"
-        :style="{ color: accentFg }"
+        :style="{ color: accentText }"
       />
-      <span class="tool-name" :style="{ color: accentFg }">{{ block.name }}</span>
+      <span class="tool-name" :style="{ color: accentText }">{{ block.name }}</span>
       <span class="tool-label">{{ t('stream.tool') }}</span>
     </v-btn>
     <div
