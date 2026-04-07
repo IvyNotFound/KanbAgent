@@ -161,7 +161,7 @@ function onCanvasWheel(event: WheelEvent): void {
 const unassignedLabel = computed(() => t('timeline.unassigned'))
 
 const allAgents = computed(() => {
-  const names = new Set(tasks.value.map(t => t.agentName ?? unassignedLabel.value))
+  const names = new Set(tasks.value.map(t => t.agentName || unassignedLabel.value))
   return [...names].sort()
 })
 
@@ -286,7 +286,7 @@ const legendItems = computed(() => [
       <h2 class="text-h6 font-weight-medium tl-title flex-shrink-0">{{ t('timeline.title') }}</h2>
       <div class="tl-filter-sep" />
       <!-- Period presets: clicking resets the viewport to that range -->
-      <v-btn-toggle v-model="selectedPeriod" mandatory density="compact" variant="outlined" class="flex-shrink-0">
+      <v-btn-toggle v-model="selectedPeriod" mandatory density="compact" variant="outlined" class="tl-period-toggle flex-shrink-0">
         <v-btn
           v-for="item in periodItems"
           :key="item.value"
@@ -452,6 +452,7 @@ const legendItems = computed(() => [
   overflow: hidden;
   min-height: 0;
 }
+.tl-period-toggle { height: 28px; }
 .tl-filter-label { color: var(--content-muted); }
 .tl-filter-sep {
   width: 1px;
