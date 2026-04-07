@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
-import { agentAccent, agentBorder } from '@renderer/utils/agentColor'
+import { agentAccent, agentBg, agentFg } from '@renderer/utils/agentColor'
 import type { Agent } from '@renderer/types'
 
 const props = defineProps<{
@@ -206,11 +206,21 @@ function handleKeydown(e: KeyboardEvent) {
     <div data-testid="create-agent-backdrop" @click.self="emit('close')">
     <v-card class="d-flex flex-column" style="max-height: 85vh;" @keydown="handleKeydown">
         <!-- Header -->
-        <div
-          class="modal-header"
-          :style="isEditMode && agent ? { borderLeftColor: agentBorder(agent.name), borderLeftWidth: '3px', borderLeftStyle: 'solid' } : {}"
-        >
-          <h2 class="text-body-1 font-weight-medium" style="color: var(--content-primary)">{{ isEditMode ? t('agent.editTitle') : t('agent.newTitle') }}</h2>
+        <div class="modal-header">
+          <template v-if="isEditMode && agent">
+            <div class="d-flex align-center ga-3">
+              <div class="agent-avatar" :style="{ background: agentBg(agent.name), color: agentFg(agent.name) }">
+                {{ agent.name.slice(0, 1).toUpperCase() }}
+              </div>
+              <div>
+                <p class="text-caption" style="color: var(--content-muted); line-height: 1.2;">{{ t('agent.editTitle') }}</p>
+                <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary); line-height: 1.3;">{{ agent.name }}</h2>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <h2 class="text-body-1 font-weight-medium" style="color: var(--content-primary)">{{ t('agent.newTitle') }}</h2>
+          </template>
           <v-btn
             icon="mdi-close"
             variant="text"
@@ -514,5 +524,18 @@ function handleKeydown(e: KeyboardEvent) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Header avatar (edit mode) */
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 </style>
