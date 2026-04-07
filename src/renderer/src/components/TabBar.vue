@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Tab } from '@renderer/stores/tabs'
-import { agentAccent } from '@renderer/utils/agentColor'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
 import { useTabBarGroups } from '@renderer/composables/useTabBarGroups'
 import ContextMenu from './ContextMenu.vue'
@@ -201,11 +200,6 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
             v-if="isGroupCollapsed(group.agentName)"
             class="tab-group-count"
           >{{ group.tabs.length }}</span>
-          <span
-            v-if="isGroupActive(group)"
-            class="tab-agent-indicator"
-            :style="group.agentName ? { backgroundColor: agentAccent(group.agentName) } : { backgroundColor: 'rgb(var(--v-theme-primary))' }"
-          ></span>
         </button>
 
         <!-- Sous-onglets session (masqués si groupe collapsé) -->
@@ -359,47 +353,49 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   color: rgb(var(--v-theme-error));
   background: rgba(0,0,0,0.2);
 }
+/* Group container — subtle surface tint + top radius visually wraps pill + sub-tabs */
 .tab-group {
   display: flex;
   align-items: stretch;
   gap: 2px;
   flex-shrink: 0;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  border-radius: var(--shape-xs) var(--shape-xs) 0 0;
+  padding: 0 4px;
+  margin: 0 2px;
 }
 .tab-group-sep {
   border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  margin-right: 4px;
-  padding-right: 4px;
+  margin-right: 2px;
+  padding-right: 0;
 }
+/* tab-agent: pill/chip floating in bar — clearly distinguishes group header from sub-tabs.
+   align-self: center + height: 28px keeps within 48px bar.
+   Opacity (1.0 = active, 0.65 = inactive) set inline via agentTabStyleMap replaces
+   the old bottom-bar indicator. */
 .tab-agent {
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 12px;
-  font-weight: 500;
+  padding: 0 10px;
+  height: 28px;
+  align-self: center;
+  font-weight: 600;
   transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
-  border-radius: var(--shape-xs) var(--shape-xs) 0 0;
+  border-radius: 999px;
   flex-shrink: 0;
   cursor: pointer;
   background: none;
   border: none;
 }
 .tab-agent:hover {
-  background: rgba(var(--v-theme-on-surface), 0.08);
+  filter: brightness(1.08);
 }
 /* Pressed — MD3 state layer 12% */
 .tab-agent:active {
-  background: rgba(var(--v-theme-on-surface), 0.12);
-}
-/* Active indicator — positioning extracted from inline style */
-.tab-agent-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
+  filter: brightness(0.92);
 }
 .tab-agent-name {
   max-width: 80px;
@@ -419,14 +415,15 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   opacity: 0.7;
   flex-shrink: 0;
 }
+/* tab-sub: sub-session tabs — lighter weight than tab-agent pill to signal sub-level */
 .tab-sub {
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 16px;
-  min-width: 90px;
-  font-weight: 500;
+  padding: 0 10px;
+  min-width: 80px;
+  font-weight: 400;
   transition: all var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
   border-radius: var(--shape-xs) var(--shape-xs) 0 0;
@@ -452,7 +449,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   border-radius: 3px 3px 0 0;
 }
 .tab-sub-label {
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
   overflow: hidden;
   text-overflow: ellipsis;
