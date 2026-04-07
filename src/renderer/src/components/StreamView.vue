@@ -17,7 +17,7 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useAgentsStore } from '@renderer/stores/agents'
-import { agentFg, agentBg, agentBorder, agentAccent, colorVersion, getOnColor, isDark } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, agentAccent, colorVersion, getOnColor, isDark, hexToRgb } from '@renderer/utils/agentColor'
 import { renderMarkdown } from '@renderer/utils/renderMarkdown'
 import { useStreamEvents } from '@renderer/composables/useStreamEvents'
 import { useCopyCode } from '@renderer/composables/useCopyCode'
@@ -138,6 +138,14 @@ const agentName = computed(() => tabsStore.tabs.find(t => t.id === props.termina
 const accentFg = computed(() => { void colorVersion.value; return agentName.value ? agentFg(agentName.value) : 'rgb(var(--v-theme-secondary))' })
 const accentBg = computed(() => { void colorVersion.value; return agentName.value ? agentBg(agentName.value) : 'rgba(var(--v-theme-secondary), 0.1)' })
 const accentBorder = computed(() => { void colorVersion.value; return agentName.value ? agentBorder(agentName.value) : 'rgba(var(--v-theme-secondary), 0.3)' })
+// Accent bar color: agentBg at 0.70 opacity — softer than the full-opaque agentFg, coherent with tab capsule design (T1769)
+const accentBarColor = computed(() => {
+  void colorVersion.value
+  if (!agentName.value) return 'rgb(var(--v-theme-secondary))'
+  const hex = agentBg(agentName.value)
+  const rgb = hexToRgb(hex)
+  return rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.70)` : hex
+})
 // MD3 on-color: dark text on light agent backgrounds, white on dark — ensures 4.5:1 contrast (T1500).
 const userBubbleTextColor = computed(() => getOnColor(accentFg.value))
 // On-color for text inside tool_use blocks (colored accentBg background) — T1544.
@@ -332,7 +340,7 @@ onUnmounted(() => {
 <template>
   <div class="stream-view">
     <!-- Agent color accent header bar (T680) -->
-    <div v-if="agentName" class="stream-accent-bar" :style="{ background: accentFg }" />
+    <div v-if="agentName" class="stream-accent-bar" :style="{ background: accentBarColor }" />
 
     <!-- Messages scroll area -->
     <div ref="scrollContainer" class="stream-scroll pa-4 ga-3" :style="{ '--stream-accent-fg': accentText }">
