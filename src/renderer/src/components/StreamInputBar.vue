@@ -37,7 +37,6 @@ async function handlePaste(e: ClipboardEvent): Promise<void> {
   e.preventDefault()
   const blob = imageItem.getAsFile()
   if (!blob) return
-  const objectUrl = URL.createObjectURL(blob)
   const reader = new FileReader()
   reader.onload = async () => {
     const dataUrl = reader.result as string
@@ -46,10 +45,11 @@ async function handlePaste(e: ClipboardEvent): Promise<void> {
     try {
       const result = await window.electronAPI.fsSaveImage(base64, mediaType)
       if (result.success) {
-        attachments.value.push({ path: result.path, objectUrl })
+        // Use dataUrl (base64) instead of blob: URL — blob: URLs are blocked by Electron CSP (T1736)
+        attachments.value.push({ path: result.path, objectUrl: dataUrl })
       }
     } catch {
-      URL.revokeObjectURL(objectUrl)
+      // fsSaveImage failed — no attachment added
     }
   }
   reader.readAsDataURL(blob)

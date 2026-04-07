@@ -210,8 +210,10 @@ const sessionContextMap = computed(() => {
 
 async function handleSend(text: string, atts: { path: string; objectUrl: string }[] = []): Promise<void> {
   agentStopped.value = false
+  // Strip 📎 path lines for display — agent still receives the full text with paths (T1736)
+  const displayText = text.replace(/(\n)?📎 [^\n]+/g, '').trim()
   const content: StreamContentBlock[] = [
-    ...(text ? [{ type: 'text' as const, text }] : []),
+    ...(displayText ? [{ type: 'text' as const, text: displayText }] : []),
     ...atts.map(a => ({ type: 'image_ref' as const, path: a.path, objectUrl: a.objectUrl })),
   ]
   const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content } }
@@ -389,6 +391,12 @@ onUnmounted(() => {
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
               <div v-if="block.type === 'text'" v-html="renderMarkdown(parsePromptContext(block.text ?? '').base)" />
+              <img
+                v-else-if="block.type === 'image_ref' && block.objectUrl"
+                :src="block.objectUrl"
+                class="user-bubble-img"
+                alt=""
+              />
             </template>
           </div>
         </div>
@@ -600,6 +608,14 @@ onUnmounted(() => {
   line-height: 1.625;
   user-select: text;
   cursor: text;
+}
+/* T1736: inline image in user bubble */
+.user-bubble-img {
+  max-height: 200px;
+  max-width: 100%;
+  border-radius: 8px;
+  display: block;
+  margin-top: 4px;
 }
 
 /* assistant wrapper — left-aligned flex column */
