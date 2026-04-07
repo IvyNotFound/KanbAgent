@@ -220,12 +220,16 @@ function stopAgent(): void {
   pointer-events: none;
 }
 /* Smooth appearance transition for icon buttons (T1536) */
-/* flex-shrink:0 + min dimensions prevent buttons from being crushed by textarea flex-grow (T1704) */
+/* flex-shrink:0 + explicit dimensions prevent buttons from being crushed by textarea flex-grow (T1704).
+   !important required: Vuetify 3 sets width/height via its own high-specificity CSS that overrides
+   scoped selectors without !important (T1737). */
 .action-btn {
   transition: all 150ms ease;
   flex-shrink: 0;
-  min-width: 52px;
-  min-height: 52px;
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  min-height: 52px !important;
 }
 /* Send button: accent color via CSS v-bind — preserves Vuetify state layers (T1687) */
 .send-btn {
