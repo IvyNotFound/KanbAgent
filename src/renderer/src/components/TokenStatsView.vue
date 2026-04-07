@@ -314,7 +314,7 @@ const {
 .ts-cards-row {
   flex-shrink: 0;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   border-bottom: 1px solid var(--edge-subtle);
   background: var(--surface-base);
 }

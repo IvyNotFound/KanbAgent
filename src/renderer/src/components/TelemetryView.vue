@@ -423,9 +423,9 @@ onMounted(scan)
 /* ── Metric cards (stat grid) ── */
 .telem-stat-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
-.telem-stat-grid--wide { grid-template-columns: repeat(5, 1fr); }
+.telem-stat-grid--wide { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 
 .telem-metric-card {
   border: 1px solid var(--edge-default) !important;
@@ -509,7 +509,7 @@ onMounted(scan)
 }
 
 /* quality grid */
-.telem-quality-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+.telem-quality-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 
 /* table */
 .telem-table-wrap {
