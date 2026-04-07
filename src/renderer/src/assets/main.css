@@ -480,6 +480,12 @@ body,
 .v-dialog .v-card {
   background-color: rgb(var(--v-theme-surface-dialog)) !important; /* override Vuetify internal surface — global selector, no scope hash */
 }
+/* TaskDetailModal uses .task-panel (not v-card) — same elevation tint; --surface-dialog alias
+   is defined on [data-v-theme] (inside .v-application) and does not cascade into the teleported
+   overlay. Use --v-theme-surface-dialog directly, as Vuetify injects it on the overlay container. */
+.v-dialog .task-panel {
+  background-color: rgb(var(--v-theme-surface-dialog)) !important;
+}
 /* Vertical centering for v-card inside a v-dialog overlay content.
    .v-overlay__content is a flex column. When the dialog has a fixed height prop
    (e.g. SettingsModal height="700") and the v-card's max-height is smaller, extra
