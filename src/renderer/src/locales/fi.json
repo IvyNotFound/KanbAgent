@@ -29,8 +29,6 @@
     "prevPage": "Edellinen",
     "nextPage": "Seuraava",
     "pageOf": "Sivu {page} / {total} ({count} tehtävää)",
-    "listView": "Listanäkymä",
-    "treeView": "Puunäkymä",
     "staleTasks": "{count} vanhentunut tehtävä | {count} vanhentunutta tehtävää"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Suurenna"
   },
   "tabBar": {
-    "openWslTerminal": "Avaa WSL-pääte",
     "closeTab": "Sulje",
     "unsaved": "Tallentamattomat muutokset",
     "closeFileTitle": "Sulje tiedosto",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Agenttien laatu",
-    "all": "Kaikki",
     "refresh": "Päivitä",
     "loading": "Ladataan…",
     "error": "Virhe: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Projektin hylkäysaste",
     "noRejections": "Hylkäyksiä ei havaittu",
     "heuristicNote": "Heuristinen tunnistus — tarkistajan kommentit, jotka sisältävät \"reject\", \"return\" tai \"todo\"",
-    "colTotal": "Yhteensä",
-    "colRejected": "Hylkäykset",
-    "colRate": "Aste",
-    "colBar": "Pylväs"
+    "colAgent": "Agentti",
+    "colRejections": "Hyl./Yht.",
+    "colRate": "Osuus"
   },
   "sessionActivityChart": {
     "title": "Istuntoaktiivisuus — viimeiset 14 päivää",
@@ -578,7 +573,10 @@
     "streaming": "Käynnissä…",
     "waitingMessages": "Odotetaan viestejä…",
     "turns": "{n} kierros | {n} kierrosta",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Lähetä viesti…",
+    "askQuestion": "Agentin kysymys",
+    "replyPlaceholder": "Vastaa agentille…"
   },
   "task": {
     "running": "Tehtävä käynnissä",
@@ -610,7 +608,8 @@
     "colSource": "Lähde",
     "colTests": "Testit",
     "colFiles": "Tiedostot",
-    "scannedAt": "Skannattu {date}"
+    "scannedAt": "Skannattu {date}",
+    "languageDetail": "Kielet yksityiskohtaisesti"
   },
   "update": {
     "available": "Päivitys {version} saatavilla",

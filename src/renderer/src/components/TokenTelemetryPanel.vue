@@ -45,71 +45,118 @@ function formatTokens(n: number): string {
 </script>
 
 <template>
-  <div class="rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
-
-    <!-- Header + period tabs -->
-    <div class="shrink-0 px-3 py-2 border-b border-edge-subtle flex items-center justify-between">
-      <span class="text-xs font-semibold uppercase tracking-wider text-content-secondary">
+  <div class="token-panel">
+<!-- Header + period tabs -->
+    <div class="token-header py-3 px-4">
+      <span class="token-title text-body-2 font-weight-medium">
         {{ t('dashboard.telemetry') }}
       </span>
-      <div class="flex gap-1">
-        <button
+      <v-btn-toggle
+        v-model="activeTab"
+        mandatory
+        color="primary"
+        variant="outlined"
+        density="compact"
+        rounded="lg"
+      >
+        <v-btn
           v-for="tab in TABS"
           :key="tab.key"
-          class="px-2 py-0.5 text-[11px] rounded font-medium transition-colors"
-          :class="activeTab === tab.key
-            ? 'bg-zinc-700 text-content-primary'
-            : 'text-content-tertiary hover:text-content-secondary'"
-          @click="activeTab = tab.key"
+          :value="tab.key"
+          size="small"
         >
           {{ t(tab.i18nKey) }}
-        </button>
-      </div>
+        </v-btn>
+      </v-btn-toggle>
     </div>
 
     <!-- 4 token metrics -->
-    <div class="px-3 py-3 grid grid-cols-4 gap-4">
-
-      <!-- Input tokens -->
-      <div class="flex flex-col gap-0.5">
-        <span class="text-[11px] text-content-tertiary">{{ t('dashboard.tokensIn') }}</span>
-        <span class="text-lg font-bold text-content-primary tabular-nums leading-tight">
+    <div class="token-metrics py-3 px-4 ga-3">
+<!-- Input tokens -->
+      <div class="token-metric">
+        <span class="token-metric-label text-label-medium">{{ t('dashboard.tokensIn') }}</span>
+        <span class="token-metric-value text-subtitle-2">
           {{ formatTokens(currentStats.tokens_in) }}
         </span>
       </div>
 
       <!-- Output tokens -->
-      <div class="flex flex-col gap-0.5">
-        <span class="text-[11px] text-content-tertiary">{{ t('dashboard.tokensOut') }}</span>
-        <span class="text-lg font-bold text-content-primary tabular-nums leading-tight">
+      <div class="token-metric">
+        <span class="token-metric-label text-label-medium">{{ t('dashboard.tokensOut') }}</span>
+        <span class="token-metric-value text-subtitle-2">
           {{ formatTokens(currentStats.tokens_out) }}
         </span>
       </div>
 
-      <!-- Cache read (emerald — économique) -->
-      <div class="flex flex-col gap-0.5">
-        <span class="text-[11px] text-content-tertiary">{{ t('dashboard.tokensCacheRead') }}</span>
-        <span class="text-lg font-bold text-emerald-400 tabular-nums leading-tight">
+      <!-- Cache read (rose — économique) -->
+      <div class="token-metric">
+        <span class="token-metric-label text-label-medium">{{ t('dashboard.tokensCacheRead') }}</span>
+        <span class="token-metric-value token-metric-value--cache-read text-subtitle-2">
           {{ formatTokens(currentStats.tokens_cache_read) }}
         </span>
       </div>
 
       <!-- Cache write (amber) -->
-      <div class="flex flex-col gap-0.5">
-        <span class="text-[11px] text-content-tertiary">{{ t('dashboard.tokensCacheWrite') }}</span>
-        <span class="text-lg font-bold text-amber-400 tabular-nums leading-tight">
+      <div class="token-metric">
+        <span class="token-metric-label text-label-medium">{{ t('dashboard.tokensCacheWrite') }}</span>
+        <span class="token-metric-value token-metric-value--cache-write text-subtitle-2">
           {{ formatTokens(currentStats.tokens_cache_write) }}
         </span>
       </div>
-
-    </div>
+</div>
 
     <!-- Session count -->
-    <div class="px-3 pb-2">
-      <span class="text-[11px] text-content-faint tabular-nums">
+    <div class="token-sessions px-4 pb-3">
+      <span class="token-sessions-text text-label-medium">
         {{ currentStats.session_count }} {{ t('dashboard.tokensSessions') }}
       </span>
     </div>
-
-  </div>
+</div>
 </template>
+
+<style scoped>
+.token-panel {
+  border-radius: var(--shape-sm);
+  background: var(--surface-primary);
+  border: 1px solid var(--edge-default);
+  overflow: hidden;
+}
+.token-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--edge-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.token-title {
+  color: var(--content-secondary);
+}
+/* 4 token metrics */
+.token-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+.token-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.token-metric-label {
+  color: var(--content-tertiary);
+}
+.token-metric-value {
+  font-weight: 700;
+  color: var(--content-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.token-metric-value--cache-read { color: rgb(var(--v-theme-secondary)); }
+.token-metric-value--cache-write { color: rgb(var(--v-theme-warning)); }
+/* Session count */
+.token-sessions {
+}
+.token-sessions-text {
+  color: var(--content-faint);
+  font-variant-numeric: tabular-nums;
+}
+</style>

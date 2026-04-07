@@ -1,7 +1,14 @@
 <script setup lang="ts">
 /**
  * StreamView — structured display of stream-json CLI messages (ADR-009 Option B).
- * Renders agent sessions as structured blocks: text, tool_use, tool_result, thinking, result.
+ *
+ * Chat-bubble layout: assistant messages rendered as left-aligned bubbles, user messages
+ * as right-aligned bubbles. Tool calls delegated to StreamToolBlock for per-tool structured
+ * display (Edit: diff view, Bash: command block, Read/Write/Grep/Glob: metadata, Agent: description).
+ * Copy-code button injected into all markdown code blocks via useCopyCode composable.
+ * Thinking text previewed live in the status bar (last 120 chars). Collapsible blocks
+ * auto-collapse when >15 lines. ANSI sequences stripped before rendering.
+ *
  * Used in App.vue for tabs with viewMode === 'stream' (T597).
  */
 import { computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
@@ -10,8 +17,10 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useAgentsStore } from '@renderer/stores/agents'
-import { agentFg, agentBg, agentBorder, colorVersion } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentBorder, agentAccent, colorVersion, getOnColor, isDark, hexToRgb } from '@renderer/utils/agentColor'
+import { renderMarkdown } from '@renderer/utils/renderMarkdown'
 import { useStreamEvents } from '@renderer/composables/useStreamEvents'
+import { useCopyCode } from '@renderer/composables/useCopyCode'
 import HookEventBar from './HookEventBar.vue'
 import StreamToolBlock from './StreamToolBlock.vue'
 import StreamInputBar from './StreamInputBar.vue'
@@ -20,7 +29,7 @@ import githubUrl from 'highlight.js/styles/github.css?url'
 
 // Re-export stream types so existing consumers keep their import paths (T816).
 export type { StreamContentBlock, StreamEvent } from '@renderer/types/stream'
-import type { StreamEvent } from '@renderer/types/stream'
+import type { StreamEvent, StreamContentBlock } from '@renderer/types/stream'
 
 const props = defineProps<{
   /** Tab identifier — used to look up tab config in tabsStore. */
@@ -52,18 +61,17 @@ const {
   assignEventId, enqueueEvent,
   scrollToBottom, toggleCollapsed, cleanup,
 } = useStreamEvents(props.terminalId)
+useCopyCode(scrollContainer)
 
 import { ref } from 'vue'
 const sessionId = ref<string | null>(null)
 const ptyId = ref<string | null>(null)
 const agentStopped = ref(false)
+/** T1772: prefill answer from AskUserQuestion option chip click */
+const prefillAnswer = ref<string | undefined>(undefined)
 
-// Lightbox state — T1718
-const lightboxOpen = ref<boolean>(false)
-const lightboxSrc = ref<string>('')
-function openLightbox(src: string): void {
-  lightboxSrc.value = src
-  lightboxOpen.value = true
+function handleSelectOption(label: string): void {
+  prefillAnswer.value = label
 }
 
 // ── Computed ──────────────────────────────────────────────────────────────────
@@ -83,23 +91,106 @@ const activeThinkingText = computed<string | null>(() => {
   return last?.type === 'thinking' && last.text ? last.text : null
 })
 
+/**
+ * Detect a pending AskUserQuestion in the current event stream.
+ *
+ * Source 1 (T1707): last assistant event contains a tool_use AskUserQuestion block
+ *   with no matching tool_result (correlates via tool_use_id, falls back to user-event check).
+ * Source 2 (T1708): a synthetic ask_user event was emitted by stream-handlers and
+ *   no user reply has arrived yet. Source 1 takes priority to avoid double-detection.
+ */
+const pendingQuestion = computed<string | null>(() => {
+  // Source 1 — tool_use AskUserQuestion without tool_result (Claude, T1707)
+  for (let i = events.value.length - 1; i >= 0; i--) {
+    const ev = events.value[i]
+    if (ev.type === 'user' || ev.type === 'result') break
+    if (ev.type === 'assistant' && ev.message) {
+      const askBlock = ev.message.content.find(
+        (b) => b.type === 'tool_use' && b.name === 'AskUserQuestion'
+      )
+      if (askBlock) {
+        const toolUseId = askBlock.tool_use_id
+        const answered = toolUseId
+          ? events.value.slice(i + 1).some(
+              (e) => e.type === 'assistant' &&
+                e.message?.content.some(
+                  (b) => b.type === 'tool_result' && b.tool_use_id === toolUseId
+                )
+            )
+          : events.value.slice(i + 1).some((e) => e.type === 'user')
+        if (!answered) {
+          const q = (askBlock.input as Record<string, unknown> | undefined)?.question
+          // T1764: if input.question is not a string, do NOT return null here — fall through
+          // to Source 2 (synthetic ask_user event) which may have the text.
+          if (typeof q === 'string') return q
+        }
+        break
+      }
+    }
+  }
+
+  // Source 2 — synthetic ask_user event without user reply (T1708)
+  for (let i = events.value.length - 1; i >= 0; i--) {
+    const ev = events.value[i]
+    if (ev.type === 'user') break
+    if (ev.type === 'ask_user' && ev.text) return ev.text
+  }
+
+  return null
+})
+
 const agentName = computed(() => tabsStore.tabs.find(t => t.id === props.terminalId)?.agentName ?? '')
 
-const accentFg = computed(() => { void colorVersion.value; return agentName.value ? agentFg(agentName.value) : 'hsl(270, 60%, 68%)' })
-const accentBg = computed(() => { void colorVersion.value; return agentName.value ? agentBg(agentName.value) : 'hsl(270, 30%, 18%)' })
-const accentBorder = computed(() => { void colorVersion.value; return agentName.value ? agentBorder(agentName.value) : 'hsl(270, 30%, 32%)' })
+const accentFg = computed(() => { void colorVersion.value; return agentName.value ? agentFg(agentName.value) : 'rgb(var(--v-theme-secondary))' })
+const accentBg = computed(() => { void colorVersion.value; return agentName.value ? agentBg(agentName.value) : 'rgba(var(--v-theme-secondary), 0.1)' })
+const accentBorder = computed(() => { void colorVersion.value; return agentName.value ? agentBorder(agentName.value) : 'rgba(var(--v-theme-secondary), 0.3)' })
+// Accent bar color: agentBg at 0.70 opacity — softer than the full-opaque agentFg, coherent with tab capsule design (T1769)
+const accentBarColor = computed(() => {
+  void colorVersion.value
+  if (!agentName.value) return 'rgb(var(--v-theme-secondary))'
+  const hex = agentBg(agentName.value)
+  const rgb = hexToRgb(hex)
+  return rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.70)` : hex
+})
+// MD3 on-color: dark text on light agent backgrounds, white on dark — ensures 4.5:1 contrast (T1500).
+const userBubbleTextColor = computed(() => getOnColor(accentFg.value))
+// On-color for text inside tool_use blocks (colored accentBg background) — T1544.
+const accentOnColor = computed(() => {
+  void colorVersion.value
+  const bg = accentBg.value
+  if (bg.startsWith('#')) return getOnColor(bg)
+  return isDark() ? '#FFFFFF' : '#1C1B1F'
+})
+// Text/dot color for agent accent on neutral dark surface — agentAccent() (lighten2 dark / darken1 light)
+// Use this instead of accentFg when agent color is displayed ON the surface, not on a badge bg (T1738)
+const accentText = computed(() => {
+  void colorVersion.value
+  return agentName.value ? agentAccent(agentName.value) : 'rgb(var(--v-theme-secondary))'
+})
 
 // Suppresses empty user bubbles from autonomous Claude reasoning (T679).
-// Also shows user events that contain image_ref blocks (T1718).
 const displayEvents = computed(() =>
   events.value.filter(event => {
     if (event.type !== 'user') return true
     if (!event.message) return false
-    const hasText = event.message.content.filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim().length > 0
-    const hasImages = event.message.content.some(b => b.type === 'image_ref')
-    return hasText || hasImages
+    return event.message.content.filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim().length > 0
   })
 )
+
+// Only show first system:init per session — subsequent inits (same session_id) are silent (T1458).
+const visibleInitIds = computed(() => {
+  const ids = new Set<number>()
+  let lastSessionId: string | undefined
+  for (const event of events.value) {
+    if (event.type === 'system' && event.subtype === 'init') {
+      if (event.session_id !== lastSessionId) {
+        if (event._id != null) ids.add(event._id)
+        lastSessionId = event.session_id ?? undefined
+      }
+    }
+  }
+  return ids
+})
 
 /**
  * Extract session/task context block from a launch prompt.
@@ -139,9 +230,15 @@ const sessionContextMap = computed(() => {
 
 // ── IPC handlers ──────────────────────────────────────────────────────────────
 
-async function handleSend(text: string): Promise<void> {
+async function handleSend(text: string, atts: { path: string; objectUrl: string }[] = []): Promise<void> {
   agentStopped.value = false
-  const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text }] } }
+  // Strip 📎 path lines for display — agent still receives the full text with paths (T1736)
+  const displayText = text.replace(/(\n)?📎 [^\n]+/g, '').trim()
+  const content: StreamContentBlock[] = [
+    ...(displayText ? [{ type: 'text' as const, text: displayText }] : []),
+    ...atts.map(a => ({ type: 'image_ref' as const, path: a.path, objectUrl: a.objectUrl })),
+  ]
+  const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content } }
   assignEventId(userEvent)
   events.value.push(userEvent)
   scrollToBottom(true)
@@ -247,74 +344,80 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base text-content-primary font-mono text-sm">
+  <div class="stream-view">
     <!-- Agent color accent header bar (T680) -->
-    <div v-if="agentName" class="h-0.5 w-full shrink-0" :style="{ background: accentFg }" />
+    <div v-if="agentName" class="stream-accent-bar" :style="{ background: accentBarColor }" />
 
     <!-- Messages scroll area -->
-    <div ref="scrollContainer" class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3">
+    <div ref="scrollContainer" class="stream-scroll pa-4 ga-3" :style="{ '--stream-accent-fg': accentText }">
       <div
         v-if="displayEvents.length === 0 && !isStreaming"
-        class="flex items-center justify-center h-full text-content-subtle text-xs"
+        class="stream-empty text-caption"
         data-testid="empty-state"
       >
         {{ t('stream.waitingMessages') }}
       </div>
 
       <template v-for="event in displayEvents" :key="event._id">
-        <!-- system:init -->
+        <!-- system:init — only first per session_id (T1458) -->
         <div
-          v-if="event.type === 'system' && event.subtype === 'init'"
-          class="text-content-subtle text-xs italic"
+          v-if="event.type === 'system' && event.subtype === 'init' && visibleInitIds.has(event._id!)"
+          class="block-system-init"
           data-testid="block-system-init"
         >
-          {{ t('stream.sessionStarted') }}
-          <span v-if="event.session_id" class="ml-1 font-mono">· {{ event.session_id.slice(0, 8) }}…</span>
-          <template v-if="sessionContextMap.get(event._id!)">
-            <button
-              class="ml-2 text-content-faint hover:text-content-muted transition-colors not-italic"
+          <div class="d-flex align-center ga-2">
+            <v-divider />
+            <span class="text-caption text-medium-emphasis text-no-wrap">
+              {{ t('stream.sessionStarted') }}<span v-if="event.session_id"> · {{ event.session_id.slice(0, 8) }}…</span>
+            </span>
+            <v-divider />
+            <v-btn
+              v-if="sessionContextMap.get(event._id!)"
+              variant="text"
+              size="x-small"
+              density="compact"
+              class="init-ctx-btn"
               @click="toggleCollapsed(`init-ctx-${event._id}`, true)"
-            >{{ (collapsed[`init-ctx-${event._id}`] ?? true) ? '▶ ' + t('stream.ctx') : '▼ ' + t('stream.ctx') }}</button>
-            <div
-              v-show="!(collapsed[`init-ctx-${event._id}`] ?? true)"
-              class="mt-1 ml-4 not-italic text-content-faint whitespace-pre-wrap font-mono text-xs"
-            >{{ sessionContextMap.get(event._id!) }}</div>
-          </template>
+            >{{ (collapsed[`init-ctx-${event._id}`] ?? true) ? '▶ ' + t('stream.ctx') : '▼ ' + t('stream.ctx') }}</v-btn>
+          </div>
+          <div
+            v-if="sessionContextMap.get(event._id!)"
+            v-show="!(collapsed[`init-ctx-${event._id}`] ?? true)"
+            class="init-ctx-body mt-1 ml-4"
+          >{{ sessionContextMap.get(event._id!) }}</div>
         </div>
 
         <!-- error:spawn / error:exit -->
         <div
           v-if="event.type === 'error:spawn' || event.type === 'error:exit'"
-          class="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg px-4 py-3 text-red-300 text-xs font-mono"
+          class="block-error ga-2 py-3 px-4"
           data-testid="block-error"
         >
-          <span class="shrink-0 text-red-400">⚠</span>
-          <div class="select-text cursor-text">
-            <span class="font-semibold text-red-400">{{ event.type }}</span>
-            <span class="ml-2 whitespace-pre-wrap">{{ event.error }}</span>
-            <pre v-if="event.stderr" class="mt-2 text-red-200 text-xs whitespace-pre-wrap">{{ event.stderr }}</pre>
+          <span class="error-icon">⚠</span>
+          <div class="error-body">
+            <span class="error-type">{{ event.type }}</span>
+            <span class="error-text ml-2">{{ event.error }}</span>
+            <pre v-if="event.stderr" class="error-stderr mt-2 text-caption">{{ event.stderr }}</pre>
           </div>
         </div>
 
         <!-- user bubble — right-aligned (T603) -->
         <div
           v-if="event.type === 'user' && event.message"
-          class="flex justify-end"
+          class="block-user"
           data-testid="block-user"
         >
           <div
-            class="bg-surface-secondary border rounded-lg px-4 py-3 max-w-[80%] whitespace-pre-wrap break-words text-sm text-content-primary leading-relaxed select-text cursor-text"
-            :style="{ borderColor: accentBorder }"
+            class="user-bubble stream-markdown-user py-3 px-4 text-body-2"
+            :style="{ background: accentFg, color: userBubbleTextColor }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
               <div v-if="block.type === 'text'" v-html="renderMarkdown(parsePromptContext(block.text ?? '').base)" />
               <img
                 v-else-if="block.type === 'image_ref' && block.objectUrl"
                 :src="block.objectUrl"
-                class="user-thumbnail"
+                class="user-bubble-img"
                 alt=""
-                data-testid="user-thumbnail"
-                @click="openLightbox(block.objectUrl!)"
               />
             </template>
           </div>
@@ -322,80 +425,90 @@ onUnmounted(() => {
 
         <!-- assistant blocks -->
         <template v-if="event.type === 'assistant' && event.message">
-          <template v-for="(block, bIdx) in event.message.content" :key="`${event._id}-${bIdx}`">
-            <!-- text block — Markdown + DOMPurify (T678), agent color bg (T720) -->
-            <div
-              v-if="block.type === 'text'"
-              class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed select-text cursor-text"
-              :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
-              data-testid="block-text"
-              v-html="block._html ?? ''"
-            />
+          <div class="block-assistant">
+            <template v-for="(block, bIdx) in event.message.content" :key="`${event._id}-${bIdx}`">
+              <!-- text block — Markdown + DOMPurify (T678) -->
+              <div
+                v-if="block.type === 'text'"
+                class="stream-markdown block-text py-3 px-4"
+                data-testid="block-text"
+                v-html="block._html ?? ''"
+              />
 
-            <!-- tool_use / tool_result — delegated to StreamToolBlock (T816) -->
-            <StreamToolBlock
-              v-else-if="block.type === 'tool_use' || block.type === 'tool_result'"
-              :block="block"
-              :event-id="event._id!"
-              :block-idx="bIdx"
-              :collapsed="collapsed"
-              :accent-fg="accentFg"
-              :accent-bg="accentBg"
-              :accent-border="accentBorder"
-              @toggle-collapsed="toggleCollapsed"
-            />
-          </template>
+              <!-- tool_use / tool_result — delegated to StreamToolBlock (T816) -->
+              <StreamToolBlock
+                v-else-if="block.type === 'tool_use' || block.type === 'tool_result'"
+                :block="block"
+                :event-id="event._id!"
+                :block-idx="bIdx"
+                :collapsed="collapsed"
+                :accent-fg="accentFg"
+                :accent-bg="accentBg"
+                :accent-border="accentBorder"
+                :accent-on-color="accentOnColor"
+                :accent-text="accentText"
+                @toggle-collapsed="toggleCollapsed"
+                @select-option="handleSelectOption"
+              />
+            </template>
+          </div>
         </template>
 
         <!-- result footer — cost / duration / turns -->
         <div
           v-if="event.type === 'result'"
-          class="flex flex-wrap gap-4 text-xs text-content-subtle border-t border-edge-subtle pt-2"
+          class="block-result d-flex flex-wrap ga-2 py-2"
           data-testid="block-result"
         >
-          <span v-if="event.num_turns !== undefined">{{ t('stream.turns', event.num_turns, { named: { n: event.num_turns } }) }}</span>
-          <span v-if="event.cost_usd !== undefined">${{ event.cost_usd.toFixed(4) }}</span>
-          <span v-if="event.duration_ms !== undefined">{{ (event.duration_ms / 1000).toFixed(1) }}s</span>
-          <span v-if="event.session_id" class="ml-auto font-mono text-content-faint">{{ event.session_id.slice(0, 8) }}…</span>
+          <v-chip v-if="event.num_turns !== undefined" size="x-small" variant="tonal">
+            {{ t('stream.turns', event.num_turns, { named: { n: event.num_turns } }) }}
+          </v-chip>
+          <v-chip v-if="event.cost_usd !== undefined" size="x-small" variant="tonal">
+            ${{ event.cost_usd.toFixed(4) }}
+          </v-chip>
+          <v-chip v-if="event.duration_ms !== undefined" size="x-small" variant="tonal">
+            {{ (event.duration_ms / 1000).toFixed(1) }}s
+          </v-chip>
+          <span v-if="event.session_id" class="result-session-id ml-auto text-caption">{{ event.session_id.slice(0, 8) }}…</span>
         </div>
 
         <!-- text block — plain text output from non-Claude CLIs (T1197) -->
-        <div
-          v-if="event.type === 'text'"
-          class="stream-markdown rounded-lg px-4 py-3 border border-l-4 leading-relaxed select-text cursor-text"
-          :style="{ backgroundColor: accentBg, borderColor: accentBorder, borderLeftColor: accentFg }"
-          data-testid="block-text-raw"
-          v-html="event._html ?? event.text ?? ''"
-        />
+        <div v-if="event.type === 'text'" class="block-assistant">
+          <div
+            class="stream-markdown block-text py-3 px-4"
+            data-testid="block-text-raw"
+            v-html="event._html ?? event.text ?? ''"
+          />
+        </div>
 
         <!-- error block — error events from non-Claude CLIs (T1197) -->
         <div
           v-if="event.type === 'error'"
-          class="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg px-4 py-3 text-red-300 text-xs font-mono"
+          class="block-error ga-2 py-3 px-4"
           data-testid="block-error-raw"
         >
-          <span class="shrink-0 text-red-400">⚠</span>
-          <span class="whitespace-pre-wrap select-text cursor-text">{{ event.text }}</span>
+          <span class="error-icon">⚠</span>
+          <span class="error-body-inline">{{ event.text }}</span>
         </div>
       </template>
 
       <!-- Streaming indicator — thinking preview (T731) or generic dots -->
       <div
         v-if="isStreaming"
-        class="flex items-center gap-2 text-xs min-w-0"
-        :style="{ color: accentFg }"
+        class="streaming-indicator ga-2 text-caption"
+        :style="{ color: accentText }"
         data-testid="streaming-indicator"
       >
-        <span class="inline-flex gap-0.5 shrink-0">
-          <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" :style="{ backgroundColor: accentFg }" />
-          <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" :style="{ backgroundColor: accentFg }" />
-          <span class="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" :style="{ backgroundColor: accentFg }" />
+        <span class="bounce-dots">
+          <span class="bounce-dot" :style="{ backgroundColor: accentText }" />
+          <span class="bounce-dot bounce-dot--d1" :style="{ backgroundColor: accentText }" />
+          <span class="bounce-dot bounce-dot--d2" :style="{ backgroundColor: accentText }" />
         </span>
-        <span v-if="activeThinkingText" class="flex items-center gap-1 min-w-0">
-          <span class="shrink-0 font-medium" data-testid="thinking-label">{{ t('stream.thinking') }}</span>
-          <span class="truncate italic opacity-75 text-content-muted" data-testid="thinking-preview">{{ activeThinkingText.slice(-120) }}</span>
+        <span v-if="activeThinkingText" class="thinking-text ga-1">
+          <span class="thinking-label" data-testid="thinking-label">{{ t('stream.thinking') }}</span>
+          <span class="thinking-preview" data-testid="thinking-preview">{{ activeThinkingText.slice(-120) }}</span>
         </span>
-        <span v-else class="opacity-75">{{ t('stream.streaming') }}</span>
+        <span v-else class="streaming-label">{{ t('stream.streaming') }}</span>
       </div>
     </div>
 
@@ -409,19 +522,13 @@ onUnmounted(() => {
       :agent-stopped="agentStopped"
       :session-id="sessionId"
       :accent-fg="accentFg"
+      :accent-text="accentText"
+      :accent-on-fg="userBubbleTextColor"
+      :pending-question="pendingQuestion ?? undefined"
+      :prefill-answer="prefillAnswer"
       @send="handleSend"
       @stop="handleStop"
     />
-
-    <!-- Lightbox dialog — fullscreen image preview on thumbnail click (T1718) -->
-    <v-dialog v-model="lightboxOpen" max-width="90vw" data-testid="lightbox-dialog">
-      <v-card>
-        <v-img :src="lightboxSrc" max-height="85vh" contain />
-        <v-card-actions class="justify-end">
-          <v-btn variant="text" @click="lightboxOpen = false">{{ t('common.close') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -529,15 +636,12 @@ onUnmounted(() => {
   user-select: text;
   cursor: text;
 }
-
-/* image thumbnail in user bubble — T1718 */
-.user-thumbnail {
-  display: block;
-  max-height: 160px;
-  max-width: 240px;
+/* T1736: inline image in user bubble */
+.user-bubble-img {
+  max-height: 200px;
+  max-width: 100%;
   border-radius: 8px;
-  cursor: pointer;
-  object-fit: contain;
+  display: block;
   margin-top: 4px;
 }
 

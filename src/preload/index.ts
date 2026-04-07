@@ -93,6 +93,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fsWriteFile: (filePath: string, content: string, allowedDir: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('fs:writeFile', filePath, content, allowedDir),
 
+  fsSaveImage: (base64: string, mediaType: string): Promise<{ success: true; path: string }> =>
+    ipcRenderer.invoke('fs:saveImage', base64, mediaType),
+
   // ── Window ─────────────────────────────────────────────────────────────────
 
   windowMinimize: (): Promise<void> => ipcRenderer.invoke('window-minimize'),
@@ -343,7 +346,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('tasks:qualityStats', dbPath, params),
 
   /** Scan project source files and return LOC stats per language. */
-  telemetryScan: (projectPath: string): Promise<{ languages: Array<{ name: string; color: string; files: number; lines: number; percent: number }>; totalFiles: number; totalLines: number; scannedAt: string }> =>
+  telemetryScan: (projectPath: string): Promise<{ languages: Array<{ name: string; files: number; lines: number; percent: number }>; totalFiles: number; totalLines: number; scannedAt: string }> =>
     ipcRenderer.invoke('telemetry:scan', projectPath),
 
   // Auto-updater (GitHub Releases — public repo)

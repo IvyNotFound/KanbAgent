@@ -1,23 +1,29 @@
 /** Types stream-json (ADR-009 §Types de messages JSONL). */
 
 export interface StreamContentBlock {
-  type: 'text' | 'tool_use' | 'tool_result' | 'thinking'
+  type: 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'image_ref'
   text?: string
   name?: string
   input?: Record<string, unknown>
   content?: string | Array<{ type: string; text?: string }>
   tool_use_id?: string
   is_error?: boolean
+  /** Local file path for image_ref blocks (T1717) */
+  path?: string
+  /** Blob URL for image_ref blocks — created via URL.createObjectURL (T1717) */
+  objectUrl?: string
   /** Pre-rendered HTML for text/tool_result blocks — computed once in flushEvents() (T791) */
   _html?: string
   /** Whether a tool_result block exceeds the collapse threshold — computed once in flushEvents() (T843) */
   _isLong?: boolean
   /** Line count of a tool_result block — computed once in flushEvents() (T843) */
   _lineCount?: number
+  /** Fallback question text for AskUserQuestion blocks when input.question is missing after IPC structured-clone (T1764) */
+  _question?: string
 }
 
 export interface StreamEvent {
-  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error' | 'error:spawn' | 'error:stderr' | 'error:exit'
+  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error' | 'error:spawn' | 'error:stderr' | 'error:exit' | 'ask_user'
   subtype?: string
   session_id?: string
   message?: {

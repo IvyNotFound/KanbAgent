@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, shallowMount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect } from 'vitest'
+import { shallowMount } from '@vue/test-utils'
 import AgentBadge from '@renderer/components/AgentBadge.vue'
 
 describe('AgentBadge', () => {
@@ -14,8 +14,7 @@ describe('AgentBadge', () => {
     const wrapper = shallowMount(AgentBadge, {
       props: { name: 'review-master' },
     })
-    const span = wrapper.find('span')
-    const style = span.attributes('style') || ''
+    const style = wrapper.attributes('style') || ''
     // Should have color, backgroundColor, borderColor in style
     expect(style).toContain('color')
     expect(style).toContain('background-color')
@@ -26,7 +25,7 @@ describe('AgentBadge', () => {
     const wrapper = shallowMount(AgentBadge, {
       props: { name: 'dev-front', active: true },
     })
-    const dot = wrapper.find('.w-1\\.5.h-1\\.5.rounded-full.bg-emerald-400')
+    const dot = wrapper.find('.activity-dot')
     expect(dot.exists()).toBe(true)
   })
 
@@ -34,7 +33,7 @@ describe('AgentBadge', () => {
     const wrapper = shallowMount(AgentBadge, {
       props: { name: 'dev-front' },
     })
-    const dot = wrapper.find('.bg-emerald-400')
+    const dot = wrapper.find('.activity-dot')
     expect(dot.exists()).toBe(false)
   })
 
@@ -42,6 +41,6 @@ describe('AgentBadge', () => {
     const wrapper = shallowMount(AgentBadge, {
       props: { name: 'arch' },
     })
-    expect(wrapper.find('span').attributes('title')).toBe('arch')
+    expect(wrapper.attributes('title')).toBe('arch')
   })
 })

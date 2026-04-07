@@ -28,33 +28,6 @@ describe('AgentBadge — snapshots', () => {
   })
 })
 
-// ── ToggleSwitch ──────────────────────────────────────────────────────────────
-
-import ToggleSwitch from '@renderer/components/ToggleSwitch.vue'
-
-describe('ToggleSwitch — snapshots', () => {
-  it('matches snapshot: off state', () => {
-    const wrapper = shallowMount(ToggleSwitch, {
-      props: { modelValue: false },
-    })
-    expect(wrapper.html()).toMatchSnapshot()
-  })
-
-  it('matches snapshot: on state', () => {
-    const wrapper = shallowMount(ToggleSwitch, {
-      props: { modelValue: true },
-    })
-    expect(wrapper.html()).toMatchSnapshot()
-  })
-
-  it('matches snapshot: disabled state', () => {
-    const wrapper = shallowMount(ToggleSwitch, {
-      props: { modelValue: false, disabled: true },
-    })
-    expect(wrapper.html()).toMatchSnapshot()
-  })
-})
-
 // ── StatusColumn ──────────────────────────────────────────────────────────────
 
 import StatusColumn from '@renderer/components/StatusColumn.vue'
@@ -96,7 +69,7 @@ describe('StatusColumn — snapshots', () => {
         title: 'Todo',
         statut: 'todo',
         tasks: [],
-        accentClass: 'bg-slate-400',
+        accentColor: '#94a3b8',
       },
       global: {
         plugins: [createTestingPinia({
@@ -117,7 +90,7 @@ describe('StatusColumn — snapshots', () => {
         title: 'Todo',
         statut: 'todo',
         tasks,
-        accentClass: 'bg-slate-400',
+        accentColor: '#94a3b8',
       },
       global: {
         plugins: [createTestingPinia({
@@ -135,7 +108,7 @@ describe('StatusColumn — snapshots', () => {
         title: 'In Progress',
         statut: 'in_progress',
         tasks,
-        accentClass: 'bg-cyan-400',
+        accentColor: '#22d3ee',
       },
       global: {
         plugins: [createTestingPinia({
@@ -305,7 +278,15 @@ describe('TitleBar — snapshots', () => {
 import ContextMenu from '@renderer/components/ContextMenu.vue'
 
 describe('ContextMenu — snapshots', () => {
-  const teleportStub = { Teleport: { template: '<div><slot /></div>' } }
+  const vuetifyStubs = {
+    VMenu: { template: '<div class="v-menu-stub"><slot /></div>' },
+    VList: { template: '<div class="v-list-stub"><slot /></div>' },
+    VListItem: {
+      template: '<button>{{ title }}</button>',
+      props: ['title'],
+    },
+    VDivider: { template: '<hr class="v-divider-stub" />' },
+  }
 
   it('matches snapshot: simple items (no separator)', () => {
     const wrapper = shallowMount(ContextMenu, {
@@ -317,7 +298,7 @@ describe('ContextMenu — snapshots', () => {
           { label: 'Delete', action: () => {} },
         ],
       },
-      global: { stubs: teleportStub },
+      global: { stubs: vuetifyStubs },
     })
     expect(wrapper.html()).toMatchSnapshot()
   })
@@ -334,7 +315,7 @@ describe('ContextMenu — snapshots', () => {
           { label: 'Delete', action: () => {} },
         ],
       },
-      global: { stubs: teleportStub },
+      global: { stubs: vuetifyStubs },
     })
     expect(wrapper.html()).toMatchSnapshot()
   })

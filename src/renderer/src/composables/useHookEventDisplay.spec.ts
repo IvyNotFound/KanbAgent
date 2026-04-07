@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   eventIcon,
   toolColor,
@@ -10,6 +10,7 @@ import {
   TOOL_COLOR,
   EVENT_COLOR,
 } from './useHookEventDisplay'
+import { setDarkMode } from '@renderer/utils/agentColor'
 
 describe('useHookEventDisplay — eventIcon() (T779)', () => {
   it('returns correct icon for PreToolUse', () => {
@@ -64,18 +65,21 @@ describe('useHookEventDisplay — EVENT_ICON hardcoded values (T1074)', () => {
 })
 
 describe('useHookEventDisplay — toolColor() (T779)', () => {
-  it('returns text-amber-400 for Bash', () => {
-    expect(toolColor('Bash')).toBe('text-amber-400')
+  beforeEach(() => { setDarkMode(true) })
+  afterEach(() => { setDarkMode(false) })
+
+  it('returns #fbbf24 for Bash', () => {
+    expect(toolColor('Bash')).toBe('#fbbf24')
   })
 
-  it('returns text-zinc-400 for unknown tool', () => {
-    expect(toolColor('UnknownTool')).toBe('text-zinc-400')
-    expect(toolColor('')).toBe('text-zinc-400')
+  it('returns #a1a1aa for unknown tool', () => {
+    expect(toolColor('UnknownTool')).toBe('#a1a1aa')
+    expect(toolColor('')).toBe('#a1a1aa')
   })
 
-  it('returns text-teal-400 for MCP tool (contains ":")', () => {
-    expect(toolColor('mcp:something')).toBe('text-teal-400')
-    expect(toolColor('server:tool_name')).toBe('text-teal-400')
+  it('returns #2dd4bf for MCP tool (contains ":")', () => {
+    expect(toolColor('mcp:something')).toBe('#2dd4bf')
+    expect(toolColor('server:tool_name')).toBe('#2dd4bf')
   })
 
   it('covers all built-in TOOL_COLOR keys', () => {
@@ -87,16 +91,16 @@ describe('useHookEventDisplay — toolColor() (T779)', () => {
 
 describe('useHookEventDisplay — TOOL_COLOR hardcoded values (T1074)', () => {
   it.each([
-    ['Bash', 'text-amber-400'],
-    ['Read', 'text-sky-400'],
-    ['Write', 'text-emerald-400'],
-    ['Edit', 'text-emerald-400'],
-    ['Glob', 'text-violet-400'],
-    ['Grep', 'text-violet-400'],
-    ['Agent', 'text-pink-400'],
-    ['WebFetch', 'text-blue-400'],
-    ['WebSearch', 'text-blue-400'],
-    ['TodoWrite', 'text-orange-400'],
+    ['Bash',      '#fbbf24'],
+    ['Read',      '#38bdf8'],
+    ['Write',     '#34d399'],
+    ['Edit',      '#34d399'],
+    ['Glob',      '#a78bfa'],
+    ['Grep',      '#a78bfa'],
+    ['Agent',     '#f472b6'],
+    ['WebFetch',  '#60a5fa'],
+    ['WebSearch', '#60a5fa'],
+    ['TodoWrite', '#fb923c'],
   ] as [string, string][])('TOOL_COLOR[%s] === "%s" (not empty)', (key, expected) => {
     expect(TOOL_COLOR[key]).toBe(expected)
     expect(TOOL_COLOR[key]).not.toBe('')
@@ -105,9 +109,9 @@ describe('useHookEventDisplay — TOOL_COLOR hardcoded values (T1074)', () => {
 
 describe('useHookEventDisplay — EVENT_COLOR hardcoded values (T1074)', () => {
   it.each([
-    ['PostToolUseFailure', 'text-red-400'],
-    ['PermissionRequest', 'text-amber-400'],
-    ['PreCompact', 'text-amber-300'],
+    ['PostToolUseFailure', '#f87171'],
+    ['PermissionRequest',  '#fbbf24'],
+    ['PreCompact',         '#fcd34d'],
   ] as [string, string][])('EVENT_COLOR[%s] === "%s" (not empty)', (key, expected) => {
     expect(EVENT_COLOR[key]).toBe(expected)
     expect(EVENT_COLOR[key]).not.toBe('')
@@ -128,29 +132,35 @@ describe('useHookEventDisplay — isMcpTool() (T779)', () => {
 })
 
 describe('useHookEventDisplay — mcpToolColor() (T1074)', () => {
-  it('returns text-teal-400 (not empty string)', () => {
-    expect(mcpToolColor()).toBe('text-teal-400')
+  beforeEach(() => { setDarkMode(true) })
+  afterEach(() => { setDarkMode(false) })
+
+  it('returns #2dd4bf in dark mode (not empty string)', () => {
+    expect(mcpToolColor()).toBe('#2dd4bf')
     expect(mcpToolColor()).not.toBe('')
   })
 })
 
 describe('useHookEventDisplay — eventColor() (T779)', () => {
-  it('returns text-red-400 for PostToolUseFailure', () => {
-    expect(eventColor('PostToolUseFailure')).toBe('text-red-400')
+  beforeEach(() => { setDarkMode(true) })
+  afterEach(() => { setDarkMode(false) })
+
+  it('returns #f87171 for PostToolUseFailure', () => {
+    expect(eventColor('PostToolUseFailure')).toBe('#f87171')
   })
 
-  it('returns text-amber-400 for PermissionRequest', () => {
-    expect(eventColor('PermissionRequest')).toBe('text-amber-400')
+  it('returns #fbbf24 for PermissionRequest', () => {
+    expect(eventColor('PermissionRequest')).toBe('#fbbf24')
   })
 
-  it('returns text-amber-300 for PreCompact', () => {
-    expect(eventColor('PreCompact')).toBe('text-amber-300')
+  it('returns #fcd34d for PreCompact', () => {
+    expect(eventColor('PreCompact')).toBe('#fcd34d')
   })
 
-  it('returns text-content-subtle fallback for unknown event', () => {
-    expect(eventColor('SessionStart')).toBe('text-content-subtle')
-    expect(eventColor('UnknownEvent')).toBe('text-content-subtle')
-    expect(eventColor('')).toBe('text-content-subtle')
+  it('returns var(--content-subtle) fallback for unknown event', () => {
+    expect(eventColor('SessionStart')).toBe('var(--content-subtle)')
+    expect(eventColor('UnknownEvent')).toBe('var(--content-subtle)')
+    expect(eventColor('')).toBe('var(--content-subtle)')
   })
 
   it('fallback is not empty string', () => {

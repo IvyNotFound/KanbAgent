@@ -29,8 +29,6 @@
     "prevPage": "Previous",
     "nextPage": "Next",
     "pageOf": "Page {page} / {total} ({count} tasks)",
-    "listView": "List view",
-    "treeView": "Tree view",
     "staleTasks": "{count} stale task | {count} stale tasks"
   },
   "taskCard": {
@@ -323,7 +321,6 @@
     "maximize": "Maximize"
   },
   "tabBar": {
-    "openWslTerminal": "Open WSL terminal",
     "closeTab": "Close",
     "unsaved": "Unsaved changes",
     "closeFileTitle": "Close file",
@@ -474,7 +471,6 @@
   },
   "quality": {
     "title": "Agent quality",
-    "all": "All",
     "refresh": "Refresh",
     "loading": "Loading…",
     "error": "Error: {msg}",
@@ -482,10 +478,9 @@
     "rejectionRate": "Project rejection rate",
     "noRejections": "No rejections detected",
     "heuristicNote": "Heuristic detection — reviewer comments containing \"reject\", \"return\" or \"todo\"",
-    "colTotal": "Total",
-    "colRejected": "Rejections",
-    "colRate": "Rate",
-    "colBar": "Bar"
+    "colAgent": "Agent",
+    "colRejections": "Rej./Total",
+    "colRate": "Rate"
   },
   "sessionActivityChart": {
     "title": "Session activity — last 14 days",
@@ -586,7 +581,10 @@
     "streaming": "In progress…",
     "waitingMessages": "Waiting for messages…",
     "turns": "{n} turn | {n} turns",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Send a message…",
+    "askQuestion": "Agent question",
+    "replyPlaceholder": "Reply to agent…"
   },
   "task": {
     "running": "Task in progress",
@@ -618,7 +616,8 @@
     "colSource": "Source",
     "colTests": "Tests",
     "colFiles": "Files",
-    "scannedAt": "Scanned at {date}"
+    "scannedAt": "Scanned at {date}",
+    "languageDetail": "Language detail"
   },
   "update": {
     "available": "Update {version} available",

@@ -18,7 +18,7 @@
 | [Agents — CRUD](#agents--crud) | `ipc-agent-crud.ts` | `rename-agent`, `update-agent-system-prompt`, `get-agent-system-prompt`, `update-agent-thinking-mode`, `update-agent`, `delete-agent`, `create-agent`, `agent:duplicate` |
 | [Agents — Perimetres](#agents--perimetres) | `ipc-agent-tasks.ts` | `close-agent-sessions`, `update-perimetre`, `build-agent-prompt`, `add-perimetre`, `task:setAssignees` |
 | [Agent Groups](#agent-groups) | `ipc-agent-groups.ts` | `agent-groups:list`, `agent-groups:create`, `agent-groups:rename`, `agent-groups:delete`, `agent-groups:setMember`, `agent-groups:reorder`, `agent-groups:setParent` |
-| [Sessions](#sessions) | `ipc-agent-sessions.ts` | `session:setConvId`, `session:collectTokens` |
+| [Sessions](#sessions) | `ipc-agent-sessions.ts` | `session:setConvId`, `session:collectTokens`, `session:parseTokens`, `session:syncAllTokens` |
 | [Session Stats](#session-stats) | `ipc-session-stats.ts` | `session:updateResult`, `sessions:statsCost`, `tasks:getArchived`, `tasks:qualityStats`, `tasks:updateStatus` |
 | [Tasks — Queries](#tasks--queries) | `ipc-agent-tasks-query.ts` | `task:getAssignees`, `search-tasks`, `task:getLinks` |
 | [Config / Settings](#config--settings) | `ipc-settings.ts` | `get-config-value`, `set-config-value`, `check-for-updates` |

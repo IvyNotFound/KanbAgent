@@ -125,6 +125,21 @@ export function attachStreamHandlers({
       return
     }
     pushStreamEvent(id, wcId, event)
+
+    // T1708: normalize Claude AskUserQuestion tool_use into a synthetic ask_user event.
+    // This allows non-Claude-aware consumers to detect pending questions via type === 'ask_user'
+    // without parsing the assistant message content structure.
+    if (adapter.cli === 'claude' && event.type === 'assistant' && event.message) {
+      const askBlock = event.message.content.find(
+        (b) => b.type === 'tool_use' && b.name === 'AskUserQuestion'
+      )
+      if (askBlock?.input) {
+        const question = (askBlock.input as Record<string, unknown>).question
+        if (typeof question === 'string') {
+          pushStreamEvent(id, wcId, { type: 'ask_user', text: question })
+        }
+      }
+    }
   })
 
   proc.on('error', (err) => {

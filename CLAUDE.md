@@ -16,7 +16,7 @@ MODE: solo · LANG_CONV: english · LANG_CODE: english · LANG_COMMIT: english �
 
 **KanbAgent** — Desktop interface Trello/Jira visualizing Claude agent tasks (SQLite). Electron, dark mode, no auth.
 
-Scopes: `front-vuejs` (`renderer/`, Vue 3 + TS + Tailwind, key files: `App.vue`, `vite.config.ts`) · `back-electron` (`main/`, Electron + Node + SQLite, key files: `index.ts`, `ipc.ts`)
+Scopes: `front-vuejs` (`renderer/`, Vue 3 + TS + Vuetify 3 (Material Design 3), key files: `App.vue`, `vite.config.ts`) · `back-electron` (`main/`, Electron + Node + SQLite, key files: `index.ts`, `ipc.ts`)
 
 Conventions: english (conv & code) · mandatory tests · Conventional Commits
 

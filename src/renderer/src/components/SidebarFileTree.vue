@@ -1,8 +1,10 @@
 <script setup lang="ts">
 /**
- * SidebarFileTree — arborescence de fichiers du projet dans la sidebar (T815).
+ * SidebarFileTree — arborescence de fichiers du projet dans la sidebar (T815/T1710).
+ * Utilise v-treeview (Vuetify MD3) avec lazy loading natif via load-children.
+ * Remplace l'ancienne approche flattenTree() + paddingLeft manuel.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
 import type { FileNode } from '@renderer/types'
@@ -14,116 +16,162 @@ const props = defineProps<{
 const { t } = useI18n()
 const tabsStore = useTabsStore()
 
+// Cast helper — v-treeview slots type item as unknown
+function asFile(item: unknown): FileNode { return item as FileNode }
+
+// Helper matching SidebarAgentSection pattern — calls the onToggleExpand handler array or fn
+function callToggle(handler: unknown, e: MouseEvent): void {
+  e.stopPropagation()
+  const h = handler as ((ev: MouseEvent) => void) | ((ev: MouseEvent) => void)[] | undefined
+  if (Array.isArray(h)) { h.forEach(fn => fn(e)) } else { h?.(e) }
+}
+
 const sidebarTree = ref<FileNode[]>([])
-const sidebarOpenDirs = ref(new Set<string>())
 const loadingSidebarTree = ref(false)
-const loadingDirs = ref(new Set<string>())
+
+// Tracks which dir paths have already been fetched — prevents re-fetch on re-expand
+const loadedDirs = new Set<string>()
+
+/** Prepare top-level or child nodes: dirs get children: [] to signal v-treeview expandability */
+function prepareNodes(nodes: FileNode[]): FileNode[] {
+  return nodes.map(node =>
+    node.isDir ? { ...node, children: node.children ?? [] } : node
+  )
+}
 
 async function loadSidebarTree(): Promise<void> {
   if (!props.projectPath) return
   loadingSidebarTree.value = true
   sidebarTree.value = []
-  sidebarOpenDirs.value = new Set()
+  loadedDirs.clear()
   try {
     const nodes = (await window.electronAPI.fsListDir(props.projectPath, props.projectPath)) as FileNode[]
-    sidebarTree.value = nodes
+    sidebarTree.value = prepareNodes(nodes)
   } finally {
     loadingSidebarTree.value = false
   }
 }
 
-async function toggleSidebarDir(path: string, node: FileNode): Promise<void> {
-  if (loadingDirs.value.has(path)) return
-  const next = new Set(sidebarOpenDirs.value)
-  if (next.has(path)) {
-    next.delete(path)
-    sidebarOpenDirs.value = next
-  } else {
-    if (node.children === undefined && props.projectPath) {
-      const loading = new Set(loadingDirs.value)
-      loading.add(path)
-      loadingDirs.value = loading
-      try {
-        const children = await window.electronAPI.fsListDir(node.path, props.projectPath)
-        node.children = children as FileNode[]
-      } finally {
-        const loading2 = new Set(loadingDirs.value)
-        loading2.delete(path)
-        loadingDirs.value = loading2
-      }
-    }
-    next.add(path)
-    sidebarOpenDirs.value = next
-  }
+/**
+ * loadChildren — appelé par v-treeview quand children.length === 0 (premier expand d'un dossier).
+ * Mute node.children avec les enfants fetched via IPC. loadedDirs évite le double-fetch.
+ */
+async function loadChildren(node: unknown): Promise<void> {
+  const fileNode = node as FileNode
+  if (!props.projectPath || loadedDirs.has(fileNode.path)) return
+  loadedDirs.add(fileNode.path)
+  const children = (await window.electronAPI.fsListDir(fileNode.path, props.projectPath)) as FileNode[]
+  fileNode.children = prepareNodes(children)
 }
-
-function isDirOpen(path: string): boolean {
-  return sidebarOpenDirs.value.has(path)
-}
-
-function flattenTree(
-  nodes: FileNode[],
-  depth = 0,
-  result: Array<{ node: FileNode; depth: number }> = []
-): Array<{ node: FileNode; depth: number }> {
-  for (const node of nodes) {
-    result.push({ node, depth })
-    if (node.isDir && isDirOpen(node.path) && node.children?.length) {
-      flattenTree(node.children, depth + 1, result)
-    }
-  }
-  return result
-}
-
-const flatSidebarTree = computed(() => flattenTree(sidebarTree.value))
 
 onMounted(() => loadSidebarTree())
 
-defineExpose({ loadSidebarTree })
+defineExpose({ loadSidebarTree, loadChildren, sidebarTree })
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto min-h-0 py-1 min-w-0">
-    <div v-if="loadingSidebarTree" class="flex items-center justify-center py-6">
-      <span class="text-xs text-content-faint animate-pulse">{{ t('common.loading') }}</span>
-    </div>
-    <div v-else-if="!projectPath" class="px-4 py-3 text-xs text-content-faint">
+  <div class="file-tree-content">
+    <v-progress-linear v-if="loadingSidebarTree" indeterminate color="primary" />
+    <div v-else-if="!projectPath" class="empty-state text-body-2">
       {{ t('common.noProject') }}
     </div>
-    <div v-else-if="flatSidebarTree.length === 0 && !loadingSidebarTree" class="px-4 py-3 text-xs text-content-faint">
+    <div v-else-if="sidebarTree.length === 0" class="empty-state text-body-2">
       {{ t('sidebar.emptyFolder') }}
     </div>
-    <button
-      v-for="item in flatSidebarTree"
-      :key="item.node.path"
-      class="w-full flex items-center gap-2 py-1 text-left text-sm transition-colors rounded pr-2 group"
-      :class="item.node.isDir ? 'hover:bg-surface-secondary/70' : 'hover:bg-surface-secondary/50'"
-      :style="{ paddingLeft: `${6 + item.depth * 12}px` }"
-      @click="item.node.isDir ? toggleSidebarDir(item.node.path, item.node) : tabsStore.openFile(item.node.path, item.node.name)"
+    <!-- v-treeview MD3 — remplace flattenTree() + v-list + paddingLeft manuel (T1710) -->
+    <v-treeview
+      v-else
+      :items="sidebarTree"
+      item-value="path"
+      item-children="children"
+      :load-children="loadChildren"
+      open-strategy="multiple"
+      density="compact"
+      bg-color="transparent"
+      class="pa-0"
     >
-      <!-- Icône dossier ouvert/fermé ou fichier -->
-      <svg v-if="item.node.isDir && isDirOpen(item.node.path)" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 shrink-0 text-amber-400">
-        <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2H6a1 1 0 0 1 .8.4L7.5 3.5H13.5A1.5 1.5 0 0 1 15 5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12V3.5z"/>
-      </svg>
-      <svg v-else-if="item.node.isDir" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 shrink-0 text-amber-500/70">
-        <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
-      </svg>
-      <svg v-else viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 shrink-0 text-content-subtle group-hover:text-content-muted">
-        <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5.5 1.5v2a1 1 0 0 0 1 1h2L9.5 1.5z"/>
-      </svg>
-      <!-- Nom -->
-      <span
-        class="truncate font-mono"
-        :class="item.node.isDir
-          ? 'text-content-secondary font-medium group-hover:text-content-primary'
-          : 'text-content-muted group-hover:text-content-secondary'"
-      >{{ item.node.name }}</span>
-    </button>
+      <!-- Dossier — icône folder-open/folder selon état, click toggle via onToggleExpand -->
+      <template #header="{ props: itemProps, item, loading }">
+        <v-list-item
+          :title="undefined"
+          density="compact"
+          rounded="lg"
+          class="dir-item"
+          @click="callToggle(itemProps.onToggleExpand, $event)"
+        >
+          <div class="tree-row">
+            <v-icon
+              size="14"
+              :class="itemProps.ariaExpanded ? 'tree-icon tree-icon--open' : 'tree-icon tree-icon--closed'"
+            >
+              {{ itemProps.ariaExpanded ? 'mdi-folder-open' : 'mdi-folder' }}
+            </v-icon>
+            <span class="tree-name tree-name--dir text-body-2">{{ asFile(item).name }}</span>
+            <v-progress-circular v-if="loading" indeterminate :size="10" :width="1" color="primary" />
+          </div>
+        </v-list-item>
+      </template>
+
+      <!-- Fichier feuille — click ouvre l'onglet correspondant -->
+      <template #item="{ item }">
+        <v-list-item
+          density="compact"
+          rounded="lg"
+          class="file-item"
+          @click="tabsStore.openFile(asFile(item).path, asFile(item).name)"
+        >
+          <div class="tree-row">
+            <v-icon class="tree-icon tree-icon--file" size="14">mdi-file-outline</v-icon>
+            <span class="tree-name tree-name--file text-body-2">{{ asFile(item).name }}</span>
+          </div>
+        </v-list-item>
+      </template>
+    </v-treeview>
   </div>
-  <div class="px-4 py-2 border-t border-edge-subtle shrink-0 flex items-center justify-between">
-    <button
-      class="text-xs text-content-subtle hover:text-content-tertiary transition-colors"
-      @click="loadSidebarTree"
-    >↺ {{ t('common.refresh') }}</button>
+  <v-divider />
+  <div class="d-flex align-center px-4 py-2">
+    <v-btn variant="text" size="small" color="primary" prepend-icon="mdi-refresh" @click="loadSidebarTree">{{ t('common.refresh') }}</v-btn>
   </div>
 </template>
+
+<style scoped>
+.file-tree-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 4px 0;
+  min-width: 0;
+}
+.empty-state {
+  padding: 12px 16px;
+  color: rgba(var(--v-theme-on-surface), 0.38);
+}
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0;
+}
+.tree-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
+}
+.tree-icon--open { color: rgb(var(--v-theme-primary)); }
+.tree-icon--closed { color: rgba(var(--v-theme-primary), 0.70); }
+.tree-icon--file { color: rgba(var(--v-theme-on-surface), 0.60); }
+.tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
+}
+.tree-name--dir {
+  color: rgba(var(--v-theme-on-surface), 0.87);
+  font-weight: 500;
+}
+.tree-name--file { color: rgba(var(--v-theme-on-surface), 0.70); }
+</style>

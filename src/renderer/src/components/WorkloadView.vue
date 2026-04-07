@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentAccent } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -46,6 +47,12 @@ const rows = computed<WorkloadRow[]>(() => {
 const maxEffort = computed(() =>
   rows.value.reduce((max, r) => Math.max(max, r.totalEffort), 1)
 )
+
+const loading = ref(false)
+async function refresh(): Promise<void> {
+  loading.value = true
+  try { await store.refresh() } finally { loading.value = false }
+}
 </script>
 
 <template>
@@ -53,7 +60,7 @@ const maxEffort = computed(() =>
     <!-- Header -->
     <div class="wl-header">
       <h2 class="wl-title text-body-2 font-weight-medium">{{ t('workload.title') }}</h2>
-      <v-btn variant="text" size="small" class="wl-refresh-btn" @click="store.refresh()">{{ t('common.refresh') }}</v-btn>
+      <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
     </div>
 
     <!-- Loading -->
@@ -83,9 +90,9 @@ const maxEffort = computed(() =>
         :key="row.agentId"
         class="wl-cols wl-cols-row"
       >
-        <span class="wl-agent-name text-caption font-mono" :style="{ color: agentAccent(row.agentName) }">{{ row.agentName }}</span>
-        <span class="wl-num wl-right text-caption font-mono">{{ row.taskCount }}</span>
-        <span class="wl-num wl-right text-caption font-mono">{{ row.totalEffort }}</span>
+        <AgentBadge :name="row.agentName" />
+        <span class="wl-num wl-right">{{ row.taskCount }}</span>
+        <span class="wl-num wl-right">{{ row.totalEffort }}</span>
         <div class="wl-bar-bg">
           <div
             class="wl-bar-fill"
@@ -124,11 +131,6 @@ const maxEffort = computed(() =>
   border-bottom: 1px solid var(--edge-subtle);
 }
 .wl-title { color: var(--content-secondary); }
-.wl-refresh-btn {
-  color: var(--content-subtle) !important;
-  transition: color var(--md-duration-short3) var(--md-easing-standard);
-}
-.wl-refresh-btn:hover { color: var(--content-secondary) !important; }
 .wl-state-center { display: flex; align-items: center; justify-content: center; padding: 32px; }
 .wl-loading {}
 .wl-empty {}
@@ -142,6 +144,8 @@ const maxEffort = computed(() =>
   align-items: center;
 }
 .wl-cols-head {
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--content-faint);
   padding-bottom: 4px;
   border-bottom: 1px solid var(--edge-subtle);
@@ -149,14 +153,10 @@ const maxEffort = computed(() =>
 }
 .wl-cols-row { }
 .wl-right { text-align: right; }
-.wl-agent-name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .wl-num {
+  font-size: 12px;
   color: var(--content-tertiary);
+  font-family: ui-monospace, monospace;
 }
 .wl-bar-bg {
   height: 8px;

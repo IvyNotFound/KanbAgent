@@ -62,7 +62,7 @@ describe('TaskCard', () => {
       props: { task: makeTask({ effort: 1 }) },
       global: { plugins: [i18n] },
     })
-    const badges = wrapper.findAll('span').filter(s => s.text() === 'S')
+    const badges = wrapper.findAll('v-chip').filter(s => s.text() === 'S')
     expect(badges.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -71,7 +71,7 @@ describe('TaskCard', () => {
       props: { task: makeTask({ effort: 2 }) },
       global: { plugins: [i18n] },
     })
-    const badges = wrapper.findAll('span').filter(s => s.text() === 'M')
+    const badges = wrapper.findAll('v-chip').filter(s => s.text() === 'M')
     expect(badges.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -80,7 +80,7 @@ describe('TaskCard', () => {
       props: { task: makeTask({ effort: 3 }) },
       global: { plugins: [i18n] },
     })
-    const badges = wrapper.findAll('span').filter(s => s.text() === 'L')
+    const badges = wrapper.findAll('v-chip').filter(s => s.text() === 'L')
     expect(badges.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -98,7 +98,7 @@ describe('TaskCard', () => {
       global: { plugins: [i18n] },
     })
     // Has "!" but not "!!"
-    const badges = wrapper.findAll('span').filter(s => s.text().trim() === '!')
+    const badges = wrapper.findAll('v-chip').filter(s => s.text().trim() === '!')
     expect(badges.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -140,7 +140,7 @@ describe('TaskCard', () => {
       global: { plugins: [i18n] },
     })
     const labels = ['S', 'M', 'L']
-    const badges = wrapper.findAll('span').filter(s => labels.includes(s.text().trim()))
+    const badges = wrapper.findAll('v-chip').filter(s => labels.includes(s.text().trim()))
     expect(badges.length).toBe(0)
   })
 
@@ -243,7 +243,7 @@ describe('TaskCard — multi-agents', () => {
     await flushPromises()
 
     // No avatars rendered — AgentBadge fallback is shown
-    const avatarDivs = wrapper.findAll('div.rounded-full')
+    const avatarDivs = wrapper.findAll('div.avatar')
     expect(avatarDivs.length).toBe(0)
     const badge = wrapper.findComponent({ name: 'AgentBadge' })
     expect(badge.exists()).toBe(true)
@@ -266,9 +266,9 @@ describe('TaskCard — multi-agents', () => {
     })
     await nextTick()
 
-    const avatarDivs = wrapper.findAll('div.rounded-full')
+    const avatarDivs = wrapper.findAll('v-avatar')
     expect(avatarDivs.length).toBe(2)
-    const overflowBadge = wrapper.findAll('div.rounded-full').find(d => d.text().startsWith('+'))
+    const overflowBadge = wrapper.findAll('v-chip').find(d => d.text().startsWith('+'))
     expect(overflowBadge).toBeUndefined()
   })
 
@@ -290,9 +290,9 @@ describe('TaskCard — multi-agents', () => {
     })
     await nextTick()
 
-    const allRounded = wrapper.findAll('div.rounded-full')
+    const allRounded = wrapper.findAll('v-avatar')
     expect(allRounded.length).toBe(3)
-    const overflowBadge = allRounded.find(d => d.text().startsWith('+'))
+    const overflowBadge = wrapper.findAll('v-chip').find(d => d.text().startsWith('+'))
     expect(overflowBadge).toBeUndefined()
   })
 
@@ -315,9 +315,9 @@ describe('TaskCard — multi-agents', () => {
     })
     await nextTick()
 
-    const allRounded = wrapper.findAll('div.rounded-full')
-    expect(allRounded.length).toBe(4)
-    const overflowBadge = allRounded.find(d => d.text().trim() === '+1')
+    const allRounded = wrapper.findAll('v-avatar')
+    expect(allRounded.length).toBe(3)
+    const overflowBadge = wrapper.findAll('v-chip').find(d => d.text().trim() === '+1')
     expect(overflowBadge).toBeDefined()
   })
 })

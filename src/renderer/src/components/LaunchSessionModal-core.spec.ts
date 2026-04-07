@@ -57,9 +57,9 @@ describe('LaunchSessionModal', () => {
       },
     })
     // Before flushPromises, loading is true — launch button should be disabled
-    const buttons = wrapper.findAll('button')
-    const disabledBtns = buttons.filter(b => b.attributes('disabled') !== undefined)
-    expect(disabledBtns.length).toBeGreaterThanOrEqual(1)
+    const launchBtn = wrapper.find('[data-testid="btn-launch"]')
+    expect(launchBtn.exists()).toBe(true)
+    expect(launchBtn.attributes('disabled')).toBeDefined()
   })
 
   it('renders instance list when Claude instances are found', async () => {
@@ -94,12 +94,12 @@ describe('LaunchSessionModal', () => {
     })
     await flushPromises()
 
-    const backdrop = wrapper.find('.fixed.inset-0')
+    const backdrop = wrapper.find('[data-testid="launch-modal-backdrop"]')
     await backdrop.trigger('click')
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
-  it('emits close when close button (✕) is clicked', async () => {
+  it('emits close when close button is clicked', async () => {
     const wrapper = shallowMount(LaunchSessionModal, {
       props: { agent: mockAgent as never },
       global: {
@@ -111,9 +111,9 @@ describe('LaunchSessionModal', () => {
     })
     await flushPromises()
 
-    const closeBtn = wrapper.findAll('button').find(b => b.text().trim() === '✕')
-    expect(closeBtn).toBeDefined()
-    await closeBtn!.trigger('click')
+    const closeBtn = wrapper.find('[data-testid="btn-close"]')
+    expect(closeBtn.exists()).toBe(true)
+    await closeBtn.trigger('click')
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
@@ -141,13 +141,9 @@ describe('LaunchSessionModal', () => {
     const { useTabsStore } = await import('@renderer/stores/tabs')
     const tabsStore = useTabsStore()
 
-    // Find the launch button by text (i18n fr: "Lancer")
-    const launchBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('lancer') || text.includes('launch')
-    })
-    expect(launchBtn).toBeDefined()
-    await launchBtn!.trigger('click')
+    const launchBtn = wrapper.find('[data-testid="btn-launch"]')
+    expect(launchBtn.exists()).toBe(true)
+    await launchBtn.trigger('click')
     await flushPromises()
     expect(tabsStore.addTerminal).toHaveBeenCalled()
   })
@@ -300,12 +296,10 @@ describe('LaunchSessionModal — auto-select cli:distro (T1090)', () => {
     await flushPromises()
 
     // The launch button should not be disabled (an instance was selected)
-    const launchBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('lancer') || text.includes('launch')
-    })
-    expect(launchBtn).toBeDefined()
-    expect(launchBtn!.attributes('disabled')).toBeUndefined()
+    const launchBtn = wrapper.find('[data-testid="btn-launch"]')
+    expect(launchBtn.exists()).toBe(true)
+    // Vuetify renders :disabled="false" as disabled="false" on the custom element — check it's not 'true'
+    expect(launchBtn.attributes('disabled')).not.toBe('true')
   })
 
   it('falls back to isDefault instance when stored key has no match', async () => {
@@ -330,11 +324,8 @@ describe('LaunchSessionModal — auto-select cli:distro (T1090)', () => {
     await flushPromises()
 
     // Falls back to isDefault → Ubuntu — launch button should be enabled
-    const launchBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('lancer') || text.includes('launch')
-    })
-    expect(launchBtn!.attributes('disabled')).toBeUndefined()
+    const launchBtn = wrapper.find('[data-testid="btn-launch"]')
+    expect(launchBtn.attributes('disabled')).not.toBe('true')
   })
 
   it('backward compat: legacy distro-only key still selects by distro', async () => {
@@ -359,10 +350,7 @@ describe('LaunchSessionModal — auto-select cli:distro (T1090)', () => {
     await flushPromises()
 
     // Backward compat: finds Ubuntu regardless of cli prefix
-    const launchBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('lancer') || text.includes('launch')
-    })
-    expect(launchBtn!.attributes('disabled')).toBeUndefined()
+    const launchBtn = wrapper.find('[data-testid="btn-launch"]')
+    expect(launchBtn.attributes('disabled')).not.toBe('true')
   })
 })

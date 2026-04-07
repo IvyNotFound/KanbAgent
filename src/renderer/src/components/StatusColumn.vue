@@ -3,16 +3,12 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Task } from '@renderer/types'
 import TaskCard from './TaskCard.vue'
-import TaskTreeNode from './TaskTreeNode.vue'
-import { buildTree } from '@renderer/utils/taskTree'
 
 const props = defineProps<{
   title: string
   statut: string
   tasks: Task[]
-  accentClass: string
-  /** Whether the tree view is active. Controlled externally so all columns share the same mode. */
-  treeMode?: boolean
+  accentColor: string
 }>()
 
 const emit = defineEmits<{
@@ -23,8 +19,6 @@ const { t } = useI18n()
 
 const isDragOver = ref(false)
 const isDropTarget = computed(() => props.statut === 'in_progress')
-
-const treeRoots = computed(() => props.treeMode ? buildTree(props.tasks) : [])
 
 function onDragOver(e: DragEvent): void {
   if (!isDropTarget.value) return
@@ -50,30 +44,97 @@ function onDrop(e: DragEvent): void {
 
 <template>
   <div
-    :class="[
-      'flex flex-col flex-1 min-w-0 bg-surface-primary/50 rounded-xl border transition-colors',
-      isDragOver ? 'border-emerald-500/60 bg-emerald-500/5' : 'border-edge-subtle'
-    ]"
+    :class="['column-wrap', { 'drag-over': isDragOver }]"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
     @drop="onDrop"
   >
-    <div class="flex items-center justify-between px-3 py-2.5 border-b border-edge-subtle">
-      <div class="flex items-center gap-2">
-        <div :class="['w-2 h-2 rounded-full', accentClass]"></div>
-        <span class="text-xs font-semibold text-content-tertiary uppercase tracking-wider">{{ title }}</span>
+    <div class="column-header">
+      <div class="column-title-row ga-2">
+        <div class="column-accent" :style="{ backgroundColor: accentColor }"></div>
+        <span class="column-title text-caption">{{ title }}</span>
       </div>
-      <span class="text-xs text-content-subtle bg-surface-secondary px-1.5 py-0.5 rounded">{{ tasks.length }}</span>
+      <span class="column-count text-caption">{{ tasks.length }}</span>
     </div>
-    <!-- List mode -->
-    <div v-if="!treeMode" class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0" style="contain: content;">
+    <div class="column-body pa-2 ga-2">
       <TaskCard v-for="task in tasks" :key="task.id" :task="task" />
-      <div v-if="tasks.length === 0" class="text-xs text-content-faint text-center py-8">{{ t('statusColumn.noTasks') }}</div>
-    </div>
-    <!-- Tree mode -->
-    <div v-else class="flex-1 overflow-y-auto p-2 min-h-0 flex flex-col gap-0.5" style="contain: content;">
-      <TaskTreeNode v-for="root in treeRoots" :key="root.id" :node="root" />
-      <div v-if="treeRoots.length === 0" class="text-xs text-content-faint text-center py-8">{{ t('statusColumn.noTasks') }}</div>
+      <div v-if="tasks.length === 0" class="column-empty py-8 text-caption">{{ t('statusColumn.noTasks') }}</div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.column-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background-color: var(--surface-primary);
+  border-radius: var(--shape-md);
+  border: 1px solid var(--edge-subtle);
+  position: relative;
+  transition: border-color var(--md-duration-short3) var(--md-easing-standard);
+}
+/* MD3 state layer — drag-over overlay via pseudo-element */
+.column-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgba(var(--v-theme-secondary), 0);
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
+  pointer-events: none;
+  z-index: 0;
+}
+.column-wrap.drag-over::before {
+  background-color: rgba(var(--v-theme-secondary), var(--md-state-hover));
+}
+.column-wrap.drag-over {
+  border-color: rgba(var(--v-theme-secondary), 0.6);
+}
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.column-title-row {
+  display: flex;
+  align-items: center;
+}
+.column-accent {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.column-title {
+  font-weight: 600;
+  color: var(--content-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.column-count {
+  color: var(--content-subtle);
+  background-color: var(--surface-secondary);
+  padding: 2px 6px;
+  border-radius: var(--shape-xs);
+}
+.column-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.column-empty {
+  color: var(--content-faint);
+  text-align: center;
+}
+</style>

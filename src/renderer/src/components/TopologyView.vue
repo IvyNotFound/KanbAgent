@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { agentAccent, agentBorder } from '@renderer/utils/agentColor'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -75,114 +75,195 @@ function onAgentClick(row: TopologyRow): void {
   store.selectedAgentId = row.id
   tabsStore.setActive('backlog')
 }
+
+const loading = ref(false)
+async function refresh(): Promise<void> {
+  loading.value = true
+  try { await store.refresh() } finally { loading.value = false }
+}
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base overflow-hidden">
-    <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle">
-      <h2 class="text-xl font-semibold text-content-primary">{{ t('topology.title') }}</h2>
-      <button
-        class="text-xs text-content-subtle hover:text-content-secondary transition-colors"
-        @click="store.refresh()"
-      >{{ t('common.refresh') }}</button>
+  <div class="tp-view">
+    <!-- Fixed header outside card -->
+    <div class="tp-header">
+      <h2 class="text-h6 font-weight-medium tp-title">{{ t('topology.title') }}</h2>
+      <div class="ml-auto">
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="refresh" />
+      </div>
     </div>
+    <!-- Body wrapper -->
+    <div class="tp-body-wrapper">
+    <v-card elevation="0" class="section-card">
+      <!-- Body -->
+      <div class="tp-body">
+        <!-- Loading -->
+        <div v-if="store.loading && rows.length === 0" class="tp-state-center">
+          <p class="tp-loading text-body-2">{{ t('common.loading') }}</p>
+        </div>
 
-    <!-- Loading -->
-    <div v-if="store.loading && rows.length === 0" class="flex items-center justify-center flex-1 py-12">
-      <p class="text-sm text-content-faint animate-pulse">{{ t('common.loading') }}</p>
-    </div>
+        <!-- Empty -->
+        <div v-else-if="!store.loading && rows.length === 0" class="tp-state-center">
+          <p class="tp-empty text-body-2">{{ t('topology.noAgents') }}</p>
+        </div>
 
-    <!-- Empty -->
-    <div v-else-if="!store.loading && rows.length === 0" class="flex items-center justify-center flex-1 py-12">
-      <p class="text-sm text-content-faint italic">{{ t('topology.noAgents') }}</p>
-    </div>
-
-    <!-- Columns by perimeter -->
-    <div v-else class="flex-1 min-h-0 overflow-y-auto">
-      <div class="flex gap-4 p-4 min-h-full">
-        <div
-          v-for="[perimetre, perimAgents] in grouped"
-          :key="perimetre"
-          class="flex flex-col flex-1 min-w-[180px] max-w-xs"
-        >
-          <!-- Column header -->
-          <div class="mb-3 flex items-center gap-2">
-            <span
-              v-if="perimetre !== '__global__'"
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono border"
-              :style="{ color: agentFg(perimetre), backgroundColor: agentBg(perimetre), borderColor: agentBorder(perimetre) }"
-            >{{ perimetre }}</span>
-            <span
-              v-else
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono border text-content-subtle bg-surface-secondary border-edge-default"
-            >{{ t('topology.global') }}</span>
-            <span class="text-[10px] text-content-faint font-mono">{{ perimAgents.length }}</span>
-          </div>
-
-          <!-- Agent cards -->
-          <div class="flex flex-col gap-2">
-            <button
-              v-for="agent in perimAgents"
-              :key="agent.id"
-              class="w-full text-left rounded-lg border px-3 py-2.5 transition-colors hover:border-edge-default group"
-              :class="[
-                agentStatus(agent) === 'active'
-                  ? 'bg-emerald-500/5 border-emerald-500/30 hover:bg-emerald-500/10'
-                  : agentStatus(agent) === 'blocked'
-                    ? 'bg-orange-500/5 border-orange-500/30 hover:bg-orange-500/10'
-                    : 'bg-surface-secondary border-edge-subtle'
-              ]"
-              :title="t('topology.filterByAgent', { name: agent.name })"
-              @click="onAgentClick(agent)"
+        <!-- Columns by perimeter -->
+        <div v-else class="tp-scroll">
+          <div class="tp-columns">
+            <div
+              v-for="[perimetre, perimAgents] in grouped"
+              :key="perimetre"
+              class="tp-column"
             >
-              <!-- Agent name + status badge -->
-              <div class="flex items-center justify-between gap-2 mb-1">
-                <span
-                  class="text-xs font-mono font-semibold truncate"
-                  :style="{ color: agentFg(agent.name) }"
-                >{{ agent.name }}</span>
-                <!-- Status badge -->
-                <span
-                  class="shrink-0 inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
-                  :class="[
-                    agentStatus(agent) === 'active'
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : agentStatus(agent) === 'blocked'
-                        ? 'bg-orange-500/20 text-orange-400'
-                        : 'bg-surface-tertiary text-content-faint'
-                  ]"
-                >
-                  <span
-                    class="w-1.5 h-1.5 rounded-full"
-                    :class="[
-                      agentStatus(agent) === 'active' ? 'bg-emerald-400' :
-                      agentStatus(agent) === 'blocked' ? 'bg-orange-400' : 'bg-content-faint'
-                    ]"
-                  ></span>
-                  {{ t(`topology.status.${agentStatus(agent)}`) }}
-                </span>
+              <!-- Column header -->
+              <div class="tp-col-header">
+                <v-chip
+                  v-if="perimetre !== '__global__'"
+                  size="small"
+                  variant="outlined"
+                  :style="{ color: agentAccent(perimetre), borderColor: agentBorder(perimetre) }"
+                  class="tp-scope-chip"
+                >{{ perimetre }}</v-chip>
+                <v-chip
+                  v-else
+                  size="small"
+                  variant="outlined"
+                  class="tp-scope-chip tp-scope-chip--global"
+                >{{ t('topology.global') }}</v-chip>
+                <span class="tp-col-count">{{ perimAgents.length }}</span>
               </div>
 
-              <!-- Agent type -->
-              <p class="text-[10px] text-content-faint font-mono truncate">{{ agent.type }}</p>
-
-              <!-- Current task (if active) -->
-              <p
-                v-if="agent.current_task"
-                class="mt-1 text-[10px] text-content-subtle truncate"
-                :title="agent.current_task"
-              >{{ agent.current_task }}</p>
-
-              <!-- Session tokens (if active) -->
-              <p
-                v-if="agent.session_tokens != null && agent.session_tokens > 0"
-                class="mt-0.5 text-[10px] text-content-faint font-mono tabular-nums"
-              >{{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}</p>
-            </button>
+              <!-- Agent cards -->
+              <div class="tp-cards">
+                <v-card
+                  v-for="agent in perimAgents"
+                  :key="agent.id"
+                  :variant="agentStatus(agent) === 'idle' ? 'outlined' : 'tonal'"
+                  :color="agentStatus(agent) === 'active' ? 'primary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
+                  class="tp-card"
+                  @click="onAgentClick(agent)"
+                >
+                  <div class="tp-card-inner" :title="t('topology.filterByAgent', { name: agent.name })">
+                    <div class="tp-card-top">
+                      <span class="tp-agent-name" :style="{ color: agentAccent(agent.name) }">{{ agent.name }}</span>
+                      <v-chip
+                        :color="agentStatus(agent) === 'active' ? 'primary' : agentStatus(agent) === 'blocked' ? 'warning' : undefined"
+                        size="x-small"
+                        variant="tonal"
+                        class="tp-status-chip"
+                      ><span class="tp-status-dot mr-1" :class="`tp-dot--${agentStatus(agent)}`"></span>{{ t(`topology.status.${agentStatus(agent)}`) }}</v-chip>
+                    </div>
+                    <p class="tp-agent-type">{{ agent.type }}</p>
+                    <p v-if="agent.current_task" class="tp-task text-label-medium" :title="agent.current_task">{{ agent.current_task }}</p>
+                    <p v-if="agent.session_tokens != null && agent.session_tokens > 0" class="tp-tokens">
+                      {{ agent.session_tokens.toLocaleString() }} {{ t('topology.tokens') }}
+                    </p>
+                  </div>
+                </v-card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </v-card>
     </div>
   </div>
 </template>
+
+<style scoped>
+.tp-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  overflow: hidden;
+}
+
+.tp-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.tp-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.tp-body-wrapper {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.tp-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.tp-state-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 48px;
+}
+.tp-loading {}
+.tp-empty {}
+@keyframes tpPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.tp-scroll { flex: 1; min-height: 0; overflow: auto; }
+.tp-columns { display: flex; gap: 16px; padding: 16px; min-height: 100%; }
+.tp-column { display: flex; flex-direction: column; flex: 1; min-width: 180px; max-width: 320px; }
+.tp-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+
+.tp-scope-chip { font-size: 12px !important; }
+.tp-scope-chip--global {
+  color: var(--content-subtle) !important;
+  border-color: var(--edge-default) !important;
+}
+.tp-col-count { font-size: 0.6875rem; color: var(--content-faint); }
+
+.tp-cards { display: flex; flex-direction: column; gap: 8px; }
+.tp-card {
+  width: 100%;
+  overflow: hidden;
+  cursor: pointer;
+}
+.tp-card-inner {
+  padding: 10px 12px;
+}
+.tp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; min-width: 0; }
+.tp-agent-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-status-chip { flex-shrink: 0; }
+.tp-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.tp-dot--active  { background: rgb(var(--v-theme-primary)); }
+.tp-dot--blocked { background: rgb(var(--v-theme-warning)); }
+.tp-dot--idle    { background: var(--content-faint); }
+.tp-agent-type { font-size: 0.6875rem; color: var(--content-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; }
+.tp-task { font-size: 0.6875rem; color: var(--content-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; display: block; margin: 2px 0 0; }
+.tp-tokens { font-size: 0.6875rem; color: var(--content-faint); font-variant-numeric: tabular-nums; margin: 2px 0 0; }
+</style>

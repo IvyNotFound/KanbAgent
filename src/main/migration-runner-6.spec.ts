@@ -110,7 +110,7 @@ describe('migrateDb — bootstrap only triggers when user_version === 0', () => 
         agent_groups: ['id', 'name', 'sort_order', 'created_at'],
         agents: ['id', 'name', 'scope', 'system_prompt', 'system_prompt_suffix',
           'thinking_mode', 'allowed_tools', 'auto_launch', 'permission_mode', 'max_sessions'],
-        sessions: ['id', 'status'],
+        sessions: ['id', 'status', 'cost_usd', 'duration_ms', 'num_turns'],
         tasks: ['id', 'title', 'status'],
         task_comments: ['id', 'task_id', 'content'],
         locks: ['id', 'file'],
@@ -177,19 +177,19 @@ describe('migrateDb — bootstrap config empty values edge case', () => {
 describe('migrateDb — exact return value', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('returns 1 when exactly one migration is pending (v31 only)', () => {
+  it('returns 1 when exactly one migration is pending (v32 only)', () => {
     const db = makeMockDb({
-      userVersion: 30,
-      colMap: { sessions: ['id', 'status'] },
+      userVersion: 31,
+      colMap: { sessions: ['id', 'status', 'cost_usd', 'duration_ms', 'num_turns', 'cli_type'] },
     })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     expect(result).toBe(1)
   })
 
-  it('returns 4 when four migrations are pending (v28, v29, v30, v31)', () => {
+  it('returns 5 when five migrations are pending (v28, v29, v30, v31, v32)', () => {
     const db = makeMockDb({ userVersion: 27, colMap: { agents: ['id', 'name'], sessions: ['id', 'status'] } })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(4) // v28, v29, v30, v31
+    expect(result).toBe(5) // v28, v29, v30, v31, v32
   })
 
   it('returns 0 exactly (not falsy) when already at CURRENT_SCHEMA_VERSION', () => {
@@ -208,7 +208,7 @@ describe('migrateDb — exact return value', () => {
     expect(result).not.toBe(CURRENT_SCHEMA_VERSION - 1)
   })
 
-  it('returns 8 for genuine legacy bootstrap (v0 + config + permission_mode + max_sessions = runs v24..v31)', () => {
+  it('returns 9 for genuine legacy bootstrap (v0 + config + permission_mode + max_sessions = runs v24..v32)', () => {
     const db = makeMockDb({
       userVersion: 0,
       hasConfigTable: true,
@@ -216,7 +216,7 @@ describe('migrateDb — exact return value', () => {
         agent_groups: ['id', 'name', 'sort_order', 'created_at'],
         agents: ['id', 'name', 'scope', 'system_prompt', 'system_prompt_suffix',
           'thinking_mode', 'allowed_tools', 'auto_launch', 'permission_mode', 'max_sessions'],
-        sessions: ['id', 'status'],
+        sessions: ['id', 'status', 'cost_usd', 'duration_ms', 'num_turns'],
         tasks: ['id', 'title', 'status'],
         task_comments: ['id', 'task_id', 'content'],
         locks: ['id', 'file'],
@@ -225,9 +225,9 @@ describe('migrateDb — exact return value', () => {
       tableMap: { config: true },
     })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(8) // v24, v25, v26, v27, v28, v29, v30, v31
-    expect(result).not.toBe(7)
-    expect(result).not.toBe(9)
+    expect(result).toBe(9) // v24, v25, v26, v27, v28, v29, v30, v31, v32
+    expect(result).not.toBe(8)
+    expect(result).not.toBe(10)
   })
 
   it('returns CURRENT_SCHEMA_VERSION for external DB (v0 + config, no permission_mode/max_sessions)', () => {

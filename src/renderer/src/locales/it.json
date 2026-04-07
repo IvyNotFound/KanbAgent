@@ -29,8 +29,6 @@
     "prevPage": "Precedente",
     "nextPage": "Successivo",
     "pageOf": "Pagina {page} / {total} ({count} attività)",
-    "listView": "Vista elenco",
-    "treeView": "Vista ad albero",
     "staleTasks": "{count} attività in stallo | {count} attività in stallo"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Ingrandisci"
   },
   "tabBar": {
-    "openWslTerminal": "Apri terminale WSL",
     "closeTab": "Chiudi",
     "unsaved": "Modifiche non salvate",
     "closeFileTitle": "Chiudi file",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Qualità agenti",
-    "all": "Tutti",
     "refresh": "Aggiorna",
     "loading": "Caricamento…",
     "error": "Errore: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Tasso di rifiuto del progetto",
     "noRejections": "Nessun rifiuto rilevato",
     "heuristicNote": "Rilevamento euristico — commenti del revisore contenenti \"reject\", \"return\" o \"todo\"",
-    "colTotal": "Totale",
-    "colRejected": "Rifiuti",
-    "colRate": "Tasso",
-    "colBar": "Barra"
+    "colAgent": "Agente",
+    "colRejections": "Rif./Tot.",
+    "colRate": "Tasso"
   },
   "sessionActivityChart": {
     "title": "Attività sessioni — ultimi 14 giorni",
@@ -578,7 +573,10 @@
     "streaming": "In corso…",
     "waitingMessages": "In attesa di messaggi…",
     "turns": "{n} turno | {n} turni",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Invia un messaggio…",
+    "askQuestion": "Domanda dell'agente",
+    "replyPlaceholder": "Rispondi all'agente…"
   },
   "task": {
     "running": "Attività in corso",
@@ -610,7 +608,8 @@
     "colSource": "Sorgente",
     "colTests": "Test",
     "colFiles": "File",
-    "scannedAt": "Scansionato il {date}"
+    "scannedAt": "Scansionato il {date}",
+    "languageDetail": "Dettaglio linguaggi"
   },
   "update": {
     "available": "Aggiornamento {version} disponibile",

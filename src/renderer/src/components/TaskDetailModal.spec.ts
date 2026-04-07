@@ -47,7 +47,7 @@ describe('TaskDetailModal', () => {
       },
     })
     // The panel with task content should not be in DOM
-    const panel = wrapper.find('.fixed.inset-0')
+    const panel = wrapper.find('[data-testid="task-detail-panel"]')
     expect(panel.exists()).toBe(false)
   })
 
@@ -60,7 +60,7 @@ describe('TaskDetailModal', () => {
       },
     })
     await nextTick()
-    const panel = wrapper.find('.fixed.inset-0')
+    const panel = wrapper.find('[data-testid="task-detail-panel"]')
     expect(panel.exists()).toBe(true)
   })
 
@@ -252,7 +252,7 @@ describe('TaskDetailModal — multi-agents', () => {
     await flushPromises()
 
     // Find the Save button and click it to trigger saveAssignees → rejection → toast
-    const saveBtn = wrapper.findAll('button').find(b => {
+    const saveBtn = wrapper.findAll('v-btn').find(b => {
       const txt = b.text().toLowerCase()
       return txt === 'save' || txt === 'enregistrer'
     })

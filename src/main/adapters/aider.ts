@@ -57,7 +57,8 @@ export const aiderAdapter: CliAdapter = {
 
   parseLine(line: string): StreamEvent | null {
     if (!line.trim()) return null
-    // Aider output is plain text — wrap as assistant text event
+    // Aider output is plain text — wrap as assistant text event.
+    // ask_user: N/A — --yes-always suppresses all interactive prompts automatically. (T1708)
     return { type: 'text', text: line }
   },
 

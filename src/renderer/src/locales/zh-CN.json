@@ -29,8 +29,6 @@
     "prevPage": "上一页",
     "nextPage": "下一页",
     "pageOf": "第 {page} / {total} 页（{count} 个任务）",
-    "listView": "列表视图",
-    "treeView": "树形视图",
     "staleTasks": "{count} 个停滞任务 | {count} 个停滞任务"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "最大化"
   },
   "tabBar": {
-    "openWslTerminal": "打开 WSL 终端",
     "closeTab": "关闭",
     "unsaved": "有未保存的更改",
     "closeFileTitle": "关闭文件",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Agent 质量",
-    "all": "全部",
     "refresh": "刷新",
     "loading": "加载中…",
     "error": "错误：{msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "项目拒绝率",
     "noRejections": "未检测到拒绝",
     "heuristicNote": "启发式检测 — 检测包含\"reject\"、\"return\"或\"todo\"的审核评论",
-    "colTotal": "总计",
-    "colRejected": "拒绝",
-    "colRate": "比率",
-    "colBar": "柱状图"
+    "colAgent": "代理",
+    "colRejections": "拒绝/总计",
+    "colRate": "比率"
   },
   "sessionActivityChart": {
     "title": "会话活动 — 最近14天",
@@ -578,7 +573,10 @@
     "streaming": "处理中…",
     "waitingMessages": "等待消息…",
     "turns": "{n} 轮 | {n} 轮",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "发送消息…",
+    "askQuestion": "代理问题",
+    "replyPlaceholder": "回复代理…"
   },
   "task": {
     "running": "任务进行中",
@@ -610,7 +608,8 @@
     "colSource": "源码",
     "colTests": "测试",
     "colFiles": "文件",
-    "scannedAt": "扫描于 {date}"
+    "scannedAt": "扫描于 {date}",
+    "languageDetail": "语言详情"
   },
   "update": {
     "available": "更新 {version} 可用",

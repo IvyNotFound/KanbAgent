@@ -141,13 +141,26 @@ export interface TokenCounts {
  */
 export interface StreamEvent {
   /** Event type — normalized across adapters. */
-  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error'
+  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error' | 'ask_user'
   subtype?: string
   /** Conversation ID (extracted by extractConvId). */
   session_id?: string
   message?: {
     role: string
-    content: Array<{ type: string; text?: string }>
+    content: Array<{
+      type: string
+      text?: string
+      /** tool_use block: tool name */
+      name?: string
+      /** tool_use block: tool input arguments */
+      input?: Record<string, unknown>
+      /** tool_use / tool_result correlation ID */
+      tool_use_id?: string
+      /** tool_result block: result content string */
+      content?: string
+      /** tool_result block: whether the tool call failed */
+      is_error?: boolean
+    }>
   }
   /** Plain-text output line (non-JSONL CLIs). */
   text?: string

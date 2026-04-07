@@ -12,14 +12,15 @@ import DashboardOverview from './DashboardOverview.vue'
 const TopologyView = defineAsyncComponent(() => import('./TopologyView.vue'))
 const OrgChartView = defineAsyncComponent(() => import('./OrgChartView.vue'))
 const TelemetryView = defineAsyncComponent(() => import('./TelemetryView.vue'))
+const TimelineView = defineAsyncComponent(() => import('./TimelineView.vue'))
 
-type SubTab = 'overview' | 'tokenStats' | 'git' | 'hooks' | 'tools' | 'topology' | 'orgchart' | 'logs' | 'telemetry'
+type SubTab = 'overview' | 'tokenStats' | 'git' | 'hooks' | 'tools' | 'topology' | 'orgchart' | 'logs' | 'telemetry' | 'timeline'
 
 const { t } = useI18n()
 const store = useTasksStore()
 
 const STORAGE_KEY = 'dashboard.activeSubTab'
-const VALID_TABS: SubTab[] = ['overview', 'tokenStats', 'git', 'hooks', 'tools', 'topology', 'orgchart', 'logs', 'telemetry']
+const VALID_TABS: SubTab[] = ['overview', 'tokenStats', 'git', 'hooks', 'tools', 'topology', 'orgchart', 'logs', 'telemetry', 'timeline']
 const savedTab = localStorage.getItem(STORAGE_KEY) as SubTab | null
 const activeSubTab = ref<SubTab>(savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'overview')
 
@@ -68,100 +69,188 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
   { id: 'orgchart',   label: t('orgchart.tabLabel') },
   { id: 'logs',       label: t('tokenStats.logsTab') },
   { id: 'telemetry', label: t('dashboard.telemetryTab') },
+  { id: 'timeline',  label: t('timeline.title') },
 ])
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary min-h-0">
+  <div class="dashboard-view">
 
     <!-- Sub-tab bar -->
-    <div class="subtab-scroll shrink-0 flex items-center gap-0.5 px-4 pt-2.5 pb-0 bg-surface-base border-b border-edge-subtle overflow-x-scroll">
-      <button
+    <v-tabs
+      v-model="activeSubTab"
+      density="compact"
+      class="dashboard-tabs"
+      show-arrows
+    >
+      <v-tab
         v-for="tab in subTabs"
         :key="tab.id"
-        :class="[
-          'px-3 py-1 rounded-t text-xs font-semibold transition-colors border border-b-0 shrink-0',
-          activeSubTab === tab.id
-            ? 'text-content-secondary bg-surface-primary border-edge-subtle mb-[-1px]'
-            : 'text-content-faint bg-transparent border-transparent hover:text-content-tertiary hover:bg-surface-secondary/40'
-        ]"
-        @click="activeSubTab = tab.id"
-      >{{ tab.label }}</button>
-    </div>
+        :value="tab.id"
+        class="dash-tab"
+      >{{ tab.label }}</v-tab>
+    </v-tabs>
 
     <!-- Overview -->
-    <DashboardOverview v-if="activeSubTab === 'overview'" class="flex-1 min-h-0" />
+    <DashboardOverview v-if="activeSubTab === 'overview'" class="tab-content" />
 
     <!-- Token Stats -->
-    <TokenStatsView v-show="activeSubTab === 'tokenStats'" class="flex-1 min-h-0" />
+    <TokenStatsView v-show="activeSubTab === 'tokenStats'" class="tab-content" />
 
     <!-- Git -->
-    <div v-if="activeSubTab === 'git'" class="flex flex-col flex-1 min-h-0 bg-surface-base">
-      <!-- Toolbar -->
-      <div class="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-edge-subtle">
-        <h2 class="text-xl font-semibold text-content-primary">Git</h2>
-        <button
-          class="flex items-center gap-1 px-2 py-1 text-xs text-content-muted hover:text-content-primary rounded transition-colors disabled:opacity-40"
-          :disabled="gitLoading"
-          @click="fetchGitCommits"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5" :class="{ 'animate-spin': gitLoading }">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-          </svg>
-          {{ t('common.refresh') }}
-        </button>
+    <div v-if="activeSubTab === 'git'" class="tab-content git-root">
+      <!-- Fixed header outside card -->
+      <div class="git-header">
+        <h2 class="text-h6 font-weight-medium git-title">Git</h2>
+        <div class="ml-auto">
+          <v-btn
+            icon="mdi-refresh"
+            variant="text"
+            size="small"
+            :loading="gitLoading"
+            :title="t('common.refresh')"
+            @click="fetchGitCommits"
+          />
+        </div>
       </div>
-      <!-- Loading -->
-      <div v-if="gitLoading" class="flex items-center justify-center flex-1 py-8">
-        <p class="text-xs text-content-faint animate-pulse">{{ t('common.loading') }}</p>
+      <!-- Scrollable body -->
+      <div class="git-body-wrapper">
+        <v-card elevation="0" class="section-card">
+          <div class="git-body">
+            <!-- Loading -->
+            <div v-if="gitLoading" class="d-flex align-center justify-center flex-1 pa-8">
+              <v-progress-circular indeterminate :size="32" :width="3" />
+            </div>
+            <!-- Error states -->
+            <div v-else-if="gitError" class="d-flex flex-column align-center justify-center flex-1 pa-8 ga-3">
+              <v-icon size="32" color="medium-emphasis">{{ gitError === 'error' ? 'mdi-alert-circle-outline' : 'mdi-source-commit' }}</v-icon>
+              <p class="text-caption text-medium-emphasis font-italic">
+                <template v-if="gitError === 'no-project'">{{ t('common.noProject') }}</template>
+                <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
+                <template v-else>{{ t('dashboard.gitError') }}</template>
+              </p>
+              <v-btn
+                v-if="gitError === 'error'"
+                variant="tonal"
+                size="small"
+                @click="fetchGitCommits"
+              >
+                {{ t('common.retry') }}
+              </v-btn>
+            </div>
+            <!-- Commit list -->
+            <GitCommitList
+              v-else
+              :commits="gitCommits"
+              class="flex-1"
+              @open-task="(id) => { const task = store.tasks.find(x => x.id === id); if (task) store.openTask(task) }"
+            />
+          </div>
+        </v-card>
       </div>
-      <!-- Error states -->
-      <div v-else-if="gitError" class="flex flex-col items-center justify-center flex-1 py-8 gap-3">
-        <p class="text-xs text-content-faint italic">
-          <template v-if="gitError === 'no-project'">{{ t('common.noProject') }}</template>
-          <template v-else-if="gitError === 'no-commits'">{{ t('git.noCommits') }}</template>
-          <template v-else>{{ t('dashboard.gitError') }}</template>
-        </p>
-        <button
-          v-if="gitError === 'error'"
-          class="px-3 py-1 text-xs bg-surface-secondary hover:bg-surface-tertiary text-content-muted rounded transition-colors"
-          @click="fetchGitCommits"
-        >
-          {{ t('common.retry') }}
-        </button>
-      </div>
-      <!-- Commit list -->
-      <GitCommitList
-        v-else
-        :commits="gitCommits"
-        class="flex-1 min-h-0"
-        @open-task="(id) => { const task = store.tasks.find(x => x.id === id); if (task) store.openTask(task) }"
-      />
     </div>
 
     <!-- Hooks -->
-    <HookEventsView v-if="activeSubTab === 'hooks'" class="flex-1 min-h-0" />
+    <HookEventsView v-if="activeSubTab === 'hooks'" class="tab-content" />
 
     <!-- Tools -->
-    <ToolStatsPanel v-if="activeSubTab === 'tools'" class="flex-1 min-h-0" />
+    <ToolStatsPanel v-if="activeSubTab === 'tools'" class="tab-content" />
 
     <!-- Topology -->
-    <TopologyView v-if="activeSubTab === 'topology'" class="flex-1 min-h-0" />
+    <TopologyView v-if="activeSubTab === 'topology'" class="tab-content" />
 
     <!-- OrgChart -->
-    <OrgChartView v-if="activeSubTab === 'orgchart'" class="flex-1 min-h-0" />
+    <OrgChartView v-if="activeSubTab === 'orgchart'" class="tab-content" />
 
     <!-- Logs -->
-    <AgentLogsView v-if="activeSubTab === 'logs'" class="flex-1 min-h-0" />
+    <AgentLogsView v-if="activeSubTab === 'logs'" class="tab-content" />
 
     <!-- Telemetry -->
-    <TelemetryView v-if="activeSubTab === 'telemetry'" class="flex-1 min-h-0" />
+    <TelemetryView v-if="activeSubTab === 'telemetry'" class="tab-content" />
+
+    <!-- Timeline -->
+    <TimelineView v-if="activeSubTab === 'timeline'" class="tab-content" />
 
   </div>
 </template>
 
 <style scoped>
-.subtab-scroll::-webkit-scrollbar { display: none; }
-.subtab-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.dashboard-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-primary);
+}
+
+.dashboard-tabs {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--edge-subtle);
+  --v-tabs-height: 48px;
+}
+
+/* Uniform vertical alignment for all tab titles — text-caption interferes with
+   Vuetify's internal line-height in density="compact", causing uneven baselines.
+   Class applied directly to v-tab root element — no :deep() needed. */
+.dash-tab {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  align-items: center;
+  min-height: 48px;
+  padding-inline: 16px;
+  text-transform: none;
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.git-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+}
+
+.git-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.git-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.git-body-wrapper {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.git-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
 </style>

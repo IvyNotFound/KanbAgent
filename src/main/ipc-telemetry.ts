@@ -13,20 +13,20 @@ import path from 'path'
 import ignore from 'ignore'
 import { assertProjectPathAllowed } from './db'
 
-const LANGUAGE_MAP: Record<string, { name: string; color: string }> = {
-  '.ts': { name: 'TypeScript', color: '#3178c6' },
-  '.vue': { name: 'Vue', color: '#42b883' },
-  '.js': { name: 'JavaScript', color: '#f7df1e' },
-  '.css': { name: 'CSS', color: '#a855f7' },
-  '.html': { name: 'HTML', color: '#e44b23' },
-  '.py': { name: 'Python', color: '#3572A5' },
-  '.go': { name: 'Go', color: '#00ADD8' },
-  '.rs': { name: 'Rust', color: '#dea584' },
-  '.java': { name: 'Java', color: '#b07219' },
-  '.json': { name: 'JSON', color: '#f5a623' },
-  '.md': { name: 'Markdown', color: '#4a8cf7' },
-  '.sh': { name: 'Shell', color: '#89e051' },
-  '.sql': { name: 'SQL', color: '#e38c00' },
+const LANGUAGE_MAP: Record<string, string> = {
+  '.ts': 'TypeScript',
+  '.vue': 'Vue',
+  '.js': 'JavaScript',
+  '.css': 'CSS',
+  '.html': 'HTML',
+  '.py': 'Python',
+  '.go': 'Go',
+  '.rs': 'Rust',
+  '.java': 'Java',
+  '.json': 'JSON',
+  '.md': 'Markdown',
+  '.sh': 'Shell',
+  '.sql': 'SQL',
 }
 
 /** Fallback exclusions when no .gitignore is found in the project root. */
@@ -56,7 +56,6 @@ interface LineStats {
 
 interface LangStat {
   name: string
-  color: string
   files: number
   lines: number
   percent: number
@@ -242,8 +241,7 @@ export function registerTelemetryHandlers(): void {
           : 0
       const languages: LangStat[] = [...stats.entries()]
         .map(([ext, v]) => ({
-          name: LANGUAGE_MAP[ext].name,
-          color: LANGUAGE_MAP[ext].color,
+          name: LANGUAGE_MAP[ext],
           files: v.files,
           lines: v.lines,
           percent: totalLines > 0 ? Math.round((v.lines / totalLines) * 1000) / 10 : 0,

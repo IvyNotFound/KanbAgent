@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useSettingsStore, parseDefaultCliInstance } from '@renderer/stores/settings'
+import { vuetifyThemeName } from '@renderer/plugins/vuetifyTheme'
 
 // Mock window.electronAPI
 const mockElectronAPI = {
@@ -37,6 +38,7 @@ describe('stores/settings', () => {
     vi.clearAllMocks()
     localStorage.clear()
     document.documentElement.className = ''
+    vuetifyThemeName.value = 'dark'
   })
 
   describe('setTheme', () => {
@@ -45,7 +47,7 @@ describe('stores/settings', () => {
       store.setTheme('dark')
       expect(store.theme).toBe('dark')
       expect(localStorage.getItem('theme')).toBe('dark')
-      expect(document.documentElement.classList.contains('dark')).toBe(true)
+      expect(vuetifyThemeName.value).toBe('dark')
     })
 
     it('should set theme to light', () => {
@@ -53,22 +55,21 @@ describe('stores/settings', () => {
       store.setTheme('light')
       expect(store.theme).toBe('light')
       expect(localStorage.getItem('theme')).toBe('light')
-      expect(document.documentElement.classList.contains('dark')).toBe(false)
+      expect(vuetifyThemeName.value).toBe('light')
     })
   })
 
   describe('applyTheme', () => {
-    it('should add dark class for dark theme', () => {
+    it('should set Vuetify theme to dark', () => {
       const store = useSettingsStore()
       store.applyTheme('dark')
-      expect(document.documentElement.classList.contains('dark')).toBe(true)
+      expect(vuetifyThemeName.value).toBe('dark')
     })
 
-    it('should remove dark class for light theme', () => {
-      document.documentElement.classList.add('dark')
+    it('should set Vuetify theme to light', () => {
       const store = useSettingsStore()
       store.applyTheme('light')
-      expect(document.documentElement.classList.contains('dark')).toBe(false)
+      expect(vuetifyThemeName.value).toBe('light')
     })
   })
 
@@ -334,20 +335,21 @@ describe('stores/settings — theme init from localStorage', () => {
     vi.clearAllMocks()
     localStorage.clear()
     document.documentElement.className = ''
+    vuetifyThemeName.value = 'dark'
   })
 
   it('should init theme to "light" when localStorage has "light"', () => {
     localStorage.setItem('theme', 'light')
     const store = useSettingsStore()
     expect(store.theme).toBe('light')
-    expect(document.documentElement.classList.contains('dark')).toBe(false)
+    expect(vuetifyThemeName.value).toBe('light')
   })
 
   it('should init theme to "dark" when localStorage has "dark"', () => {
     localStorage.setItem('theme', 'dark')
     const store = useSettingsStore()
     expect(store.theme).toBe('dark')
-    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    expect(vuetifyThemeName.value).toBe('dark')
   })
 
   it('should default to "dark" when localStorage is empty', () => {
@@ -355,15 +357,15 @@ describe('stores/settings — theme init from localStorage', () => {
     expect(store.theme).toBe('dark')
   })
 
-  it('should apply "dark" class on dark theme init', () => {
+  it('should apply Vuetify dark theme on dark theme init', () => {
     localStorage.setItem('theme', 'dark')
     useSettingsStore()
-    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    expect(vuetifyThemeName.value).toBe('dark')
   })
 
-  it('should NOT apply "dark" class on light theme init', () => {
+  it('should apply Vuetify light theme on light theme init', () => {
     localStorage.setItem('theme', 'light')
     useSettingsStore()
-    expect(document.documentElement.classList.contains('dark')).toBe(false)
+    expect(vuetifyThemeName.value).toBe('light')
   })
 })

@@ -14,12 +14,6 @@ const selectedEvent = ref<HookEvent | null>(null)
 
 const ALL_TYPES = Object.keys(EVENT_ICON)
 
-function toggleType(t: string): void {
-  const idx = filterTypes.value.indexOf(t)
-  if (idx >= 0) filterTypes.value.splice(idx, 1)
-  else filterTypes.value.push(t)
-}
-
 // Iterate backwards — newest first, early exit at 200 items (T792)
 // Avoids .slice().reverse() O(N) on 2000 events on every hook event
 const MAX_DISPLAY = 200
@@ -44,69 +38,55 @@ function relativeTime(ts: number): string {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden bg-surface-base">
-    <!-- Header -->
-    <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-b border-edge-default">
-      <h2 class="text-xl font-semibold text-content-primary">{{ t('sidebar.hooks') }}</h2>
+  <div class="he-view">
+    <!-- Fixed header outside card -->
+    <div class="he-header">
+      <h2 class="text-h6 font-weight-medium he-title">{{ t('sidebar.hooks') }}</h2>
     </div>
-    <!-- Filters bar -->
-    <div class="flex items-center gap-2 px-6 py-2 border-b border-edge-default shrink-0 flex-wrap">
-      <span class="text-xs text-content-muted uppercase tracking-wide mr-1">{{ t('hooks.filters') }}</span>
-      <button
-        v-for="eventType in ALL_TYPES"
-        :key="eventType"
-        class="text-[11px] font-mono px-2 py-0.5 rounded border transition-colors"
-        :class="filterTypes.includes(eventType)
-          ? 'border-amber-500 text-amber-300 bg-amber-950/40'
-          : 'border-edge-subtle text-content-subtle hover:text-content-secondary hover:border-edge-default'"
-        @click="toggleType(eventType)"
-      >
-        {{ EVENT_ICON[eventType] }} {{ eventType }}
-      </button>
-      <div class="flex-1" />
-      <span class="text-[11px] text-content-faint font-mono tabular-nums">
-        {{ filtered.length }} event{{ filtered.length !== 1 ? 's' : '' }}
-      </span>
-    </div>
+    <!-- Body -->
+    <div class="he-body">
+    <v-card elevation="0" class="section-card">
+      <!-- Filters bar -->
+      <div class="he-filters">
+        <span class="he-filter-label text-label-medium text-medium-emphasis">{{ t('hooks.filters') }}</span>
+        <v-chip-group v-model="filterTypes" multiple column>
+          <v-chip
+            v-for="eventType in ALL_TYPES"
+            :key="eventType"
+            :value="eventType"
+            filter
+            size="small"
+            color="primary"
+            class="he-chip-item"
+          >{{ EVENT_ICON[eventType] }} {{ eventType }}</v-chip>
+        </v-chip-group>
+        <div class="he-spacer" />
+        <span class="he-count">{{ filtered.length }} event{{ filtered.length !== 1 ? 's' : '' }}</span>
+      </div>
 
-    <!-- Event list -->
-    <div
-      class="flex-1 overflow-y-auto px-6 py-2 space-y-0.5"
-    >
-      <div
-        v-if="filtered.length === 0"
-        class="flex items-center justify-center h-full text-content-faint text-xs italic"
-      >
-        {{ t('hooks.noEvents') }}
-      </div>
-      <div
-        v-for="e in filtered"
-        :key="e.id"
-        class="flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-surface-secondary/40 transition-colors"
-        @click="selectedEvent = e"
-      >
-        <!-- Event icon -->
-        <span class="text-[11px] text-content-faint font-mono shrink-0 w-4 text-center">
-          {{ eventIcon(e.event) }}
-        </span>
-        <!-- Event type / tool name -->
-        <span
-          class="text-[11px] font-mono shrink-0"
-          :class="['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event)
-            ? toolColor(toolName(e.payload))
-            : eventColor(e.event)"
+      <!-- Event list -->
+      <div class="he-list">
+        <div v-if="filtered.length === 0" class="he-empty text-caption">{{ t('hooks.noEvents') }}</div>
+        <div
+          v-for="e in filtered"
+          :key="e.id"
+          class="he-event"
+          @click="selectedEvent = e"
         >
-          {{ ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event) ? toolName(e.payload) : e.event }}
-        </span>
-        <!-- Session ID short -->
-        <span class="text-[10px] text-content-faint font-mono truncate flex-1">
-          {{ e.sessionId ? e.sessionId.slice(0, 8) : '—' }}
-        </span>
-        <!-- Relative timestamp -->
-        <span class="text-[10px] text-content-faint font-mono tabular-nums shrink-0">
-          {{ relativeTime(e.ts) }}
-        </span>
+          <span class="he-event-icon">{{ eventIcon(e.event) }}</span>
+          <span
+            class="he-event-type"
+            :style="{ color: ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event)
+              ? toolColor(toolName(e.payload))
+              : eventColor(e.event) }"
+          >
+            {{ ['PreToolUse','PostToolUse','PostToolUseFailure'].includes(e.event) ? toolName(e.payload) : e.event }}
+          </span>
+          <span class="he-session-id">{{ e.sessionId ? e.sessionId.slice(0, 8) : '—' }}</span>
+          <span class="he-time">{{ relativeTime(e.ts) }}</span>
+        </div>
       </div>
+    </v-card>
     </div>
   </div>
 
@@ -119,3 +99,113 @@ function relativeTime(ts: number): string {
     />
   </Teleport>
 </template>
+
+<style scoped>
+.he-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--surface-base);
+}
+
+.he-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.he-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.he-body {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.he-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--edge-default);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.he-filter-label {
+  color: var(--content-muted);
+  margin-right: 4px;
+}
+/* font-size inherits from chip root — no :deep() needed; 0.6875rem (11px) below Vuetify "small" minimum */
+.he-chip-item {
+  font-size: 0.6875rem;
+}
+.he-spacer { flex: 1; }
+.he-count {
+  font-size: 0.6875rem;
+  color: var(--content-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.he-list { flex: 1; overflow-y: auto; padding: 8px 24px; display: flex; flex-direction: column; gap: 2px; }
+.he-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--content-faint);
+  font-style: italic;
+}
+.he-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--shape-xs);
+  cursor: pointer;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
+}
+.he-event:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
+.he-event-icon {
+  font-size: 0.6875rem;
+  color: var(--content-faint);
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+.he-event-type { font-size: 0.6875rem; flex-shrink: 0; }
+/* monospace retained: UUID fragment benefits from fixed-width legibility */
+.he-session-id {
+  font-size: 0.6875rem;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.he-time {
+  font-size: 0.6875rem;
+  color: var(--content-faint);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+</style>

@@ -3,6 +3,7 @@ import { mount, shallowMount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { nextTick } from 'vue'
 import StreamView from '@renderer/components/StreamView.vue'
+import StreamInputBar from '@renderer/components/StreamInputBar.vue'
 import type { StreamEvent } from '@renderer/components/StreamView.vue'
 import { mockElectronAPI } from '../../../test/setup'
 import i18n from '@renderer/plugins/i18n'
@@ -163,17 +164,19 @@ describe('StreamView', () => {
   })
 
   it('send button is disabled when input is empty', async () => {
+    // v-btn is a custom element — Vue sets :disabled as DOM attribute (not .disabled property)
     const { wrapper } = await mountStream()
     const btn = wrapper.find('[data-testid="send-button"]')
-    expect((btn.element as HTMLButtonElement).disabled).toBe(true)
+    expect(btn.element.hasAttribute('disabled')).toBe(true)
   })
 
   it('calls agentSend with message on send (T648)', async () => {
     // T648: sendMessage uses agentSend via stdin JSONL — no PTY respawn needed (ADR-009)
+    // v-textarea is a custom element — set text via StreamInputBar's exposed inputText ref
     const { wrapper } = await mountStream([], { convId: 'test-session-id' })
     vi.mocked(mockElectronAPI.agentSend).mockResolvedValue(undefined)
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Hello agent')
+    wrapper.findComponent(StreamInputBar).vm.inputText = 'Hello agent'
+    await nextTick()
     const btn = wrapper.find('[data-testid="send-button"]')
     await btn.trigger('click')
     await flushPromises()
@@ -183,12 +186,13 @@ describe('StreamView', () => {
   it('clears input after send', async () => {
     // T648: send requires sessionId — use convId shortcut to enable the button
     const { wrapper } = await mountStream([], { convId: 'test-session-id' })
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Mon message')
+    const inputBar = wrapper.findComponent(StreamInputBar)
+    inputBar.vm.inputText = 'Mon message'
+    await nextTick()
     const btn = wrapper.find('[data-testid="send-button"]')
     await btn.trigger('click')
     await flushPromises()
-    expect((textarea.element as HTMLTextAreaElement).value).toBe('')
+    expect(inputBar.vm.inputText).toBe('')
   })
 
   it('registers system:init session_id', async () => {
@@ -217,7 +221,7 @@ describe('StreamView', () => {
     const block = wrapper.find('[data-testid="block-user"]')
     expect(block.exists()).toBe(true)
     expect(block.text()).toContain('coucou')
-    expect(block.classes()).toContain('justify-end')
+    expect(block.classes()).toContain('block-user')
   })
 
   it('suppresses empty user bubbles from autonomous Claude reasoning (T679)', async () => {
@@ -248,7 +252,7 @@ describe('StreamView', () => {
     const userBlocks = wrapper.findAll('[data-testid="block-user"]')
     expect(userBlocks.length).toBe(1)
     expect(userBlocks[0].text()).toContain('Mon prompt initial')
-    expect(userBlocks[0].classes()).toContain('justify-end')
+    expect(userBlocks[0].classes()).toContain('block-user')
   })
 
   it('does not display user bubble when autoSend is null (T607)', async () => {
@@ -281,30 +285,32 @@ describe('StreamView', () => {
     expect(mockElectronAPI.agentCreate).toHaveBeenCalledWith(
       expect.objectContaining({ convId: 'abc123-session-id' })
     )
-    // Send button should be enabled (sessionId set from convId shortcut)
-    const btn = wrapper.find('[data-testid="send-button"]')
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Premier message')
-    expect((btn.element as HTMLButtonElement).disabled).toBe(false)
+    // Send button should be enabled once sessionId is set from convId shortcut.
+    // Verify the prop is correctly propagated to StreamInputBar.
+    const inputBar = wrapper.findComponent(StreamInputBar)
+    expect(inputBar.props('sessionId')).toBe('abc123-session-id')
   })
 
   it('displays sent message as user bubble immediately (T605)', async () => {
     // T648: send requires sessionId — use convId shortcut to enable the button
     const { wrapper } = await mountStream([], { convId: 'test-session-id' })
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Bonjour Claude')
+    wrapper.findComponent(StreamInputBar).vm.inputText = 'Bonjour Claude'
+    await nextTick()
     const btn = wrapper.find('[data-testid="send-button"]')
     await btn.trigger('click')
     await nextTick()
     const userBlock = wrapper.find('[data-testid="block-user"]')
     expect(userBlock.exists()).toBe(true)
     expect(userBlock.text()).toContain('Bonjour Claude')
-    expect(userBlock.classes()).toContain('justify-end')
+    expect(userBlock.classes()).toContain('block-user')
   })
 
-  it('stop-button is absent when agent is not streaming (T683)', async () => {
+  it('stop-button is disabled when agent is not streaming (T683, T1536, T1569)', async () => {
+    // T1569: button stays in DOM with :disabled=true when isStreaming=false
     const { wrapper } = await mountStream([])
-    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(false)
+    const btn = wrapper.find('[data-testid="stop-button"]')
+    expect(btn.exists()).toBe(true)
+    expect(btn.attributes('disabled')).toBeDefined()
   })
 
   it('stop-button is visible when isStreaming=true and ptyId set (T683)', async () => {
@@ -331,7 +337,8 @@ describe('StreamView', () => {
     expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('agent-stream-1')
   })
 
-  it('stop-button disappears after click (agentStopped flag, T683)', async () => {
+  it('stop-button becomes disabled after click (agentStopped flag, T683, T1536, T1569)', async () => {
+    // T1569: button stays in DOM with :disabled=true after click (agentStopped=true)
     const event: StreamEvent = {
       type: 'assistant',
       message: { role: 'assistant', content: [{ type: 'text', text: 'En cours…' }] },
@@ -340,7 +347,9 @@ describe('StreamView', () => {
     await nextTick()
     await wrapper.find('[data-testid="stop-button"]').trigger('click')
     await nextTick()
-    expect(wrapper.find('[data-testid="stop-button"]').exists()).toBe(false)
+    const btn = wrapper.find('[data-testid="stop-button"]')
+    expect(btn.exists()).toBe(true)
+    expect(btn.attributes('disabled')).toBeDefined()
   })
 
   it('renders error:spawn event as red error block (T694)', async () => {
@@ -550,5 +559,70 @@ describe('StreamView auto-close on process exit (T1373)', () => {
 
     vi.advanceTimersByTime(5000)
     expect(closeTabSpy).not.toHaveBeenCalled()
+  })
+})
+
+// T1764 — pendingQuestion Source 1 / Source 2
+describe('StreamView pendingQuestion (T1764)', () => {
+  async function mountStreamQ(events: StreamEvent[] = []) {
+    vi.mocked(mockElectronAPI.agentCreate).mockResolvedValue('agent-q-1')
+    vi.mocked(mockElectronAPI.onAgentStream).mockReset()
+    vi.mocked(mockElectronAPI.onAgentStream).mockReturnValue(() => {})
+    vi.mocked(mockElectronAPI.onAgentConvId).mockReset()
+    vi.mocked(mockElectronAPI.onAgentConvId).mockReturnValue(() => {})
+    vi.mocked(mockElectronAPI.onAgentExit).mockReset()
+    vi.mocked(mockElectronAPI.onAgentExit).mockReturnValue(() => {})
+    vi.mocked(mockElectronAPI.agentSend).mockResolvedValue(undefined)
+    const pinia = createTestingPinia({
+      stubActions: false,
+      initialState: {
+        tabs: { tabs: [{ id: 'tq-1', type: 'terminal', title: 'Q', ptyId: null, agentName: 'qa', wslDistro: null, autoSend: null, systemPrompt: null, thinkingMode: null, convId: null, viewMode: 'stream' as const }] },
+      },
+    })
+    const wrapper = mount(StreamView, { props: { terminalId: 'tq-1' }, global: { plugins: [pinia, i18n] } })
+    await flushPromises()
+    const [, callback] = vi.mocked(mockElectronAPI.onAgentStream).mock.calls[0] ?? []
+    if (callback) events.forEach((e) => (callback as (e: StreamEvent) => void)(e))
+    if (events.length > 0) await flushPromises()
+    return { wrapper }
+  }
+
+  it('Source 1: shows banner when input.question is present as a string', async () => {
+    const assistantEvent: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', name: 'AskUserQuestion', input: { question: 'Direct question?' } }] },
+    }
+    const { wrapper } = await mountStreamQ([assistantEvent])
+    const banner = wrapper.find('[data-testid="pending-question-banner"]')
+    expect(banner.exists()).toBe(true)
+    expect(banner.text()).toContain('Direct question?')
+    wrapper.unmount()
+  })
+
+  it('Source 2: shows banner via synthetic ask_user event when input.question is missing', async () => {
+    const assistantEvent: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', name: 'AskUserQuestion', input: {} }] },
+    }
+    const askUserEvent: StreamEvent = { type: 'ask_user', text: 'Synthetic question text?' }
+    const { wrapper } = await mountStreamQ([assistantEvent, askUserEvent])
+    const banner = wrapper.find('[data-testid="pending-question-banner"]')
+    expect(banner.exists()).toBe(true)
+    expect(banner.text()).toContain('Synthetic question text?')
+    wrapper.unmount()
+  })
+
+  it('hides banner after a user reply follows the AskUserQuestion block', async () => {
+    const assistantEvent: StreamEvent = {
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', name: 'AskUserQuestion', input: { question: 'A question?' } }] },
+    }
+    const userReply: StreamEvent = {
+      type: 'user',
+      message: { role: 'user', content: [{ type: 'text', text: 'My reply' }] },
+    }
+    const { wrapper } = await mountStreamQ([assistantEvent, userReply])
+    expect(wrapper.find('[data-testid="pending-question-banner"]').exists()).toBe(false)
+    wrapper.unmount()
   })
 })

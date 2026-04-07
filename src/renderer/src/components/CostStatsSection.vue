@@ -8,7 +8,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { agentAccent } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 
 /**
  * @property dbPath  - Path to the active SQLite database (null = no project open).
@@ -164,6 +165,13 @@ function cacheEfficiency(row: AgentCostAgg): number {
   return Math.round((row.cache_read / total) * 100)
 }
 
+function cacheEffClass(row: AgentCostAgg): string {
+  const e = cacheEfficiency(row)
+  if (e > 50) return 'cache-eff--high'
+  if (e >= 20) return 'cache-eff--mid'
+  return ''
+}
+
 // ── Formatting ─────────────────────────────────────────────────────────────
 
 /**
@@ -182,23 +190,6 @@ function formatCost(usd: number): string {
   return '$' + usd.toFixed(2)
 }
 
-// ── Agent styles ───────────────────────────────────────────────────────────
-
-interface AgentStyle { color: string; backgroundColor: string; boxShadow: string }
-
-const agentStyles = computed<Map<string, AgentStyle>>(() => {
-  const m = new Map<string, AgentStyle>()
-  for (const row of byAgent.value) {
-    if (!m.has(row.agent_name)) {
-      m.set(row.agent_name, {
-        color: agentFg(row.agent_name),
-        backgroundColor: agentBg(row.agent_name),
-        boxShadow: `0 0 0 1px ${agentBorder(row.agent_name)}`,
-      })
-    }
-  }
-  return m
-})
 
 // ── Sparkline hover ────────────────────────────────────────────────────────
 
@@ -206,76 +197,75 @@ const hoveredBar = ref<number | null>(null)
 </script>
 
 <template>
-  <section class="space-y-3">
-
-    <!-- Header + period selector -->
-    <div v-if="!props.period" class="flex items-center justify-between">
-      <h3 class="text-[11px] uppercase tracking-wider text-content-faint">
+  <section class="cost-section ga-3">
+<!-- Header + period selector -->
+    <div v-if="!props.period" class="cost-header">
+      <h3 class="cost-title text-label-medium">
         {{ t('costStats.title') }}
       </h3>
-      <div class="flex gap-1">
-        <button
+      <div class="cost-period-btns ga-1">
+        <v-btn
           v-for="p in PERIODS"
           :key="p.key"
-          class="px-2 py-0.5 rounded-full text-[11px] border transition-colors"
-          :class="selectedPeriod === p.key
-            ? 'bg-accent-primary border-accent-primary text-white'
-            : 'bg-surface-secondary border-edge-default text-content-secondary hover:border-accent-primary hover:text-content-primary'"
+          variant="text"
+          size="small"
+          density="compact"
+          class="cost-period-btn text-label-medium"
+          :class="{ 'cost-period-btn--active': selectedPeriod === p.key }"
           @click="selectedPeriod = p.key"
         >
           {{ t(p.labelKey) }}
-        </button>
+        </v-btn>
       </div>
     </div>
 
     <!-- Loading state -->
-    <div v-if="loading && rows.length === 0" class="text-sm text-content-faint py-4 text-center">
+    <div v-if="loading && rows.length === 0" class="cost-state pa-4 text-caption">
       {{ t('costStats.loading') }}
     </div>
 
     <!-- No data state -->
-    <div v-else-if="hasData === false" class="text-sm text-content-faint py-4 text-center">
+    <div v-else-if="hasData === false" class="cost-state pa-4 text-caption">
       {{ t('costStats.noData') }}
     </div>
 
     <template v-else-if="byAgent.length > 0">
-
-      <!-- Global summary row -->
-      <div class="grid grid-cols-3 gap-2">
-        <div class="flex flex-col gap-0.5 p-2.5 rounded-lg bg-surface-secondary border border-edge-default">
-          <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.totalCost') }}</span>
-          <span class="text-base font-bold text-content-primary tabular-nums">{{ formatCost(globalCost) }}</span>
+<!-- Global summary row -->
+      <div class="cost-summary-grid ga-2">
+        <div class="cost-summary-card">
+          <span class="cost-summary-label text-label-medium">{{ t('costStats.totalCost') }}</span>
+          <span class="cost-summary-value text-body-2">{{ formatCost(globalCost) }}</span>
         </div>
-        <div class="flex flex-col gap-0.5 p-2.5 rounded-lg bg-surface-secondary border border-edge-default">
-          <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.sessions') }}</span>
-          <span class="text-base font-bold text-content-primary tabular-nums">{{ globalSessions }}</span>
+        <div class="cost-summary-card">
+          <span class="cost-summary-label text-label-medium">{{ t('costStats.sessions') }}</span>
+          <span class="cost-summary-value text-body-2">{{ globalSessions }}</span>
         </div>
-        <div class="flex flex-col gap-0.5 p-2.5 rounded-lg bg-surface-secondary border border-edge-default">
-          <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.turns') }}</span>
-          <span class="text-base font-bold text-content-primary tabular-nums">{{ globalTurns }}</span>
+        <div class="cost-summary-card">
+          <span class="cost-summary-label text-label-medium">{{ t('costStats.turns') }}</span>
+          <span class="cost-summary-value text-body-2">{{ globalTurns }}</span>
         </div>
       </div>
 
       <!-- Cost sparkline (last 7 periods) -->
-      <div v-if="sparkPeriods.length > 1" class="flex flex-col gap-1">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.trend') }}</span>
-        <div class="flex items-end gap-1 h-[40px]">
+      <div v-if="sparkPeriods.length > 1" class="cost-sparkline-section ga-1">
+        <span class="cost-section-label text-label-medium">{{ t('costStats.trend') }}</span>
+        <div class="cost-sparkline ga-1">
           <div
             v-for="(bar, i) in sparkPeriods"
             :key="bar.label"
-            class="relative flex-1 flex flex-col justify-end cursor-default"
+            class="cost-spark-bar-wrap"
             @mouseenter="hoveredBar = i"
             @mouseleave="hoveredBar = null"
           >
             <div
-              class="w-full rounded-t transition-colors"
-              :class="hoveredBar === i ? 'bg-accent-primary' : 'bg-violet-600/50 dark:bg-violet-500/40'"
+              class="cost-spark-bar"
+              :class="{ 'cost-spark-bar--hover': hoveredBar === i }"
               :style="{ height: Math.max(Math.round((bar.cost / sparkMax) * 36), bar.cost > 0 ? 2 : 0) + 'px' }"
             />
-            <div v-if="bar.cost === 0" class="w-full h-[2px] rounded bg-edge-subtle" />
+            <div v-if="bar.cost === 0" class="cost-spark-zero" />
             <div
               v-if="hoveredBar === i"
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded text-[10px] whitespace-nowrap bg-surface-tooltip text-content-primary border border-edge-default shadow-lg pointer-events-none"
+              class="cost-spark-tooltip elevation-2 py-1 px-2 text-label-medium"
             >
               {{ bar.label }} : {{ formatCost(bar.cost) }}
             </div>
@@ -284,43 +274,193 @@ const hoveredBar = ref<number | null>(null)
       </div>
 
       <!-- Per-agent cost table -->
-      <div class="space-y-1.5">
-        <span class="text-[10px] uppercase tracking-wider text-content-faint">{{ t('costStats.perAgent') }}</span>
+      <div class="cost-agent-table">
+        <span class="cost-section-label text-label-medium">{{ t('costStats.perAgent') }}</span>
 
         <div
           v-for="row in byAgent"
           :key="row.agent_id"
-          class="flex items-center gap-3"
+          class="cost-agent-row ga-3"
         >
           <!-- Agent badge -->
-          <span
-            class="shrink-0 w-32 text-[11px] font-mono px-1.5 py-0.5 rounded font-medium truncate text-right"
-            :style="agentStyles.get(row.agent_name)"
-            :title="row.agent_name"
-          >{{ row.agent_name }}</span>
+          <AgentBadge :name="row.agent_name" />
 
           <!-- Cost bar -->
-          <div class="flex-1 h-5 bg-surface-secondary rounded overflow-hidden relative">
+          <div class="cost-bar-track">
             <div
-              class="h-full rounded bg-gradient-to-r from-violet-600/60 to-pink-600/60 transition-all duration-300"
-              :style="{ width: barWidth(row.total_cost) }"
+              class="cost-bar-fill"
+              :style="{ width: barWidth(row.total_cost), backgroundColor: agentAccent(row.agent_name) }"
             />
-            <span class="absolute inset-0 flex items-center px-2 text-[10px] font-mono text-content-secondary">
+            <span class="cost-bar-label px-2">
               {{ formatCost(row.total_cost) }}
             </span>
           </div>
 
           <!-- Cache efficiency -->
-          <div class="shrink-0 flex gap-3 text-[10px] font-mono text-content-subtle w-32 justify-end">
+          <div class="cost-cache-info ga-3">
             <span
-              :class="cacheEfficiency(row) > 50 ? 'text-emerald-600 dark:text-emerald-400' : cacheEfficiency(row) >= 20 ? 'text-amber-600 dark:text-amber-400' : 'text-content-faint'"
+              class="cost-cache-eff"
+              :class="cacheEffClass(row)"
               :title="t('costStats.cacheEfficiency')"
             >{{ t('costStats.cache') }} {{ cacheEfficiency(row) }}%</span>
-            <span class="text-content-faint">{{ row.session_count }}s</span>
+            <span class="cost-sessions">{{ row.session_count }}s</span>
           </div>
         </div>
       </div>
-
-    </template>
+</template>
   </section>
 </template>
+
+<style scoped>
+.cost-section {
+  display: flex;
+  flex-direction: column;
+}
+.cost-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cost-title {
+  letter-spacing: 0.02em;
+  color: var(--content-faint);
+  margin: 0;
+  font-weight: 400;
+}
+.cost-period-btns {
+  display: flex;
+}
+.cost-period-btn {
+  border: 1px solid var(--edge-default) !important;
+  border-radius: var(--shape-full) !important;
+  color: var(--content-secondary) !important;
+}
+.cost-period-btn--active {
+  background: rgb(var(--v-theme-primary)) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+  color: white !important;
+}
+.cost-state {
+  color: var(--content-faint);
+  text-align: center;
+}
+/* Summary grid */
+.cost-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.cost-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--shape-sm);
+  background: var(--surface-secondary);
+  border: 1px solid var(--edge-default);
+}
+.cost-summary-label {
+  letter-spacing: 0.02em;
+  color: var(--content-faint);
+}
+.cost-summary-value {
+  font-weight: 700;
+  color: var(--content-primary);
+  font-variant-numeric: tabular-nums;
+}
+/* Section label */
+.cost-section-label {
+  letter-spacing: 0.02em;
+  color: var(--content-faint);
+  display: block;
+}
+/* Sparkline */
+.cost-sparkline-section {
+  display: flex;
+  flex-direction: column;
+}
+.cost-sparkline {
+  display: flex;
+  align-items: flex-end;
+  height: 40px;
+}
+.cost-spark-bar-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  cursor: default;
+}
+.cost-spark-bar {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  background: rgba(var(--v-theme-secondary), 0.5);
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
+}
+.cost-spark-bar--hover { background: rgb(var(--v-theme-secondary)); }
+.cost-spark-zero {
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--edge-subtle);
+}
+.cost-spark-tooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  border-radius: var(--shape-xs);
+  white-space: nowrap;
+  background: var(--surface-secondary);
+  color: var(--content-primary);
+  border: 1px solid var(--edge-default);
+  pointer-events: none;
+}
+/* Per-agent table */
+.cost-agent-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cost-agent-row {
+  display: flex;
+  align-items: center;
+}
+
+.cost-bar-track {
+  flex: 1;
+  height: 20px;
+  background: var(--surface-secondary);
+  border-radius: var(--shape-xs);
+  overflow: hidden;
+  position: relative;
+}
+.cost-bar-fill {
+  height: 100%;
+  border-radius: var(--shape-xs);
+  transition: width var(--md-duration-medium2) var(--md-easing-standard);
+}
+.cost-bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  font-size: 0.625rem;
+  font-family: ui-monospace, monospace;
+  color: var(--content-secondary);
+}
+.cost-cache-info {
+  flex-shrink: 0;
+  display: flex;
+  font-size: 0.625rem;
+  font-family: ui-monospace, monospace;
+  color: var(--content-subtle);
+  width: 128px;
+  justify-content: flex-end;
+}
+.cost-cache-eff { color: var(--content-faint); }
+.cache-eff--high { color: rgb(var(--v-theme-secondary)); }
+.cache-eff--mid { color: rgb(var(--v-theme-warning)); }
+.cost-sessions { color: var(--content-faint); }
+</style>

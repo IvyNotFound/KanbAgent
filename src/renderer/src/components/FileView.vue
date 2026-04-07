@@ -157,8 +157,9 @@ let pendingContent: string | null = null
 
 async function initEditor(): Promise<void> {
   if (!editorEl.value) return
+  const extensions = await buildExtensions()
   view = new EditorView({
-    state: EditorState.create({ doc: pendingContent ?? '', extensions: await buildExtensions() }),
+    state: EditorState.create({ doc: pendingContent ?? '', extensions }),
     parent: editorEl.value,
   })
   pendingContent = null
@@ -226,35 +227,98 @@ watch(() => props.filePath, async () => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden bg-surface-primary">
+  <div class="fv-view">
     <!-- Header -->
-    <div class="flex items-center gap-3 px-4 py-2 border-b border-edge-subtle shrink-0 min-h-[41px]">
-      <span class="text-xs font-mono text-content-tertiary truncate">{{ filePath.split(/[/\\]/).pop() }}</span>
-      <span v-if="isDirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" :title="t('fileView.unsaved')" />
-      <span class="ml-auto flex items-center gap-2 shrink-0">
-        <span v-if="saved" class="text-xs text-emerald-400">{{ t('fileView.saved') }}</span>
-        <span v-if="saveError" class="text-xs text-red-400">{{ saveError }}</span>
-        <button
+    <div class="fv-header">
+      <span class="fv-filename">{{ filePath.split(/[/\\]/).pop() }}</span>
+      <span v-if="isDirty" class="fv-dirty-dot" :title="t('fileView.unsaved')" />
+      <span class="fv-actions">
+        <span v-if="saved" class="fv-saved text-caption">{{ t('fileView.saved') }}</span>
+        <span v-if="saveError" class="fv-save-error text-caption">{{ saveError }}</span>
+        <v-btn
           v-if="!error && !loading"
-          class="px-2.5 py-1 text-xs rounded bg-surface-tertiary hover:bg-content-faint text-content-secondary transition-colors disabled:opacity-40"
+          variant="tonal"
+          size="small"
+          class="fv-save-btn text-caption"
           :disabled="saving || !isDirty"
           @click="save"
-        >{{ saving ? t('common.saving') : t('common.save') }}</button>
+        >{{ saving ? t('common.saving') : t('common.save') }}</v-btn>
       </span>
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-hidden relative">
-      <div v-if="loading" class="absolute inset-0 flex items-center justify-center z-10 bg-surface-primary/80">
-        <span class="text-xs text-content-faint animate-pulse">{{ t('common.loading') }}</span>
+    <div class="fv-content">
+      <div v-if="loading" class="fv-loading-overlay">
+        <span class="fv-loading-text text-caption">{{ t('common.loading') }}</span>
       </div>
-      <div v-if="error" class="flex items-center justify-center h-full px-8">
-        <span class="text-xs text-content-subtle italic text-center">{{ error }}</span>
+      <div v-if="error" class="fv-error-state">
+        <span class="fv-error-text text-caption">{{ error }}</span>
       </div>
-      <div v-show="!error" ref="editorEl" class="h-full" />
+      <div v-show="!error" ref="editorEl" class="fv-editor" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.fv-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-primary, var(--surface-base));
+}
+.fv-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+  min-height: 41px;
+}
+.fv-filename {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  color: var(--content-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fv-dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-warning));
+  flex-shrink: 0;
+}
+.fv-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.fv-saved {}
+.fv-save-error {}
+.fv-content { flex: 1; overflow: hidden; position: relative; }
+.fv-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: rgba(var(--v-theme-surface-primary), 0.8);
+}
+.fv-loading-text {
+  color: var(--content-faint);
+  animation: fvPulse 1.5s ease-in-out infinite;
+}
+@keyframes fvPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.fv-error-state { display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 32px; }
+.fv-error-text {}
+.fv-editor { height: 100%; }
+</style>
 
 <style>
 /* Override One Dark background to match app palette */

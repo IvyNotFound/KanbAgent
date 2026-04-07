@@ -74,6 +74,11 @@ export function registerDbHandlers(): void {
       const safeQuery = addDefaultLimit(query)
       return await queryLive(dbPath, safeQuery, params)
     } catch (err) {
+      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : 'UNKNOWN'
+      if (code === 'SQLITE_CORRUPT') {
+        console.warn('[IPC query-db] DB corrupt:', dbPath)
+        return { success: false, error: 'DB_CORRUPT', rows: [] }
+      }
       console.error('[IPC query-db]', err)
       throw err
     }

@@ -466,7 +466,7 @@ describe('useTabBarGroups', () => {
       expect(style).toEqual({})
     })
 
-    it('returns dark styles for active tab without agentName (isDark=true)', async () => {
+    it('returns CSS var styles for active tab without agentName', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
       const { setDarkMode } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
@@ -479,7 +479,7 @@ describe('useTabBarGroups', () => {
       store.setActive(nullTab.id)
 
       const style = tabStyleMap.value.get(nullTab.id)
-      expect(style).toEqual({ color: '#f4f4f5', backgroundColor: '#27272a' })
+      expect(style).toEqual({ color: 'rgb(var(--v-theme-on-surface))', backgroundColor: 'rgb(var(--v-theme-surface-variant))' })
     })
 
     it('returns agent colors for active terminal tab with agentName', async () => {
@@ -498,9 +498,9 @@ describe('useTabBarGroups', () => {
       expect(style).toEqual({ color: agentFg('agent-alpha'), backgroundColor: agentBg('agent-alpha') })
     })
 
-    it('returns hsla styles for inactive tab with agentName in dark mode', async () => {
+    it('returns agentFg/agentBg with opacity for inactive tab with agentName in dark mode', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
-      const { setDarkMode, agentHue } = await import('@renderer/utils/agentColor')
+      const { setDarkMode, agentFg, agentBg } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
       const scrollContainer = makeScrollContainer()
       const { tabStyleMap } = useTabBarGroups(scrollContainer)
@@ -511,16 +511,16 @@ describe('useTabBarGroups', () => {
       store.setActive('backlog')
 
       const style = tabStyleMap.value.get(tab.id)
-      const h = agentHue('agent-alpha')
       expect(style).toEqual({
-        color: `hsla(${h}, 65%, 65%, 0.65)`,
-        backgroundColor: `hsla(${h}, 38%, 16%, 0.55)`,
+        color: agentFg('agent-alpha'),
+        backgroundColor: agentBg('agent-alpha'),
+        opacity: '0.65',
       })
     })
 
-    it('returns light mode hsla styles for inactive tab with agentName', async () => {
+    it('returns agentFg/agentBg with opacity for inactive tab with agentName in light mode', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
-      const { setDarkMode, agentHue } = await import('@renderer/utils/agentColor')
+      const { setDarkMode, agentFg, agentBg } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
       const scrollContainer = makeScrollContainer()
       const { tabStyleMap } = useTabBarGroups(scrollContainer)
@@ -531,17 +531,17 @@ describe('useTabBarGroups', () => {
       store.setActive('backlog')
 
       const style = tabStyleMap.value.get(tab.id)
-      const h = agentHue('agent-alpha')
       expect(style).toEqual({
-        color: `hsla(${h}, 55%, 40%, 0.7)`,
-        backgroundColor: `hsla(${h}, 45%, 92%, 0.6)`,
+        color: agentFg('agent-alpha'),
+        backgroundColor: agentBg('agent-alpha'),
+        opacity: '0.65',
       })
     })
   })
 
   // ── agentTabStyleMap ──────────────────────────────────────────────────────
   describe('agentTabStyleMap (L140-L159)', () => {
-    it('uses isDark colors for null agentName group', async () => {
+    it('uses CSS var styles for null agentName group (dark mode)', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
       const { setDarkMode } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
@@ -552,10 +552,10 @@ describe('useTabBarGroups', () => {
       store.addTerminal(undefined)
 
       const style = agentTabStyleMap.value.get(null)
-      expect(style).toEqual({ color: '#a1a1aa', backgroundColor: '#27272a' })
+      expect(style).toEqual({ color: 'rgb(var(--v-theme-on-surface-variant))', backgroundColor: 'rgb(var(--v-theme-surface-variant))' })
     })
 
-    it('uses light mode colors for null agentName group', async () => {
+    it('uses CSS var styles for null agentName group (light mode)', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
       const { setDarkMode } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
@@ -566,7 +566,7 @@ describe('useTabBarGroups', () => {
       store.addTerminal(undefined)
 
       const style = agentTabStyleMap.value.get(null)
-      expect(style).toEqual({ color: '#52525b', backgroundColor: '#e4e4e7' })
+      expect(style).toEqual({ color: 'rgb(var(--v-theme-on-surface-variant))', backgroundColor: 'rgb(var(--v-theme-surface-variant))' })
     })
 
     it('uses agentFg/agentBg for active named group (L152-L153)', async () => {
@@ -583,9 +583,9 @@ describe('useTabBarGroups', () => {
       expect(style).toEqual({ color: agentFg('agent-active'), backgroundColor: agentBg('agent-active') })
     })
 
-    it('uses hsla for inactive named group in dark mode (L154-L155)', async () => {
+    it('uses agentFg/agentBg with opacity for inactive named group in dark mode (L154-L155)', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
-      const { setDarkMode, agentHue } = await import('@renderer/utils/agentColor')
+      const { setDarkMode, agentFg, agentBg } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
       const scrollContainer = makeScrollContainer()
       const { agentTabStyleMap } = useTabBarGroups(scrollContainer)
@@ -597,10 +597,10 @@ describe('useTabBarGroups', () => {
       await nextTick()
 
       const style = agentTabStyleMap.value.get('agent-inactive')
-      const h = agentHue('agent-inactive')
       expect(style).toEqual({
-        color: `hsla(${h}, 65%, 65%, 0.65)`,
-        backgroundColor: `hsla(${h}, 38%, 16%, 0.55)`,
+        color: agentFg('agent-inactive'),
+        backgroundColor: agentBg('agent-inactive'),
+        opacity: '0.65',
       })
     })
   })
@@ -622,17 +622,34 @@ describe('useTabBarGroups', () => {
       expect(style).toEqual({ backgroundColor: agentFg('agent-alpha') })
     })
 
-    it('uses violet-400 for tabs without agentName', async () => {
+    it('uses neutral zinc for tabs without agentName (dark mode)', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
+      const { setDarkMode } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
       const scrollContainer = makeScrollContainer()
       const { indicatorStyleMap } = useTabBarGroups(scrollContainer)
 
+      setDarkMode(true)
       store.addTerminal(undefined) // null agentName
       const tab = store.tabs.find(t => t.type === 'terminal')!
 
       const style = indicatorStyleMap.value.get(tab.id)
-      expect(style).toEqual({ backgroundColor: '#a78bfa' })
+      expect(style).toEqual({ backgroundColor: '#a1a1aa' })
+    })
+
+    it('uses neutral zinc for tabs without agentName (light mode)', async () => {
+      const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
+      const { setDarkMode } = await import('@renderer/utils/agentColor')
+      const store = useTabsStore()
+      const scrollContainer = makeScrollContainer()
+      const { indicatorStyleMap } = useTabBarGroups(scrollContainer)
+
+      setDarkMode(false)
+      store.addTerminal(undefined) // null agentName
+      const tab = store.tabs.find(t => t.type === 'terminal')!
+
+      const style = indicatorStyleMap.value.get(tab.id)
+      expect(style).toEqual({ backgroundColor: '#71717a' })
     })
   })
 
@@ -837,7 +854,7 @@ describe('useTabBarGroups', () => {
 
     it('applies inactive styles when 0 of 2 tabs in group is active (L150 some=false)', async () => {
       const { useTabBarGroups } = await import('@renderer/composables/useTabBarGroups')
-      const { agentHue, setDarkMode } = await import('@renderer/utils/agentColor')
+      const { agentFg, agentBg, setDarkMode } = await import('@renderer/utils/agentColor')
       const store = useTabsStore()
       const scrollContainer = makeScrollContainer()
       const { agentTabStyleMap } = useTabBarGroups(scrollContainer)
@@ -851,10 +868,10 @@ describe('useTabBarGroups', () => {
       await nextTick()
 
       const style = agentTabStyleMap.value.get('agent-multi')
-      const h = agentHue('agent-multi')
       expect(style).toEqual({
-        color: `hsla(${h}, 65%, 65%, 0.65)`,
-        backgroundColor: `hsla(${h}, 38%, 16%, 0.55)`,
+        color: agentFg('agent-multi'),
+        backgroundColor: agentBg('agent-multi'),
+        opacity: '0.65',
       })
     })
   })

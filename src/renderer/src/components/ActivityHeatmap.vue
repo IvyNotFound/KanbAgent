@@ -92,13 +92,7 @@ function intensity(count: number): number {
   return 4
 }
 
-const COLORS = [
-  'bg-zinc-700/40',   // 0 — empty (slightly visible against card bg)
-  'bg-emerald-900',   // 1
-  'bg-emerald-700',   // 2
-  'bg-emerald-500',   // 3
-  'bg-emerald-400',   // 4
-]
+const COLORS = ['heat-0', 'heat-1', 'heat-2', 'heat-3', 'heat-4']
 
 /**
  * Build the 52×7 grid as a flat array of cells.
@@ -128,35 +122,36 @@ const maxCount = computed(() => Math.max(...Array.from(dayCountMap.value.values(
 </script>
 
 <template>
-  <div class="flex flex-col px-4 py-3 gap-3">
+  <div class="heatmap-root">
     <!-- Filters -->
-    <div class="flex items-center gap-3 shrink-0 flex-wrap">
-      <span class="text-xs text-content-faint font-semibold">{{ t('heatmap.agentLabel') }}</span>
-      <div class="flex gap-1.5 flex-wrap">
-        <button
+    <div class="heatmap-filters">
+      <span class="heatmap-label text-label-medium">{{ t('heatmap.agentLabel') }}</span>
+      <div class="heatmap-filter-btns">
+        <v-btn
           v-for="a in agents"
           :key="String(a.id)"
-          class="text-[11px] font-mono px-2 py-0.5 rounded border transition-colors"
-          :class="filterAgentId === a.id
-            ? 'border-emerald-500 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40'
-            : 'border-edge-subtle text-content-subtle hover:text-content-secondary'"
+          variant="text"
+          size="small"
+          density="compact"
+          class="heatmap-filter-btn"
+          :class="{ 'heatmap-filter-btn--active': filterAgentId === a.id }"
           @click="filterAgentId = a.id"
         >
           {{ a.id === null ? t('heatmap.all') : a.name }}
-        </button>
+        </v-btn>
       </div>
     </div>
 
     <!-- Heatmap grid -->
-    <div class="overflow-x-auto shrink-0">
+    <div class="heatmap-grid-wrap">
       <div
-        class="grid gap-[3px]"
+        class="heatmap-grid"
         style="grid-template-columns: repeat(52, 12px); grid-template-rows: repeat(7, 12px);"
       >
         <div
           v-for="cell in grid"
           :key="cell.date"
-          class="w-3 h-3 rounded-sm transition-colors cursor-default"
+          class="heatmap-cell"
           :class="COLORS[intensity(cell.count)]"
           :style="{ gridColumn: cell.week + 1, gridRow: cell.day + 1 }"
           :title="t('heatmap.tooltip', cell.count, { named: { date: cell.date, n: cell.count } })"
@@ -165,16 +160,90 @@ const maxCount = computed(() => Math.max(...Array.from(dayCountMap.value.values(
     </div>
 
     <!-- Legend -->
-    <div class="flex items-center gap-2 text-[10px] text-content-faint shrink-0">
+    <div class="heatmap-legend text-label-medium">
       <span>{{ t('heatmap.less') }}</span>
       <div
         v-for="(cls, idx) in COLORS"
         :key="idx"
-        class="w-3 h-3 rounded-sm"
+        class="heatmap-legend-dot"
         :class="cls"
       />
       <span>{{ t('heatmap.more') }}</span>
-      <span class="ml-auto font-mono">{{ t('heatmap.maxPerDay', maxCount, { named: { n: maxCount } }) }}</span>
+      <span class="heatmap-legend-max">{{ t('heatmap.maxPerDay', maxCount, { named: { n: maxCount } }) }}</span>
     </div>
   </div>
 </template>
+
+<style scoped>
+.heatmap-root {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  gap: 12px;
+}
+.heatmap-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.heatmap-label {
+  color: var(--content-faint);
+  font-weight: 600;
+}
+.heatmap-filter-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.heatmap-filter-btn {
+  font-size: 0.75rem !important; /* text-caption — monospace retained for filter button style */
+  font-family: ui-monospace, monospace !important;
+  border: 1px solid var(--edge-subtle) !important;
+  color: var(--content-subtle) !important;
+}
+.heatmap-filter-btn:hover { color: var(--content-secondary) !important; }
+.heatmap-filter-btn--active {
+  border-color: rgb(var(--v-theme-secondary));
+  color: rgb(var(--v-theme-secondary));
+  background: rgba(var(--v-theme-secondary), 0.1);
+}
+.heatmap-grid-wrap {
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.heatmap-grid {
+  display: grid;
+  gap: 4px;
+}
+.heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  cursor: default;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
+}
+/* Heat intensity levels */
+.heat-0 { background-color: rgba(var(--v-theme-surface-tertiary), 0.4); }
+.heat-1 { background-color: rgba(var(--v-theme-secondary), 0.15); }
+.heat-2 { background-color: rgba(var(--v-theme-secondary), 0.35); }
+.heat-3 { background-color: rgb(var(--v-theme-secondary)); }
+.heat-4 { background-color: rgba(var(--v-theme-secondary), 0.7); }
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--content-faint);
+  flex-shrink: 0;
+}
+.heatmap-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.heatmap-legend-max {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+}
+</style>

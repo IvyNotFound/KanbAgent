@@ -21,7 +21,7 @@ Built for developers who run AI coding agents at scale and need more than a term
 - **Multi-agent orchestration** — spawn, resume, and kill agents across WSL distros and native installs; supports Claude Code, Codex, Gemini, Aider, Goose, and OpenCode
 - **Analytics dashboard** — token usage, cost tracking, agent quality scores, git activity, and more
 - **Git worktree isolation** — each agent works on its own branch, automatically, no conflicts
-- **Zero dependencies** — local SQLite database, no account, no API, no subscription
+- **Zero dependencies** — local SQLite database, no account, no API, no subscription; optional HTTP DB daemon (`db-server.js`) reduces per-call overhead for high-frequency agent workloads
 
 ---
 
@@ -32,32 +32,32 @@ Built for developers who run AI coding agents at scale and need more than a term
 
 ### Estimated scope (from ticket data)
 
-The project manages **1,279 tasks** in its own SQLite database, each tagged with an effort estimate:
+The project manages **1,520 tasks** in its own SQLite database, each tagged with an effort estimate:
 
 | Effort | Definition | Avg. hours | Tickets | Total |
 |--------|-----------|-----------|---------|-------|
-| 1 — Small | < 2h | 1.5h | 558 | 837h |
-| 2 — Medium | Half-day (~4h) | 4h | 372 | 1,488h |
-| 3 — Large | > 1 day (~10h) | 10h | 63 | 630h |
-| **Total** | | | **993** | **~2,955h** |
+| 1 — Small | < 2h | 1.5h | 678 | 1,017h |
+| 2 — Medium | Half-day (~4h) | 4h | 464 | 1,856h |
+| 3 — Large | > 1 day (~10h) | 10h | 89 | 890h |
+| **Total** | | | **1,231** | **~3,763h** |
 
-*286 tasks had no effort estimate and are excluded from the calculation.*
+*289 tasks had no effort estimate and are excluded from the calculation.*
 
 ### If a team of 5 had built this (5 days/week, 8h/day)
 
 ```
 Team weekly capacity : 5 devs × 5 days × 8h = 200h/week
-Estimated work scope : ~2,955h
-Best-case delivery   : 2,955 ÷ 200 = ~15 weeks ≈ 3.5 months
+Estimated work scope : ~3,763h
+Best-case delivery   : 3,763 ÷ 200 = ~19 weeks ≈ 4.5 months
 ```
 
-That's the best-case scenario: full parallel utilization, zero overhead, no standups, no onboarding, no context switching, no code review lag. Add realistic team overhead (×1.3) and you're looking at **4–5 months**.
+That's the best-case scenario: full parallel utilization, zero overhead, no standups, no onboarding, no context switching, no code review lag. Add realistic team overhead (×1.3) and you're looking at **5–6 months**.
 
 ### What actually happened
 
 **First commit: February 24, 2026. Last commit: March 10, 2026. That's 14 days.**
 
-838 commits. 1,279 tickets created, assigned, implemented, reviewed, and closed. One person. Built entirely solo while watching streams or anime on a second monitor.
+1,070 commits. 1,520 tickets created, assigned, implemented, reviewed, and closed. One person. Built entirely solo while watching streams or anime on a second monitor.
 
 The model mix across all sessions: **90% Claude Sonnet 4.6** for the bulk of implementation work, **5% Claude Opus 4.6** for architecture decisions and complex reviews, and **5% MiniMax M2.5** for lightweight tasks — proving the workflow is model-agnostic.
 
@@ -69,21 +69,13 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 
 ## Screenshots
 
-| Kanban Board | Dashboard Overview |
+| Kanban Board + Task Detail | Live Session Stream |
 |---|---|
-| ![Kanban Board](img/2026-03-06_16h08_43.png) | ![Dashboard Overview](img/2026-03-06_16h09_34.png) |
+| ![Kanban Board](img/screenshot-board.png) | ![Stream View](img/screenshot-stream.png) |
 
-| Token Stats & Cost | Agent Logs |
+| Dashboard — Agent Logs | Backlog View |
 |---|---|
-| ![Token Stats](img/2026-03-06_16h08_33.png) | ![Agent Logs](img/2026-03-06_16h09_58.png) |
-
-| Live Session Stream | Git Commit List |
-|---|---|
-| ![Stream View](img/2026-03-06_16h09_26.png) | ![Git View](img/2026-03-06_16h10_05.png) |
-
-| Agent OrgChart |
-|---|
-| ![OrgChart](img/2026-03-06_16h10_22.png) |
+| ![Dashboard Logs](img/screenshot-dashboard-logs.png) | ![Backlog](img/screenshot-backlog.png) |
 
 ## Key Features
 
@@ -101,7 +93,7 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 - **Agent Management**: Creation, configuration, system prompt editing, thinking mode (auto/disabled), mandatory assignment, right-click delete/duplicate, max sessions limit (including `-1` for unlimited); review agents highlighted with amber accent in a dedicated sidebar section
 - **Agent Groups & Drag & Drop**: Sidebar agent groups with drag-and-drop reordering (`useSidebarGroups`, `useSidebarDragDrop`)
 - **Multi-instance**: Launch multiple instances of the same agent with git worktree isolation — enabled by default for all CLI adapters (branch `agent/<sessionId>`, path `../agent-worktrees/<sessionId>`); falls back gracefully if git is unavailable
-- **Multi-CLI Support**: Select any supported coding agent CLI per session — Claude Code, OpenAI Codex, Google Gemini, OpenCode, Aider, Goose — detected automatically across WSL distros and native installs; each CLI has a dedicated adapter (`src/main/adapters/<cli>.ts`) following the `CliAdapter` contract (ADR-010); `LaunchSessionModal` shows a unified list of all detected CLI×environment combinations (local Windows/macOS/Linux + every WSL distro), filtered by the CLIs enabled in Settings
+- **Multi-CLI Support**: Select any supported coding agent CLI per session — Claude Code, OpenAI Codex, Google Gemini, OpenCode, Aider, Goose — detected automatically across WSL distros and native installs; each CLI has a dedicated adapter (`src/main/adapters/<cli>.ts`) following the `CliAdapter` contract (ADR-010); `LaunchSessionModal` shows a unified list of all detected CLI×environment combinations (local Windows/macOS/Linux + every WSL distro), filtered by the CLIs enabled in Settings; `tool_use` / `tool_result` blocks are now parsed and surfaced in `StreamView` for all supported non-Claude CLIs (Codex, Gemini, Aider, Goose, OpenCode)
 - **Permission Mode per Agent**: Configure each agent to run Claude with `--dangerously-skip-permissions` (auto mode, opt-in with visible warning)
 - **Setup Wizard**: First-run configuration assistant (`SetupWizard`) — guides through WSL detection, project creation and initial agents; project templates (`CLAUDE.md`, `.claude/WORKFLOW.md`) are bundled at compile time and written locally — no network access required
 
@@ -124,7 +116,7 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 - **Peon-ping coexistence**: HTTP hooks injected into `settings.json` even when the event already contains other hooks (e.g. peon-ping command hooks) — existing entries are preserved and the KanbAgent http hook is appended
 
 ### Stream & Session
-- **Improved StreamView**: User message bubbles, live thinking preview, collapsible `tool_use` / `tool_result` / `thinking` blocks (auto-collapse >15 lines), ANSI stripping, markdown rendering
+- **StreamView**: Chat-bubble layout — assistant messages as left-aligned bubbles, user messages as right-aligned bubbles; per-tool structured display via `StreamToolBlock` (Edit: inline diff view, Bash: command block, Read/Write/Grep/Glob: structured metadata, Agent: description + subagent type, unknown tools: raw JSON fallback); copy-code button on all markdown code blocks; live thinking preview in status bar; collapsible `tool_use` / `tool_result` / `thinking` blocks (auto-collapse >15 lines), ANSI stripping, syntax-highlighted markdown rendering
 - **Stream Input Bar**: `StreamInputBar` — send messages to active agent sessions via IPC
 - **Stream Tool Block**: `StreamToolBlock` — isolated rendering of individual tool call blocks
 - **Thinking Live Preview**: Status bar shows last 120 chars of live thinking text in real time
@@ -149,6 +141,8 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 - **DB Selector**: `DbSelector` — graphical project database switcher; unified CLI instance selector (deduped by distro, hidden when only one environment is detected — auto-selected); language selector displayed below action buttons with accessible `aria-label`
 - **Project Popup**: Click the project button in the sidebar to open a modal showing active project name, database path, version, and quick actions (switch project, close project)
 - **Keyboard Shortcuts**: Press `Escape` to close any modal (standardised via `useModalEscape` composable)
+- **Material Design 3**: Full Vuetify 3 design system — MD3 color tokens, typography scale, 4dp spacing grid, elevation, and scrim system applied consistently across all components
+- **Agent Color System**: `agentColor.ts` — deterministic per-agent color identity via 15 MD2 palette families; `agentFg/agentBg/agentAccent/agentBorder` functions guarantee WCAG AA (4.5:1) contrast on all backgrounds; theme-reactive via `colorVersion` ref, invalidated on dark/light toggle
 - **Dark / Light Mode**: Dark theme by default, light mode available
 - **Internationalization**: Interface available in 18 locales via a native dropdown selector (vue-i18n): fr, en, es, pt, pt-BR, de, no, it, ar, ru, pl, sv, fi, da, tr, zh-CN, ko, ja — fallback to English for untranslated locales
 - **Spell Check**: Native spell check on prompt textareas with right-click context menu suggestions
@@ -455,6 +449,7 @@ The scripts in `scripts/` let agents interact with the database without opening 
 | `node scripts/dbq.js "<SQL>"` | Direct WAL read (better-sqlite3) |
 | `node scripts/dbw.js "<SQL>"` | Direct WAL write (better-sqlite3, serialized) |
 | `node scripts/dbstart.js <agent>` | Starts an agent session, displays tasks and locks; runs `git worktree prune` (non-fatal) |
+| `node scripts/db-server.js` | Persistent HTTP DB daemon — agents send HTTP requests instead of spawning a new Node.js process per call, saving 30–50 MB RAM × per active agent; replaces double-spawn (node + sqlite3) with single-spawn (sqlite3 only) |
 | `bash scripts/release.sh [patch\|minor\|major]` | Build + version bump + Git tag + GitHub Release (draft) |
 
 **JSON mode (dbw.js)** — for values containing apostrophes or special characters, use JSON mode via stdin:
@@ -494,7 +489,7 @@ SQL
 | Build tool | electron-vite 5 |
 | Frontend | Vue 3 + TypeScript 5 |
 | State management | Pinia 3 |
-| CSS | Tailwind CSS v4 (`@tailwindcss/postcss`) |
+| UI Framework | Vuetify 3 (Material Design 3) |
 | i18n | vue-i18n 11 (18 locales) |
 | Database | better-sqlite3 (native SQLite binding, WAL mode) |
 | Tests | Vitest 4 |

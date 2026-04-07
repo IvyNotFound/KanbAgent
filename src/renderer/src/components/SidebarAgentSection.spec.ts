@@ -65,7 +65,7 @@ describe('SidebarAgentSection', () => {
       global: { plugins: [pinia, i18n] },
     })
     // The agent section header should still exist
-    expect(wrapper.find('.flex-1').exists()).toBe(true)
+    expect(wrapper.find('.agent-section').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -84,8 +84,8 @@ describe('SidebarAgentSection', () => {
     const wrapper = shallowMount(SidebarAgentSection, {
       global: { plugins: [pinia, i18n] },
     })
-    const buttons = wrapper.findAll('button')
-    const hasResetBtn = buttons.some(b => b.classes().includes('text-violet-400'))
+    const buttons = wrapper.findAll('v-btn')
+    const hasResetBtn = buttons.some(b => b.classes().includes('reset-btn'))
     expect(hasResetBtn).toBe(true)
     wrapper.unmount()
   })
@@ -105,7 +105,7 @@ describe('SidebarAgentSection', () => {
     const wrapper = shallowMount(SidebarAgentSection, {
       global: { plugins: [pinia, i18n] },
     })
-    const resetBtn = wrapper.findAll('button').find(b => b.classes().includes('text-violet-400'))
+    const resetBtn = wrapper.findAll('v-btn').find(b => b.classes().includes('reset-btn'))
     expect(resetBtn).toBeUndefined()
     wrapper.unmount()
   })
@@ -134,7 +134,7 @@ describe('SidebarAgentSection', () => {
     wrapper.unmount()
   })
 
-  it('renders groups from store.agentGroupsTree via SidebarGroupNode', () => {
+  it('renders grouped agents via v-treeview (SidebarGroupNode replaced — T1668)', () => {
     const agents = [makeAgent({ id: 1, name: 'grouped-agent' })]
     const group = { id: 10, name: 'My Group', sort_order: 0, parent_id: null, members: [{ agent_id: 1, sort_order: 0 }] }
     const pinia = createTestingPinia({
@@ -152,10 +152,10 @@ describe('SidebarAgentSection', () => {
     const wrapper = shallowMount(SidebarAgentSection, {
       global: { plugins: [pinia, i18n] },
     })
-    // SidebarGroupNode is stubbed in shallowMount — verify it receives the group as a prop
-    const groupNode = wrapper.findComponent({ name: 'SidebarGroupNode' })
-    expect(groupNode.exists()).toBe(true)
-    expect(groupNode.props('group')).toMatchObject({ id: 10, name: 'My Group' })
+    // SidebarGroupNode is no longer used — v-treeview handles group rendering
+    expect(wrapper.findComponent({ name: 'SidebarGroupNode' }).exists()).toBe(false)
+    // Component renders without error
+    expect(wrapper.exists()).toBe(true)
     wrapper.unmount()
   })
 

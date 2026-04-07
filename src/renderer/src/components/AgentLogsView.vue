@@ -5,7 +5,7 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { parseUtcDate } from '@renderer/utils/parseDate'
 import { usePolledData } from '@renderer/composables/usePolledData'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 import type { AgentLog } from '@renderer/types'
 
 const props = defineProps<{
@@ -115,6 +115,19 @@ const uniqueAgents = computed(() =>
     .sort((a, b) => a[1].localeCompare(b[1]))
 )
 
+const levelBtnColor: Record<string, string | undefined> = {
+  all:   undefined,
+  info:  'info',
+  warn:  'warning',
+  error: 'error',
+  debug: 'secondary',
+}
+
+const agentSelectItems = computed<Array<{ title: string; value: number | null }>>(() => [
+  { title: t('logs.allAgents'), value: null },
+  ...uniqueAgents.value.map(([id, name]) => ({ title: name, value: id })),
+])
+
 // ── Timestamps ────────────────────────────────────────────────────────────
 function formatTime(dateStr: string): string {
   const d = parseUtcDate(dateStr)
@@ -132,26 +145,6 @@ function absoluteTime(dateStr: string): string {
     day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
-}
-
-// ── Level styling ─────────────────────────────────────────────────────────
-const levelConfig: Record<string, { label: string; text: string; bg: string; dot: string }> = {
-  info:  { label: 'info',  text: 'text-sky-700 dark:text-sky-400',       bg: 'bg-sky-100 dark:bg-sky-950/60',       dot: 'bg-sky-500 dark:bg-sky-400' },
-  warn:  { label: 'warn',  text: 'text-amber-700 dark:text-amber-400',   bg: 'bg-amber-100 dark:bg-amber-950/60',   dot: 'bg-amber-500 dark:bg-amber-400' },
-  error: { label: 'error', text: 'text-red-700 dark:text-red-400',       bg: 'bg-red-100 dark:bg-red-950/60',       dot: 'bg-red-500 dark:bg-red-400' },
-  debug: { label: 'debug', text: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-950/60', dot: 'bg-violet-500 dark:bg-violet-400' },
-}
-
-function levelCfg(niveau: string) {
-  return levelConfig[niveau] ?? levelConfig.info
-}
-
-const filterLevelConfig: Record<string, string> = {
-  all:   'text-content-tertiary bg-surface-secondary ring-edge-default',
-  info:  'text-sky-700 dark:text-sky-400 bg-sky-100 dark:bg-sky-950/60 ring-sky-300 dark:ring-sky-800',
-  warn:  'text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 ring-amber-300 dark:ring-amber-800',
-  error: 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/60 ring-red-300 dark:ring-red-800',
-  debug: 'text-violet-700 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/60 ring-violet-300 dark:ring-violet-800',
 }
 
 function resetFilters(): void {
@@ -193,200 +186,281 @@ watch(() => props.initialAgentId, (v) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base min-h-0">
-
-    <!-- ── Titre ──────────────────────────────────────────────────────────── -->
-    <div class="shrink-0 flex items-center px-6 py-3 border-b border-edge-default">
-      <h2 class="text-xl font-semibold text-content-primary">{{ t('tokenStats.logsTab') }}</h2>
+  <div class="al-view">
+    <!-- Fixed header outside card -->
+    <div class="al-header">
+      <h2 class="text-h6 font-weight-medium al-title">{{ t('tokenStats.logsTab') }}</h2>
     </div>
+    <!-- Body -->
+    <div class="al-body">
+    <v-card elevation="0" class="section-card">
 
-    <!-- ── Barre de filtres ──────────────────────────────────────────────── -->
-    <div class="shrink-0 flex items-center gap-2 px-6 py-2.5 border-b border-edge-default bg-surface-base">
-
-      <!-- Filtres niveau -->
-      <div class="flex items-center gap-1">
-        <button
+      <!-- ── Filter bar ──────────────────────────────────────────────────── -->
+      <div class="al-filter-bar">
+      <div class="al-level-btns">
+        <v-btn
           v-for="lvl in levels"
           :key="lvl"
-          :class="[
-            'px-2 py-0.5 rounded text-xs font-mono font-medium ring-1 transition-all',
-            filterLevel === lvl
-              ? filterLevelConfig[lvl]
-              : 'text-content-subtle bg-transparent ring-transparent hover:text-content-tertiary hover:ring-edge-default'
-          ]"
+          size="small"
+          class="al-level-btn"
+          :variant="filterLevel === lvl ? 'tonal' : 'text'"
+          :color="filterLevel === lvl ? levelBtnColor[lvl] : undefined"
           @click="filterLevel = lvl"
-        >{{ lvl }}</button>
+        >{{ lvl }}</v-btn>
       </div>
 
-      <!-- Séparateur -->
-      <div class="w-px h-4 bg-surface-secondary mx-1" />
+      <v-select
+        v-model="filterAgentId"
+        :items="agentSelectItems"
+        class="al-agent-select"
+        density="compact"
+        variant="outlined"
+        :hide-details="true"
+        style="max-width: 180px;"
+      />
 
-      <!-- Filtre agent -->
-      <select
-        v-model.number="filterAgentId"
-        class="bg-surface-secondary border border-edge-default rounded px-2 py-0.5 text-xs font-mono text-content-tertiary outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
-      >
-        <option :value="null">{{ t('logs.allAgents') }}</option>
-        <option
-          v-for="[id, name] in uniqueAgents"
-          :key="id"
-          :value="id"
-        >{{ name }}</option>
-      </select>
-
-      <!-- Reset filters -->
-      <button
+      <v-btn
         v-if="filterLevel !== 'all' || filterAgentId !== null"
-        class="px-2 py-0.5 rounded text-xs font-mono text-content-subtle bg-transparent ring-1 ring-edge-default hover:text-content-secondary hover:ring-violet-500 transition-all"
+        size="small"
+        variant="text"
+        color="primary"
+        class="al-reset-btn text-caption"
         :title="t('logs.resetFilters')"
         @click="resetFilters"
-      >{{ t('logs.reset') }}</button>
+      >{{ t('logs.reset') }}</v-btn>
 
-      <!-- Spacer -->
-      <div class="flex-1" />
+      <div class="al-spacer" />
 
-      <!-- Pagination controls -->
-      <div v-if="totalPages > 1" class="flex items-center gap-2">
-        <button
-          class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      <div v-if="totalPages > 1" class="al-pagination">
+        <v-btn
+          icon="mdi-chevron-left"
+          size="x-small"
+          variant="text"
           :disabled="currentPage === 1"
           :title="t('logs.prevPage')"
           @click="prevPage"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-            <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
-          </svg>
-        </button>
-        <span class="text-[11px] text-content-faint font-mono">
-          {{ currentPage }} / {{ totalPages }}
-        </span>
-        <button
-          class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        />
+        <span class="al-page-info text-caption">{{ currentPage }} / {{ totalPages }}</span>
+        <v-btn
+          icon="mdi-chevron-right"
+          size="x-small"
+          variant="text"
           :disabled="currentPage >= totalPages"
           :title="t('logs.nextPage')"
           @click="nextPage"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-          </svg>
-        </button>
+        />
       </div>
+      <span v-else class="al-count text-caption">{{ paginatedLogs.length }} / {{ totalCount }}</span>
 
-      <!-- Compteur + refresh -->
-      <span v-else class="text-[11px] text-content-faint font-mono">
-        {{ paginatedLogs.length }} / {{ totalCount }}
-      </span>
-      <button
-        class="w-6 h-6 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors"
-        :class="{ 'animate-spin': loading }"
-        :title="t('logs.refresh')"
+      <v-btn
+        icon="mdi-refresh"
+        variant="text"
+        size="small"
+        :loading="loading"
+        :title="t('common.refresh')"
         @click="fetchLogs"
-      >
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
-          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-        </svg>
-      </button>
+      />
     </div>
 
-    <!-- ── Liste logs ────────────────────────────────────────────────────── -->
-    <div class="flex-1 overflow-y-auto min-h-0" style="contain: strict;">
+    <!-- ── Log list ────────────────────────────────────────────────────── -->
+    <div class="al-list">
 
       <!-- Empty state -->
-      <div
-        v-if="paginatedLogs.length === 0 && !loading"
-        class="flex flex-col items-center justify-center h-full gap-2"
-      >
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-8 h-8 text-content-dim">
-          <path d="M5 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 3a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H5z"/>
-          <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
-        </svg>
-        <p class="text-sm text-content-faint">{{ t('logs.noLogs') }}</p>
+      <div v-if="paginatedLogs.length === 0 && !loading" class="al-empty">
+        <v-icon class="al-empty-icon" size="24">mdi-file-document-outline</v-icon>
+        <p class="al-empty-text text-body-2">{{ t('logs.noLogs') }}</p>
       </div>
 
       <!-- Log rows -->
       <div
         v-for="log in enrichedLogs"
         :key="log.id"
-        :class="[
-          'group border-b border-edge-default/50 transition-colors',
-          log.detail || log.parsedFiles.length > 0 ? 'cursor-pointer hover:bg-surface-secondary/40' : ''
-        ]"
+        class="al-row"
+        :class="log.detail || log.parsedFiles.length > 0 ? 'al-row--clickable' : ''"
         @click="(log.detail || log.parsedFiles.length > 0) && toggleExpand(log.id)"
       >
-        <!-- Ligne principale -->
-        <div class="flex items-center gap-3 px-6 py-2.5 min-w-0">
-
-          <!-- Dot niveau -->
-          <span
-            :class="['shrink-0 w-2 h-2 rounded-full', levelCfg(log.level).dot]"
-          />
-
-          <!-- Badge niveau -->
-          <span
-            :class="[
-              'shrink-0 text-xs font-mono font-semibold px-1.5 py-0.5 rounded',
-              levelCfg(log.level).text,
-              levelCfg(log.level).bg
-            ]"
-          >{{ levelCfg(log.level).label }}</span>
-
-          <!-- Timestamp -->
-          <span
-            class="shrink-0 text-xs text-content-subtle font-mono w-14 text-right tabular-nums"
-            :title="absoluteTime(log.created_at)"
-          >{{ formatTime(log.created_at) }}</span>
-
-          <!-- Agent badge -->
-          <span
-            v-if="log.agent_name"
-            class="shrink-0 text-xs font-mono px-1.5 py-0.5 rounded font-medium"
-            :style="{
-              color: agentFg(log.agent_name),
-              backgroundColor: agentBg(log.agent_name),
-              boxShadow: `0 0 0 1px ${agentBorder(log.agent_name)}`
-            }"
-          >{{ log.agent_name }}</span>
-          <span v-else class="shrink-0 text-xs font-mono text-content-dim px-1.5 py-0.5">—</span>
-
-          <!-- Action -->
-          <span class="text-sm font-semibold text-content-secondary truncate min-w-0">{{ log.action }}</span>
-
-          <!-- Chevron si détail existe -->
-          <svg
+        <!-- Main line -->
+        <div class="al-row-main">
+          <v-chip
+            :color="levelBtnColor[log.level]"
+            size="x-small"
+            variant="tonal"
+            class="al-level-chip"
+          >{{ log.level }}</v-chip>
+          <span class="al-time text-label-medium" :title="absoluteTime(log.created_at)">{{ formatTime(log.created_at) }}</span>
+          <AgentBadge v-if="log.agent_name" :name="log.agent_name" />
+          <span v-else class="al-agent-badge al-agent-badge--none text-label-medium">—</span>
+          <span class="al-action text-body-2">{{ log.action }}</span>
+          <v-icon
             v-if="log.detail || log.parsedFiles.length > 0"
-            :class="[
-              'shrink-0 w-3 h-3 text-content-faint transition-transform ml-auto',
-              isExpanded(log.id) ? 'rotate-90' : ''
-            ]"
-            viewBox="0 0 16 16" fill="currentColor"
-          >
-            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-          </svg>
+            class="al-chevron"
+            :class="isExpanded(log.id) ? 'al-chevron--open' : ''"
+            size="12"
+          >mdi-chevron-right</v-icon>
         </div>
 
-        <!-- Détail pliable -->
-        <div
-          v-if="isExpanded(log.id)"
-          class="px-6 pb-2.5 pt-0 ml-[18px] flex flex-col gap-1.5"
-        >
-          <!-- Texte detail -->
-          <p
-            v-if="log.detail"
-            class="text-sm text-content-tertiary leading-relaxed whitespace-pre-wrap break-words"
-          >{{ log.detail }}</p>
-
-          <!-- Fichiers -->
-          <div v-if="log.parsedFiles.length > 0" class="flex flex-wrap gap-1 mt-0.5">
+        <!-- Expandable detail -->
+        <div v-if="isExpanded(log.id)" class="al-detail">
+          <p v-if="log.detail" class="al-detail-text text-body-2">{{ log.detail }}</p>
+          <div v-if="log.parsedFiles.length > 0" class="al-files">
             <span
               v-for="f in log.parsedFiles"
               :key="f"
-              class="text-xs font-mono px-1.5 py-0.5 rounded bg-surface-secondary text-content-subtle border border-edge-default/50"
+              class="al-file-badge text-label-medium"
             >{{ f.split('/').pop() }}</span>
           </div>
         </div>
       </div>
-    </div>
 
+    </div>
+    </v-card>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.al-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  min-height: 0;
+}
+
+.al-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.al-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+
+.al-body {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* filter bar */
+.al-filter-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--edge-default);
+  background: var(--surface-base);
+}
+.al-level-btns { display: flex; align-items: center; gap: 4px; }
+.al-spacer { flex: 1; }
+.al-pagination { display: flex; align-items: center; gap: 4px; }
+.al-page-info { color: var(--content-faint); }
+.al-count { color: var(--content-faint); }
+
+/* log list */
+.al-list { flex: 1; overflow-y: auto; min-height: 0; contain: strict; }
+.al-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+}
+.al-empty-icon { width: 32px; height: 32px; color: var(--content-dim); }
+.al-empty-text {}
+
+/* log rows */
+.al-row {
+  border-bottom: 1px solid rgba(var(--v-theme-surface-tertiary),0.5);
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
+}
+.al-row--clickable { cursor: pointer; }
+.al-row--clickable:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
+
+.al-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 24px;
+  min-width: 0;
+}
+
+/* level chip (replaces custom dot+badge) */
+.al-level-chip { flex-shrink: 0; }
+
+.al-time {
+  flex-shrink: 0;
+  color: var(--content-subtle);
+  font-family: ui-monospace, monospace;
+  width: 56px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.al-agent-badge {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: var(--shape-xs);
+  font-weight: 500;
+}
+.al-agent-badge--none { color: var(--content-dim); }
+.al-action {
+  font-weight: 500;
+  color: var(--content-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.al-chevron {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--content-faint);
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
+  margin-left: auto;
+}
+.al-chevron--open { transform: rotate(90deg); }
+
+.al-detail {
+  padding: 0 24px 8px;
+  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.al-detail-text {
+  color: var(--content-tertiary);
+  line-height: 1.625;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  margin: 0;
+}
+.al-files { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.al-file-badge {
+  font-family: ui-monospace, monospace;
+  padding: 4px 8px;
+  border-radius: var(--shape-xs);
+  background: var(--surface-secondary);
+  color: var(--content-subtle);
+  border: 1px solid rgba(var(--v-theme-surface-tertiary),0.5);
+}
+</style>

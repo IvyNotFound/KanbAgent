@@ -272,9 +272,9 @@ export function useTokenStats() {
   })
 
   const cacheHitColor = computed(() => {
-    if (cacheHitRate.value > 50) return 'text-emerald-600 dark:text-emerald-400'
-    if (cacheHitRate.value >= 20) return 'text-amber-600 dark:text-amber-400'
-    return 'text-content-faint'
+    if (cacheHitRate.value > 50) return '#34d399'
+    if (cacheHitRate.value >= 20) return '#fbbf24'
+    return 'var(--content-faint)'
   })
 
   // ── Sparkline 30 days ───────────────────────────────────────────────────────

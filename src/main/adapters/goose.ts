@@ -61,7 +61,15 @@ export const gooseAdapter: CliAdapter = {
     // Goose may emit ACP JSON or plain text — attempt parse, fallback to text
     try {
       const parsed = JSON.parse(line) as Record<string, unknown>
-      if (typeof parsed.type === 'string') return parsed as unknown as StreamEvent
+      if (typeof parsed.type === 'string') {
+        // TODO(T1518): Goose ACP tool event format is not yet confirmed from a real run.
+        // Once confirmed, add explicit tool_use / tool_result conversion here (same pattern
+        // as opencode.ts). Until then, ACP events with a type field pass through as-is.
+        // ask_user: Goose ACP protocol is not yet confirmed. If Goose exposes a user-prompt
+        // mechanism, emit { type: 'ask_user', text: '...' } here once the ACP format is known.
+        // Until confirmed: N/A. (T1708)
+        return parsed as unknown as StreamEvent
+      }
       return { type: 'text', text: line }
     } catch {
       return { type: 'text', text: line }

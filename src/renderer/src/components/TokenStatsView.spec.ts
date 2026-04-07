@@ -58,7 +58,9 @@ describe('TokenStatsView (T353)', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('dev-front')
+    const badges = wrapper.findAllComponents({ name: 'AgentBadge' })
+    expect(badges.length).toBeGreaterThan(0)
+    expect(badges[0].props('name')).toBe('dev-front')
   })
 
   it('renders session table with session IDs', async () => {

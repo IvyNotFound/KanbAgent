@@ -22,6 +22,7 @@ import {
   isProjectPathAllowed,
 } from './db'
 import { buildSingleFileZip } from './ipc-project-zip'
+import { startDbDaemon } from './db-daemon'
 
 // ── Trusted project paths persistence ────────────────────────────────────────
 // Paths registered via native dialog are persisted to userData so they can be
@@ -99,6 +100,7 @@ export function registerProjectHandlers(): void {
     registerDbPath(dbPath)
     registerProjectPath(projectPath)
     void persistTrustedPaths()
+    if (dbPath) void startDbDaemon(dbPath).catch(() => {})
     let hasCLAUDEmd = false
     try { await access(join(projectPath, 'CLAUDE.md')); hasCLAUDEmd = true } catch { /* not found */ }
     if (!dbPath) return { projectPath, dbPath: null, error: null, hasCLAUDEmd }
@@ -215,6 +217,7 @@ export function registerProjectHandlers(): void {
       }
       db.close()
       registerDbPath(dbPath)
+      void startDbDaemon(dbPath).catch(() => {})
       console.log('[create-project-db] created:', dbPath)
 
       // Copy agent scripts to <projectPath>/scripts/

@@ -79,7 +79,7 @@ describe('ActivityHeatmap (T784)', () => {
     ])
     const wrapper = mount(ActivityHeatmap, { props: { dbPath: '/tmp/test.db' }, global: { plugins: [i18n] } })
     await flushPromises()
-    const agentABtn = wrapper.findAll('button').find(b => b.text() === 'agentA')
+    const agentABtn = wrapper.findAll('v-btn').find(b => b.text() === 'agentA')
     expect(agentABtn?.exists()).toBe(true)
     await agentABtn!.trigger('click')
     await nextTick()

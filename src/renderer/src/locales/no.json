@@ -29,8 +29,6 @@
     "prevPage": "Forrige",
     "nextPage": "Neste",
     "pageOf": "Side {page} / {total} ({count} oppgaver)",
-    "listView": "Listevisning",
-    "treeView": "Trevisning",
     "staleTasks": "{count} foreldet oppgave | {count} foreldede oppgaver"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Maksimer"
   },
   "tabBar": {
-    "openWslTerminal": "Åpne WSL-terminal",
     "closeTab": "Lukk",
     "unsaved": "Ulagrede endringer",
     "closeFileTitle": "Lukk fil",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Agentkvalitet",
-    "all": "Alle",
     "refresh": "Oppdater",
     "loading": "Laster…",
     "error": "Feil: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Prosjektavslagsrate",
     "noRejections": "Ingen avslag funnet",
     "heuristicNote": "Heuristisk deteksjon — gjennomgangskommentarer som inneholder \"reject\", \"return\" eller \"todo\"",
-    "colTotal": "Total",
-    "colRejected": "Avslag",
-    "colRate": "Frekvens",
-    "colBar": "Stolpe"
+    "colAgent": "Agent",
+    "colRejections": "Avsl./Total",
+    "colRate": "Rate"
   },
   "sessionActivityChart": {
     "title": "Øktaktivitet — siste 14 dager",
@@ -578,7 +573,10 @@
     "streaming": "Pågår…",
     "waitingMessages": "Venter på meldinger…",
     "turns": "{n} runde | {n} runder",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Send en melding…",
+    "askQuestion": "Agentspørsmål",
+    "replyPlaceholder": "Svar til agent…"
   },
   "task": {
     "running": "Oppgave pågår",
@@ -610,7 +608,8 @@
     "colSource": "Kilde",
     "colTests": "Tester",
     "colFiles": "Filer",
-    "scannedAt": "Skannet {date}"
+    "scannedAt": "Skannet {date}",
+    "languageDetail": "Språkdetaljer"
   },
   "update": {
     "available": "Oppdatering {version} tilgjengelig",

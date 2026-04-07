@@ -83,16 +83,16 @@ const avgRate = computed<number | null>(() => {
   return Math.round(valid.reduce((sum, d) => sum + (d.rate ?? 0), 0) / valid.length)
 })
 
-function barColor(rate: number): string {
-  if (rate >= 80) return 'bg-emerald-500 dark:bg-emerald-600'
-  if (rate >= 50) return 'bg-amber-400 dark:bg-amber-500'
-  return 'bg-red-500 dark:bg-red-600'
+function barClass(rate: number): string {
+  if (rate >= 80) return 'bar-high'
+  if (rate >= 50) return 'bar-mid'
+  return 'bar-low'
 }
 
-function avgBadgeColor(rate: number): string {
-  if (rate >= 80) return 'text-emerald-500 dark:text-emerald-400'
-  if (rate >= 50) return 'text-amber-400 dark:text-amber-300'
-  return 'text-red-500 dark:text-red-400'
+function avgBadgeStyle(rate: number): string {
+  if (rate >= 80) return 'rgb(var(--v-theme-secondary))'
+  if (rate >= 50) return 'rgb(var(--v-theme-warning))'
+  return 'rgb(var(--v-theme-error))'
 }
 
 function barH(rate: number): string {
@@ -111,85 +111,166 @@ function tooltip(day: DayRate): string {
 </script>
 
 <template>
-  <div class="flex flex-col h-full min-h-0 px-4 py-3 gap-3 overflow-y-auto rounded-lg bg-surface-secondary border border-edge-default overflow-hidden">
+  <v-card elevation="0" class="chart-card">
     <!-- Title with avg rate -->
-    <div class="shrink-0 flex items-center gap-2">
-      <h3 class="text-xs font-semibold text-content-secondary">
+    <div class="chart-header d-flex align-center ga-2">
+      <h3 class="text-body-2 font-weight-medium chart-title">
         {{ t('successRateChart.title') }}
       </h3>
       <span
         v-if="avgRate !== null"
-        class="text-xs font-bold font-mono"
-        :class="avgBadgeColor(avgRate)"
+        class="text-caption font-weight-bold font-mono"
+        :data-rate-level="avgRate >= 80 ? 'high' : avgRate >= 50 ? 'mid' : 'low'"
+        :style="{ color: avgBadgeStyle(avgRate) }"
       >
         {{ t('successRateChart.avg', { rate: avgRate }) }}
       </span>
     </div>
+    <div class="chart-body">
 
-    <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center flex-1">
-      <span class="text-xs text-content-faint animate-pulse">{{ t('successRateChart.loading') }}</span>
-    </div>
-
-    <!-- Empty state -->
-    <div v-else-if="isEmpty" class="flex items-center justify-center flex-1">
-      <p class="text-xs text-content-faint italic">{{ t('successRateChart.empty') }}</p>
-    </div>
-
-    <!-- Chart -->
-    <template v-else>
-      <!-- Bar area -->
-      <div class="flex items-end gap-[3px] shrink-0" :style="{ height: `${CHART_H}px` }">
-        <div
-          v-for="day in grouped"
-          :key="day.date"
-          class="flex flex-col-reverse flex-1 cursor-default"
-          :title="tooltip(day)"
-        >
-          <div
-            v-if="day.rate !== null"
-            class="w-full rounded-sm transition-all"
-            :class="barColor(day.rate)"
-            :style="{ height: barH(day.rate) }"
-          />
-          <!-- No data marker -->
-          <div
-            v-else
-            class="w-full rounded-sm bg-surface-secondary"
-            style="height: 4px"
-          />
-        </div>
+      <!-- Loading -->
+      <div v-if="loading" class="d-flex align-center justify-center flex-1">
+        <span class="text-caption text-disabled">{{ t('successRateChart.loading') }}</span>
       </div>
 
-      <!-- Reference lines labels -->
-      <div class="relative shrink-0 -mt-1">
-        <div class="flex gap-[3px]">
+      <!-- Empty state -->
+      <div v-else-if="isEmpty" class="d-flex align-center justify-center flex-1">
+        <p class="text-caption text-disabled font-italic">{{ t('successRateChart.empty') }}</p>
+      </div>
+
+      <!-- Chart -->
+      <template v-else>
+        <!-- Bar area -->
+        <div class="bars-container" :style="{ height: `${CHART_H}px` }">
+          <div
+            v-for="day in grouped"
+            :key="day.date"
+            class="bar-col"
+            :title="tooltip(day)"
+          >
+            <div
+              v-if="day.rate !== null"
+              class="bar"
+              :class="barClass(day.rate)"
+              :style="{ height: barH(day.rate) }"
+            />
+            <!-- No data marker -->
+            <div v-else class="bar bar-empty" style="height: 4px" />
+          </div>
+        </div>
+
+        <!-- Date labels -->
+        <div class="bars-container date-labels">
           <div
             v-for="(day, idx) in grouped"
             :key="day.date"
-            class="flex-1 text-center font-mono"
-            :class="(idx % 2 === 0 || idx === 13) ? 'text-[10px] text-content-faint' : 'text-transparent'"
+            class="bar-col text-center font-mono text-label-medium"
+            :class="(idx % 2 === 0 || idx === 13) ? 'date-visible' : 'date-hidden'"
           >
             {{ shortDate(day.date) }}
           </div>
         </div>
-      </div>
 
-      <!-- Legend / thresholds -->
-      <div class="flex items-center gap-4 shrink-0 flex-wrap">
-        <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 rounded-sm bg-emerald-500 dark:bg-emerald-600" />
-          <span class="text-[11px] text-content-tertiary">≥ 80%</span>
+        <!-- Legend / thresholds -->
+        <div class="d-flex align-center ga-4 flex-wrap">
+          <div class="d-flex align-center ga-2">
+            <span class="legend-dot legend-dot--high" />
+            <span class="text-caption text-medium-emphasis">≥ 80%</span>
+          </div>
+          <div class="d-flex align-center ga-2">
+            <span class="legend-dot legend-dot--mid" />
+            <span class="text-caption text-medium-emphasis">≥ 50%</span>
+          </div>
+          <div class="d-flex align-center ga-2">
+            <span class="legend-dot legend-dot--low" />
+            <span class="text-caption text-medium-emphasis">&lt; 50%</span>
+          </div>
         </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 rounded-sm bg-amber-400 dark:bg-amber-500" />
-          <span class="text-[11px] text-content-tertiary">≥ 50%</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 rounded-sm bg-red-500 dark:bg-red-600" />
-          <span class="text-[11px] text-content-tertiary">&lt; 50%</span>
-        </div>
-      </div>
-    </template>
-  </div>
+      </template>
+
+    </div>
+  </v-card>
 </template>
+
+<style scoped>
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border: 1px solid var(--edge-default);
+  overflow: hidden;
+  background: var(--surface-primary) !important;
+}
+
+.chart-header {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+
+.chart-title {
+  color: var(--content-secondary);
+  margin: 0;
+}
+
+.chart-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.bars-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column-reverse;
+  flex: 1;
+  cursor: default;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 2px;
+  transition: height var(--md-duration-short4) var(--md-easing-standard);
+}
+
+.bar-high  { background-color: rgb(var(--v-theme-secondary)); }
+.bar-mid   { background-color: rgb(var(--v-theme-warning)); }
+.bar-low   { background-color: rgb(var(--v-theme-error)); }
+.bar-empty { background-color: var(--surface-tertiary); }
+
+.date-labels {
+  height: auto !important;
+  align-items: flex-start;
+}
+
+.date-visible {
+color: var(--content-faint);
+}
+
+.date-hidden {
+  color: transparent;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-dot--high { background-color: rgb(var(--v-theme-secondary)); }
+.legend-dot--mid  { background-color: rgb(var(--v-theme-warning)); }
+.legend-dot--low  { background-color: rgb(var(--v-theme-error)); }
+</style>

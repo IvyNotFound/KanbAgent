@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
+import vuetify from 'vite-plugin-vuetify'
 import { readFileSync } from 'fs'
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
@@ -18,7 +19,7 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [vue()],
+    plugins: [vue(), vuetify({ autoImport: true })],
     define: {
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
       // Enable JIT message compilation (interpreter-based, no new Function())

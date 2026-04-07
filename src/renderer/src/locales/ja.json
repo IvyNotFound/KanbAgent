@@ -29,8 +29,6 @@
     "prevPage": "前へ",
     "nextPage": "次へ",
     "pageOf": "ページ {page} / {total} （{count} タスク）",
-    "listView": "リスト表示",
-    "treeView": "ツリー表示",
     "staleTasks": "{count} 件の停滞タスク | {count} 件の停滞タスク"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "最大化"
   },
   "tabBar": {
-    "openWslTerminal": "WSL ターミナルを開く",
     "closeTab": "閉じる",
     "unsaved": "未保存の変更",
     "closeFileTitle": "ファイルを閉じる",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "エージェント品質",
-    "all": "全て",
     "refresh": "更新",
     "loading": "読み込み中…",
     "error": "エラー: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "プロジェクト差し戻し率",
     "noRejections": "差し戻しは検出されませんでした",
     "heuristicNote": "ヒューリスティック検出 — 「reject」「return」「todo」を含むレビューコメントを検出",
-    "colTotal": "合計",
-    "colRejected": "差し戻し",
-    "colRate": "率",
-    "colBar": "バー"
+    "colAgent": "エージェント",
+    "colRejections": "却下/合計",
+    "colRate": "率"
   },
   "sessionActivityChart": {
     "title": "セッションアクティビティ — 直近14日間",
@@ -578,7 +573,10 @@
     "streaming": "処理中…",
     "waitingMessages": "メッセージを待っています…",
     "turns": "{n} ターン | {n} ターン",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "メッセージを送信…",
+    "askQuestion": "エージェントからの質問",
+    "replyPlaceholder": "エージェントに返信…"
   },
   "task": {
     "running": "タスク進行中",
@@ -610,7 +608,8 @@
     "colSource": "ソース",
     "colTests": "テスト",
     "colFiles": "ファイル",
-    "scannedAt": "{date} にスキャン"
+    "scannedAt": "{date} にスキャン",
+    "languageDetail": "言語の詳細"
   },
   "update": {
     "available": "アップデート {version} が利用可能",

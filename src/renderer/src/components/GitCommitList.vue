@@ -40,34 +40,85 @@ function formatDate(iso: string): string {
 </script>
 
 <template>
-  <div class="overflow-y-auto">
+  <div class="commit-list">
     <div
       v-for="commit in visibleCommits"
       :key="commit.hash"
-      class="flex items-start gap-2 px-4 py-2 border-b border-edge-default/50 last:border-0 hover:bg-surface-tertiary/30 transition-colors"
+      class="commit-row"
     >
       <!-- Hash -->
-      <code class="text-[10px] text-content-faint font-mono w-14 shrink-0 mt-0.5 select-all">{{ commit.hash.slice(0, 7) }}</code>
+      <code class="commit-hash">{{ commit.hash.slice(0, 7) }}</code>
 
       <!-- Subject + author -->
-      <div class="flex-1 min-w-0">
-        <p class="text-xs text-content-tertiary truncate">{{ commit.subject }}</p>
-        <p class="text-[10px] text-content-faint font-mono mt-0.5">
+      <div class="commit-body">
+        <p class="commit-subject text-caption">{{ commit.subject }}</p>
+        <p class="commit-meta">
           <span>{{ commit.author }}</span>
-          <span class="mx-1 opacity-50">·</span>
+          <span class="commit-sep">·</span>
           <span>{{ formatDate(commit.date) }}</span>
         </p>
       </div>
 
       <!-- Task badges -->
-      <div class="flex flex-wrap gap-1 shrink-0">
-        <button
+      <div class="commit-badges">
+        <v-chip
           v-for="id in commit.taskIds"
           :key="id"
-          class="text-[10px] px-1.5 py-0.5 rounded font-mono bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors"
+          size="x-small"
+          variant="tonal"
+          color="primary"
+          class="commit-task-badge"
           @click="emit('openTask', id)"
-        >T{{ id }}</button>
+        >T{{ id }}</v-chip>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.commit-list { overflow-y: auto; }
+.commit-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(var(--v-theme-surface-tertiary), 0.5);
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
+}
+.commit-row:last-child { border-bottom: none; }
+.commit-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
+.commit-hash {
+  font-size: 10px;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  width: 56px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  user-select: all;
+}
+.commit-body {
+  flex: 1;
+  min-width: 0;
+}
+.commit-subject {
+  color: var(--content-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+.commit-meta {
+  font-size: 10px;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  margin: 2px 0 0;
+}
+.commit-sep { margin: 0 4px; opacity: 0.5; }
+.commit-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.commit-task-badge { font-family: ui-monospace, monospace; cursor: pointer; }
+</style>

@@ -72,90 +72,192 @@ onUnmounted(() => document.removeEventListener('keyup', onKey))
 </script>
 
 <template>
-  <Transition
-    enter-active-class="transition-opacity duration-150"
-    leave-active-class="transition-opacity duration-150"
-    enter-from-class="opacity-0"
-    leave-to-class="opacity-0"
-    appear
-  >
-    <!-- Overlay -->
+  <v-dialog model-value max-width="420" @update:model-value="emit('close')">
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      data-testid="project-popup-backdrop"
       @click.self="emit('close')"
     >
       <!-- Card -->
-      <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl w-80 flex flex-col overflow-hidden">
+      <v-card class="popup-card" elevation="2">
         <!-- Header -->
-        <div class="px-5 py-4 border-b border-edge-subtle flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-surface-secondary flex items-center justify-center shrink-0">
-              <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-content-tertiary">
-                <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z" />
-              </svg>
+        <div class="popup-header py-4 px-5">
+          <div class="popup-header-left">
+            <div class="popup-icon">
+              <v-icon size="16" :style="{ color: 'rgb(var(--v-theme-secondary))' }">mdi-folder-outline</v-icon>
             </div>
-            <h2 class="text-sm font-semibold text-content-primary">{{ t('project.activeTitle') }}</h2>
+            <h2 class="popup-title text-subtitle-2">{{ t('project.activeTitle') }}</h2>
           </div>
-          <button
-            class="w-7 h-7 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors"
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            density="compact"
+            class="popup-close"
             :title="t('common.close')"
             @click="emit('close')"
-          >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-              <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z" />
-            </svg>
-          </button>
+          />
         </div>
 
         <!-- Body -->
-        <div class="px-5 py-4 flex flex-col gap-3">
+        <div class="popup-body py-4 px-5 ga-3">
           <!-- Project info -->
-          <div class="space-y-1">
-            <p class="text-sm font-medium text-content-primary truncate" :title="store.projectPath ?? undefined">
+          <div class="project-info ga-1">
+            <p class="project-name text-body-2" :title="store.projectPath ?? undefined">
               {{ projectName }}
             </p>
             <p
               v-if="store.dbPath"
-              class="text-xs text-content-muted font-mono truncate"
+              class="project-path"
               :title="store.dbPath"
             >
               {{ store.dbPath }}
             </p>
-            <p v-else-if="store.projectPath" class="text-xs text-amber-500/70 font-mono">
+            <p v-else-if="store.projectPath" class="project-initializing">
               {{ t('sidebar.initializing') }}
             </p>
           </div>
 
           <!-- Error -->
-          <div v-if="store.error" class="px-3 py-2 bg-red-950/40 border border-red-800/50 rounded-md">
-            <p class="text-xs text-red-400 break-all">{{ store.error }}</p>
+          <div v-if="store.error" class="project-error py-2 px-3">
+            <p class="project-error-text text-caption">{{ store.error }}</p>
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="px-5 py-4 border-t border-edge-subtle bg-surface-base/50 flex flex-col gap-2">
-          <button
-            class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-surface-secondary hover:bg-surface-tertiary text-content-primary transition-colors"
+        <!-- Footer — MD3: horizontal actions right-aligned, version text left -->
+        <v-card-actions class="popup-footer px-4 py-3">
+          <p class="popup-version">v{{ appVersion }}</p>
+          <v-spacer />
+          <v-btn
+            variant="text"
+            color="primary"
+            class="btn-change px-4"
             @click="handleChangeProject"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
-              <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.98 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z" />
-            </svg>
             {{ t('project.changeProject') }}
-          </button>
-          <button
+          </v-btn>
+          <v-btn
             v-if="store.projectPath"
-            class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-800/30 hover:border-red-700/50 transition-colors"
+            color="error"
+            variant="tonal"
+            class="btn-close-project px-4"
             @click="handleCloseProject"
           >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
-              <path d="M4.354 4.646a.5.5 0 0 0-.708.708L7.293 8l-3.647 3.646a.5.5 0 0 0 .708.708L8 8.707l3.646 3.647a.5.5 0 0 0 .708-.708L8.707 8l3.647-3.646a.5.5 0 0 0-.708-.708L8 7.293 4.354 4.646z" />
-            </svg>
             {{ t('project.close') }}
-          </button>
-          <p class="text-[11px] text-content-faint font-mono text-right pt-1">v{{ appVersion }}</p>
-        </div>
-      </div>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </div>
-  </Transition>
+  </v-dialog>
 </template>
+
+<style scoped>
+.popup-card {
+  border-radius: var(--shape-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.popup-header {
+  border-bottom: 1px solid var(--edge-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.popup-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.popup-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--shape-sm);
+  background-color: rgba(var(--v-theme-secondary), 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.popup-title {
+  font-weight: 600;
+  color: var(--content-primary);
+  margin: 0;
+}
+
+.popup-close {
+  color: var(--content-subtle) !important;
+}
+
+/* Body */
+.popup-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-name {
+  font-weight: 500;
+  color: var(--content-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.project-path {
+  font-size: 0.75rem;
+  color: var(--content-muted);
+  font-family: ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.project-initializing {
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-warning));
+  font-family: ui-monospace, monospace;
+  margin: 0;
+}
+
+.project-error {
+  background-color: rgba(var(--v-theme-error), 0.15);
+  border: 1px solid rgba(var(--v-theme-error), 0.3);
+  border-radius: var(--shape-xs);
+}
+.project-error-text {
+  color: rgb(var(--v-theme-error));
+  word-break: break-all;
+  margin: 0;
+}
+
+/* Footer — transparent so it inherits the card's surface-dialog background */
+.popup-footer {
+  border-top: 1px solid var(--edge-subtle);
+  background: transparent;
+}
+
+
+.popup-version {
+  font-size: 0.6875rem;
+  color: var(--content-faint);
+  font-family: ui-monospace, monospace;
+  margin: 0;
+  align-self: center;
+}
+
+.icon-sm {
+  width: 1rem;
+  height: 1rem;
+}
+</style>

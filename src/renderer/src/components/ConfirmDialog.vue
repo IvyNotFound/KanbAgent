@@ -1,26 +1,40 @@
 <script setup lang="ts">
-import { watch, ref, nextTick } from 'vue'
+import { watch, ref, nextTick, computed, onUnmounted, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
 
 const { t } = useI18n()
 const { pending, accept, cancel } = useConfirmDialog()
 
-const cancelBtn = ref<HTMLButtonElement | null>(null)
-const confirmBtn = ref<HTMLButtonElement | null>(null)
+const cancelBtn = ref<ComponentPublicInstance | null>(null)
+const confirmBtn = ref<ComponentPublicInstance | null>(null)
+
+const isOpen = computed(() => !!pending.value)
 
 // Auto-focus confirm button when dialog opens
 watch(pending, (val) => {
-  if (val) nextTick(() => confirmBtn.value?.focus())
+  if (val) nextTick(() => confirmBtn.value?.$el?.focus())
+})
+
+// Document-level Escape listener — works with v-dialog AND in unit tests
+let escListener: ((e: KeyboardEvent) => void) | null = null
+watch(pending, (val) => {
+  if (val && !escListener) {
+    escListener = (e: KeyboardEvent) => { if (e.key === 'Escape') cancel() }
+    document.addEventListener('keydown', escListener)
+  } else if (!val && escListener) {
+    document.removeEventListener('keydown', escListener)
+    escListener = null
+  }
+})
+
+onUnmounted(() => {
+  if (escListener) document.removeEventListener('keydown', escListener)
 })
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    cancel()
-    return
-  }
   if (e.key === 'Tab') {
-    const focusable = [cancelBtn.value, confirmBtn.value].filter(Boolean) as HTMLElement[]
+    const focusable = [cancelBtn.value?.$el, confirmBtn.value?.$el].filter(Boolean) as HTMLElement[]
     if (focusable.length === 0) return
     const current = document.activeElement
     const idx = focusable.indexOf(current as HTMLElement)
@@ -34,120 +48,102 @@ function onKeydown(e: KeyboardEvent) {
     e.preventDefault()
   }
 }
+
+const confirmBtnColor = computed(() =>
+  pending.value?.options.type === 'danger' ? 'error' :
+  pending.value?.options.type === 'warning' ? 'warning' : 'primary'
+)
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition-opacity duration-150"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition-opacity duration-100"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+  <v-dialog :model-value="isOpen" max-width="420" persistent @update:model-value="cancel">
+    <v-card
+      v-if="pending"
+      elevation="3"
+      role="alertdialog"
+      aria-modal="true"
+      :aria-label="pending.options.title"
+      @keydown="onKeydown"
     >
-      <div
-        v-if="pending"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-        tabindex="-1"
-        @click.self="cancel"
-        @keydown="onKeydown"
-      >
-        <Transition
-          enter-active-class="transition-all duration-150"
-          enter-from-class="opacity-0 scale-95"
-          enter-to-class="opacity-100 scale-100"
-          leave-active-class="transition-all duration-100"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
-        >
+      <!-- Header with icon -->
+      <v-card-text class="pa-5 pb-3">
+        <div class="d-flex align-start ga-3">
+          <!-- Icon wrapper -->
           <div
-            v-if="pending"
-            class="w-[380px] bg-surface-primary border border-edge-default rounded-xl shadow-2xl overflow-hidden"
-            role="alertdialog"
-            aria-modal="true"
-            :aria-label="pending.options.title"
+            class="icon-wrapper d-flex align-center justify-center"
+            :class="[
+              pending.options.type === 'danger' ? 'icon-danger' :
+              pending.options.type === 'warning' ? 'icon-warning' :
+              'icon-info'
+            ]"
           >
-            <!-- Header with icon -->
-            <div class="flex items-start gap-3 px-5 pt-5 pb-3">
-              <!-- Icon -->
-              <div
-                :class="[
-                  'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
-                  pending.options.type === 'danger' ? 'bg-red-500/15' :
-                  pending.options.type === 'warning' ? 'bg-amber-500/15' :
-                  'bg-blue-500/15'
-                ]"
-              >
-                <!-- Danger icon -->
-                <svg
-                  v-if="pending.options.type === 'danger'"
-                  viewBox="0 0 16 16" fill="currentColor"
-                  class="w-4.5 h-4.5 text-red-400"
-                >
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
-                </svg>
-                <!-- Warning icon -->
-                <svg
-                  v-else-if="pending.options.type === 'warning'"
-                  viewBox="0 0 16 16" fill="currentColor"
-                  class="w-4.5 h-4.5 text-amber-400"
-                >
-                  <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                  <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
-                </svg>
-                <!-- Info icon -->
-                <svg
-                  v-else
-                  viewBox="0 0 16 16" fill="currentColor"
-                  class="w-4.5 h-4.5 text-blue-400"
-                >
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                  <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-                </svg>
-              </div>
-
-              <div class="flex-1 min-w-0">
-                <h3 class="text-sm font-semibold text-content-primary leading-tight">
-                  {{ pending.options.title }}
-                </h3>
-                <p class="text-sm text-content-secondary mt-1.5 leading-relaxed">
-                  {{ pending.options.message }}
-                </p>
-                <p v-if="pending.options.detail" class="text-xs text-content-subtle mt-1">
-                  {{ pending.options.detail }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-edge-subtle bg-surface-base/50">
-              <button
-                ref="cancelBtn"
-                class="px-4 py-2 text-sm text-content-muted hover:text-content-secondary hover:bg-surface-secondary rounded-lg transition-colors"
-                @click="cancel"
-              >
-                {{ pending.options.cancelLabel || t('common.cancel') }}
-              </button>
-              <button
-                ref="confirmBtn"
-                :class="[
-                  'px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-transparent',
-                  pending.options.type === 'danger'
-                    ? 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500'
-                    : pending.options.type === 'warning'
-                      ? 'bg-amber-600 hover:bg-amber-500 text-white focus:ring-amber-500'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white focus:ring-blue-500'
-                ]"
-                @click="accept"
-              >
-                {{ pending.options.confirmLabel || t('common.confirm') }}
-              </button>
-            </div>
+            <!-- Danger icon -->
+            <v-icon v-if="pending.options.type === 'danger'" class="icon-svg icon-svg--danger" size="20">mdi-alert-circle-outline</v-icon>
+            <!-- Warning icon -->
+            <v-icon v-else-if="pending.options.type === 'warning'" class="icon-svg icon-svg--warning" size="20">mdi-alert-outline</v-icon>
+            <!-- Info icon -->
+            <v-icon v-else class="icon-svg icon-svg--info" size="20">mdi-information-outline</v-icon>
           </div>
-        </Transition>
-      </div>
-    </Transition>
-  </Teleport>
+
+          <div class="flex-grow-1 content-text">
+            <h3 class="text-subtitle-2 font-weight-medium">
+              {{ pending.options.title }}
+            </h3>
+            <p class="text-body-2 text-medium-emphasis mt-2">
+              {{ pending.options.message }}
+            </p>
+            <p v-if="pending.options.detail" class="text-caption text-disabled mt-1">
+              {{ pending.options.detail }}
+            </p>
+          </div>
+        </div>
+      </v-card-text>
+
+      <!-- Actions -->
+      <v-card-actions class="px-5 py-4 actions-border">
+        <v-spacer />
+        <v-btn
+          ref="cancelBtn"
+          variant="text"
+          @click="cancel"
+        >
+          {{ pending.options.cancelLabel || t('common.cancel') }}
+        </v-btn>
+        <v-btn
+          ref="confirmBtn"
+          :color="confirmBtnColor"
+          variant="flat"
+          @click="accept"
+        >
+          {{ pending.options.confirmLabel || t('common.confirm') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
+
+<style scoped>
+.icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--shape-sm);
+  flex-shrink: 0;
+}
+.icon-danger  { background-color: rgba(var(--v-theme-error), 0.15); }
+.icon-warning { background-color: rgba(var(--v-theme-warning), 0.15); }
+.icon-info    { background-color: rgba(var(--v-theme-info), 0.15); }
+
+.icon-svg {
+  width: 18px;
+  height: 18px;
+}
+.icon-svg--danger  { color: rgb(var(--v-theme-error)); }
+.icon-svg--warning { color: rgb(var(--v-theme-warning)); }
+.icon-svg--info    { color: rgb(var(--v-theme-info)); }
+
+.content-text { min-width: 0; }
+
+.actions-border {
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+</style>

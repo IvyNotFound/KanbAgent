@@ -2,7 +2,8 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentFg, agentBg, agentBorder } from '@renderer/utils/agentColor'
+import { agentFg, agentBg } from '@renderer/utils/agentColor'
+import AgentBadge from './AgentBadge.vue'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -28,22 +29,69 @@ const tasks = ref<TimelineTask[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const selectedAgents = ref<string[]>([])
-const daysBack = ref(30)
+const daysBack = ref(180) // DB fetch range — not the zoom level
 const now = ref(Date.now())
+
+// Viewport: defines the visible time window (independent of the fetch range)
+const viewportStart = ref<number>(now.value - 7 * 86_400_000)
+const viewportEnd = ref<number>(now.value)
+const viewportDuration = computed(() => viewportEnd.value - viewportStart.value)
+
+// Period chip presets — tracks the last clicked preset for visual state only
+const selectedPeriod = ref<number>(7)
+
+function setViewportPeriod(days: number): void {
+  selectedPeriod.value = days
+  viewportEnd.value = now.value
+  viewportStart.value = now.value - days * 86_400_000
+}
 
 let nowTimer: ReturnType<typeof setInterval> | null = null
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
+// Drag pan state
+const bodyRef = ref<HTMLElement | null>(null)
+let dragStartX = 0
+let dragStartViewportStart = 0
+let isDragging = false
+
+function onMouseDown(event: MouseEvent): void {
+  dragStartX = event.clientX
+  dragStartViewportStart = viewportStart.value
+  isDragging = true
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function onMouseMove(event: MouseEvent): void {
+  if (!isDragging || !bodyRef.value) return
+  const canvasWidth = bodyRef.value.clientWidth - 144 // subtract label column width
+  if (canvasWidth <= 0) return
+  const pxPerMs = canvasWidth / viewportDuration.value
+  const deltaMs = -(event.clientX - dragStartX) / pxPerMs
+  viewportStart.value = dragStartViewportStart + deltaMs
+  viewportEnd.value = viewportStart.value + viewportDuration.value
+}
+
+function onMouseUp(): void {
+  isDragging = false
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
+}
+
 onMounted(() => {
   nowTimer = setInterval(() => { now.value = Date.now() }, 60_000)
-  // Poll every 60s while tab is open instead of reacting to every lastRefresh (T1116)
   refreshTimer = setInterval(fetchTasks, 60_000)
   fetchTasks()
+  window.addEventListener('blur', onMouseUp)
 })
 
 onUnmounted(() => {
   if (nowTimer) clearInterval(nowTimer)
   if (refreshTimer) clearInterval(refreshTimer)
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
+  window.removeEventListener('blur', onMouseUp)
 })
 
 async function fetchTasks(): Promise<void> {
@@ -74,25 +122,49 @@ async function fetchTasks(): Promise<void> {
 watch(() => store.dbPath, fetchTasks)
 watch(daysBack, fetchTasks)
 
+// Expand DB fetch range if the user pans/zooms beyond fetched data
+watch(viewportStart, (newStart) => {
+  const cutoff = now.value - daysBack.value * 86_400_000
+  if (newStart < cutoff) {
+    const daysNeeded = Math.ceil((now.value - newStart) / 86_400_000)
+    daysBack.value = Math.min(Math.max(daysNeeded + 30, daysBack.value), 365)
+  }
+})
+
+const periodItems = computed(() => [
+  { title: '1d', value: 1 },
+  { title: '3d', value: 3 },
+  { title: '7d', value: 7 },
+  { title: '14d', value: 14 },
+  { title: '30d', value: 30 },
+  { title: '60d', value: 60 },
+  { title: '90d', value: 90 },
+  { title: '180d', value: 180 },
+])
+
+function onCanvasWheel(event: WheelEvent): void {
+  const el = event.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  // Compute cursor fraction within the bars area (skip 144px label column)
+  const cursorX = event.clientX - rect.left - 144
+  const barsWidth = rect.width - 144
+  const cursorFraction = barsWidth > 0 ? Math.max(0, Math.min(1, cursorX / barsWidth)) : 0.5
+  const cursorTime = viewportStart.value + cursorFraction * viewportDuration.value
+  const factor = event.deltaY > 0 ? 1.15 : 1 / 1.15
+  const newDuration = Math.min(
+    Math.max(viewportDuration.value * factor, 60_000),  // min: 1 minute
+    365 * 86_400_000                                    // max: 1 year
+  )
+  viewportStart.value = cursorTime - cursorFraction * newDuration
+  viewportEnd.value = cursorTime + (1 - cursorFraction) * newDuration
+}
+
 const unassignedLabel = computed(() => t('timeline.unassigned'))
 
 const allAgents = computed(() => {
-  const names = new Set(tasks.value.map(t => t.agentName ?? unassignedLabel.value))
+  const names = new Set(tasks.value.map(t => t.agentName || unassignedLabel.value))
   return [...names].sort()
 })
-
-function toggleAgent(name: string): void {
-  const idx = selectedAgents.value.indexOf(name)
-  if (idx >= 0) {
-    selectedAgents.value.splice(idx, 1)
-  } else {
-    selectedAgents.value.push(name)
-  }
-}
-
-function isAgentSelected(name: string): boolean {
-  return selectedAgents.value.includes(name)
-}
 
 const filteredTasks = computed(() => {
   if (selectedAgents.value.length === 0) return tasks.value
@@ -110,28 +182,14 @@ function taskEndMs(task: TimelineTask): number {
   return taskStartMs(task) + 1_800_000
 }
 
-const rangeStart = computed(() => {
-  if (filteredTasks.value.length === 0) return Date.now() - daysBack.value * 86_400_000
-  return filteredTasks.value.reduce(
-    (min, t) => Math.min(min, new Date(t.created_at).getTime()),
-    Infinity
-  )
-})
-
-const rangeEnd = computed(() => {
-  return Math.max(now.value, rangeStart.value + 3_600_000)
-})
-
-const rangeDuration = computed(() => Math.max(rangeEnd.value - rangeStart.value, 1))
-
-const isHourly = computed(() => rangeDuration.value < 2 * 86_400_000)
-const isWeekly = computed(() => rangeDuration.value > 60 * 86_400_000)
+const isHourly = computed(() => viewportDuration.value < 2 * 86_400_000)
+const isWeekly = computed(() => viewportDuration.value > 60 * 86_400_000)
 
 const axisTicks = computed(() => {
   const ticks: { label: string; pct: number }[] = []
   const count = 7
   for (let i = 0; i <= count; i++) {
-    const ts = rangeStart.value + (rangeDuration.value / count) * i
+    const ts = viewportStart.value + (viewportDuration.value / count) * i
     const d = new Date(ts)
     let label: string
     if (isHourly.value) {
@@ -157,23 +215,20 @@ const groups = computed((): AgentGroup[] => {
 })
 
 function barLeft(task: TimelineTask): string {
-  const start = Math.max(taskStartMs(task), rangeStart.value)
-  return ((start - rangeStart.value) / rangeDuration.value * 100).toFixed(3) + '%'
+  return ((taskStartMs(task) - viewportStart.value) / viewportDuration.value * 100).toFixed(3) + '%'
 }
 
 function barWidth(task: TimelineTask): string {
-  const start = Math.max(taskStartMs(task), rangeStart.value)
-  const end = Math.min(taskEndMs(task), rangeEnd.value)
-  const w = Math.max((end - start) / rangeDuration.value * 100, 0.3)
+  const w = Math.max((taskEndMs(task) - taskStartMs(task)) / viewportDuration.value * 100, 0.3)
   return w.toFixed(3) + '%'
 }
 
 function statusColorClass(status: string): string {
   switch (status) {
-    case 'in_progress': return 'bg-blue-500'
-    case 'done': return 'bg-green-600'
-    case 'archived': return 'bg-zinc-600'
-    default: return 'bg-zinc-500'
+    case 'in_progress': return 'tl-bg-progress'
+    case 'done': return 'tl-bg-done'
+    case 'archived': return 'tl-bg-archived'
+    default: return 'tl-bg-todo'
   }
 }
 
@@ -226,79 +281,73 @@ const legendItems = computed(() => [
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-primary overflow-hidden" @mousemove="moveTooltip">
-    <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-3 border-b border-edge-subtle bg-surface-base">
-      <h2 class="text-sm font-semibold text-content-secondary">{{ t('timeline.title') }}</h2>
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-content-muted">{{ t('timeline.period') }}</span>
-          <select
-            v-model="daysBack"
-            class="text-xs bg-surface-base border border-edge-subtle rounded px-2 py-1 text-content-primary focus:outline-none cursor-pointer"
-          >
-            <option :value="7">7j</option>
-            <option :value="14">14j</option>
-            <option :value="30">30j</option>
-            <option :value="60">60j</option>
-            <option :value="90">90j</option>
-          </select>
-        </div>
-        <button
-          class="text-xs text-content-muted hover:text-content-primary transition-colors px-2 py-1 rounded border border-edge-subtle disabled:opacity-50"
-          :disabled="loading"
-          @click="fetchTasks"
+  <div class="tl-view" @mousemove="moveTooltip">
+    <!-- Header: title + refresh only -->
+    <div class="tl-header">
+      <h2 class="text-h6 font-weight-medium tl-title flex-shrink-0">{{ t('timeline.title') }}</h2>
+      <div class="ml-auto flex-shrink-0">
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchTasks" />
+      </div>
+    </div>
+
+    <!-- Filter bar: period presets + agent chips -->
+    <div class="tl-filter-bar">
+      <!-- Period presets: clicking resets the viewport to that range -->
+      <v-btn-toggle v-model="selectedPeriod" mandatory density="compact" variant="outlined" class="tl-period-toggle flex-shrink-0">
+        <v-btn
+          v-for="item in periodItems"
+          :key="item.value"
+          :value="item.value"
+          size="x-small"
+          class="text-label-medium"
+          @click="setViewportPeriod(item.value)"
         >
-          {{ loading ? t('common.loading') : t('common.refresh') }}
-        </button>
-      </div>
+          {{ item.title }}
+        </v-btn>
+      </v-btn-toggle>
+      <!-- Agent filter chips -->
+      <template v-if="allAgents.length > 0">
+        <div class="tl-filter-sep" />
+        <span class="tl-filter-label text-caption flex-shrink-0">{{ t('timeline.filterAgents') }}</span>
+        <v-chip-group v-model="selectedAgents" multiple>
+          <v-chip
+            v-for="name in allAgents"
+            :key="name"
+            :value="name"
+            variant="outlined"
+            size="small"
+            :style="selectedAgents.includes(name)
+              ? { color: agentFg(name), backgroundColor: agentBg(name), borderColor: agentFg(name) + '66' }
+              : {}"
+          >
+            {{ name }}
+          </v-chip>
+        </v-chip-group>
+        <v-btn v-if="selectedAgents.length > 0" variant="text" size="small" class="flex-shrink-0" @click="selectedAgents = []">
+          {{ t('timeline.clearFilter') }}
+        </v-btn>
+      </template>
     </div>
 
-    <!-- Agent filter chips -->
-    <div
-      v-if="allAgents.length > 0"
-      class="shrink-0 flex items-center gap-2 px-5 py-2 border-b border-edge-subtle flex-wrap"
-    >
-      <span class="text-xs text-content-muted shrink-0">{{ t('timeline.filterAgents') }}</span>
-      <button
-        v-for="name in allAgents"
-        :key="name"
-        class="text-xs px-2 py-0.5 rounded-full border transition-colors"
-        :style="isAgentSelected(name) ? { color: agentFg(name), background: agentBg(name), borderColor: agentBorder(name) } : {}"
-        :class="isAgentSelected(name) ? '' : 'border-edge-subtle text-content-muted hover:border-edge-strong'"
-        @click="toggleAgent(name)"
-      >
-        {{ name }}
-      </button>
-      <button
-        v-if="selectedAgents.length > 0"
-        class="text-xs text-content-muted hover:text-content-primary ml-1 transition-colors"
-        @click="selectedAgents = []"
-      >
-        {{ t('timeline.clearFilter') }}
-      </button>
-    </div>
-
-    <!-- Timeline body -->
-    <div class="flex-1 overflow-auto">
-      <div v-if="loading" class="flex items-center justify-center h-32 text-content-muted text-sm">
-        {{ t('common.loading') }}
+    <!-- Body -->
+    <div class="tl-body-wrapper">
+    <v-card elevation="0" class="section-card">
+    <!-- Timeline body — wheel zooms viewport continuously, mousedown pans -->
+    <div ref="bodyRef" class="tl-body" @wheel.prevent="onCanvasWheel" @mousedown="onMouseDown">
+      <div v-if="loading" class="tl-state-center">
+        <v-progress-circular indeterminate :size="32" :width="3" />
       </div>
-      <div v-else-if="error" class="flex items-center justify-center h-32 text-red-400 text-sm">
-        {{ error }}
-      </div>
-      <div v-else-if="groups.length === 0" class="flex items-center justify-center h-32 text-content-muted text-sm">
-        {{ t('timeline.noData') }}
-      </div>
-      <div v-else class="min-w-[700px]">
-        <!-- Time axis -->
-        <div class="flex border-b border-edge-subtle">
-          <div class="w-36 shrink-0" />
-          <div class="flex-1 relative h-8">
+      <div v-else-if="error" class="tl-state-center tl-error text-body-2">{{ error }}</div>
+      <div v-else-if="groups.length === 0" class="tl-state-center tl-muted-sm text-body-2">{{ t('timeline.noData') }}</div>
+      <div v-else class="tl-canvas">
+        <!-- Time axis — reflects visible viewport in real time -->
+        <div class="tl-axis">
+          <div class="tl-axis-spacer" />
+          <div class="tl-axis-ticks">
             <span
               v-for="tick in axisTicks"
               :key="tick.pct"
-              class="absolute text-xs text-content-muted -translate-x-1/2 top-1/2 -translate-y-1/2 whitespace-nowrap"
+              class="tl-tick text-caption"
               :style="{ left: tick.pct + '%' }"
             >{{ tick.label }}</span>
           </div>
@@ -308,42 +357,33 @@ const legendItems = computed(() => [
         <div
           v-for="group in groups"
           :key="group.name"
-          class="flex items-stretch border-b border-edge-subtle/40 hover:bg-surface-secondary/50 transition-colors"
+          class="tl-row"
         >
-          <!-- Agent label -->
-          <div class="w-36 shrink-0 flex items-center px-3 py-2 border-r border-edge-subtle/40">
-            <span
-              class="text-xs font-medium truncate"
-              :style="{ color: agentFg(group.name) }"
-            >{{ group.name }}</span>
+          <div class="tl-row-label py-2 px-3">
+            <AgentBadge :name="group.name" />
           </div>
-
-          <!-- Bars -->
-          <div class="flex-1 relative" style="min-height: 40px;">
+          <!-- overflow:hidden clips bars that extend outside the viewport -->
+          <div class="tl-row-bars">
             <div
               v-for="task in group.tasks"
               :key="task.id"
-              class="absolute top-2 h-6 rounded cursor-pointer hover:opacity-80 transition-opacity"
-              :class="[statusColorClass(task.status), task.status === 'in_progress' ? 'animate-pulse' : '']"
+              class="tl-bar"
+              :class="[statusColorClass(task.status), task.status === 'in_progress' ? 'tl-bar--pulse' : '']"
               :style="{ left: barLeft(task), width: barWidth(task), minWidth: '4px' }"
               @mouseenter="showTooltip($event, task)"
               @mouseleave="hideTooltip"
             />
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Legend -->
-        <div class="flex items-center gap-4 px-5 py-3 border-t border-edge-subtle">
-          <span class="text-xs text-content-muted">{{ t('timeline.legend') }}</span>
-          <div
-            v-for="item in legendItems"
-            :key="item.status"
-            class="flex items-center gap-1.5"
-          >
-            <div class="w-3 h-3 rounded-sm" :class="statusColorClass(item.status)" />
-            <span class="text-xs text-content-muted">{{ item.label }}</span>
-          </div>
-        </div>
+    <!-- Legend — outside scrollable canvas so it stays visible when body is scrolled -->
+    <div v-if="!loading && !error && groups.length > 0" class="tl-legend ga-4 py-3 px-5">
+      <span class="tl-muted-xs text-caption">{{ t('timeline.legend') }}</span>
+      <div v-for="item in legendItems" :key="item.status" class="tl-legend-item">
+        <div class="tl-legend-dot" :class="statusColorClass(item.status)" />
+        <span class="tl-muted-xs text-caption">{{ item.label }}</span>
       </div>
     </div>
 
@@ -351,30 +391,180 @@ const legendItems = computed(() => [
     <Teleport to="body">
       <div
         v-if="tooltipTask"
-        class="fixed z-50 bg-surface-primary border border-edge-default rounded-lg shadow-xl p-3 text-xs pointer-events-none"
-        :style="{ left: (tooltipX + 14) + 'px', top: (tooltipY - 14) + 'px', maxWidth: '280px' }"
+        class="tl-tooltip elevation-2 pa-3 text-caption"
+        :style="{ left: (tooltipX + 14) + 'px', top: (tooltipY - 14) + 'px' }"
       >
-        <div class="font-semibold text-content-primary mb-1.5 leading-snug">{{ tooltipTask.title }}</div>
-        <div class="space-y-0.5 text-content-muted">
+        <div class="tl-tooltip-title">{{ tooltipTask.title }}</div>
+        <div class="tl-tooltip-body">
           <div>
             {{ t('timeline.tooltipStatus') }}:
-            <span
-              :class="{
-                'text-blue-400': tooltipTask.status === 'in_progress',
-                'text-green-400': tooltipTask.status === 'done',
-                'text-content-tertiary': tooltipTask.status === 'todo',
-              }"
-            >{{ tooltipTask.status }}</span>
+            <span :class="{
+              'tl-status-progress': tooltipTask.status === 'in_progress',
+              'tl-status-done': tooltipTask.status === 'done',
+              'tl-status-todo': tooltipTask.status === 'todo',
+            }">{{ tooltipTask.status }}</span>
           </div>
           <div>{{ t('timeline.tooltipStart') }}: {{ formatDate(tooltipTask.started_at ?? tooltipTask.created_at) }}</div>
-          <div v-if="tooltipTask.completed_at">
-            {{ t('timeline.tooltipEnd') }}: {{ formatDate(tooltipTask.completed_at) }}
-          </div>
+          <div v-if="tooltipTask.completed_at">{{ t('timeline.tooltipEnd') }}: {{ formatDate(tooltipTask.completed_at) }}</div>
           <div>{{ t('timeline.tooltipDuration') }}: {{ taskDurationLabel(tooltipTask) }}</div>
           <div>{{ t('timeline.tooltipEffort') }}: {{ effortLabel(tooltipTask.effort) }}</div>
-          <div class="text-content-faint mt-0.5">#{{ tooltipTask.id }}</div>
+          <div class="tl-tooltip-id">#{{ tooltipTask.id }}</div>
         </div>
       </div>
     </Teleport>
+    </v-card>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.tl-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  overflow: hidden;
+}
+.tl-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.tl-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.tl-title {
+  margin: 0;
+  color: var(--content-primary);
+}
+.tl-body-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+.section-card {
+  border: 1px solid var(--edge-default) !important;
+  background: var(--surface-primary) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.tl-period-toggle { height: 28px; }
+.tl-filter-label { color: var(--content-muted); }
+.tl-filter-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--edge-subtle);
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0 4px;
+}
+.tl-muted-xs { color: var(--content-muted); }
+.tl-muted-sm { color: var(--content-muted); }
+
+.tl-body {
+  flex: 1;
+  overflow: auto;
+  cursor: grab;
+  user-select: none;
+}
+.tl-body:active { cursor: grabbing; }
+.tl-state-center { display: flex; align-items: center; justify-content: center; height: 128px; }
+.tl-error { color: rgb(var(--v-theme-error)); }
+
+.tl-canvas { min-width: 700px; }
+.tl-axis {
+  display: flex;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.tl-axis-spacer { width: 144px; flex-shrink: 0; }
+.tl-axis-ticks { flex: 1; position: relative; height: 32px; }
+.tl-tick {
+  position: absolute;
+  color: var(--content-muted);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  white-space: nowrap;
+}
+/* Prevent first/last tick labels from being clipped at the canvas edges */
+.tl-tick:first-child { transform: translate(0%, -50%); }
+.tl-tick:last-child  { transform: translate(-100%, -50%); }
+
+.tl-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(var(--v-theme-surface-secondary),0.4);
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
+}
+.tl-row:hover { background: rgba(var(--v-theme-on-surface), var(--md-state-hover)); }
+.tl-row-label {
+  width: 144px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(var(--v-theme-surface-secondary),0.4);
+}
+.tl-row-bars {
+  flex: 1;
+  position: relative;
+  min-height: 40px;
+  overflow: hidden;
+}
+.tl-bar {
+  position: absolute;
+  top: 8px;
+  height: 24px;
+  border-radius: var(--shape-xs);
+  cursor: pointer;
+  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
+}
+.tl-bar:hover { opacity: 0.8; }
+.tl-bar--pulse { animation: tlPulse 2s ease-in-out infinite; }
+@keyframes tlPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* Status colors — todo/archived use on-surface alpha for visibility in both themes */
+.tl-bg-progress { background: rgb(var(--v-theme-primary)); }
+.tl-bg-done     { background: rgb(var(--v-theme-secondary)); }
+.tl-bg-todo     { background: rgba(var(--v-theme-on-surface), 0.35); }
+.tl-bg-archived { background: rgba(var(--v-theme-on-surface), 0.18); }
+
+/* Legend — flex-shrink:0 keeps it fixed at the bottom, outside the scrollable canvas */
+.tl-legend {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--edge-subtle);
+}
+.tl-legend-item { display: flex; align-items: center; gap: 6px; }
+.tl-legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+/* tooltip */
+.tl-tooltip {
+  position: fixed;
+  z-index: 50;
+  background: var(--surface-base);
+  border: 1px solid var(--edge-default);
+  border-radius: var(--shape-sm);
+  pointer-events: none;
+  max-width: 280px;
+}
+.tl-tooltip-title { font-weight: 600; color: var(--content-primary); margin-bottom: 6px; line-height: 1.4; }
+.tl-tooltip-body { color: var(--content-muted); display: flex; flex-direction: column; gap: 2px; }
+.tl-tooltip-id { color: var(--content-faint); margin-top: 2px; }
+.tl-status-progress { color: rgb(var(--v-theme-primary)); }
+.tl-status-done { color: rgb(var(--v-theme-secondary)); }
+.tl-status-todo { color: var(--content-tertiary); }
+</style>

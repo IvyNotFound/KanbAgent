@@ -38,7 +38,7 @@ describe('ProjectPopup (T675)', () => {
     })
     const { useTasksStore } = await import('@renderer/stores/tasks')
     const store = useTasksStore()
-    const changeBtn = wrapper.findAll('button').find(b => b.text().includes('Changer de projet'))
+    const changeBtn = wrapper.findAll('v-btn').find(b => b.text().includes('Changer de projet'))
     expect(changeBtn?.exists()).toBe(true)
     await changeBtn!.trigger('click')
     await flushPromises()
@@ -54,7 +54,7 @@ describe('ProjectPopup (T675)', () => {
     const wrapper = mount(ProjectPopup, {
       global: { plugins: [pinia, i18n], stubs: teleportStub },
     })
-    const closeBtn = wrapper.find('button[title="Fermer"]')
+    const closeBtn = wrapper.find('v-btn[title="Fermer"]')
     await closeBtn.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
@@ -68,7 +68,7 @@ describe('ProjectPopup (T675)', () => {
     const wrapper = mount(ProjectPopup, {
       global: { plugins: [pinia, i18n], stubs: teleportStub },
     })
-    const backdrop = wrapper.find('.fixed.inset-0')
+    const backdrop = wrapper.find('[data-testid="project-popup-backdrop"]')
     await backdrop.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })

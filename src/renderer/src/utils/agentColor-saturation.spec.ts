@@ -1,20 +1,22 @@
 /**
- * Targeted mutation tests for agentColor.ts (T1349)
+ * MD2 palette correctness tests for agentColor.ts (T1467, updated T1625)
  *
- * Kills surviving mutants in:
- * - agentSat(): SAT_STEPS indexing via (hash >> 9) % 4
- * - agentFg() light mode: Math.min(s, 70) cap — exact output for each sat step
- * - cacheSet(): FIFO eviction at exactly CACHE_MAX boundary (>= not >)
- * - Arithmetic constants: exact HSL values for all color functions
+ * Verifies that the Material Design 2 color migration is correct:
+ * - agentHue returns palette indices 0–11 (12-family palette, no green/orange/deepOrange)
+ * - Each color function picks the right shade for dark/light mode
+ * - Exact hex values for known names (palette index deterministic from hash)
+ * - Cache eviction continues to work with hex output
  *
- * Named test-names (n0, n10, n100, n600) are pre-computed to hit each SAT_STEPS index:
- *   n0   → hash idx=2 → sat=75, hue=218
- *   n10  → hash idx=1 → sat=65, hue=357
- *   n100 → hash idx=3 → sat=85, hue=315
- *   n600 → hash idx=0 → sat=55, hue=80
+ * Pre-computed palette indices (hash(name) % 12):
+ *   'a'  → idx=1  (pink)
+ *   'b'  → idx=2  (purple)
+ *   'i'  → idx=9  (brown)
+ *   'j'  → idx=10 (blueGrey)
+ *   'k'  → idx=11 (amber)
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import {
+  agentHue,
   agentFg,
   agentBg,
   agentBorder,
@@ -22,7 +24,19 @@ import {
   perimeterBg,
   perimeterBorder,
   setDarkMode as setDarkModeReactive,
+  hexToRgb,
 } from '@renderer/utils/agentColor'
+
+function lum(hex: string): number {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return 0
+  const lin = (c: number) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4) }
+  return 0.2126 * lin(rgb.r) + 0.7152 * lin(rgb.g) + 0.0722 * lin(rgb.b)
+}
+function contrastRatio(fg: string, bg: string): number {
+  const l1 = lum(fg); const l2 = lum(bg)
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
+}
 
 function setDarkMode(enabled: boolean) {
   if (enabled) {
@@ -33,418 +47,347 @@ function setDarkMode(enabled: boolean) {
   setDarkModeReactive(enabled)
 }
 
-describe('agentColor saturation & exact values (T1349)', () => {
+const HEX_PATTERN = /^#[0-9a-f]{6}$/i
+
+describe('agentColor MD2 palette (T1467)', () => {
   afterEach(() => setDarkMode(false))
 
-  // ── agentSat() SAT_STEPS indexing — exact sat per name ───────────────────────
-  // These tests kill mutants on (hash >> 9) % SAT_STEPS.length
-  // and arithmetic mutations on the step values [55, 65, 75, 85].
-  describe('agentSat() — each SAT_STEPS index hit with exact value', () => {
-    it('n600: SAT_STEPS[0]=55 — agentFg dark saturation is exactly 55', () => {
-      setDarkMode(true)
-      // n600 → hash idx=0 → sat=55
-      expect(agentFg('n600')).toBe('hsl(80, 55%, 68%)')
+  // ── Palette index range ───────────────────────────────────────────────────────
+  describe('agentHue() — palette index 0–11', () => {
+    it('returns index 1 for "a" (hash=97, 97%12=1)', () => {
+      expect(agentHue('a')).toBe(1)
     })
 
-    it('n10: SAT_STEPS[1]=65 — agentFg dark saturation is exactly 65', () => {
-      setDarkMode(true)
-      // n10 → hash idx=1 → sat=65
-      expect(agentFg('n10')).toBe('hsl(357, 65%, 68%)')
+    it('returns index 2 for "b" (hash=98, 98%12=2)', () => {
+      expect(agentHue('b')).toBe(2)
     })
 
-    it('n0: SAT_STEPS[2]=75 — agentFg dark saturation is exactly 75', () => {
-      setDarkMode(true)
-      // n0 → hash idx=2 → sat=75
-      expect(agentFg('n0')).toBe('hsl(218, 75%, 68%)')
+    it('returns index 9 for "i" (hash=105, 105%12=9)', () => {
+      expect(agentHue('i')).toBe(9)
     })
 
-    it('n100: SAT_STEPS[3]=85 — agentFg dark saturation is exactly 85', () => {
-      setDarkMode(true)
-      // n100 → hash idx=3 → sat=85
-      expect(agentFg('n100')).toBe('hsl(315, 85%, 68%)')
+    it('returns index 10 for "j" (hash=106, 106%12=10)', () => {
+      expect(agentHue('j')).toBe(10)
     })
 
-    it('all four SAT_STEPS values are reachable (no dead step)', () => {
-      setDarkMode(true)
-      const sats = new Set<number>()
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        const fg = agentFg(name)
-        const s = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-        sats.add(s)
-      }
-      expect(sats).toContain(55)
-      expect(sats).toContain(65)
-      expect(sats).toContain(75)
-      expect(sats).toContain(85)
-    })
-  })
-
-  // ── agentFg() light mode: Math.min(s, 70) cap — exact values ─────────────────
-  // Kills mutant: Math.min(s, 70) → Math.max(s, 70) or removing the cap
-  describe('agentFg() light mode — Math.min(s, 70) cap kills', () => {
-    it('n600 (sat=55): light mode sat=55 (< 70, uncapped)', () => {
-      setDarkMode(false)
-      // sat=55 < 70, so Math.min(55, 70) = 55 — not capped
-      expect(agentFg('n600')).toBe('hsl(80, 55%, 38%)')
+    it('returns index 11 for "k" (hash=107, 107%12=11)', () => {
+      expect(agentHue('k')).toBe(11)
     })
 
-    it('n10 (sat=65): light mode sat=65 (< 70, uncapped)', () => {
-      setDarkMode(false)
-      // sat=65 < 70, so Math.min(65, 70) = 65 — not capped
-      expect(agentFg('n10')).toBe('hsl(357, 65%, 38%)')
-    })
-
-    it('n0 (sat=75): light mode sat is capped at 70 (not 75)', () => {
-      setDarkMode(false)
-      // sat=75 > 70, so Math.min(75, 70) = 70 — CAPPED
-      expect(agentFg('n0')).toBe('hsl(218, 70%, 38%)')
-    })
-
-    it('n100 (sat=85): light mode sat is capped at 70 (not 85)', () => {
-      setDarkMode(false)
-      // sat=85 > 70, so Math.min(85, 70) = 70 — CAPPED
-      expect(agentFg('n100')).toBe('hsl(315, 70%, 38%)')
-    })
-
-    it('capped names (sat>70) have lower sat in light than dark', () => {
-      // n0: dark=75, light=70
-      setDarkMode(true)
-      const darkFg = agentFg('n0')
-      const darkS = parseInt(darkFg.match(/hsl\(\d+, (\d+)%/)![1])
-      setDarkMode(false)
-      const lightFg = agentFg('n0')
-      const lightS = parseInt(lightFg.match(/hsl\(\d+, (\d+)%/)![1])
-      expect(darkS).toBe(75)
-      expect(lightS).toBe(70)
-      expect(lightS).toBeLessThan(darkS)
-    })
-
-    it('uncapped names (sat<=70) have same sat in light and dark', () => {
-      // n600: dark=55, light=55 (no capping)
-      setDarkMode(true)
-      const darkFg = agentFg('n600')
-      const darkS = parseInt(darkFg.match(/hsl\(\d+, (\d+)%/)![1])
-      setDarkMode(false)
-      const lightFg = agentFg('n600')
-      const lightS = parseInt(lightFg.match(/hsl\(\d+, (\d+)%/)![1])
-      expect(darkS).toBe(55)
-      expect(lightS).toBe(55)
-    })
-  })
-
-  // ── agentBg() exact arithmetic: 0.58 (dark) and 0.72 (light) ────────────────
-  // Kills mutants on the multiplication factors in agentBg
-  describe('agentBg() — exact factor arithmetic', () => {
-    it('n600 (sat=55): dark = round(55*0.58)=32, light = round(55*0.72)=40', () => {
-      setDarkMode(true)
-      expect(agentBg('n600')).toBe('hsl(80, 32%, 18%)')
-      setDarkMode(false)
-      expect(agentBg('n600')).toBe('hsl(80, 40%, 92%)')
-    })
-
-    it('n10 (sat=65): dark = round(65*0.58)=38, light = round(65*0.72)=47', () => {
-      setDarkMode(true)
-      expect(agentBg('n10')).toBe('hsl(357, 38%, 18%)')
-      setDarkMode(false)
-      expect(agentBg('n10')).toBe('hsl(357, 47%, 92%)')
-    })
-
-    it('n0 (sat=75): dark = round(75*0.58)=44, light = round(75*0.72)=54', () => {
-      setDarkMode(true)
-      expect(agentBg('n0')).toBe('hsl(218, 44%, 18%)')
-      setDarkMode(false)
-      expect(agentBg('n0')).toBe('hsl(218, 54%, 92%)')
-    })
-
-    it('n100 (sat=85): dark = round(85*0.58)=49, light = round(85*0.72)=61', () => {
-      setDarkMode(true)
-      expect(agentBg('n100')).toBe('hsl(315, 49%, 18%)')
-      setDarkMode(false)
-      expect(agentBg('n100')).toBe('hsl(315, 61%, 92%)')
-    })
-
-    it('agentBg dark lightness is exactly 18% (kills +/-1 lightness mutants)', () => {
-      setDarkMode(true)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        const bg = agentBg(name)
-        expect(bg).toMatch(/%, 18%\)$/)
+    it('all results are in range [0, 11]', () => {
+      const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']
+      for (const name of names) {
+        const idx = agentHue(name)
+        expect(idx).toBeGreaterThanOrEqual(0)
+        expect(idx).toBeLessThanOrEqual(11)
       }
     })
 
-    it('agentBg light lightness is exactly 92% (kills +/-1 lightness mutants)', () => {
+    it('all 12 palette indices are reachable', () => {
+      const found = new Set<number>()
+      for (const name of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']) {
+        found.add(agentHue(name))
+      }
+      // Single-char ASCII letters a-l span exactly indices 1-11 then wraps to 0 (12 total)
+      expect(found.size).toBe(12)
+    })
+  })
+
+  // ── agentFg() — WCAG AA ratio >= 4.5:1 (T1510: shade escalation replaces fixed shades) ────
+  describe('agentFg() — WCAG AA contrast ratio >= 4.5:1', () => {
+    it('"a" (pink idx=1) dark meets WCAG AA', () => {
+      setDarkMode(true)
+      expect(contrastRatio(agentFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it('"a" (pink idx=1) light meets WCAG AA', () => {
       setDarkMode(false)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        const bg = agentBg(name)
-        expect(bg).toMatch(/%, 92%\)$/)
+      expect(contrastRatio(agentFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it('"i" (brown idx=9) dark meets WCAG AA', () => {
+      setDarkMode(true)
+      expect(contrastRatio(agentFg('i'), agentBg('i'))).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it('"i" (brown idx=9) light meets WCAG AA', () => {
+      setDarkMode(false)
+      expect(contrastRatio(agentFg('i'), agentBg('i'))).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it('dark and light values differ for families where darken3 contrast differs across lighten3/lighten4', () => {
+      // Pastel approach: families where darken3 fails against lighten3 (dark bg) but passes
+      // against lighten4 (light bg) produce different fg values between themes.
+      // Families like blueGrey/brown/amber settle to the same shade — this is expected.
+      for (const name of ['a', 'b']) {
+        // 'a' → pink: darkFg=#000000, lightFg=#880e4f (differ)
+        // 'b' → purple: darkFg=darken4, lightFg=darken3 (differ)
+        setDarkMode(false)
+        const light = agentFg(name)
+        setDarkMode(true)
+        const dark = agentFg(name)
+        expect(dark).not.toBe(light)
+      }
+    })
+
+    it('all outputs are valid hex colors', () => {
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        setDarkMode(false)
+        expect(agentFg(name)).toMatch(HEX_PATTERN)
+        setDarkMode(true)
+        expect(agentFg(name)).toMatch(HEX_PATTERN)
       }
     })
   })
 
-  // ── agentBorder() exact arithmetic: factor 0.58 ──────────────────────────────
-  describe('agentBorder() — exact factor arithmetic', () => {
-    it('n600 (sat=55): dark = light = round(55*0.58)=32', () => {
+  // ── agentBg() — pastel: lighten3 dark / lighten4 light ──────────────────────
+  describe('agentBg() — exact MD2 hex values', () => {
+    it('"a" (pink idx=1) dark → pink lighten3 #f48fb1', () => {
       setDarkMode(true)
-      expect(agentBorder('n600')).toBe('hsl(80, 32%, 32%)')
-      setDarkMode(false)
-      expect(agentBorder('n600')).toBe('hsl(80, 32%, 78%)')
+      expect(agentBg('a')).toBe('#f48fb1')
     })
 
-    it('n10 (sat=65): dark = light = round(65*0.58)=38', () => {
-      setDarkMode(true)
-      expect(agentBorder('n10')).toBe('hsl(357, 38%, 32%)')
+    it('"a" (pink idx=1) light → pink lighten4 #f8bbd0', () => {
       setDarkMode(false)
-      expect(agentBorder('n10')).toBe('hsl(357, 38%, 78%)')
+      expect(agentBg('a')).toBe('#f8bbd0')
     })
 
-    it('n0 (sat=75): dark = light = round(75*0.58)=44', () => {
+    it('"i" (brown idx=9) dark → brown lighten3 #bcaaa4', () => {
       setDarkMode(true)
-      expect(agentBorder('n0')).toBe('hsl(218, 44%, 32%)')
-      setDarkMode(false)
-      expect(agentBorder('n0')).toBe('hsl(218, 44%, 78%)')
+      expect(agentBg('i')).toBe('#bcaaa4')
     })
 
-    it('n100 (sat=85): dark = light = round(85*0.58)=49', () => {
-      setDarkMode(true)
-      expect(agentBorder('n100')).toBe('hsl(315, 49%, 32%)')
+    it('"i" (brown idx=9) light → brown lighten4 #d7ccc8', () => {
       setDarkMode(false)
-      expect(agentBorder('n100')).toBe('hsl(315, 49%, 78%)')
+      expect(agentBg('i')).toBe('#d7ccc8')
     })
 
-    it('agentBorder dark lightness is exactly 32% (kills +/-1 mutants)', () => {
+    it('agentBg dark differs from agentFg dark (different shades)', () => {
       setDarkMode(true)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(agentBorder(name)).toMatch(/%, 32%\)$/)
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        expect(agentBg(name)).not.toBe(agentFg(name))
       }
     })
 
-    it('agentBorder light lightness is exactly 78% (kills +/-1 mutants)', () => {
+    it('agentBg light differs from agentFg light (different shades)', () => {
       setDarkMode(false)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(agentBorder(name)).toMatch(/%, 78%\)$/)
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        expect(agentBg(name)).not.toBe(agentFg(name))
       }
     })
   })
 
-  // ── agentFg() lightness constants: 68% dark, 38% light ───────────────────────
-  describe('agentFg() — lightness constants exact', () => {
-    it('dark lightness is exactly 68% for all sat steps', () => {
+  // ── agentBorder() — lighten2 dark / lighten3 light (one shade richer than bg) ─
+  describe('agentBorder() — exact MD2 hex values', () => {
+    it('"a" (pink idx=1) dark → pink lighten2 #f06292', () => {
       setDarkMode(true)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(agentFg(name)).toMatch(/%, 68%\)$/)
+      expect(agentBorder('a')).toBe('#f06292')
+    })
+
+    it('"a" (pink idx=1) light → pink lighten3 #f48fb1', () => {
+      setDarkMode(false)
+      expect(agentBorder('a')).toBe('#f48fb1')
+    })
+
+    it('agentBorder dark differs from agentBg dark', () => {
+      setDarkMode(true)
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        expect(agentBorder(name)).not.toBe(agentBg(name))
       }
     })
 
-    it('light lightness is exactly 38% for all sat steps', () => {
-      setDarkMode(false)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(agentFg(name)).toMatch(/%, 38%\)$/)
-      }
-    })
-  })
-
-  // ── perimeterFg() exact arithmetic: dark=0.86, light=0.79 ───────────────────
-  describe('perimeterFg() — exact factor arithmetic', () => {
-    it('n600 (sat=55): dark=round(55*0.86)=47, light=round(55*0.79)=43', () => {
-      setDarkMode(true)
-      expect(perimeterFg('n600')).toBe('hsl(80, 47%, 70%)')
-      setDarkMode(false)
-      expect(perimeterFg('n600')).toBe('hsl(80, 43%, 35%)')
-    })
-
-    it('n10 (sat=65): dark=round(65*0.86)=56, light=round(65*0.79)=51', () => {
-      setDarkMode(true)
-      expect(perimeterFg('n10')).toBe('hsl(357, 56%, 70%)')
-      setDarkMode(false)
-      expect(perimeterFg('n10')).toBe('hsl(357, 51%, 35%)')
-    })
-
-    it('n0 (sat=75): dark=round(75*0.86)=65, light=round(75*0.79)=59', () => {
-      setDarkMode(true)
-      expect(perimeterFg('n0')).toBe('hsl(218, 65%, 70%)')
-      setDarkMode(false)
-      expect(perimeterFg('n0')).toBe('hsl(218, 59%, 35%)')
-    })
-
-    it('n100 (sat=85): dark=round(85*0.86)=73, light=round(85*0.79)=67', () => {
-      setDarkMode(true)
-      expect(perimeterFg('n100')).toBe('hsl(315, 73%, 70%)')
-      setDarkMode(false)
-      expect(perimeterFg('n100')).toBe('hsl(315, 67%, 35%)')
-    })
-
-    it('perimeterFg dark lightness is exactly 70% (kills +/-1 mutants)', () => {
-      setDarkMode(true)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(perimeterFg(name)).toMatch(/%, 70%\)$/)
-      }
-    })
-
-    it('perimeterFg light lightness is exactly 35% (kills +/-1 mutants)', () => {
-      setDarkMode(false)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(perimeterFg(name)).toMatch(/%, 35%\)$/)
+    it('all outputs are valid hex colors', () => {
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        setDarkMode(false)
+        expect(agentBorder(name)).toMatch(HEX_PATTERN)
+        setDarkMode(true)
+        expect(agentBorder(name)).toMatch(HEX_PATTERN)
       }
     })
   })
 
-  // ── perimeterBg() exact arithmetic: dark=0.43, light=0.57 ───────────────────
-  describe('perimeterBg() — exact factor arithmetic', () => {
-    it('n600 (sat=55): dark=round(55*0.43)=24, light=round(55*0.57)=31', () => {
+  // ── perimeterFg() — WCAG AA ratio >= 4.5:1 (T1510: shade escalation replaces fixed shades) ──
+  describe('perimeterFg() — WCAG AA contrast ratio >= 4.5:1', () => {
+    it('"a" (lightBlue idx=6) dark meets WCAG AA', () => {
       setDarkMode(true)
-      expect(perimeterBg('n600')).toBe('hsl(80, 24%, 15%)')
-      setDarkMode(false)
-      expect(perimeterBg('n600')).toBe('hsl(80, 31%, 93%)')
+      expect(contrastRatio(perimeterFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('n10 (sat=65): dark=round(65*0.43)=28, light=round(65*0.57)=37', () => {
-      setDarkMode(true)
-      expect(perimeterBg('n10')).toBe('hsl(357, 28%, 15%)')
+    it('"a" (lightBlue idx=6) light meets WCAG AA', () => {
       setDarkMode(false)
-      expect(perimeterBg('n10')).toBe('hsl(357, 37%, 93%)')
+      expect(contrastRatio(perimeterFg('a'), agentBg('a'))).toBeGreaterThanOrEqual(4.5)
     })
 
-    it('n0 (sat=75): dark=round(75*0.43)=32, light=round(75*0.57)=43', () => {
+    it('perimeterFg dark meets WCAG AA for all tested families', () => {
       setDarkMode(true)
-      expect(perimeterBg('n0')).toBe('hsl(218, 32%, 15%)')
-      setDarkMode(false)
-      expect(perimeterBg('n0')).toBe('hsl(218, 43%, 93%)')
-    })
-
-    it('n100 (sat=85): dark=round(85*0.43)=37, light=round(85*0.57)=48', () => {
-      setDarkMode(true)
-      expect(perimeterBg('n100')).toBe('hsl(315, 37%, 15%)')
-      setDarkMode(false)
-      expect(perimeterBg('n100')).toBe('hsl(315, 48%, 93%)')
-    })
-
-    it('perimeterBg dark lightness is exactly 15% (kills +/-1 mutants)', () => {
-      setDarkMode(true)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(perimeterBg(name)).toMatch(/%, 15%\)$/)
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        expect(contrastRatio(perimeterFg(name), agentBg(name))).toBeGreaterThanOrEqual(4.5)
       }
     })
 
-    it('perimeterBg light lightness is exactly 93% (kills +/-1 mutants)', () => {
-      setDarkMode(false)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(perimeterBg(name)).toMatch(/%, 93%\)$/)
+    it('dark and light values differ for families where darken3 contrast differs across lighten3/lighten4', () => {
+      // Same rationale as agentFg: pastel bgs mean some families settle to the same candidate.
+      for (const name of ['a', 'b']) {
+        setDarkMode(false)
+        const light = perimeterFg(name)
+        setDarkMode(true)
+        const dark = perimeterFg(name)
+        expect(dark).not.toBe(light)
       }
     })
   })
 
-  // ── perimeterBorder() exact arithmetic: factor 0.43 ─────────────────────────
-  describe('perimeterBorder() — exact factor arithmetic', () => {
-    it('n600 (sat=55): dark=light=round(55*0.43)=24', () => {
+  // ── perimeterBg() — pastel: lighten3 dark / lighten4 light (same as agentBg) ─
+  describe('perimeterBg() — exact MD2 hex values', () => {
+    it('"a" (pink idx=1) dark → pink lighten3 #f48fb1', () => {
       setDarkMode(true)
-      expect(perimeterBorder('n600')).toBe('hsl(80, 24%, 27%)')
-      setDarkMode(false)
-      expect(perimeterBorder('n600')).toBe('hsl(80, 24%, 80%)')
+      expect(perimeterBg('a')).toBe('#f48fb1')
     })
 
-    it('n10 (sat=65): dark=light=round(65*0.43)=28', () => {
-      setDarkMode(true)
-      expect(perimeterBorder('n10')).toBe('hsl(357, 28%, 27%)')
+    it('"a" (pink idx=1) light → pink lighten4 #f8bbd0', () => {
       setDarkMode(false)
-      expect(perimeterBorder('n10')).toBe('hsl(357, 28%, 80%)')
+      expect(perimeterBg('a')).toBe('#f8bbd0')
     })
 
-    it('n0 (sat=75): dark=light=round(75*0.43)=32', () => {
+    it('dark and light values always differ', () => {
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        setDarkMode(false)
+        const light = perimeterBg(name)
+        setDarkMode(true)
+        const dark = perimeterBg(name)
+        expect(dark).not.toBe(light)
+      }
+    })
+  })
+
+  // ── perimeterBorder() — lighten2 dark / lighten3 light (same as agentBorder) ─
+  describe('perimeterBorder() — exact MD2 hex values', () => {
+    it('"a" (pink idx=1) dark → pink lighten2 #f06292', () => {
       setDarkMode(true)
-      expect(perimeterBorder('n0')).toBe('hsl(218, 32%, 27%)')
-      setDarkMode(false)
-      expect(perimeterBorder('n0')).toBe('hsl(218, 32%, 80%)')
+      expect(perimeterBorder('a')).toBe('#f06292')
     })
 
-    it('n100 (sat=85): dark=light=round(85*0.43)=37', () => {
-      setDarkMode(true)
-      expect(perimeterBorder('n100')).toBe('hsl(315, 37%, 27%)')
+    it('"a" (pink idx=1) light → pink lighten3 #f48fb1', () => {
       setDarkMode(false)
-      expect(perimeterBorder('n100')).toBe('hsl(315, 37%, 80%)')
+      expect(perimeterBorder('a')).toBe('#f48fb1')
     })
 
-    it('perimeterBorder dark lightness is exactly 27% (kills +/-1 mutants)', () => {
+    it('perimeterBorder differs from perimeterBg (border is one shade richer than bg)', () => {
+      // dark: border=lighten2 ≠ bg=lighten3; light: border=lighten3 ≠ bg=lighten4
       setDarkMode(true)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(perimeterBorder(name)).toMatch(/%, 27%\)$/)
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        expect(perimeterBorder(name)).not.toBe(perimeterBg(name))
       }
     })
 
-    it('perimeterBorder light lightness is exactly 80% (kills +/-1 mutants)', () => {
-      setDarkMode(false)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        expect(perimeterBorder(name)).toMatch(/%, 80%\)$/)
-      }
-    })
-
-    it('perimeterBorder and perimeterBg have same saturation (both factor 0.43)', () => {
-      setDarkMode(true)
-      for (const name of ['n0', 'n10', 'n100', 'n600']) {
-        const bgS = parseInt(perimeterBg(name).match(/hsl\(\d+, (\d+)%/)![1])
-        const borderS = parseInt(perimeterBorder(name).match(/hsl\(\d+, (\d+)%/)![1])
-        expect(borderS).toBe(bgS)
+    it('dark and light values always differ', () => {
+      for (const name of ['a', 'b', 'i', 'j', 'k']) {
+        setDarkMode(false)
+        const light = perimeterBorder(name)
+        setDarkMode(true)
+        const dark = perimeterBorder(name)
+        expect(dark).not.toBe(light)
       }
     })
   })
 
   // ── cacheSet() FIFO eviction at exactly CACHE_MAX boundary ───────────────────
-  // Kills mutants: map.size >= CACHE_MAX → map.size > CACHE_MAX
   describe('cacheSet() FIFO eviction — CACHE_MAX=100 boundary', () => {
-    it('inserting exactly 100 entries then 1 more returns valid color (eviction correct)', () => {
+    it('inserting exactly 100 entries then 1 more returns valid hex color', () => {
       setDarkMode(true)
-      // Use a prefix unlikely to collide with other tests
-      const prefix = 'fifo-t1349-'
+      const prefix = 'fifo-t1467-'
       for (let i = 0; i < 100; i++) {
         agentFg(`${prefix}${i}`)
       }
-      // 101st insert triggers eviction of prefix-0
       const result = agentFg(`${prefix}100`)
-      expect(result).toMatch(/^hsl\(\d+, \d+%, 68%\)$/)
+      expect(result).toMatch(HEX_PATTERN)
     })
 
     it('cache eviction keeps second entry accessible after evicting first', () => {
       setDarkMode(true)
-      const prefix = 'fifo2-t1349-'
+      const prefix = 'fifo2-t1467-'
       for (let i = 0; i < 100; i++) {
         agentFg(`${prefix}${i}`)
       }
-      // Evict prefix-0
       agentFg(`${prefix}100`)
-      // prefix-1 should still be accessible (not evicted)
       const second = agentFg(`${prefix}1`)
-      expect(second).toMatch(/^hsl\(\d+, \d+%, 68%\)$/)
+      expect(second).toMatch(HEX_PATTERN)
     })
 
-    it('cache size stays bounded after many inserts (not unbounded growth)', () => {
+    it('cache size stays bounded after many inserts', () => {
       setDarkMode(false)
-      // Insert 200 entries — should trigger 100 evictions but always produce valid colors
       for (let i = 0; i < 200; i++) {
-        const result = agentFg(`size-bound-${i}`)
-        expect(result).toMatch(/^hsl\(\d+, \d+%, 38%\)$/)
+        const result = agentFg(`size-bound-t1467-${i}`)
+        expect(result).toMatch(HEX_PATTERN)
       }
     })
 
     it('99 entries do NOT trigger eviction (< CACHE_MAX)', () => {
       setDarkMode(true)
-      const prefix = 'noevict-t1349-'
-      // Fill 99 entries (one under CACHE_MAX)
+      const prefix = 'noevict-t1467-'
       for (let i = 0; i < 99; i++) {
         agentBg(`${prefix}${i}`)
       }
-      // 100th insert: size was 99 < 100, so no eviction
       const result = agentBg(`${prefix}99`)
-      expect(result).toMatch(/^hsl\(\d+, \d+%, 18%\)$/)
+      expect(result).toMatch(HEX_PATTERN)
     })
 
     it('exactly 100 entries trigger eviction on 101st insert (>= boundary)', () => {
       setDarkMode(true)
-      const prefix = 'at-max-t1349-'
-      // Fill to exactly CACHE_MAX=100
+      const prefix = 'at-max-t1467-'
       for (let i = 0; i < 100; i++) {
         agentBorder(`${prefix}${i}`)
       }
-      // 101st: size=100 >= 100, so eviction fires → delete first key → insert
       const result = agentBorder(`${prefix}100`)
-      expect(result).toMatch(/^hsl\(\d+, \d+%, 32%\)$/)
+      expect(result).toMatch(HEX_PATTERN)
     })
+  })
+})
+
+// ─── T1510: WCAG AA compliance — all 12 families × 2 themes ──────────────────
+// Single-char names a–l map to palette indices 1–11 then 0, covering all 12.
+//   a=pink(1) b=purple(2) c=deepPurple(3) d=indigo(4) e=blue(5) f=lightBlue(6)
+//   g=cyan(7) h=teal(8) i=brown(9) j=blueGrey(10) k=amber(11) l=red(0)
+const ALL_FAMILIES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']
+
+function setDarkModeForWcag(enabled: boolean) {
+  if (enabled) document.documentElement.classList.add('dark')
+  else document.documentElement.classList.remove('dark')
+  setDarkModeReactive(enabled)
+}
+
+describe('WCAG AA compliance — all 12 families × 2 themes (T1510, updated T1625)', () => {
+  afterEach(() => setDarkModeForWcag(false))
+
+  it('agentFg dark mode: all 12 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(true)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(agentFg(name), agentBg(name))
+      expect(ratio, `agentFg('${name}') dark: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('agentFg light mode: all 12 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(false)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(agentFg(name), agentBg(name))
+      expect(ratio, `agentFg('${name}') light: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('perimeterFg dark mode: all 12 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(true)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(perimeterFg(name), agentBg(name))
+      expect(ratio, `perimeterFg('${name}') dark: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('perimeterFg light mode: all 12 families meet 4.5:1 against agentBg', () => {
+    setDarkModeForWcag(false)
+    for (const name of ALL_FAMILIES) {
+      const ratio = contrastRatio(perimeterFg(name), agentBg(name))
+      expect(ratio, `perimeterFg('${name}') light: ratio=${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)
+    }
   })
 })

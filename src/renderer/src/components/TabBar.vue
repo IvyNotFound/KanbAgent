@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Tab } from '@renderer/stores/tabs'
-import { agentFg } from '@renderer/utils/agentColor'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
 import { useTabBarGroups } from '@renderer/composables/useTabBarGroups'
 import ContextMenu from './ContextMenu.vue'
@@ -13,16 +12,23 @@ const { confirm } = useConfirmDialog()
 
 const scrollContainer = ref<HTMLDivElement | null>(null)
 
+// ── Fixed tab active state ────────────────────────────────────────────────────
+const fixedActiveTab = computed<string | undefined>(() => {
+  if (store.activeTabId === 'backlog') return 'backlog'
+  if (store.activeTabId === 'dashboard') return 'dashboard'
+  return undefined
+})
+
+function onFixedTabChange(val: string | null | undefined) {
+  if (val) store.setActive(val)
+}
+
 const {
   store, terminalTabs, fileTabs,
   groupedTerminalTabs,
-  toggleGroup, isGroupCollapsed, isGroupActive, activateAgentGroup,
-  tabStyleMap, agentTabStyleMap, indicatorStyleMap, subTabLabel,
+  toggleGroup, isGroupCollapsed, activateAgentGroup,
+  agentTabStyleMap, groupEnvelopeStyleMap, subTabBgMap, subTabLabel,
 } = useTabBarGroups(scrollContainer)
-
-async function openWslTerminal(): Promise<void> {
-  await window.electronAPI.openWslTerminal()
-}
 
 // ── Scroll state ─────────────────────────────────────────────────────────────
 const canScrollLeft = ref(false)
@@ -105,65 +111,40 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 </script>
 
 <template>
-  <div class="flex items-stretch border-b border-edge-default bg-surface-primary shrink-0 h-10">
+  <div class="tabbar">
 
-    <!-- Onglet Backlog (fixe) -->
-    <button
-      :class="[
-        'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0',
-        store.activeTabId === 'backlog'
-          ? 'text-content-primary bg-surface-secondary'
-          : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
-      ]"
-      @click="store.setActive('backlog')"
+    <!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
+    <v-tabs
+      :model-value="fixedActiveTab"
+      density="compact"
+      height="48"
+      color="primary"
+      class="tabbar-fixed-tabs"
+      @update:model-value="onFixedTabChange"
     >
-      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
-        <rect x="1"  y="2" width="4" height="12" rx="1.5"/>
-        <rect x="6"  y="2" width="4" height="8"  rx="1.5"/>
-        <rect x="11" y="2" width="4" height="5"  rx="1.5"/>
-      </svg>
-      <span>{{ t('sidebar.backlog') }}</span>
-      <span
-        v-if="store.activeTabId === 'backlog'"
-        class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
-      ></span>
-    </button>
-
-    <!-- Onglet Stat (fixe) -->
-    <button
-      :class="[
-        'flex items-center gap-2 px-5 text-sm font-semibold transition-all relative select-none border-r border-edge-subtle shrink-0',
-        store.activeTabId === 'dashboard'
-          ? 'text-content-primary bg-surface-secondary'
-          : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
-      ]"
-      @click="store.setActive('dashboard')"
-    >
-      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0">
-        <path d="M0 11l4-5 3 3 4-6 5 3v5H0z"/>
-      </svg>
-      <span>{{ t('sidebar.dashboard') }}</span>
-      <span
-        v-if="store.activeTabId === 'dashboard'"
-        class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
-      ></span>
-    </button>
+      <v-tab value="backlog">
+        <v-icon size="14" class="mr-2">mdi-view-list</v-icon>
+        {{ t('sidebar.backlog') }}
+      </v-tab>
+      <v-tab value="dashboard">
+        <v-icon size="14" class="mr-2">mdi-chart-line</v-icon>
+        {{ t('sidebar.dashboard') }}
+      </v-tab>
+    </v-tabs>
 
     <!-- Scroll left arrow -->
     <button
       v-show="canScrollLeft"
-      class="flex items-center justify-center w-6 shrink-0 text-content-subtle hover:text-content-secondary hover:bg-surface-secondary/60 transition-colors"
+      class="scroll-arrow"
       @click="scrollBy(-120)"
     >
-      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-        <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
-      </svg>
+      <v-icon size="12">mdi-chevron-left</v-icon>
     </button>
 
     <!-- Onglets (scrollable) -->
     <div
       ref="scrollContainer"
-      class="scroll-container flex items-stretch gap-0.5 px-1.5 flex-1 min-w-0 overflow-x-scroll"
+      class="scroll-container"
       @wheel="onWheel"
       @scroll="updateScrollState"
     >
@@ -171,109 +152,73 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       <button
         v-for="tab in fileTabs"
         :key="tab.id"
-        :class="[
-          'relative flex items-center gap-1.5 px-3 text-sm font-medium transition-all select-none rounded-t shrink-0 cursor-pointer mr-0.5',
-          store.activeTabId === tab.id
-            ? 'text-content-primary bg-surface-secondary'
-            : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50'
-        ]"
+        class="text-caption"
+        :class="['tab-file', store.activeTabId === tab.id && 'tab-file--active']"
         :title="tab.title"
         :aria-label="t('explorer.files') + ': ' + tab.title"
         @click="store.setActive(tab.id)"
         @mousedown="onMiddleClick($event, tab)"
       >
-        <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5 shrink-0 text-content-subtle">
-          <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5.5 1.5v2a1 1 0 0 0 1 1h2L9.5 1.5z"/>
-        </svg>
-        <span class="truncate max-w-[120px] font-mono text-xs">{{ tab.title }}</span>
-        <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" :title="t('tabBar.unsaved')" />
+        <v-icon size="14" style="flex-shrink: 0; opacity: 0.5;">mdi-file-outline</v-icon>
+        <span class="tab-title-mono">{{ tab.title }}</span>
+        <span v-if="tab.dirty" class="tab-dirty" :title="t('tabBar.unsaved')" />
         <span
-          class="flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer ml-4"
+          class="tab-close text-label-medium"
           :title="t('tabBar.closeTab')"
           @click.stop="handleCloseTab(tab)"
         >✕</span>
-        <span
-          v-if="store.activeTabId === tab.id"
-          class="absolute bottom-0 left-0 right-0 h-[2px] bg-content-faint"
-        ></span>
       </button>
 
-      <!-- Groupe agent -->
+      <!-- Groupe agent — envelope pill wrapping pill-header + sub-chips -->
       <div
-        v-for="(group, groupIdx) in groupedTerminalTabs"
+        v-for="group in groupedTerminalTabs"
         :key="group.agentName ?? '__misc__'"
-        class="flex items-stretch gap-0.5 shrink-0"
-        :class="groupIdx < groupedTerminalTabs.length - 1 ? 'mr-3' : ''"
+        class="tab-group"
+        :style="groupEnvelopeStyleMap.get(group.agentName)"
       >
-        <!-- Onglet-agent (bouton principal du groupe) -->
+        <!-- Pill header (identité de l'agent) -->
         <button
-          class="relative flex items-center gap-1.5 px-3 text-sm font-semibold transition-all select-none rounded-t shrink-0 cursor-pointer"
+          v-ripple
+          class="tab-agent"
           :style="agentTabStyleMap.get(group.agentName)"
           @click="activateAgentGroup(group)"
           @contextmenu.prevent="openGroupMenu($event, group)"
         >
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 shrink-0 text-violet-500 dark:text-zinc-300">
-            <polyline points="2,5 6.5,8 2,11"/>
-            <line x1="8.5" y1="11" x2="14" y2="11"/>
-          </svg>
-          <span class="opacity-50 select-none">·</span>
-          <span class="truncate max-w-[80px]">{{ group.agentName ?? '?' }}</span>
-          <svg
-            viewBox="0 0 16 16" fill="currentColor"
-            class="w-2.5 h-2.5 shrink-0 transition-transform duration-150"
-            :class="isGroupCollapsed(group.agentName) ? '' : '-rotate-90'"
+          <v-icon size="11" style="flex-shrink: 0;">mdi-console</v-icon>
+          <span class="tab-agent-name">{{ group.agentName ?? '?' }}</span>
+          <v-icon
+            class="tab-chevron"
+            :style="isGroupCollapsed(group.agentName) ? {} : { transform: 'rotate(-90deg)' }"
+            size="10"
             @click.stop="toggleGroup(group.agentName)"
-          >
-            <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-          </svg>
+          >mdi-chevron-down</v-icon>
           <span
             v-if="isGroupCollapsed(group.agentName)"
-            class="text-[10px] font-mono opacity-70 shrink-0"
+            class="tab-group-count"
           >{{ group.tabs.length }}</span>
-          <span
-            v-if="isGroupActive(group)"
-            class="absolute bottom-0 left-0 right-0 h-[2px]"
-            :style="group.agentName ? { backgroundColor: agentFg(group.agentName) } : { backgroundColor: '#a78bfa' }"
-          ></span>
         </button>
 
-        <!-- Sous-onglets session (masqués si groupe collapsé) -->
+        <!-- Sub-chips session (masqués si groupe collapsé) -->
         <template v-if="!isGroupCollapsed(group.agentName)">
-          <template v-for="tab in group.tabs" :key="tab.id">
-            <button
-              v-if="isGroupActive(group)"
-              class="relative flex items-center gap-1.5 px-4 min-w-[90px] text-sm font-medium transition-all select-none rounded-t shrink-0 cursor-pointer"
-              :style="tabStyleMap.get(tab.id)"
-              :title="subTabLabel(tab)"
-              @click="store.setActive(tab.id)"
-              @mousedown="onMiddleClick($event, tab)"
-            >
-              <span class="font-mono text-xs shrink-0">{{ subTabLabel(tab) }}</span>
-              <span v-if="tab.dirty" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" :title="t('tabBar.unsaved')" />
-              <span
-                class="flex items-center justify-center w-4 h-4 rounded opacity-40 hover:opacity-100 hover:text-red-400 hover:bg-black/20 transition-all text-xs cursor-pointer ml-4"
-                :title="t('tabBar.closeTab')"
-                @click.stop="handleCloseTab(tab)"
-              >✕</span>
-              <span
-                class="absolute bottom-0 left-0 right-0 h-[2px]"
-                :style="indicatorStyleMap.get(tab.id)"
-              ></span>
-            </button>
-            <button
-              v-else
-              class="relative flex items-center justify-center w-4 h-6 self-center transition-all select-none rounded shrink-0 cursor-pointer"
-              :title="subTabLabel(tab)"
-              @click="store.setActive(tab.id)"
-              @mousedown="onMiddleClick($event, tab)"
-            >
-              <span
-                class="w-1.5 h-1.5 rounded-full opacity-70 hover:opacity-100 transition-opacity"
-                :class="tab.dirty ? 'bg-amber-400' : ''"
-                :style="tab.dirty ? {} : indicatorStyleMap.get(tab.id)"
-              ></span>
-            </button>
-          </template>
+          <button
+            v-for="tab in group.tabs"
+            :key="tab.id"
+            v-ripple
+            class="tab-sub"
+            :class="{ 'tab-sub--active': store.activeTabId === tab.id }"
+            :style="subTabBgMap.get(tab.id)"
+            :title="subTabLabel(tab)"
+            @click="store.setActive(tab.id)"
+            @mousedown="onMiddleClick($event, tab)"
+          >
+            <span class="tab-sub-label">{{ subTabLabel(tab) }}</span>
+            <span v-if="tab.dirty" class="tab-dirty" :title="t('tabBar.unsaved')" />
+            <span
+              class="tab-close text-label-medium"
+              :title="t('tabBar.closeTab')"
+              @click.stop="handleCloseTab(tab)"
+            >✕</span>
+          </button>
         </template>
       </div>
     </div>
@@ -281,25 +226,12 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
     <!-- Scroll right arrow -->
     <button
       v-show="canScrollRight"
-      class="flex items-center justify-center w-6 shrink-0 text-content-subtle hover:text-content-secondary hover:bg-surface-secondary/60 transition-colors"
+      class="scroll-arrow"
       @click="scrollBy(120)"
     >
-      <svg viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3">
-        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-      </svg>
+      <v-icon size="12">mdi-chevron-right</v-icon>
     </button>
 
-    <!-- Bouton + WSL -->
-    <button
-      class="flex items-center gap-1.5 px-3 self-center text-sm font-semibold text-violet-700 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/40 hover:border-violet-500/60 dark:text-violet-300 dark:border-violet-500/30 dark:hover:border-violet-500/50 rounded transition-all ml-1 mr-2 shrink-0 cursor-pointer"
-      style="height: 28px"
-      :title="t('tabBar.openWslTerminal')"
-      @click="openWslTerminal()"
-    >
-      <span class="text-base leading-none">+</span>
-      <span>WSL</span>
-    </button>
-    <div class="w-3 shrink-0"></div>
 
   </div>
 
@@ -314,12 +246,194 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 </template>
 
 <style scoped>
-/* Hide native scrollbar on the tab scroll container — custom arrows handle navigation */
+.tabbar {
+  display: flex;
+  align-items: stretch;
+  height: 48px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  background: rgb(var(--v-theme-surface));
+}
+/* tabbar-fixed-tabs: v-tabs wrapper for Backlog + Dashboard (MD3 Secondary Tabs).
+   flex-shrink: 0 prevents compression by adjacent scrollable area. */
+.tabbar-fixed-tabs {
+  flex-shrink: 0;
+}
+.scroll-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
+  color: rgba(var(--v-theme-on-surface), 0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--md-duration-short3) var(--md-easing-standard), color var(--md-duration-short3) var(--md-easing-standard);
+}
+.scroll-arrow:hover {
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  background: rgba(var(--v-theme-on-surface), 0.06);
+}
+.scroll-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 .scroll-container::-webkit-scrollbar {
   display: none;
 }
-.scroll-container {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+.tab-file {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 36px;
+  align-self: center;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: rgba(var(--v-theme-on-surface), 0.60);
+  transition: background var(--md-duration-short3) var(--md-easing-standard),
+              color var(--md-duration-short3) var(--md-easing-standard);
+  user-select: none;
+}
+.tab-file:hover {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+  color: rgba(var(--v-theme-on-surface), 0.80);
+}
+.tab-file--active {
+  background: rgba(var(--v-theme-primary), 0.15);
+  color: rgb(var(--v-theme-primary));
+}
+.tab-title-mono {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  font-size: 12px;
+}
+.tab-dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-warning));
+  flex-shrink: 0;
+}
+.tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  opacity: 0.4;
+  cursor: pointer;
+  margin-left: 16px;
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
+}
+.tab-close:hover {
+  opacity: 1;
+  color: rgb(var(--v-theme-error));
+  background: rgba(0,0,0,0.2);
+}
+/* Group envelope — pill container tinted with agent color.
+   border and background come from :style (groupEnvelopeStyleMap). */
+.tab-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  height: 44px;
+  align-self: center;
+  border-radius: 22px;
+  padding: 2px 3px;
+}
+/* Pill header — agent identity, always visible */
+.tab-agent {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 36px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: filter var(--md-duration-short3) var(--md-easing-standard);
+  user-select: none;
+  border-radius: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: none;
+}
+.tab-agent:hover {
+  filter: brightness(1.12);
+}
+.tab-agent:active {
+  filter: brightness(0.9);
+}
+.tab-agent-name {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tab-chevron {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
+}
+.tab-group-count {
+  font-size: 10px;
+  font-family: inherit;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+/* Sub-chips — session tabs inside the group envelope.
+   Active state: tinted bg (0.60) + agentFg text via subTabBgMap :style.
+   Inactive: subtle agent tint (0.08) via --sub-tab-bg CSS custom prop (allows hover override). */
+.tab-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 36px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: background var(--md-duration-short3) var(--md-easing-standard),
+              color var(--md-duration-short3) var(--md-easing-standard);
+  user-select: none;
+  border-radius: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+  background-color: var(--sub-tab-bg, transparent);
+  border: none;
+  color: rgba(var(--v-theme-on-surface), 0.70);
+}
+.tab-sub:not(.tab-sub--active):hover {
+  background: rgba(var(--v-theme-on-surface), 0.08);
+  color: rgba(var(--v-theme-on-surface), 0.80);
+}
+.tab-sub:not(.tab-sub--active):active {
+  background: rgba(var(--v-theme-on-surface), 0.12);
+}
+.tab-sub-label {
+  font-size: 11px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

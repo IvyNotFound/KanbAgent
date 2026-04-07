@@ -29,8 +29,6 @@
     "prevPage": "السابق",
     "nextPage": "التالي",
     "pageOf": "الصفحة {page} / {total} ({count} مهام)",
-    "listView": "عرض القائمة",
-    "treeView": "عرض الشجرة",
     "staleTasks": "مهمة قديمة {count} | مهام قديمة {count}"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "تكبير"
   },
   "tabBar": {
-    "openWslTerminal": "فتح طرفية WSL",
     "closeTab": "إغلاق",
     "unsaved": "تغييرات غير محفوظة",
     "closeFileTitle": "إغلاق الملف",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "جودة الوكيل",
-    "all": "الكل",
     "refresh": "تحديث",
     "loading": "جار التحميل…",
     "error": "خطأ: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "معدل الرفض في المشروع",
     "noRejections": "لم يتم اكتشاف أي رفض",
     "heuristicNote": "اكتشاف إرشادي — تعليقات المراجع التي تحتوي على \"رفض\" أو \"إعادة\" أو \"للتنفيذ\"",
-    "colTotal": "الإجمالي",
-    "colRejected": "المرفوض",
-    "colRate": "المعدل",
-    "colBar": "الشريط"
+    "colAgent": "العميل",
+    "colRejections": "مرفوض/الكل",
+    "colRate": "المعدل"
   },
   "sessionActivityChart": {
     "title": "نشاط الجلسة — آخر 14 يوماً",
@@ -578,7 +573,10 @@
     "streaming": "قيد التشغيل…",
     "waitingMessages": "في انتظار الرسائل…",
     "turns": "{n} دور | {n} أدوار",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "إرسال رسالة…",
+    "askQuestion": "سؤال الوكيل",
+    "replyPlaceholder": "الرد على الوكيل…"
   },
   "task": {
     "running": "المهمة قيد التنفيذ",
@@ -610,7 +608,8 @@
     "colSource": "مصدر",
     "colTests": "اختبارات",
     "colFiles": "ملفات",
-    "scannedAt": "تم الفحص في {date}"
+    "scannedAt": "تم الفحص في {date}",
+    "languageDetail": "تفاصيل اللغات"
   },
   "update": {
     "available": "التحديث {version} متاح",

@@ -96,6 +96,10 @@ body,
   --md-state-focus:    0.12;
   --md-state-pressed:  0.12;
   --md-state-dragged:  0.16;
+  /* Overlay utilities — prefer these over rgba(0,0,0,...) for hover/active/divider states */
+  --bg-hover:      rgba(var(--v-theme-on-surface), 0.06);
+  --bg-active:     rgba(var(--v-theme-on-surface), 0.12);
+  --divider-soft:  rgba(var(--v-theme-on-surface), 0.08);
   /* Markdown code */
   --md-code-bg:     rgb(var(--v-theme-md-code-bg));
   --md-code-text:   rgb(var(--v-theme-md-code-text));
@@ -211,7 +215,7 @@ body,
 
   /* links */
   & a {
-    color: #6d3bd7; /* MD3 primary light — tone 40 */
+    color: rgb(var(--v-theme-primary));
     text-decoration: underline;
   }
 
@@ -220,14 +224,6 @@ body,
     border: none;
     border-top: 1px solid var(--md-hr);
     margin: 0.75em 0;
-  }
-}
-
-/* Dark mode link color override */
-[data-v-theme="dark"] {
-  .md-content a,
-  .md-bubble a {
-    color: #d0bcff; /* MD3 primary dark — tone 80 */
   }
 }
 
@@ -275,7 +271,9 @@ body,
 .stream-markdown li { margin: 0.2em 0; }
 .stream-markdown code:not(pre code) {
   background: var(--md-code-bg); border-radius: 3px;
-  padding: 0.1em 0.35em; font-size: 0.85em; color: var(--md-code-text);
+  padding: 0.1em 0.35em; font-size: 0.85em;
+  /* Tinted with agent accent when available, fallback to default code text */
+  color: var(--stream-accent-fg, var(--md-code-text));
 }
 .stream-markdown pre { margin: 0.6em 0; border-radius: var(--shape-xs); overflow-x: auto; }
 .stream-markdown pre code { font-size: 0.8em; padding: 0.85em 1em; display: block; }
@@ -283,8 +281,7 @@ body,
   border-left: 3px solid var(--md-bq-border);
   padding-left: 0.8em; margin: 0.4em 0; color: var(--md-bq-text);
 }
-.stream-markdown a { color: #6d3bd7; text-decoration: underline; } /* MD3 primary light — tone 40 */
-[data-v-theme="dark"] .stream-markdown a { color: #d0bcff; } /* MD3 primary dark — tone 80 */
+.stream-markdown a { color: rgb(var(--v-theme-primary)); text-decoration: underline; }
 .stream-markdown strong { font-weight: 600; }
 .stream-markdown em { font-style: italic; }
 .stream-markdown hr { border: none; border-top: 1px solid var(--md-hr); margin: 0.8em 0; }
@@ -298,6 +295,49 @@ body,
 .stream-markdown th { background: var(--surface-secondary); font-weight: 600; color: var(--content-secondary); }
 .stream-markdown tr:nth-child(odd) td { background: transparent; }
 .stream-markdown tr:nth-child(even) td { background: rgba(var(--v-theme-on-surface), 0.04); }
+
+/* ── User bubble markdown (T1701) — prose + code adapted for colored bg ───────
+   Applied on user bubbles instead of stream-markdown to avoid stream-markdown's
+   link/code/heading color tokens bleeding onto the agent-colored background.
+   Code uses dark semi-transparent overlays to stay readable on any accent.
+   ────────────────────────────────────────────────────────────────────────── */
+.stream-markdown-user { font-size: 0.875rem; line-height: 1.65; }
+.stream-markdown-user p { margin: 0.5em 0; }
+.stream-markdown-user p:first-child { margin-top: 0; }
+.stream-markdown-user p:last-child { margin-bottom: 0; }
+.stream-markdown-user h1, .stream-markdown-user h2,
+.stream-markdown-user h3, .stream-markdown-user h4 {
+  font-weight: 600; margin: 0.85em 0 0.35em; color: inherit;
+}
+.stream-markdown-user h1 { font-size: 1.25em; }
+.stream-markdown-user h2 { font-size: 1.1em; }
+.stream-markdown-user h3 { font-size: 1em; }
+.stream-markdown-user ul, .stream-markdown-user ol { padding-left: 1.4em; margin: 0.4em 0; }
+.stream-markdown-user li { margin: 0.2em 0; }
+.stream-markdown-user code:not(pre code) {
+  background-color: rgba(0, 0, 0, 0.15);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+[data-v-theme="dark"] .stream-markdown-user code:not(pre code) {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+.stream-markdown-user pre {
+  margin: 0.6em 0; border-radius: var(--shape-xs); overflow-x: auto;
+  background-color: rgba(0, 0, 0, 0.1); border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.stream-markdown-user pre code { font-size: 0.8em; padding: 0.85em 1em; display: block; color: inherit; }
+.stream-markdown-user blockquote {
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  padding-left: 0.8em; margin: 0.4em 0;
+}
+.stream-markdown-user a { color: inherit; text-decoration: underline; opacity: 0.85; }
+.stream-markdown-user strong { font-weight: 600; }
+.stream-markdown-user em { font-style: italic; }
+.stream-markdown-user hr { border: none; border-top: 1px solid rgba(0, 0, 0, 0.2); margin: 0.8em 0; }
 
 /* ── Copy code button (T1516) ─────────────────────────────────────────────────
    .code-block-wrapper wraps every <pre> injected by renderMarkdown.ts.
@@ -330,19 +370,14 @@ body,
 }
 
 .copy-code-btn.copied {
-  color: #4caf50;
-  border-color: #4caf50;
+  color: rgb(var(--v-theme-success));
+  border-color: rgb(var(--v-theme-success));
 }
 
 [data-v-theme="light"] .copy-code-btn {
   border-color: rgba(0, 0, 0, 0.15);
   background: rgba(255, 255, 255, 0.7);
   color: rgba(0, 0, 0, 0.6);
-}
-
-[data-v-theme="light"] .copy-code-btn.copied {
-  color: #2e7d32;
-  border-color: #2e7d32;
 }
 
 /* ── Sidebar Agent Item — shared styles (SidebarGroupNode + SidebarAgentSection) ─
@@ -402,12 +437,10 @@ body,
 .agent-name--active { color: var(--content-primary); }
 .agent-actions {
   flex-shrink: 0;
-  display: flex;
+  display: none;
   align-items: center;
-  opacity: 0;
-  transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
-.agent-item:hover .agent-actions { opacity: 1; }
+.agent-item:hover .agent-actions { display: flex; }
 .drag-handle {
   width: 20px;
   height: 20px;
@@ -418,11 +451,11 @@ body,
   color: var(--content-dim);
 }
 .action-btn {
-  width: 20px !important;
-  min-width: 20px !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  color: var(--content-subtle) !important;
+  width: 20px !important; /* override Vuetify v-btn size — global rule, no scope hash boost */
+  min-width: 20px !important; /* same */
+  height: 20px !important; /* same */
+  min-height: 20px !important; /* same */
+  color: var(--content-subtle) !important; /* override Vuetify v-btn theme color — global rule */
 }
 .action-btn--launch:hover { filter: brightness(1.15); }
 .empty-msg {
@@ -437,7 +470,30 @@ body,
 }
 /* MD3 elevation tint: dialog cards float above the app base surface */
 .v-dialog .v-card {
-  background-color: rgb(var(--v-theme-surface-dialog)) !important;
+  background-color: rgb(var(--v-theme-surface-dialog)) !important; /* override Vuetify internal surface — global selector, no scope hash */
+}
+/* Vertical centering for v-card inside a v-dialog overlay content.
+   .v-overlay__content is a flex column. When the dialog has a fixed height prop
+   (e.g. SettingsModal height="700") and the v-card's max-height is smaller, extra
+   vertical space appears below the card. margin-block: auto distributes this space
+   equally above and below, keeping the card visually centered.
+   Only affects dialogs where the overlay content has a definite height > card height;
+   harmless (resolves to 0) for auto-sized overlay content. */
+.v-dialog > .v-overlay__content > .v-card {
+  margin-block: auto;
+}
+
+/* CommandPalette — force overlay content to cover the full viewport so that
+   .palette-backdrop's padding-top: 12vh is relative to the window, not the content box.
+   Vuetify's .v-overlay__content sizes to its content by default (no height guarantee).
+   Isolated via .palette-dialog class to avoid impacting other dialogs. */
+.palette-dialog > .v-overlay__content {
+  width: 100% !important; /* override Vuetify overlay content sizing — required for full-viewport layout */
+  height: 100% !important; /* same */
+  max-width: 100% !important; /* same */
+  max-height: 100% !important; /* same */
+  margin: 0 !important; /* same */
+  align-self: stretch;
 }
 
 /* ── MD3 compliance — remove MD2 uppercase on all buttons ────────────────────
@@ -450,10 +506,40 @@ body,
   letter-spacing: 0.00625em;
 }
 
-/* ── Utility — monospace font stack ─────────────────────────────────────────
-   Used alongside text-caption / text-label-medium for numeric/code values.
-   Vuetify 3 does not provide a font-mono utility out of the box.
+/* ── Diff view colors — theme-aware CSS vars (T1670/T1742) ───────────────────
+   Used by ToolInputView.vue .diff-add / .diff-remove / .diff-char-hl,
+   and as overrides for .hljs-addition / .hljs-deletion (markdown diff blocks).
+   Defined here instead of :global() in scoped style to avoid scope leak.
    ────────────────────────────────────────────────────────────────────────── */
-.font-mono {
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+[data-v-theme="dark"] {
+  --diff-add-color:       rgb(74, 222, 128);
+  --diff-remove-color:    rgb(248, 113, 113);
+  --diff-add-bg:          rgba(34, 197, 94, 0.18);
+  --diff-remove-bg:       rgba(239, 68, 68, 0.18);
+  --diff-add-char-hl:     rgba(34, 197, 94, 0.45);
+  --diff-remove-char-hl:  rgba(239, 68, 68, 0.45);
+}
+[data-v-theme="light"] {
+  /* T1742 — darker variants for sufficient contrast on light surfaces */
+  --diff-add-color:       rgb(21, 128, 61);    /* green-700 — 5:1 on white */
+  --diff-remove-color:    rgb(185, 28, 28);    /* red-700 — 5.9:1 on white */
+  --diff-add-bg:          rgba(21, 128, 61, 0.12);
+  --diff-remove-bg:       rgba(185, 28, 28, 0.10);
+  --diff-add-char-hl:     rgba(21, 128, 61, 0.25);
+  --diff-remove-char-hl:  rgba(185, 28, 28, 0.25);
+}
+
+/* ── hljs diff block overrides — enforce theme-aware colors (T1742) ──────────
+   github.css (light) uses #22863a (4.47:1 on #f0fff4) which fails WCAG AA.
+   Override to use the same CSS vars as ToolInputView for visual consistency.
+   ────────────────────────────────────────────────────────────────────────── */
+[data-v-theme="dark"] .hljs-addition,
+[data-v-theme="light"] .hljs-addition {
+  color: var(--diff-add-color);
+  background-color: var(--diff-add-bg);
+}
+[data-v-theme="dark"] .hljs-deletion,
+[data-v-theme="light"] .hljs-deletion {
+  color: var(--diff-remove-color);
+  background-color: var(--diff-remove-bg);
 }

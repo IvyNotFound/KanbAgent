@@ -1,78 +1,79 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, shallowMount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import ToastContainer from '@renderer/components/ToastContainer.vue'
 import { useToast } from '@renderer/composables/useToast'
 
+// vitest.config.ts sets isCustomElement: tag => tag.startsWith('v-'),
+// so v-snackbar / v-btn are custom HTML elements — no Vuetify stubs needed.
+function mountContainer() {
+  return mount(ToastContainer)
+}
+
 describe('ToastContainer', () => {
   beforeEach(() => {
-    // Clear all toasts before each test
     const { toasts } = useToast()
     toasts.value.splice(0, toasts.value.length)
   })
 
   afterEach(() => {
-    // Clean up singleton toasts to prevent leak between tests
     const { toasts } = useToast()
     toasts.value.splice(0, toasts.value.length)
   })
 
-  it('renders nothing when toasts array is empty', () => {
-    const wrapper = mount(ToastContainer)
-    // Container div exists but no toast items inside
-    const toastItems = wrapper.findAll('.flex.items-start')
-    expect(toastItems).toHaveLength(0)
+  it('renders no snackbars when toasts array is empty', () => {
+    const wrapper = mountContainer()
+    expect(wrapper.findAll('v-snackbar')).toHaveLength(0)
   })
 
-  it('renders one div per toast with the correct message', async () => {
+  it('renders one VSnackbar per toast', async () => {
     const { push } = useToast()
     push('Error happened', 'error', 999999)
     push('Warning here', 'warn', 999999)
-
-    const wrapper = mount(ToastContainer)
+    const wrapper = mountContainer()
     await nextTick()
-    const text = wrapper.text()
-    expect(text).toContain('Error happened')
-    expect(text).toContain('Warning here')
+    expect(wrapper.findAll('v-snackbar')).toHaveLength(2)
   })
 
-  it('shows correct icon per type (error→✕, warn→⚠, info→ℹ)', async () => {
+  it('passes correct color prop per type (error→error, warn→warning, info→surface-variant)', async () => {
     const { push } = useToast()
     push('err', 'error', 999999)
     push('wrn', 'warn', 999999)
     push('inf', 'info', 999999)
-
-    const wrapper = mount(ToastContainer)
+    const wrapper = mountContainer()
     await nextTick()
-    const text = wrapper.text()
-    expect(text).toContain('✕')
-    expect(text).toContain('⚠')
-    expect(text).toContain('ℹ')
+    const snackbars = wrapper.findAll('v-snackbar')
+    expect(snackbars[0].attributes('color')).toBe('error')
+    expect(snackbars[1].attributes('color')).toBe('warning')
+    expect(snackbars[2].attributes('color')).toBe('surface-variant')
   })
 
-  it('applies correct CSS class per type', async () => {
+  it('displays toast message in snackbar content', async () => {
     const { push } = useToast()
-    push('err', 'error', 999999)
-
-    const wrapper = mount(ToastContainer)
+    push('My important message', 'info', 999999)
+    const wrapper = mountContainer()
     await nextTick()
-    const toastDiv = wrapper.find('.bg-red-100')
-    expect(toastDiv.exists()).toBe(true)
+    expect(wrapper.text()).toContain('My important message')
   })
 
-  it('clicking dismiss button removes the toast', async () => {
+  it('clicking the close button dismisses the toast', async () => {
     const { push, toasts } = useToast()
     push('dismiss me', 'error', 999999)
     expect(toasts.value).toHaveLength(1)
-
-    const wrapper = mount(ToastContainer)
+    const wrapper = mountContainer()
     await nextTick()
-
-    // Click the ✕ dismiss button (last button in toast row)
-    const dismissBtn = wrapper.find('button')
-    await dismissBtn.trigger('click')
+    const btn = wrapper.find('v-btn')
+    await btn.trigger('click')
     await nextTick()
-
     expect(toasts.value).toHaveLength(0)
+  })
+
+  it('passes timeout=-1 so the composable controls auto-dismiss', async () => {
+    const { push } = useToast()
+    push('timed', 'info', 999999)
+    const wrapper = mountContainer()
+    await nextTick()
+    const snackbar = wrapper.find('v-snackbar')
+    expect(Number(snackbar.attributes('timeout'))).toBe(-1)
   })
 })

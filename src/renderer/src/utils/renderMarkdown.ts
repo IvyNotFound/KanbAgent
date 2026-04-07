@@ -30,7 +30,7 @@ function ensureMarkedConfigured(): void {
         const highlighted = language
           ? hljs.highlight(text, { language }).value
           : escapeHtml(text)
-        return `<pre class="hljs"><code class="${language ? `language-${language}` : ''}">${highlighted}</code></pre>`
+        return `<div class="code-block-wrapper"><button class="copy-code-btn" type="button" aria-label="Copy code">Copy</button><pre class="hljs"><code class="${language ? `language-${language}` : ''}">${highlighted}</code></pre></div>`
       }
     }
   })
@@ -40,5 +40,5 @@ function ensureMarkedConfigured(): void {
 export function renderMarkdown(text: string): string {
   ensureMarkedConfigured()
   const raw = marked.parse(text) as string
-  return DOMPurify.sanitize(raw)
+  return DOMPurify.sanitize(raw, { ADD_TAGS: ['button'] })
 }

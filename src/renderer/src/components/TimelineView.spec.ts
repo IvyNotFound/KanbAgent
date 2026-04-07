@@ -56,8 +56,8 @@ describe('TimelineView (T842)', () => {
       },
     })
     await flushPromises()
-    // in_progress bars have animate-pulse class
-    const bars = wrapper.findAll('.animate-pulse')
+    // in_progress bars have tl-bar--pulse class (scoped CSS migration, was animate-pulse)
+    const bars = wrapper.findAll('.tl-bar--pulse')
     expect(bars.length).toBeGreaterThan(0)
     wrapper.unmount()
   })

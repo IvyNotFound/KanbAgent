@@ -60,7 +60,7 @@ describe('SidebarPerimetreSection', () => {
     const wrapper = shallowMount(SidebarPerimetreSection, {
       global: { plugins: [pinia, i18n] },
     })
-    expect(wrapper.find('.text-content-faint').exists()).toBe(true)
+    expect(wrapper.find('.no-perimeter-msg').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -127,11 +127,11 @@ describe('SidebarPerimetreSection', () => {
     })
     const { useTasksStore } = await import('@renderer/stores/tasks')
     const store = useTasksStore()
-    // Find and click the perimetre button
-    const buttons = wrapper.findAll('button')
-    const perimetreBtn = buttons.find(b => b.text().includes('front-vuejs'))
-    expect(perimetreBtn).toBeDefined()
-    await perimetreBtn!.trigger('click')
+    // Find and click the perimetre list-item (replaced v-btn with v-list-item in T1574)
+    const items = wrapper.findAll('v-list-item')
+    const perimetreItem = items.find(item => item.text().includes('front-vuejs'))
+    expect(perimetreItem).toBeDefined()
+    await perimetreItem!.trigger('click')
     expect(store.togglePerimetreFilter).toHaveBeenCalledWith('front-vuejs')
     wrapper.unmount()
   })
@@ -173,7 +173,7 @@ describe('SidebarPerimetreSection', () => {
       global: { plugins: [pinia, i18n] },
     })
     // Find the edit button (the pencil icon button with @click.stop="openEditPerimetre(p)")
-    const editBtn = wrapper.find('button.absolute')
+    const editBtn = wrapper.find('v-btn.edit-btn')
     if (editBtn.exists()) {
       await editBtn.trigger('click')
       // Edit modal should now show with prefilled values
@@ -237,8 +237,8 @@ describe('SidebarPerimetreSection', () => {
       global: { plugins: [pinia, i18n] },
     })
     // Reset button should exist when selectedPerimetre is non-null
-    const buttons = wrapper.findAll('button')
-    const hasResetBtn = buttons.some(b => b.classes().includes('text-violet-400'))
+    const buttons = wrapper.findAll('v-btn')
+    const hasResetBtn = buttons.some(b => b.classes().includes('reset-btn'))
     expect(hasResetBtn).toBe(true)
     wrapper.unmount()
   })

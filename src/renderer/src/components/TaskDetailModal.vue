@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
 import { useTasksStore } from '@renderer/stores/tasks'
+import { renderMarkdown as renderMarkdownShared } from '@renderer/utils/renderMarkdown'
+import { useCopyCode } from '@renderer/composables/useCopyCode'
 import AgentBadge from './AgentBadge.vue'
 import TaskDependencyGraph from './TaskDependencyGraph.vue'
 import GitCommitList from './GitCommitList.vue'
-import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
 import { parseUtcDate } from '@renderer/utils/parseDate'
 import type { TaskAssignee, TaskLink } from '@renderer/types'
-
-// Configure marked for synchronous rendering
-marked.setOptions({ async: false })
 
 const { t, locale } = useI18n()
 const store = useTasksStore()
@@ -30,18 +27,29 @@ const statusLabel = (key: string) => ({
   archived:    t('columns.archived'),
 }[key] ?? key)
 
-const STATUS_COLORS: Record<string, string> = {
-  todo:        'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  in_progress: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-  done:        'bg-surface-tertiary/50 text-content-tertiary border-content-faint/50',
-  archived:    'bg-violet-500/20 text-violet-300 border-violet-500/30',
+const STATUS_COLOR: Record<string, string | undefined> = {
+  todo:        'chip-todo',
+  in_progress: 'chip-in-progress',
+  done:        'chip-done',
+  archived:    'chip-archived',
+  rejected:    'chip-rejected',
 }
 
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
-const EFFORT_BADGE: Record<number, string> = {
-  1: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-  2: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  3: 'bg-red-500/20 text-red-300 border-red-500/30',
+const EFFORT_COLOR: Record<number, string> = { 1: 'chip-effort-s', 2: 'chip-effort-m', 3: 'chip-effort-l' }
+
+const PRIORITY_COLOR: Record<string, string | undefined> = {
+  low:      undefined,
+  normal:   undefined,
+  high:     'chip-priority-high',
+  critical: 'chip-priority-critical',
+}
+
+const PRIORITY_LABEL: Record<string, string> = {
+  low:      'Low',
+  normal:   'Normal',
+  high:     'High',
+  critical: 'Critical',
 }
 
 function formatDateFull(iso: string): string {
@@ -57,12 +65,12 @@ function normalizeNewlines(text: string): string {
   return text.replace(/\\n/g, '\n')
 }
 
-// Render markdown with DOMPurify sanitization
 function renderMarkdown(text: string): string {
-  const normalized = normalizeNewlines(text)
-  const raw = marked.parse(normalized) as string
-  return DOMPurify.sanitize(raw)
+  return renderMarkdownShared(normalizeNewlines(text))
 }
+
+const taskPanelRef = ref<HTMLElement | null>(null)
+useCopyCode(taskPanelRef)
 
 // Computed for description
 const renderedDescription = computed(() => {
@@ -159,86 +167,86 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Transition
-    enter-active-class="transition-all duration-150 ease-out"
-    enter-from-class="opacity-0 scale-[0.98]"
-    enter-to-class="opacity-100 scale-100"
-    leave-active-class="transition-all duration-100 ease-in"
-    leave-from-class="opacity-100 scale-100"
-    leave-to-class="opacity-0 scale-[0.98]"
-  >
-    <div
-      v-if="task"
-      class="fixed inset-0 z-50 flex items-center justify-center"
-    >
-      <!-- Backdrop -->
-      <div
-        class="absolute inset-0 bg-black/65 backdrop-blur-sm"
-        @click="store.closeTask()"
-      ></div>
+  <v-dialog :model-value="!!task" max-width="1400" scrollable @update:model-value="store.closeTask()">
+    <!-- v-if="task" ensures content not rendered when task is null (test compat for shallowMount) -->
+    <div v-if="task" data-testid="task-detail-panel">
+      <!-- Backdrop click handled by v-dialog; keep for test compat -->
+      <div class="backdrop-overlay" @click="store.closeTask()"></div>
 
       <!-- Panel -->
-      <div class="relative w-full max-w-6xl max-h-[90vh] bg-surface-primary border border-edge-default rounded-xl shadow-2xl flex flex-col overflow-hidden mx-4 select-text">
+      <div ref="taskPanelRef" class="task-panel elevation-3">
 
         <!-- Header -->
-        <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-edge-subtle shrink-0">
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-content-primary leading-snug mb-2">{{ task.title }}</p>
-            <div class="flex flex-wrap gap-1.5">
-              <span :class="['text-xs px-2 py-0.5 rounded-full border font-medium', STATUS_COLORS[task.status]]">
+        <div class="task-header ga-3 py-4 px-5">
+          <div class="task-header-left">
+            <p class="task-title mb-2 text-body-2">{{ task.title }}</p>
+            <div class="d-flex flex-wrap ga-2">
+              <v-chip size="small" variant="tonal" :color="STATUS_COLOR[task.status]">
                 {{ statusLabel(task.status) }}
-              </span>
-              <span
+              </v-chip>
+              <v-chip
+                v-if="task.priority && PRIORITY_COLOR[task.priority]"
+                size="small"
+                variant="tonal"
+                :color="PRIORITY_COLOR[task.priority]"
+              >
+                {{ PRIORITY_LABEL[task.priority] }}
+              </v-chip>
+              <v-chip
                 v-if="task.scope"
-                class="text-xs px-1.5 py-0.5 rounded font-mono border"
+                size="small"
+                variant="outlined"
                 :style="{
                   color: perimeterFg(task.scope),
-                  backgroundColor: perimeterBg(task.scope),
                   borderColor: perimeterBorder(task.scope),
+                  backgroundColor: perimeterBg(task.scope),
                 }"
-              >{{ task.scope }}</span>
-              <span
+              >{{ task.scope }}</v-chip>
+              <v-chip
                 v-if="task.effort"
-                :class="['text-xs font-bold px-2 py-0.5 rounded font-mono border', EFFORT_BADGE[task.effort]]"
-              >{{ EFFORT_LABEL[task.effort] }}</span>
+                size="small"
+                variant="tonal"
+                :color="EFFORT_COLOR[task.effort]"
+              >{{ EFFORT_LABEL[task.effort] }}</v-chip>
             </div>
           </div>
-          <button
-            class="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-all text-sm"
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="x-small"
+            class="btn-close"
+            :style="{ borderRadius: 'var(--shape-xs)', color: 'var(--content-subtle)' }"
             @click="store.closeTask()"
-          >✕</button>
+          />
         </div>
 
         <!-- Body : 2 colonnes -->
-        <div class="flex flex-1 min-h-0 divide-x divide-edge-subtle">
+        <div class="task-body">
 
           <!-- Colonne gauche : description + commentaire tâche -->
-          <div class="flex-1 min-w-0 overflow-y-auto px-5 py-4 space-y-5">
+          <div class="task-left-col py-4 px-5 ga-5">
             <!-- Description -->
             <div v-if="task.description">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('taskDetail.description') }}</p>
-              <div class="md-content text-sm text-content-tertiary leading-relaxed" v-html="renderedDescription"></div>
+              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.description') }}</p>
+              <div class="md-content" v-html="renderedDescription"></div>
             </div>
 
-            <p v-if="!task.description" class="text-sm text-content-faint italic pt-2">
+            <p v-if="!task.description" class="empty-text pt-2 text-caption">
               {{ t('taskDetail.noDescription') }}
             </p>
           </div>
 
           <!-- Colonne droite : assignés + commentaires -->
-          <div class="w-72 shrink-0 flex flex-col min-h-0">
+          <div class="task-right-col">
 
             <!-- T553: Blocked indicator -->
-            <div
-              v-if="isBlocked"
-              class="px-4 py-2 border-b border-amber-500/30 bg-amber-500/10 shrink-0"
-            >
-              <p class="text-[10px] font-semibold text-amber-400 uppercase tracking-wider mb-1">{{ t('taskDetail.blockedTitle') }}</p>
-              <ul class="space-y-0.5">
+            <div v-if="isBlocked" class="blocked-banner py-2 px-4">
+              <p class="section-label mb-1 text-label-medium" style="color: rgb(var(--v-theme-warning));">{{ t('taskDetail.blockedTitle') }}</p>
+              <ul class="blocked-list">
                 <li
                   v-for="link in unresolvedBlockers"
                   :key="link.id"
-                  class="text-[10px] text-amber-300/80"
+                  class="blocked-item text-label-medium"
                 >
                   #{{ link.from_task === task.id ? link.to_task : link.from_task }}
                   {{ link.from_task === task.id ? link.to_titre : link.from_titre }}
@@ -247,27 +255,27 @@ onUnmounted(() => {
             </div>
 
             <!-- Section Agents (créateur / assigné / valideur) -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('taskDetail.agents') }}</p>
-              <div class="space-y-1.5">
-                <div v-if="task.agent_creator_name" class="flex items-center gap-2">
-                  <span class="text-[10px] text-content-faint w-14 shrink-0">{{ t('taskDetail.creator') }}</span>
+            <div class="right-section">
+              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.agents') }}</p>
+              <div class="d-flex flex-column ga-2">
+                <div v-if="task.agent_creator_name" class="d-flex align-center ga-2">
+                  <span class="meta-label text-label-medium">{{ t('taskDetail.creator') }}</span>
                   <AgentBadge :name="task.agent_creator_name" />
                 </div>
-                <div v-if="task.agent_name" class="flex items-center gap-2">
-                  <span class="text-[10px] text-content-faint w-14 shrink-0">{{ t('taskDetail.assigned') }}</span>
+                <div v-if="task.agent_name" class="d-flex align-center ga-2">
+                  <span class="meta-label text-label-medium">{{ t('taskDetail.assigned') }}</span>
                   <AgentBadge :name="task.agent_name" />
                 </div>
-                <div v-if="valideurAgent" class="flex items-center gap-2">
-                  <span class="text-[10px] text-content-faint w-14 shrink-0">{{ t('taskDetail.validator') }}</span>
+                <div v-if="valideurAgent" class="d-flex align-center ga-2">
+                  <span class="meta-label text-label-medium">{{ t('taskDetail.validator') }}</span>
                   <AgentBadge :name="valideurAgent.name" />
                 </div>
               </div>
             </div>
 
             <!-- Section Dependencies -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">{{ t('taskDetail.dependencies') }}</p>
+            <div class="right-section">
+              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.dependencies') }}</p>
               <TaskDependencyGraph
                 v-if="task"
                 :task-id="task.id"
@@ -277,23 +285,24 @@ onUnmounted(() => {
             </div>
 
             <!-- Section Commits liés (T761) — hidden when no commits -->
-            <div v-if="gitCommits.length > 0" class="border-b border-edge-subtle shrink-0">
-              <button
-                class="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-secondary/30 transition-colors"
+            <div v-if="gitCommits.length > 0" class="right-section right-section--collapsible">
+              <v-btn
+                variant="text"
+                block
+                class="commits-toggle py-3 px-4"
                 @click="gitCommitsOpen = !gitCommitsOpen"
               >
-                <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider">
+                <p class="section-label text-label-medium">
                   {{ t('taskDetail.commits') }}
-                  <span class="ml-1 text-content-faint">({{ gitCommits.length }})</span>
+                  <span class="meta-count">({{ gitCommits.length }})</span>
                 </p>
-                <svg
-                  :class="['w-3 h-3 text-content-faint transition-transform', gitCommitsOpen ? 'rotate-90' : '']"
-                  viewBox="0 0 16 16" fill="currentColor"
-                >
-                  <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-                </svg>
-              </button>
-              <div v-if="gitCommitsOpen" class="max-h-40 overflow-y-auto border-t border-edge-subtle">
+                <v-icon
+                  class="toggle-arrow"
+                  :class="gitCommitsOpen ? 'toggle-arrow--open' : ''"
+                  size="14"
+                >mdi-chevron-right</v-icon>
+              </v-btn>
+              <div v-if="gitCommitsOpen" class="commits-content">
                 <GitCommitList
                   :commits="gitCommits"
                   @open-task="(id) => { const t = store.tasks.find(x => x.id === id); if (t) store.openTask(t) }"
@@ -302,66 +311,59 @@ onUnmounted(() => {
             </div>
 
             <!-- Section Assignés (read-only — T571) -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider mb-2">
+            <div class="right-section">
+              <p class="section-label mb-2 text-label-medium">
                 {{ t('taskDetail.assignees') }}
               </p>
 
               <!-- Assigned agents list — display only -->
-              <div v-if="sortedAssignees.length > 0" class="space-y-1">
-                <div v-for="a in sortedAssignees" :key="a.agent_id" class="flex items-center gap-1.5">
-                  <div
-                    class="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-[8px] font-bold border"
-                    :style="{ color: agentFg(a.agent_name), backgroundColor: agentBg(a.agent_name), borderColor: agentBorder(a.agent_name) }"
+              <div v-if="sortedAssignees.length > 0" class="d-flex flex-column ga-2">
+                <div v-for="a in sortedAssignees" :key="a.agent_id" class="d-flex align-center ga-2">
+                  <v-avatar
+                    size="20"
+                    :style="{ color: agentFg(a.agent_name), backgroundColor: agentBg(a.agent_name) }"
                     :title="a.agent_name"
-                  >{{ a.agent_name.slice(0, 2).toUpperCase() }}</div>
-                  <span class="text-xs text-content-secondary truncate flex-1 min-w-0">{{ a.agent_name }}</span>
-                  <span class="text-[10px] text-content-faint shrink-0">{{ a.role ?? '—' }}</span>
+                    class="text-overline font-weight-bold"
+                  >{{ a.agent_name.slice(0, 2).toUpperCase() }}</v-avatar>
+                  <span class="text-caption" style="color: var(--content-secondary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.agent_name }}</span>
+                  <span class="text-caption" style="color: var(--content-faint); flex-shrink: 0;">{{ a.role ?? '—' }}</span>
                 </div>
               </div>
-              <p v-else class="text-xs text-content-faint italic">
+              <p v-else class="empty-text pt-2 text-caption">
                 {{ t('taskDetail.noAssignees') }}
               </p>
             </div>
 
             <!-- Comments header -->
-            <div class="px-4 py-3 border-b border-edge-subtle shrink-0">
-              <p class="text-[10px] font-semibold text-content-subtle uppercase tracking-wider">
+            <div class="right-section right-section--no-bottom">
+              <p class="section-label text-label-medium">
                 {{ t('taskDetail.comments') }}
-                <span v-if="store.taskComments.length > 0" class="ml-1 text-content-faint">({{ store.taskComments.length }})</span>
+                <span v-if="store.taskComments.length > 0" class="meta-count ml-1">({{ store.taskComments.length }})</span>
               </p>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+            <div class="comments-list pa-3 ga-3">
               <!-- Messages conversation -->
-              <div
-                v-for="comment in renderedComments"
-                :key="comment.id"
-                class="flex flex-col gap-1"
-              >
-                <!-- Auteur + temps -->
-                <div class="flex items-center justify-between gap-2 px-1">
-                  <span
-                    class="text-[11px] font-semibold font-mono truncate"
-                    :style="{ color: agentFg(comment.agent_name ?? 'unknown') }"
-                  >{{ comment.agent_name ?? '?' }}</span>
-                  <span class="text-[10px] text-content-faint shrink-0" :title="formatDateFull(comment.created_at)">
-                    {{ relativeTime(comment.created_at) }}
-                  </span>
+              <div v-for="comment in renderedComments" :key="comment.id">
+                <div class="md-bubble text-caption">
+                  <div class="comment-bubble-header">
+                    <div class="d-flex align-center ga-2" style="min-width: 0; flex: 1; overflow: hidden;">
+                      <v-avatar
+                        size="32"
+                        :style="{ color: agentFg(comment.agent_name ?? 'unknown'), backgroundColor: agentBg(comment.agent_name ?? 'unknown') }"
+                        class="text-overline font-weight-bold flex-shrink-0"
+                      >{{ (comment.agent_name ?? '?').slice(0, 2).toUpperCase() }}</v-avatar>
+                      <span class="comment-author">{{ comment.agent_name ?? '?' }}</span>
+                    </div>
+                    <span class="comment-time" :title="formatDateFull(comment.created_at)">
+                      {{ relativeTime(comment.created_at) }}
+                    </span>
+                  </div>
+                  <div class="comment-bubble-body" v-html="comment._html"></div>
                 </div>
-                <!-- Bulle -->
-                <div
-                  class="md-bubble rounded-lg px-3 py-2 text-xs leading-relaxed break-words border"
-                  :style="{
-                    color: agentFg(comment.agent_name ?? 'unknown'),
-                    backgroundColor: agentBg(comment.agent_name ?? 'unknown'),
-                    borderColor: agentBorder(comment.agent_name ?? 'unknown'),
-                  }"
-                  v-html="comment._html"
-                ></div>
               </div>
 
-              <p v-if="store.taskComments.length === 0" class="text-xs text-content-faint italic text-center py-4">
+              <p v-if="store.taskComments.length === 0" class="empty-text text-center py-4 text-caption">
                 {{ t('taskDetail.noComments') }}
               </p>
             </div>
@@ -369,18 +371,217 @@ onUnmounted(() => {
         </div>
 
         <!-- Footer -->
-        <div class="px-5 py-3 border-t border-edge-subtle bg-surface-base/50 flex items-center justify-between gap-4 shrink-0">
-          <div class="flex items-center gap-5">
-            <p class="text-xs text-content-muted">
-              <span class="text-content-subtle mr-1">{{ t('taskDetail.created') }}</span>{{ formatDateFull(task.created_at) }}
+        <div class="task-footer py-3 px-5 ga-4">
+          <div class="d-flex align-center ga-5">
+            <p class="text-caption" style="color: var(--content-muted);">
+              <span style="color: var(--content-subtle); margin-right: 4px;">{{ t('taskDetail.created') }}</span>{{ formatDateFull(task.created_at) }}
             </p>
-            <p class="text-xs text-content-muted">
-              <span class="text-content-subtle mr-1">{{ t('taskDetail.updated') }}</span>{{ formatDateFull(task.updated_at) }}
+            <p class="text-caption" style="color: var(--content-muted);">
+              <span style="color: var(--content-subtle); margin-right: 4px;">{{ t('taskDetail.updated') }}</span>{{ formatDateFull(task.updated_at) }}
             </p>
           </div>
-          <span class="text-xs text-content-subtle font-mono">#{{ task.id }}</span>
+          <span class="text-caption font-mono" style="color: var(--content-subtle);">#{{ task.id }}</span>
         </div>
       </div>
     </div>
-  </Transition>
+  </v-dialog>
 </template>
+
+<style scoped>
+/* Backdrop overlay — kept for test compat (some tests look for click handler) */
+.backdrop-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* Main panel */
+.task-panel {
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  background: var(--surface-dialog);
+  border: 1px solid var(--edge-default);
+  border-radius: var(--shape-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: text;
+}
+
+/* Header */
+.task-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.task-header-left {
+  flex: 1;
+  min-width: 0;
+}
+.task-title {
+  font-weight: 600;
+  color: var(--content-primary);
+  line-height: 1.4;
+}
+.btn-close {
+  flex-shrink: 0;
+  /* size="x-small" sets 28×28px — border-radius and color via :style binding */
+  transition: all var(--md-duration-short3) var(--md-easing-standard);
+}
+
+/* Body layout: 2 columns */
+.task-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: none;
+}
+.task-body > .task-left-col {
+  border-right: 1px solid var(--edge-subtle);
+}
+
+/* Left column */
+.task-left-col {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Right column */
+.task-right-col {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Section headings */
+.section-label {
+  font-weight: 600;
+  color: var(--content-subtle);
+  letter-spacing: 0.02em;
+}
+.right-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.right-section--collapsible {
+  padding: 0;
+}
+.right-section--no-bottom {
+  padding-bottom: 12px;
+}
+
+/* Blocked banner */
+.blocked-banner {
+  border-bottom: 1px solid rgba(var(--v-theme-warning), 0.3);
+  background: rgba(var(--v-theme-warning), 0.1);
+  flex-shrink: 0;
+}
+.blocked-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.blocked-item {
+  color: rgb(var(--v-theme-warning));
+}
+
+/* Meta labels */
+.meta-label {
+  color: var(--content-secondary);
+  width: 56px;
+  flex-shrink: 0;
+}
+.meta-count {
+  color: var(--content-faint);
+}
+
+/* Commits collapsible */
+.commits-toggle {
+  justify-content: space-between !important; /* override Vuetify v-btn default center — no prop available */
+  height: auto !important; /* override Vuetify v-btn fixed height — content drives height here */
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
+}
+.toggle-arrow {
+  width: 12px;
+  height: 12px;
+  color: var(--content-faint);
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
+}
+.toggle-arrow--open {
+  transform: rotate(90deg);
+}
+.commits-content {
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 1px solid var(--edge-subtle);
+}
+
+/* Comments */
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.comment-bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.comment-bubble-body {
+  padding: 8px 12px;
+}
+.comment-author {
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comment-time {
+  opacity: 0.65;
+  flex-shrink: 0;
+}
+
+/* md-bubble: keep class for tests */
+.md-bubble {
+  border-radius: var(--shape-sm);
+  line-height: 1.5;
+  word-break: break-words;
+  border: 1px solid var(--edge-subtle);
+  background: var(--surface-card);
+  color: var(--content-primary);
+}
+
+/* Empty states */
+.empty-text {
+  color: var(--content-faint);
+  font-style: italic;
+}
+
+/* Footer */
+.task-footer {
+  border-top: 1px solid var(--edge-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.font-mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}
+</style>

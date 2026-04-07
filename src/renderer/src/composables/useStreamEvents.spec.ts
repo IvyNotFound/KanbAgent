@@ -1929,3 +1929,68 @@ describe('useStreamEvents — cleanup clears pendingEvents (L138)', () => {
     expect((events.value[0] as any).num_turns).toBe(2)
   })
 })
+
+// T1764 — _question bridge
+describe('useStreamEvents — _question bridge (T1764)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.setItem('dbPath', '/test/project.db')
+  })
+
+  afterEach(() => { vi.clearAllMocks() })
+
+  it('populates _question on AskUserQuestion block when ask_user event is in the same batch', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', name: 'AskUserQuestion', input: {} }] },
+    })
+    enqueueEvent({ type: 'ask_user', text: 'Which path should I use?' })
+
+    await nextTick()
+
+    const assistantEv = events.value.find(e => e.type === 'assistant')
+    const block = assistantEv?.message?.content[0]
+    expect(block?._question).toBe('Which path should I use?')
+  })
+
+  it('does not set _question when input.question is already present', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', name: 'AskUserQuestion', input: { question: 'Already here' } }] },
+    })
+    enqueueEvent({ type: 'ask_user', text: 'Should not override' })
+
+    await nextTick()
+
+    const assistantEv = events.value.find(e => e.type === 'assistant')
+    const block = assistantEv?.message?.content[0]
+    expect(block?._question).toBeUndefined()
+  })
+
+  it('does not set _question when no ask_user event is in the batch', async () => {
+    await makeTabsStore('tab-1')
+    const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
+    const { events, enqueueEvent } = useStreamEvents('tab-1')
+
+    enqueueEvent({
+      type: 'assistant',
+      message: { role: 'assistant', content: [{ type: 'tool_use', name: 'AskUserQuestion', input: {} }] },
+    })
+
+    await nextTick()
+
+    const assistantEv = events.value.find(e => e.type === 'assistant')
+    const block = assistantEv?.message?.content[0]
+    expect(block?._question).toBeUndefined()
+  })
+})

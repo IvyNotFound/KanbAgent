@@ -87,8 +87,8 @@ describe('SuccessRateChart', () => {
       },
     })
     await flushPromises()
-    // 90% → emerald color class
-    const badge = wrapper.find('[class*="emerald"]')
+    // 90% → high rate level
+    const badge = wrapper.find('[data-rate-level="high"]')
     expect(badge.exists()).toBe(true)
     wrapper.unmount()
   })
@@ -111,8 +111,8 @@ describe('SuccessRateChart', () => {
       },
     })
     await flushPromises()
-    // 60% → amber color class
-    const badge = wrapper.find('[class*="amber"]')
+    // 60% → mid rate level
+    const badge = wrapper.find('[data-rate-level="mid"]')
     expect(badge.exists()).toBe(true)
     wrapper.unmount()
   })

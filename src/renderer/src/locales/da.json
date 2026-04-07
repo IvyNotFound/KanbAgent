@@ -29,8 +29,6 @@
     "prevPage": "Forrige",
     "nextPage": "Næste",
     "pageOf": "Side {page} / {total} ({count} opgaver)",
-    "listView": "Listevisning",
-    "treeView": "Trævisning",
     "staleTasks": "{count} forældet opgave | {count} forældede opgaver"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Maksimer"
   },
   "tabBar": {
-    "openWslTerminal": "Åbn WSL-terminal",
     "closeTab": "Luk",
     "unsaved": "Ikke-gemte ændringer",
     "closeFileTitle": "Luk fil",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Agentkvalitet",
-    "all": "Alle",
     "refresh": "Opdater",
     "loading": "Indlæser…",
     "error": "Fejl: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Projektafvisningsrate",
     "noRejections": "Ingen afvisninger fundet",
     "heuristicNote": "Heuristisk detektion — reviewerkommentarer indeholdende \"reject\", \"return\" eller \"todo\"",
-    "colTotal": "I alt",
-    "colRejected": "Afvisninger",
-    "colRate": "Frekvens",
-    "colBar": "Søjle"
+    "colAgent": "Agent",
+    "colRejections": "Afv./Total",
+    "colRate": "Rate"
   },
   "sessionActivityChart": {
     "title": "Sessionaktivitet — seneste 14 dage",
@@ -578,7 +573,10 @@
     "streaming": "I gang…",
     "waitingMessages": "Venter på beskeder…",
     "turns": "{n} tur | {n} ture",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Send en besked…",
+    "askQuestion": "Agentspørgsmål",
+    "replyPlaceholder": "Svar til agent…"
   },
   "task": {
     "running": "Opgave i gang",
@@ -610,7 +608,8 @@
     "colSource": "Kilde",
     "colTests": "Tests",
     "colFiles": "Filer",
-    "scannedAt": "Scannet den {date}"
+    "scannedAt": "Scannet den {date}",
+    "languageDetail": "Sprogdetaljer"
   },
   "update": {
     "available": "Opdatering {version} tilgængelig",

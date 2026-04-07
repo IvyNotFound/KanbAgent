@@ -79,7 +79,7 @@ describe('ConfirmDialog (T353)', () => {
   })
 
   it('Escape key triggers cancel', async () => {
-    const { confirm, pending } = useConfirmDialog()
+    const { confirm } = useConfirmDialog()
 
     const promise = confirm({
       title: 'Delete?',
@@ -87,7 +87,7 @@ describe('ConfirmDialog (T353)', () => {
       type: 'danger',
     })
 
-    const wrapper = mount(ConfirmDialog, {
+    mount(ConfirmDialog, {
       global: {
         plugins: [i18n],
         stubs: { ...teleportStub, Transition: false },
@@ -95,11 +95,8 @@ describe('ConfirmDialog (T353)', () => {
     })
     await nextTick()
 
-    // Simulate Escape key on the dialog container
-    const container = wrapper.find('.fixed.inset-0')
-    if (container.exists()) {
-      await container.trigger('keydown', { key: 'Escape' })
-    }
+    // ConfirmDialog registers a document-level Escape listener — dispatch directly
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
 
     const result = await promise
     expect(result).toBe(false)
@@ -122,8 +119,8 @@ describe('ConfirmDialog (T353)', () => {
     })
     await nextTick()
 
-    // Danger icon container has bg-red-500/15
-    const iconContainer = wrapper.find('.bg-red-500\\/15')
+    // Danger icon container has icon-danger scoped class
+    const iconContainer = wrapper.find('.icon-danger')
     expect(iconContainer.exists()).toBe(true)
 
     // Cleanup

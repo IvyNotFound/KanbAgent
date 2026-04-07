@@ -36,7 +36,7 @@ describe('DbSelector', () => {
     const store = useTasksStore()
 
     // Find the open project button (not the language toggle buttons)
-    const buttons = wrapper.findAll('button')
+    const buttons = wrapper.findAll('v-btn')
     const openBtn = buttons.find(b => {
       const text = b.text()
       return text.includes('Ouvrir') || text.includes('Open')
@@ -67,14 +67,14 @@ describe('DbSelector', () => {
     })
     await flushPromises()
 
-    // The second button should be the "create" button
-    const buttons = wrapper.findAll('button')
-    const createBtn = buttons.find(b => {
-      const text = b.text()
+    // The second action card is the "create" card (now a v-card)
+    const cards = wrapper.findAll('v-card')
+    const createCard = cards.find(c => {
+      const text = c.text()
       return text.includes('Créer') || text.includes('Create') || text.includes('Nouveau')
     })
-    expect(createBtn).toBeDefined()
-    await createBtn!.trigger('click')
+    expect(createCard).toBeDefined()
+    await createCard!.trigger('click')
     await nextTick()
     // After clicking create, should show the "Retour" (back) button
     expect(wrapper.text()).toContain('Retour')

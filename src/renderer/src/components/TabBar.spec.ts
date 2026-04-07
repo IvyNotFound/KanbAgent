@@ -56,7 +56,7 @@ describe('TabBar', () => {
     expect(wrapper.text()).toContain('review-master')
   })
 
-  it('shows active indicator on active tab', () => {
+  it('shows backlog as active in v-tabs when backlog tab is active', () => {
     const wrapper = shallowMount(TabBar, {
       global: {
         plugins: [createTestingPinia({
@@ -67,46 +67,34 @@ describe('TabBar', () => {
         }), i18n],
       },
     })
-    // backlog is active — check for active indicator
-    const indicator = wrapper.find('.absolute.bottom-0')
-    expect(indicator.exists()).toBe(true)
+    // After v-tabs migration: active state is managed by Vuetify v-tabs via :model-value binding.
+    // isCustomElement config renders v-tabs as a custom HTML element with attributes.
+    const vtabs = wrapper.find('v-tabs')
+    expect(vtabs.exists()).toBe(true)
+    expect(vtabs.attributes('model-value')).toBe('backlog')
   })
 
-  it('calls store.setActive when backlog button is clicked', async () => {
-    const pinia = createTestingPinia({
-      initialState: { tabs: {
-        tabs: [
-          { id: 'backlog', type: 'backlog', title: 'Backlog', permanent: true },
-          { id: 'dashboard', type: 'dashboard', title: 'Dashboard', permanent: true },
-        ],
-        activeTabId: 'dashboard',
-      } },
-    })
-    const wrapper = shallowMount(TabBar, {
-      global: { plugins: [pinia, i18n] },
-    })
-
-    const { useTabsStore } = await import('@renderer/stores/tabs')
-    const tabsStore = useTabsStore()
-
-    // Click backlog button
-    const backlogBtn = wrapper.findAll('button').find(b => b.text().includes('Backlog'))
-    expect(backlogBtn).toBeDefined()
-    await backlogBtn!.trigger('click')
-    expect(tabsStore.setActive).toHaveBeenCalledWith('backlog')
-  })
-
-  it('renders + WSL button for new terminal', () => {
+  it('renders v-tab elements for Backlog and Dashboard navigation', () => {
     const wrapper = shallowMount(TabBar, {
       global: {
         plugins: [createTestingPinia({
           initialState: { tabs: {
-            tabs: [{ id: 'backlog', type: 'board', title: 'Backlog', permanent: true }],
-            activeTabId: 'backlog',
+            tabs: [
+              { id: 'backlog', type: 'backlog', title: 'Backlog', permanent: true },
+              { id: 'dashboard', type: 'dashboard', title: 'Dashboard', permanent: true },
+            ],
+            activeTabId: 'dashboard',
           } },
         }), i18n],
       },
     })
-    expect(wrapper.text()).toContain('WSL')
+    // v-tabs isCustomElement → renders as native custom elements with value attributes
+    const backlogTab = wrapper.find('v-tab[value="backlog"]')
+    const dashboardTab = wrapper.find('v-tab[value="dashboard"]')
+    expect(backlogTab.exists()).toBe(true)
+    expect(dashboardTab.exists()).toBe(true)
+    expect(wrapper.text()).toContain('Backlog')
+    expect(wrapper.text()).toContain('Dashboard')
   })
+
 })

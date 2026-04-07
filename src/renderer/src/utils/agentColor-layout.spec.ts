@@ -11,6 +11,8 @@ function setDarkMode(enabled: boolean) {
   setDarkModeReactive(enabled)
 }
 
+const HEX_PATTERN = /^#[0-9a-f]{6}$/i
+
 describe('agentColor', () => {
   afterEach(() => setDarkMode(false))
 
@@ -19,18 +21,18 @@ describe('agentColor', () => {
 
     it('cache does not grow beyond CACHE_MAX when filling agentHue with 110 names', () => {
       for (let i = 0; i < 110; i++) {
-        const hue = agentHue(`cache-test-name-${i}`)
-        expect(hue).toBeGreaterThanOrEqual(0)
-        expect(hue).toBeLessThan(360)
+        const idx = agentHue(`cache-test-name-${i}`)
+        expect(idx).toBeGreaterThanOrEqual(0)
+        expect(idx).toBeLessThan(12)
       }
     })
 
-    it('agentFg cache still works after eviction — returns valid HSL for new names', () => {
+    it('agentFg cache still works after eviction — returns valid hex for new names', () => {
       for (let i = 0; i < 105; i++) {
         agentFg(`eviction-fg-${i}`)
       }
       const fg = agentFg('eviction-fg-new')
-      expect(fg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(fg).toMatch(HEX_PATTERN)
     })
 
     it('agentBg cache stays functional after eviction', () => {
@@ -38,149 +40,115 @@ describe('agentColor', () => {
         agentBg(`eviction-bg-${i}`)
       }
       const bg = agentBg('eviction-bg-new')
-      expect(bg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
+      expect(bg).toMatch(HEX_PATTERN)
     })
   })
 
-  describe('saturation arithmetic (factor tests)', () => {
-    it('agentBg dark: saturation factor 0.58 applied correctly (not 0 or full)', () => {
+  describe('shade relationships', () => {
+    it('agentBg dark differs from agentFg dark (different MD shades)', () => {
       setDarkMode(true)
       const name = 'sat-test-agent'
-      const bg = agentBg(name)
-      const match = bg.match(/hsl\(\d+, (\d+)%, \d+%\)/)
-      const s = match ? parseInt(match[1]) : -1
-      expect(s).toBeGreaterThan(0)
-      expect(s).toBeLessThan(100)
+      expect(agentBg(name)).not.toBe(agentFg(name))
     })
 
-    it('agentBg light: saturation factor 0.72 applied correctly (not 0 or full)', () => {
+    it('agentBg light differs from agentFg light (different MD shades)', () => {
       setDarkMode(false)
       const name = 'sat-test-agent'
-      const bg = agentBg(name)
-      const match = bg.match(/hsl\(\d+, (\d+)%, \d+%\)/)
-      const s = match ? parseInt(match[1]) : -1
-      expect(s).toBeGreaterThan(0)
-      expect(s).toBeLessThan(100)
+      expect(agentBg(name)).not.toBe(agentFg(name))
     })
 
-    it('agentBg dark saturation is less than agentFg saturation (factor 0.58 < 1)', () => {
+    it('agentBorder dark differs from agentFg dark', () => {
       setDarkMode(true)
       const name = 'sat-compare-agent'
-      const fg = agentFg(name)
-      const bg = agentBg(name)
-      const fgS = parseInt(fg.match(/hsl\(\d+, (\d+)%/)![1])
-      const bgS = parseInt(bg.match(/hsl\(\d+, (\d+)%/)![1])
-      expect(bgS).toBeLessThan(fgS)
+      expect(agentBorder(name)).not.toBe(agentFg(name))
     })
 
-    it('perimeterFg dark: saturation factor 0.86 applied (higher than agentBg 0.58)', () => {
+    it('perimeterFg dark differs from agentBg dark', () => {
       setDarkMode(true)
       const name = 'sat-perimeter-test'
-      const pfg = perimeterFg(name)
-      const bg = agentBg(name)
-      const pfgS = parseInt(pfg.match(/hsl\(\d+, (\d+)%/)![1])
-      const bgS = parseInt(bg.match(/hsl\(\d+, (\d+)%/)![1])
-      expect(pfgS).toBeGreaterThan(bgS)
+      expect(perimeterFg(name)).not.toBe(agentBg(name))
     })
   })
 
-  describe('agentFg lightness exact values', () => {
-    it('dark mode: lightness is exactly 68%', () => {
+  describe('agentFg hex format', () => {
+    it('dark mode: returns valid hex color', () => {
       setDarkMode(true)
       const fg = agentFg('exact-lightness-test')
-      expect(fg).toMatch(/68%\)$/)
+      expect(fg).toMatch(HEX_PATTERN)
     })
 
-    it('light mode: lightness is exactly 38%', () => {
+    it('light mode: returns valid hex color', () => {
       setDarkMode(false)
       const fg = agentFg('exact-lightness-test-light')
-      expect(fg).toMatch(/38%\)$/)
+      expect(fg).toMatch(HEX_PATTERN)
     })
   })
 
-  describe('agentBg lightness exact values', () => {
-    it('dark mode: lightness is exactly 18%', () => {
+  describe('agentBg hex format', () => {
+    it('dark mode: returns valid hex color', () => {
       setDarkMode(true)
       const bg = agentBg('exact-bg-lightness-dark')
-      expect(bg).toMatch(/18%\)$/)
+      expect(bg).toMatch(HEX_PATTERN)
     })
 
-    it('light mode: lightness is exactly 92%', () => {
+    it('light mode: returns valid hex color', () => {
       setDarkMode(false)
       const bg = agentBg('exact-bg-lightness-light')
-      expect(bg).toMatch(/92%\)$/)
+      expect(bg).toMatch(HEX_PATTERN)
     })
   })
 
-  describe('agentBorder lightness exact values', () => {
-    it('dark mode: lightness is exactly 32%', () => {
+  describe('agentBorder hex format', () => {
+    it('dark mode: returns valid hex color', () => {
       setDarkMode(true)
       const border = agentBorder('exact-border-dark')
-      expect(border).toMatch(/32%\)$/)
+      expect(border).toMatch(HEX_PATTERN)
     })
 
-    it('light mode: lightness is exactly 78%', () => {
+    it('light mode: returns valid hex color', () => {
       setDarkMode(false)
       const border = agentBorder('exact-border-light')
-      expect(border).toMatch(/78%\)$/)
+      expect(border).toMatch(HEX_PATTERN)
     })
   })
 
-  describe('perimeterFg lightness exact values', () => {
-    it('dark mode: lightness is exactly 70%', () => {
+  describe('perimeterFg hex format', () => {
+    it('dark mode: returns valid hex color', () => {
       setDarkMode(true)
       const fg = perimeterFg('exact-pfg-dark')
-      expect(fg).toMatch(/70%\)$/)
+      expect(fg).toMatch(HEX_PATTERN)
     })
 
-    it('light mode: lightness is exactly 35%', () => {
+    it('light mode: returns valid hex color', () => {
       setDarkMode(false)
       const fg = perimeterFg('exact-pfg-light')
-      expect(fg).toMatch(/35%\)$/)
+      expect(fg).toMatch(HEX_PATTERN)
     })
   })
 
   describe('perimeterBg and perimeterBorder', () => {
-    it('perimeterBg dark: lightness is exactly 15%', () => {
+    it('perimeterBg dark: returns valid hex color', () => {
       setDarkMode(true)
       const bg = perimeterBg('pbg-dark-test')
-      expect(bg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(bg).toMatch(/15%\)$/)
+      expect(bg).toMatch(HEX_PATTERN)
     })
 
-    it('perimeterBg light: lightness is exactly 93%', () => {
+    it('perimeterBg light: returns valid hex color', () => {
       setDarkMode(false)
       const bg = perimeterBg('pbg-light-test')
-      expect(bg).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(bg).toMatch(/93%\)$/)
+      expect(bg).toMatch(HEX_PATTERN)
     })
 
-    it('perimeterBorder dark: lightness is exactly 27%', () => {
+    it('perimeterBorder dark: returns valid hex color', () => {
       setDarkMode(true)
       const border = perimeterBorder('pborder-dark-test')
-      expect(border).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(border).toMatch(/27%\)$/)
+      expect(border).toMatch(HEX_PATTERN)
     })
 
-    it('perimeterBorder light: lightness is exactly 80%', () => {
+    it('perimeterBorder light: returns valid hex color', () => {
       setDarkMode(false)
       const border = perimeterBorder('pborder-light-test')
-      expect(border).toMatch(/^hsl\(\d+, \d+%, \d+%\)$/)
-      expect(border).toMatch(/80%\)$/)
-    })
-
-    it('perimeterBg uses same hue as agentHue', () => {
-      const name = 'perimeter-hue-check'
-      const hue = agentHue(name)
-      const bg = perimeterBg(name)
-      expect(bg).toContain(`hsl(${hue},`)
-    })
-
-    it('perimeterBorder uses same hue as agentHue', () => {
-      const name = 'perimeter-border-hue-check'
-      const hue = agentHue(name)
-      const border = perimeterBorder(name)
-      expect(border).toContain(`hsl(${hue},`)
+      expect(border).toMatch(HEX_PATTERN)
     })
 
     it('perimeterBg changes on theme switch', () => {
@@ -200,23 +168,50 @@ describe('agentColor', () => {
       const light = perimeterBorder(name)
       expect(dark).not.toBe(light)
     })
-  })
 
-  describe('HSL format correctness', () => {
-    it('all color functions return exactly "hsl(H, S%, L%)" format', () => {
-      const hslPattern = /^hsl\(\d+, \d+%, \d+%\)$/
-      const name = 'format-check-agent'
-      expect(agentFg(name)).toMatch(hslPattern)
-      expect(agentBg(name)).toMatch(hslPattern)
-      expect(agentBorder(name)).toMatch(hslPattern)
-      expect(perimeterFg(name)).toMatch(hslPattern)
-      expect(perimeterBg(name)).toMatch(hslPattern)
-      expect(perimeterBorder(name)).toMatch(hslPattern)
+    it('perimeterBg and perimeterBorder use same family (same base color, different shade)', () => {
+      // Both use agentFamily(name) — so in dark mode they share darken4 and darken3 of same family.
+      // They should differ in shade, not in family.
+      setDarkMode(true)
+      const name = 'perimeter-family-check'
+      const bg = perimeterBg(name)
+      const border = perimeterBorder(name)
+      // Same family → colors share the same hue family but different shades → they differ
+      expect(bg).not.toBe(border)
     })
 
-    it('format uses comma-space separator between values', () => {
+    it('perimeterBg uses same family as agentHue for a given name', () => {
+      const name = 'perimeter-hue-check'
+      const idx = agentHue(name)
+      // Both perimeterBg and agentBg use the same family (same agentHue index)
+      setDarkMode(true)
+      expect(perimeterBg(name)).toBe(agentBg(name))
+    })
+  })
+
+  describe('hex format correctness', () => {
+    it('all color functions return exactly "#rrggbb" hex format', () => {
+      const name = 'format-check-agent'
+      setDarkMode(false)
+      expect(agentFg(name)).toMatch(HEX_PATTERN)
+      expect(agentBg(name)).toMatch(HEX_PATTERN)
+      expect(agentBorder(name)).toMatch(HEX_PATTERN)
+      expect(perimeterFg(name)).toMatch(HEX_PATTERN)
+      expect(perimeterBg(name)).toMatch(HEX_PATTERN)
+      expect(perimeterBorder(name)).toMatch(HEX_PATTERN)
+      setDarkMode(true)
+      expect(agentFg(name)).toMatch(HEX_PATTERN)
+      expect(agentBg(name)).toMatch(HEX_PATTERN)
+      expect(agentBorder(name)).toMatch(HEX_PATTERN)
+      expect(perimeterFg(name)).toMatch(HEX_PATTERN)
+      expect(perimeterBg(name)).toMatch(HEX_PATTERN)
+      expect(perimeterBorder(name)).toMatch(HEX_PATTERN)
+    })
+
+    it('format starts with # and has 6 hex digits', () => {
       const fg = agentFg('format-sep-test')
-      expect(fg).toMatch(/hsl\(\d+, \d+%, \d+%\)/)
+      expect(fg.startsWith('#')).toBe(true)
+      expect(fg).toHaveLength(7)
     })
   })
 })

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(defineProps<{
@@ -18,49 +17,42 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('cancel')
-}
-
-onMounted(() => document.addEventListener('keydown', onKeydown))
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      @click.self="emit('cancel')"
-    >
-      <div class="w-96 bg-surface-primary border border-edge-default rounded-xl shadow-2xl flex flex-col overflow-hidden">
+  <v-dialog model-value max-width="384" @update:model-value="emit('cancel')">
+    <!-- data-testid wrapper catches @click.self for test compat (Vuetify handles overlay in prod) -->
+    <div data-testid="confirm-modal-wrapper" @click.self="emit('cancel')">
+      <v-card variant="elevated">
         <!-- Header -->
-        <div class="px-5 py-4 border-b border-edge-subtle">
-          <h2 class="text-sm font-semibold text-content-primary">{{ props.title }}</h2>
-        </div>
+        <v-card-title class="text-subtitle-1 font-weight-medium pt-4 pb-0 px-5">{{ props.title }}</v-card-title>
 
         <!-- Body -->
-        <div class="px-5 py-4">
-          <p class="text-sm text-content-secondary">{{ props.message }}</p>
-        </div>
+        <v-card-text>
+          <p class="text-body-2 text-medium-emphasis">{{ props.message }}</p>
+        </v-card-text>
 
         <!-- Footer -->
-        <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-edge-subtle bg-surface-base/50">
-          <button
-            class="px-4 py-2 text-sm text-content-muted hover:text-content-secondary hover:bg-surface-secondary rounded-lg transition-colors"
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            variant="text"
             @click="emit('cancel')"
           >
             {{ props.cancelLabel ?? t('common.cancel') }}
-          </button>
-          <button
-            class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all"
-            :class="props.danger ? 'bg-red-600 hover:bg-red-500' : 'bg-violet-600 hover:bg-violet-500'"
+          </v-btn>
+          <v-btn
+            :color="props.danger ? 'error' : 'primary'"
+            variant="flat"
             @click="emit('confirm')"
           >
             {{ props.confirmLabel ?? t('common.confirm') }}
-          </button>
-        </div>
-      </div>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </div>
-  </Teleport>
+  </v-dialog>
 </template>
+
+<style scoped>
+</style>

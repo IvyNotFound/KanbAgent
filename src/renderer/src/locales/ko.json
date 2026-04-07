@@ -29,8 +29,6 @@
     "prevPage": "이전",
     "nextPage": "다음",
     "pageOf": "{page} / {total} 페이지 （{count}개 작업）",
-    "listView": "목록 보기",
-    "treeView": "트리 보기",
     "staleTasks": "{count}개의 지연 작업 | {count}개의 지연 작업"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "최대화"
   },
   "tabBar": {
-    "openWslTerminal": "WSL 터미널 열기",
     "closeTab": "닫기",
     "unsaved": "저장되지 않은 변경 사항",
     "closeFileTitle": "파일 닫기",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "에이전트 품질",
-    "all": "전체",
     "refresh": "새로 고침",
     "loading": "로딩 중…",
     "error": "오류: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "프로젝트 반려율",
     "noRejections": "반려가 감지되지 않았습니다",
     "heuristicNote": "휴리스틱 감지 — 'reject', 'return', 'todo'를 포함하는 검토 댓글을 감지",
-    "colTotal": "합계",
-    "colRejected": "반려",
-    "colRate": "율",
-    "colBar": "바"
+    "colAgent": "에이전트",
+    "colRejections": "거절/총",
+    "colRate": "비율"
   },
   "sessionActivityChart": {
     "title": "세션 활동 — 최근 14일",
@@ -578,7 +573,10 @@
     "streaming": "진행 중…",
     "waitingMessages": "메시지를 기다리는 중…",
     "turns": "{n} 턴 | {n} 턴",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "메시지 보내기…",
+    "askQuestion": "에이전트 질문",
+    "replyPlaceholder": "에이전트에 답장…"
   },
   "task": {
     "running": "작업 진행 중",
@@ -610,7 +608,8 @@
     "colSource": "소스",
     "colTests": "테스트",
     "colFiles": "파일",
-    "scannedAt": "{date}에 스캔됨"
+    "scannedAt": "{date}에 스캔됨",
+    "languageDetail": "언어 세부 정보"
   },
   "update": {
     "available": "업데이트 {version} 사용 가능",

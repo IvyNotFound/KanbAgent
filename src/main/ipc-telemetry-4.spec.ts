@@ -78,7 +78,7 @@ registerTelemetryHandlers()
 const scan = (projectPath: string) =>
   registeredHandlers['telemetry:scan'](fakeEvent, projectPath) as Promise<{
     languages: Array<{
-      name: string; color: string; files: number; lines: number; percent: number
+      name: string; files: number; lines: number; percent: number
       sourceFiles: number; testFiles: number; sourceLines: number; testLines: number
       blankLines: number; commentLines: number; codeLines: number
     }>

@@ -71,29 +71,20 @@ onMounted(loadTree)
 </script>
 
 <template>
-  <div class="flex-1 flex overflow-hidden">
+  <div class="ex-view">
     <!-- Tree panel -->
-    <div class="w-64 shrink-0 border-r border-edge-subtle overflow-y-auto flex flex-col">
-      <div class="flex items-center justify-between px-3 py-2.5 border-b border-edge-subtle shrink-0">
-        <span class="text-xs font-semibold text-content-subtle uppercase tracking-wider">{{ t('explorer.files') }}</span>
-        <button
-          class="w-5 h-5 flex items-center justify-center rounded text-content-subtle hover:text-content-tertiary hover:bg-surface-secondary transition-colors"
-          :title="t('common.refresh')"
-          @click="loadTree"
-        >
-          <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-          </svg>
-        </button>
+    <div class="ex-tree">
+      <div class="ex-tree-header">
+        <span class="ex-tree-label text-caption">{{ t('explorer.files') }}</span>
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loadingTree" :title="t('common.refresh')" @click="loadTree" />
       </div>
-      <div v-if="loadingTree" class="flex-1 flex items-center justify-center">
-        <span class="text-xs text-content-faint animate-pulse">{{ t('explorer.loading') }}</span>
+      <div v-if="loadingTree" class="ex-state-center">
+        <span class="ex-loading text-caption">{{ t('explorer.loading') }}</span>
       </div>
-      <div v-else-if="!store.projectPath" class="flex-1 flex items-center justify-center px-4">
-        <span class="text-xs text-content-faint text-center">{{ t('common.noProject') }}</span>
+      <div v-else-if="!store.projectPath" class="ex-state-center ex-padded">
+        <span class="ex-faint ex-center text-caption">{{ t('common.noProject') }}</span>
       </div>
-      <div v-else class="flex-1 py-0.5 select-none">
+      <div v-else class="ex-tree-nodes">
         <FileTreeNode
           v-for="node in tree"
           :key="node.path"
@@ -107,36 +98,106 @@ onMounted(loadTree)
     </div>
 
     <!-- Content panel -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <div class="flex items-center gap-3 px-4 py-2.5 border-b border-edge-subtle shrink-0 min-h-[41px]">
-        <span v-if="selectedPath" class="text-xs font-mono text-content-tertiary truncate">{{ selectedName }}</span>
-        <span v-else class="text-xs text-content-faint">{{ t('explorer.selectFile') }}</span>
-        <span v-if="fileContent" class="ml-auto text-xs text-content-faint shrink-0">
-          {{ lineCount(fileContent) }} {{ t('explorer.lines') }}
-        </span>
+    <div class="ex-content">
+      <div class="ex-content-header">
+        <span v-if="selectedPath" class="ex-content-filename">{{ selectedName }}</span>
+        <span v-else class="ex-faint text-caption">{{ t('explorer.selectFile') }}</span>
+        <span v-if="fileContent" class="ex-line-count text-caption">{{ lineCount(fileContent) }} {{ t('explorer.lines') }}</span>
       </div>
-      <div class="flex-1 overflow-auto">
-        <div v-if="loadingFile" class="flex items-center justify-center h-full">
-          <span class="text-xs text-content-faint animate-pulse">{{ t('explorer.reading') }}</span>
+      <div class="ex-content-body">
+        <div v-if="loadingFile" class="ex-state-center">
+          <span class="ex-loading text-caption">{{ t('explorer.reading') }}</span>
         </div>
-        <div v-else-if="fileError" class="flex items-center justify-center h-full px-8">
-          <span class="text-xs text-content-subtle italic text-center">{{ fileError }}</span>
+        <div v-else-if="fileError" class="ex-state-center ex-padded">
+          <span class="ex-subtle ex-center ex-italic text-caption">{{ fileError }}</span>
         </div>
-        <pre
-          v-else-if="fileContent"
-          class="text-xs font-mono text-content-tertiary leading-relaxed p-4 whitespace-pre-wrap break-words"
-        >{{ fileContent }}</pre>
-        <div v-else class="flex items-center justify-center h-full">
-          <span class="text-xs text-content-dim">—</span>
+        <pre v-else-if="fileContent" class="ex-pre">{{ fileContent }}</pre>
+        <div v-else class="ex-state-center">
+          <span class="ex-dim text-caption">—</span>
         </div>
       </div>
     </div>
   </div>
 </template>
 
+<style scoped>
+.ex-view { flex: 1; display: flex; overflow: hidden; }
+
+.ex-tree {
+  width: 256px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--edge-subtle);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.ex-tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.ex-tree-label {
+  font-weight: 600;
+  color: var(--content-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ex-tree-nodes { flex: 1; padding: 4px 0; user-select: none; }
+
+.ex-state-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+.ex-padded { padding: 16px; }
+.ex-loading {}
+@keyframes exPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.ex-faint {}
+.ex-subtle {}
+.ex-dim {}
+.ex-center { text-align: center; }
+.ex-italic { font-style: italic; }
+
+.ex-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ex-content-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+  min-height: 41px;
+}
+.ex-content-filename {
+  font-size: 12px; /* monospace filename — code path exception */
+  font-family: ui-monospace, monospace;
+  color: var(--content-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ex-line-count { margin-left: auto; color: var(--content-faint); flex-shrink: 0; 
+}
+.ex-content-body { flex: 1; overflow: auto; }
+.ex-pre {
+  font-size: 12px; /* monospace code preview — exception */
+  font-family: ui-monospace, monospace;
+  color: var(--content-tertiary);
+  line-height: 1.625;
+  padding: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  margin: 0;
+}
+</style>
+
 <script lang="ts">
 // Sub-component: recursive file tree node — VS Code-style rendering
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, resolveComponent, type Component } from 'vue'
 
 // File extension → icon color mapping (VS Code inspired)
 const EXT_COLORS: Record<string, string> = {
@@ -157,31 +218,32 @@ function fileIconColor(name: string): string {
   return EXT_COLORS[ext] ?? '#9ca3af'
 }
 
-// SVG icon factories (VS Code style, inline)
-function chevronSvg(open: boolean) {
-  return h('svg', {
-    viewBox: '0 0 16 16', fill: 'currentColor',
-    class: ['w-3 h-3 shrink-0 transition-transform duration-150', open ? 'rotate-90' : ''],
+// MDI icon factories (VS Code style) — VIcon resolved at runtime to avoid static CSS import
+function chevronSvg(VIconComp: Component, open: boolean) {
+  return h(VIconComp, {
+    class: ['shrink-0 transition-transform duration-150', open ? 'rotate-90' : ''],
+    size: 12,
     style: { color: 'var(--content-subtle)' },
-  }, [
-    h('path', { d: 'M6 4l4 4-4 4', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
-  ])
+    icon: 'mdi-chevron-right',
+  })
 }
 
-function folderSvg(open: boolean) {
-  return open
-    ? h('svg', { viewBox: '0 0 16 16', fill: 'currentColor', class: 'w-4 h-4 shrink-0', style: { color: '#dcb67a' } }, [
-        h('path', { d: 'M1.75 3A1.75 1.75 0 0 0 0 4.75v7.5C0 13.216.784 14 1.75 14h12.5A1.75 1.75 0 0 0 16 12.25v-6.5A1.75 1.75 0 0 0 14.25 4H8.22a.25.25 0 0 1-.177-.073L6.957 2.841A1.75 1.75 0 0 0 5.721 2.25H1.75zM1.5 4.75a.25.25 0 0 1 .25-.25h3.971c.067 0 .13.026.177.073l1.086 1.086A1.75 1.75 0 0 0 8.22 5.5h6.03a.25.25 0 0 1 .25.25v6.5a.25.25 0 0 1-.25.25H1.75a.25.25 0 0 1-.25-.25z' }),
-      ])
-    : h('svg', { viewBox: '0 0 16 16', fill: 'currentColor', class: 'w-4 h-4 shrink-0', style: { color: '#c09553' } }, [
-        h('path', { d: 'M1.75 3A1.75 1.75 0 0 0 0 4.75v7.5C0 13.216.784 14 1.75 14h12.5A1.75 1.75 0 0 0 16 12.25v-6.5A1.75 1.75 0 0 0 14.25 4H8.22a.25.25 0 0 1-.177-.073L6.957 2.841A1.75 1.75 0 0 0 5.721 2.25H1.75zM1.5 4.75a.25.25 0 0 1 .25-.25h3.971c.067 0 .13.026.177.073l1.086 1.086A1.75 1.75 0 0 0 8.22 5.5h6.03a.25.25 0 0 1 .25.25v6.5a.25.25 0 0 1-.25.25H1.75a.25.25 0 0 1-.25-.25z' }),
-      ])
+function folderSvg(VIconComp: Component, open: boolean) {
+  return h(VIconComp, {
+    class: 'shrink-0',
+    size: 16,
+    style: { color: 'rgb(var(--v-theme-warning))' },
+    icon: open ? 'mdi-folder-open' : 'mdi-folder',
+  })
 }
 
-function fileSvg(name: string) {
-  return h('svg', { viewBox: '0 0 16 16', fill: 'currentColor', class: 'w-4 h-4 shrink-0', style: { color: fileIconColor(name) } }, [
-    h('path', { d: 'M3.75 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V5.414a.25.25 0 0 0-.073-.177L9.263 2.073a.25.25 0 0 0-.177-.073H3.75zM2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l3.164 3.163c.329.328.513.773.513 1.237v8.337A1.75 1.75 0 0 1 12.5 15h-9A1.75 1.75 0 0 1 2 13.25z' }),
-  ])
+function fileSvg(VIconComp: Component, name: string) {
+  return h(VIconComp, {
+    class: 'shrink-0',
+    size: 16,
+    style: { color: fileIconColor(name) },
+    icon: 'mdi-file-outline',
+  })
 }
 
 const FileTreeNode = defineComponent({
@@ -194,6 +256,7 @@ const FileTreeNode = defineComponent({
   },
   emits: ['select'],
   setup(props, { emit }) {
+    const VIconComp = resolveComponent('VIcon') as Component
     return () => {
       const node = props.node
       const isOpen = node.isDir && props.openDirs.has(node.path)
@@ -221,9 +284,9 @@ const FileTreeNode = defineComponent({
       }, [
         ...guides,
         // Chevron (dirs only)
-        node.isDir ? chevronSvg(isOpen) : h('span', { class: 'w-3 shrink-0' }),
+        node.isDir ? chevronSvg(VIconComp, isOpen) : h('span', { class: 'w-3 shrink-0' }),
         // Icon
-        node.isDir ? folderSvg(isOpen) : fileSvg(node.name),
+        node.isDir ? folderSvg(VIconComp, isOpen) : fileSvg(VIconComp, node.name),
         // Label
         h('span', { class: 'truncate' }, node.name),
       ])

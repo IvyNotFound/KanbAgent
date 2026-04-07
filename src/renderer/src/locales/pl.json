@@ -29,8 +29,6 @@
     "prevPage": "Poprzednia",
     "nextPage": "Następna",
     "pageOf": "Strona {page} / {total} ({count} zadań)",
-    "listView": "Widok listy",
-    "treeView": "Widok drzewa",
     "staleTasks": "{count} przestarzałe zadanie | {count} przestarzałe zadania"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Maksymalizuj"
   },
   "tabBar": {
-    "openWslTerminal": "Otwórz terminal WSL",
     "closeTab": "Zamknij",
     "unsaved": "Niezapisane zmiany",
     "closeFileTitle": "Zamknij plik",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Jakość agentów",
-    "all": "Wszystkie",
     "refresh": "Odśwież",
     "loading": "Ładowanie…",
     "error": "Błąd: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Wskaźnik odrzuceń projektu",
     "noRejections": "Nie wykryto odrzuceń",
     "heuristicNote": "Detekcja heurystyczna — komentarze recenzenta zawierające \"reject\", \"return\" lub \"todo\"",
-    "colTotal": "Łącznie",
-    "colRejected": "Odrzucenia",
-    "colRate": "Wskaźnik",
-    "colBar": "Słupek"
+    "colAgent": "Agent",
+    "colRejections": "Odrzuc./Łącz.",
+    "colRate": "Wsk."
   },
   "sessionActivityChart": {
     "title": "Aktywność sesji — ostatnie 14 dni",
@@ -578,7 +573,10 @@
     "streaming": "W toku…",
     "waitingMessages": "Oczekiwanie na wiadomości…",
     "turns": "{n} ruch | {n} ruchy",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Wyślij wiadomość…",
+    "askQuestion": "Pytanie agenta",
+    "replyPlaceholder": "Odpowiedz agentowi…"
   },
   "task": {
     "running": "Zadanie w toku",
@@ -610,7 +608,8 @@
     "colSource": "Źródło",
     "colTests": "Testy",
     "colFiles": "Pliki",
-    "scannedAt": "Zeskanowano {date}"
+    "scannedAt": "Zeskanowano {date}",
+    "languageDetail": "Szczegóły języków"
   },
   "update": {
     "available": "Dostępna aktualizacja {version}",

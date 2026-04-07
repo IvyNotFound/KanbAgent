@@ -29,8 +29,6 @@
     "prevPage": "Föregående",
     "nextPage": "Nästa",
     "pageOf": "Sida {page} / {total} ({count} uppgifter)",
-    "listView": "Listvy",
-    "treeView": "Trädvy",
     "staleTasks": "{count} inaktiv uppgift | {count} inaktiva uppgifter"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Maximera"
   },
   "tabBar": {
-    "openWslTerminal": "Öppna WSL-terminal",
     "closeTab": "Stäng",
     "unsaved": "Osparade ändringar",
     "closeFileTitle": "Stäng fil",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Agentkvalitet",
-    "all": "Alla",
     "refresh": "Uppdatera",
     "loading": "Laddar…",
     "error": "Fel: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Projektets avslagsfrekevens",
     "noRejections": "Inga avslag hittades",
     "heuristicNote": "Heuristisk detektering — granskarkommentarer med \"reject\", \"return\" eller \"todo\"",
-    "colTotal": "Totalt",
-    "colRejected": "Avslag",
-    "colRate": "Frekvens",
-    "colBar": "Stapel"
+    "colAgent": "Agent",
+    "colRejections": "Avv./Total",
+    "colRate": "Andel"
   },
   "sessionActivityChart": {
     "title": "Sessionsaktivitet — senaste 14 dagarna",
@@ -578,7 +573,10 @@
     "streaming": "Pågår…",
     "waitingMessages": "Väntar på meddelanden…",
     "turns": "{n} varv | {n} varv",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Skicka ett meddelande…",
+    "askQuestion": "Agentfråga",
+    "replyPlaceholder": "Svara till agent…"
   },
   "task": {
     "running": "Uppgift pågår",
@@ -610,7 +608,8 @@
     "colSource": "Källkod",
     "colTests": "Tester",
     "colFiles": "Filer",
-    "scannedAt": "Skannat {date}"
+    "scannedAt": "Skannat {date}",
+    "languageDetail": "Språkdetaljer"
   },
   "update": {
     "available": "Uppdatering {version} tillgänglig",

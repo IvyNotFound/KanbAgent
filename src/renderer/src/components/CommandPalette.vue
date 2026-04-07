@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentFg, agentBg } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentAccent } from '@renderer/utils/agentColor'
 import type { Task } from '@renderer/types'
 
 const props = defineProps<{ modelValue: boolean }>()
@@ -17,7 +17,7 @@ const tasksStore = useTasksStore()
 const searchQuery = ref('')
 const debouncedQuery = ref('')
 const selectedIndex = ref(0)
-const inputRef = ref<HTMLInputElement | null>(null)
+const inputRef = ref<{ focus: () => void } | null>(null)
 
 const filterStatut = ref<string | null>(null)
 const filterAgentId = ref<number | null>(null)
@@ -30,10 +30,10 @@ watch(searchQuery, (val) => {
 })
 
 const STATUTS = computed(() => [
-  { key: 'todo',        label: t('columns.todo'),        dot: 'bg-amber-500' },
-  { key: 'in_progress', label: t('columns.in_progress'), dot: 'bg-emerald-500' },
-  { key: 'done',        label: t('columns.done'),        dot: 'bg-content-faint' },
-  { key: 'archived',    label: t('columns.archived'),    dot: 'bg-violet-500' },
+  { key: 'todo',        label: t('columns.todo'),        color: 'rgb(var(--v-theme-warning))' },
+  { key: 'in_progress', label: t('columns.in_progress'), color: 'rgb(var(--v-theme-secondary))' },
+  { key: 'done',        label: t('columns.done'),        color: 'var(--content-faint)' },
+  { key: 'archived',    label: t('columns.archived'),    color: 'rgb(var(--v-theme-primary))' },
 ])
 
 // Pre-computed lowercase index — recomputes only when tasks list changes, not on every keystroke
@@ -60,18 +60,6 @@ const filteredTasks = computed<Task[]>(() => {
 const hasFilters = computed(() =>
   filterStatut.value !== null || filterAgentId.value !== null || filterPerimetre.value !== null
 )
-
-function toggleStatut(key: string) {
-  filterStatut.value = filterStatut.value === key ? null : key
-}
-
-function toggleAgent(id: number) {
-  filterAgentId.value = filterAgentId.value === id ? null : id
-}
-
-function togglePerimetre(name: string) {
-  filterPerimetre.value = filterPerimetre.value === name ? null : name
-}
 
 function clearFilters() {
   filterStatut.value = null
@@ -134,186 +122,236 @@ onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
 })
 
-function statutDot(statut: string): string {
-  return STATUTS.value.find(s => s.key === statut)?.dot ?? 'bg-content-faint'
+function effortColor(effort: number): string {
+  if (effort === 1) return 'rgb(var(--v-theme-secondary))'
+  if (effort === 2) return 'rgb(var(--v-theme-warning))'
+  return 'rgb(var(--v-theme-error))'
 }
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="palette-fade">
+  <v-dialog :model-value="modelValue" max-width="672" @update:model-value="close">
+    <!-- Transition wraps v-if for MD3 entry/exit motion -->
+    <!-- data-testid="palette-backdrop" required by tests (@click.self compat) -->
+    <Transition name="palette">
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/60 backdrop-blur-sm"
+        data-testid="palette-backdrop"
+        class="d-flex align-center justify-center"
         @click.self="close"
         @keydown="handleKeydown"
       >
-        <div class="w-full max-w-2xl mx-4 bg-surface-primary rounded-xl shadow-2xl border border-edge-default/60 overflow-hidden flex flex-col max-h-[72vh]">
+        <v-card
+          class="d-flex flex-column"
+          width="100%"
+          max-width="672"
+          rounded="xl"
+          elevation="8"
+          :style="{ height: 'min(72vh, 640px)', overflow: 'hidden' }"
+        >
 
-          <!-- Search input -->
-          <div class="flex items-center gap-3 px-4 py-3 border-b border-edge-subtle shrink-0">
-            <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-content-subtle shrink-0">
-              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
-            </svg>
-            <input
+          <!-- Search row -->
+          <div class="d-flex align-center ga-3 px-4 py-1 flex-shrink-0">
+            <v-text-field
               ref="inputRef"
               v-model="searchQuery"
-              type="text"
+              data-testid="search-input"
+              variant="plain"
+              hide-details
               :placeholder="t('commandPalette.placeholder')"
-              class="flex-1 bg-transparent text-content-primary placeholder-content-subtle outline-none text-sm"
-            >
-            <div class="flex items-center gap-2 shrink-0">
-              <button
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              class="flex-grow-1"
+            />
+            <div class="d-flex align-center ga-2 flex-shrink-0">
+              <v-btn
                 v-if="hasFilters"
-                class="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                variant="text"
+                size="small"
+                color="primary"
                 @click="clearFilters"
-              >{{ t('commandPalette.resetFilters') }}</button>
-              <kbd class="px-1.5 py-0.5 text-xs bg-surface-secondary text-content-subtle rounded border border-edge-default">ESC</kbd>
+              >{{ t('commandPalette.resetFilters') }}</v-btn>
+              <kbd class="palette-kbd">ESC</kbd>
             </div>
           </div>
+
+          <v-divider />
 
           <!-- Filters -->
-          <div class="px-4 py-2.5 border-b border-edge-subtle shrink-0 space-y-2">
-            <!-- Statut chips -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[10px] text-content-faint uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.status') }}</span>
-              <button
-                v-for="s in STATUTS"
-                :key="s.key"
-                class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs transition-all border"
-                :class="filterStatut === s.key
-                  ? 'border-content-subtle bg-surface-tertiary text-content-primary'
-                  : 'border-edge-default/60 text-content-subtle hover:border-content-faint hover:text-content-tertiary'"
-                @click="toggleStatut(s.key)"
+          <div class="pa-3 d-flex flex-column ga-1 flex-shrink-0">
+            <!-- Status chips -->
+            <div class="d-flex align-center ga-2 flex-wrap">
+              <span class="text-caption font-weight-bold text-medium-emphasis">{{ t('commandPalette.status') }}</span>
+              <v-chip-group
+                :model-value="filterStatut ?? undefined"
+                @update:model-value="filterStatut = $event ?? null"
               >
-                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="s.dot" />
-                {{ s.label }}
-              </button>
+                <v-chip
+                  v-for="s in STATUTS"
+                  :key="s.key"
+                  :value="s.key"
+                  variant="outlined"
+                  size="small"
+                >
+                  <span class="status-dot mr-1" :style="{ backgroundColor: s.color }" />
+                  {{ s.label }}
+                </v-chip>
+              </v-chip-group>
             </div>
 
-            <!-- Agent + Périmètre -->
-            <div v-if="tasksStore.agents.length > 0 || tasksStore.perimetresData.length > 0" class="flex items-center gap-3 flex-wrap">
-              <!-- Agents -->
-              <div v-if="tasksStore.agents.length > 0" class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] text-content-faint uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.agent') }}</span>
-                <button
-                  v-for="agent in tasksStore.agents.slice(0, 8)"
-                  :key="agent.id"
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border font-mono"
-                  :class="filterAgentId === agent.id
-                    ? 'border-content-subtle bg-surface-tertiary text-content-primary'
-                    : 'border-edge-default/60 text-content-subtle hover:border-content-faint hover:text-content-tertiary'"
-                  :style="filterAgentId === Number(agent.id)
-                    ? { color: agentFg(agent.name), backgroundColor: agentBg(agent.name), borderColor: agentFg(agent.name) + '66' }
-                    : {}"
-                  @click="toggleAgent(Number(agent.id))"
+            <!-- Agent + Perimeter chips -->
+            <div
+              v-if="tasksStore.agents.length > 0 || tasksStore.perimetresData.length > 0"
+              class="d-flex align-center ga-3 flex-wrap"
+            >
+              <div v-if="tasksStore.agents.length > 0" class="d-flex align-center ga-2 flex-wrap">
+                <span class="text-caption font-weight-bold text-medium-emphasis">{{ t('commandPalette.agent') }}</span>
+                <v-chip-group
+                  :model-value="filterAgentId ?? undefined"
+                  @update:model-value="filterAgentId = $event != null ? Number($event) : null"
                 >
-                  {{ agent.name }}
-                </button>
+                  <v-chip
+                    v-for="agent in tasksStore.agents.slice(0, 8)"
+                    :key="agent.id"
+                    :value="agent.id"
+                    variant="outlined"
+                    size="small"
+                    :style="filterAgentId === Number(agent.id)
+                      ? { color: agentFg(agent.name), backgroundColor: agentBg(agent.name), borderColor: agentFg(agent.name) + '66', fontFamily: 'ui-monospace, Consolas, monospace', fontSize: '0.75rem' }
+                      : { fontFamily: 'ui-monospace, Consolas, monospace', fontSize: '0.75rem' }"
+                  >{{ agent.name }}</v-chip>
+                </v-chip-group>
               </div>
 
-              <!-- Périmètres -->
-              <div v-if="tasksStore.perimetresData.length > 0" class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] text-content-faint uppercase tracking-wider font-semibold mr-1">{{ t('commandPalette.perimeter') }}</span>
-                <button
-                  v-for="p in tasksStore.perimetresData"
-                  :key="p.id"
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border font-mono"
-                  :class="filterPerimetre === p.name
-                    ? 'border-content-subtle bg-surface-tertiary text-content-primary'
-                    : 'border-edge-default/60 text-content-subtle hover:border-content-faint hover:text-content-tertiary'"
-                  :style="filterPerimetre === p.name
-                    ? { color: agentFg(p.name), backgroundColor: agentBg(p.name), borderColor: agentFg(p.name) + '66' }
-                    : {}"
-                  @click="togglePerimetre(p.name)"
+              <div v-if="tasksStore.perimetresData.length > 0" class="d-flex align-center ga-2 flex-wrap">
+                <span class="text-caption font-weight-bold text-medium-emphasis">{{ t('commandPalette.perimeter') }}</span>
+                <v-chip-group
+                  :model-value="filterPerimetre ?? undefined"
+                  @update:model-value="filterPerimetre = $event ?? null"
                 >
-                  {{ p.name }}
-                </button>
+                  <v-chip
+                    v-for="p in tasksStore.perimetresData"
+                    :key="p.id"
+                    :value="p.name"
+                    variant="outlined"
+                    size="small"
+                    :style="filterPerimetre === p.name
+                      ? { color: agentFg(p.name), backgroundColor: agentBg(p.name), borderColor: agentFg(p.name) + '66', fontFamily: 'ui-monospace, Consolas, monospace', fontSize: '0.75rem' }
+                      : { fontFamily: 'ui-monospace, Consolas, monospace', fontSize: '0.75rem' }"
+                  >{{ p.name }}</v-chip>
+                </v-chip-group>
               </div>
             </div>
           </div>
 
-          <!-- Results -->
-          <div class="flex-1 overflow-y-auto min-h-0">
-            <div v-if="filteredTasks.length === 0" class="flex flex-col items-center justify-center py-12 gap-2">
-              <svg viewBox="0 0 16 16" fill="currentColor" class="w-6 h-6 text-content-dim">
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/>
-              </svg>
-              <p class="text-sm text-content-faint">
-                {{ debouncedQuery || hasFilters ? t('commandPalette.noResults') : t('commandPalette.noTasksLoaded') }}
-              </p>
-            </div>
+          <v-divider />
 
-            <div v-else>
-              <div class="px-4 py-1.5 flex items-center justify-between">
-                <p class="text-[10px] text-content-faint uppercase tracking-wider font-semibold">
-                  {{ filteredTasks.length }} {{ t('commandPalette.tasks', filteredTasks.length) }}
+          <!-- Results -->
+          <v-list class="flex-grow-1 overflow-y-auto" bg-color="transparent" density="compact">
+            <template v-if="filteredTasks.length === 0">
+              <div class="d-flex flex-column align-center justify-center py-12 ga-2">
+                <v-icon size="24" class="text-disabled">mdi-magnify</v-icon>
+                <p class="text-caption text-medium-emphasis">
+                  {{ debouncedQuery || hasFilters ? t('commandPalette.noResults') : t('commandPalette.noTasksLoaded') }}
                 </p>
               </div>
-              <div
+            </template>
+
+            <template v-else>
+              <div class="px-5 py-2 text-caption font-weight-bold text-medium-emphasis">
+                {{ filteredTasks.length }} {{ t('commandPalette.tasks', filteredTasks.length) }}
+              </div>
+              <v-list-item
                 v-for="(task, index) in filteredTasks"
                 :key="task.id"
-                class="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors border-l-2"
-                :class="index === selectedIndex
-                  ? 'bg-surface-secondary border-violet-500'
-                  : 'border-transparent hover:bg-surface-secondary/50 hover:border-content-faint'"
+                :active="index === selectedIndex"
+                active-color="primary"
+                class="px-5"
                 @click="selectTask(task)"
                 @mouseenter="selectedIndex = index"
               >
-                <!-- Status dot -->
-                <span class="w-2 h-2 rounded-full shrink-0 mt-0.5" :class="statutDot(task.status)" />
-
-                <!-- Content -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-mono text-content-faint shrink-0">#{{ task.id }}</span>
-                    <span class="text-sm text-content-primary truncate font-medium">{{ task.title }}</span>
+                <div class="d-flex align-start ga-2">
+                  <span
+                    class="status-dot flex-shrink-0"
+                    :style="{ marginTop: '4px', backgroundColor: STATUTS.find(s => s.key === task.status)?.color ?? 'rgba(var(--v-theme-on-surface), 0.38)' }"
+                  />
+                  <div style="min-width: 0; flex: 1;">
+                    <div class="d-flex align-center ga-2">
+                      <span
+                        class="text-caption text-medium-emphasis flex-shrink-0"
+                        style="font-family: ui-monospace, Consolas, monospace;"
+                      >#{{ task.id }}</span>
+                      <span class="text-body-2 font-weight-medium text-truncate">{{ task.title }}</span>
+                    </div>
+                    <div class="d-flex align-center ga-2 mt-1">
+                      <span
+                        v-if="task.agent_name"
+                        class="text-caption"
+                        :style="{ color: agentAccent(task.agent_name), fontFamily: 'ui-monospace, Consolas, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }"
+                      >{{ task.agent_name }}</span>
+                      <span
+                        v-if="task.scope"
+                        class="text-caption rounded-sm px-1 flex-shrink-0"
+                        :style="{ color: agentFg(task.scope), backgroundColor: agentBg(task.scope), fontFamily: 'ui-monospace, Consolas, monospace', fontSize: '10px' }"
+                      >{{ task.scope }}</span>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-2 mt-0.5">
-                    <span
-                      v-if="task.agent_name"
-                      class="text-[11px] font-mono truncate"
-                      :style="{ color: agentFg(task.agent_name) }"
-                    >{{ task.agent_name }}</span>
-                    <span
-                      v-if="task.scope"
-                      class="text-[10px] font-mono px-1 py-0.5 rounded shrink-0"
-                      :style="{ color: agentFg(task.scope), backgroundColor: agentBg(task.scope) }"
-                    >{{ task.scope }}</span>
-                  </div>
+                  <span
+                    v-if="task.effort"
+                    class="effort-dot flex-shrink-0"
+                    :style="{ backgroundColor: effortColor(task.effort) }"
+                    :title="task.effort === 1 ? 'Small' : task.effort === 2 ? 'Medium' : 'Large'"
+                  />
                 </div>
+              </v-list-item>
+            </template>
+          </v-list>
 
-                <!-- Effort dot -->
-                <span
-                  v-if="task.effort"
-                  class="w-2 h-2 rounded-full shrink-0"
-                  :class="task.effort === 1 ? 'bg-emerald-500' : task.effort === 2 ? 'bg-amber-500' : 'bg-red-500'"
-                  :title="task.effort === 1 ? 'Small' : task.effort === 2 ? 'Medium' : 'Large'"
-                />
-              </div>
-            </div>
-          </div>
+          <v-divider />
 
           <!-- Footer -->
-          <div class="px-4 py-2 border-t border-edge-subtle flex items-center gap-4 text-xs text-content-faint shrink-0">
-            <span><kbd class="px-1 py-0.5 bg-surface-secondary rounded border border-edge-default">↑↓</kbd> {{ t('commandPalette.navigate') }}</span>
-            <span><kbd class="px-1 py-0.5 bg-surface-secondary rounded border border-edge-default">↵</kbd> {{ t('commandPalette.open') }}</span>
-            <span class="ml-auto"><kbd class="px-1 py-0.5 bg-surface-secondary rounded border border-edge-default">Ctrl+K</kbd> toggle</span>
+          <div class="d-flex align-center ga-4 px-5 py-2 flex-shrink-0">
+            <span class="d-flex align-center ga-1 text-caption text-medium-emphasis">
+              <kbd class="palette-kbd">↑↓</kbd> {{ t('commandPalette.navigate') }}
+            </span>
+            <span class="d-flex align-center ga-1 text-caption text-medium-emphasis">
+              <kbd class="palette-kbd">↵</kbd> {{ t('commandPalette.open') }}
+            </span>
+            <span class="d-flex align-center ga-1 text-caption text-medium-emphasis ml-auto">
+              <kbd class="palette-kbd">Ctrl+K</kbd> toggle
+            </span>
           </div>
 
-        </div>
+        </v-card>
       </div>
     </Transition>
-  </Teleport>
+  </v-dialog>
 </template>
 
 <style scoped>
-.palette-fade-enter-active,
-.palette-fade-leave-active {
-  transition: opacity 0.12s ease;
-}
-.palette-fade-enter-from,
-.palette-fade-leave-to {
-  opacity: 0;
+/* MD3 entry/exit motion — v-card slides from -8px above */
+.palette-enter-from :deep(.v-card),
+.palette-leave-to   :deep(.v-card) { transform: translateY(-8px); opacity: 0; }
+
+/* v-text-field compact height overrides — no prop equivalent for min-height:0 */
+:deep(.v-field__input) { min-height: 0; padding-top: 8px; padding-bottom: 8px; font-size: 0.875rem; }
+:deep(.v-input__control) { min-height: 0; }
+
+/* Chip border softening — outlined chip default border too prominent on dark bg */
+:deep(.v-chip--variant-outlined) { border-color: rgba(var(--v-theme-on-surface), 0.18) !important; }
+
+/* Selected list item — MD3 primary left indicator */
+:deep(.v-list-item--active) { border-left: 2px solid rgb(var(--v-theme-primary)); }
+
+/* Status / effort dots */
+.status-dot,
+.effort-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+/* kbd key caps */
+.palette-kbd {
+  padding: 2px 6px; font-size: 0.75rem; font-family: ui-monospace, Consolas, monospace;
+  background: rgba(var(--v-theme-on-surface), 0.08); border-radius: 4px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.2);
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 </style>

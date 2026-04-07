@@ -38,7 +38,7 @@ describe('StatusColumn', () => {
 
   it('renders the column title', () => {
     const wrapper = shallowMount(StatusColumn, {
-      props: { title: 'À faire', statut: 'todo', tasks: [], accentClass: 'bg-amber-500' },
+      props: { title: 'À faire', statut: 'todo', tasks: [], accentColor: '#f59e0b' },
       global: { plugins: [i18n] },
     })
     expect(wrapper.text()).toContain('À faire')
@@ -47,7 +47,7 @@ describe('StatusColumn', () => {
   it('shows correct task count badge', () => {
     const tasks = [makeTask({ id: 1 }), makeTask({ id: 2 })]
     const wrapper = shallowMount(StatusColumn, {
-      props: { title: 'À faire', statut: 'todo', tasks, accentClass: 'bg-amber-500' },
+      props: { title: 'À faire', statut: 'todo', tasks, accentColor: '#f59e0b' },
       global: { plugins: [i18n] },
     })
     // The count badge shows tasks.length
@@ -57,7 +57,7 @@ describe('StatusColumn', () => {
 
   it('shows empty state message when tasks array is empty', () => {
     const wrapper = shallowMount(StatusColumn, {
-      props: { title: 'À faire', statut: 'todo', tasks: [], accentClass: 'bg-amber-500' },
+      props: { title: 'À faire', statut: 'todo', tasks: [], accentColor: '#f59e0b' },
       global: { plugins: [i18n] },
     })
     expect(wrapper.text()).toContain('Aucune tâche')
@@ -66,7 +66,7 @@ describe('StatusColumn', () => {
   it('does not show empty state when there are tasks', () => {
     const tasks = [makeTask()]
     const wrapper = shallowMount(StatusColumn, {
-      props: { title: 'À faire', statut: 'todo', tasks, accentClass: 'bg-amber-500' },
+      props: { title: 'À faire', statut: 'todo', tasks, accentColor: '#f59e0b' },
       global: { plugins: [i18n] },
     })
     expect(wrapper.text()).not.toContain('Aucune tâche')
@@ -75,7 +75,7 @@ describe('StatusColumn', () => {
   it('renders one task-card stub per task', () => {
     const tasks = [makeTask({ id: 1 }), makeTask({ id: 2 }), makeTask({ id: 3 })]
     const wrapper = shallowMount(StatusColumn, {
-      props: { title: 'En cours', statut: 'in_progress', tasks, accentClass: 'bg-blue-500' },
+      props: { title: 'En cours', statut: 'in_progress', tasks, accentColor: '#3b82f6' },
       global: { plugins: [i18n] },
     })
     // shallowMount stubs TaskCard — count stubs
@@ -83,12 +83,14 @@ describe('StatusColumn', () => {
     expect(cards).toHaveLength(3)
   })
 
-  it('applies accent class to the indicator dot', () => {
+  it('applies accent color to the indicator dot via inline style', () => {
     const wrapper = shallowMount(StatusColumn, {
-      props: { title: 'Terminé', statut: 'done', tasks: [], accentClass: 'bg-green-500' },
+      props: { title: 'Terminé', statut: 'done', tasks: [], accentColor: '#22c55e' },
       global: { plugins: [i18n] },
     })
-    const dot = wrapper.find('.w-2.h-2.rounded-full')
-    expect(dot.classes()).toContain('bg-green-500')
+    const dot = wrapper.find('.column-accent')
+    expect(dot.exists()).toBe(true)
+    // JSDOM converts hex to rgb — check for the rgb equivalent of #22c55e
+    expect(dot.attributes('style')).toMatch(/background-color/)
   })
 })

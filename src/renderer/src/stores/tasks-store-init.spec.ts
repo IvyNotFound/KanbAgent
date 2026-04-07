@@ -130,6 +130,33 @@ describe('tasks — query function string literal (L56)', () => {
     expect(warnSpy).not.toHaveBeenCalled()
     warnSpy.mockRestore()
   })
+
+  it('sets error to DB_CORRUPT and returns [] when queryDb returns { success: false, error: "DB_CORRUPT" }', async () => {
+    const store = useTasksStore()
+    store.dbPath = '/test/db'
+    mockElectronAPI.queryDb.mockResolvedValueOnce({ success: false, error: 'DB_CORRUPT' })
+
+    const result = await store.query('SELECT 1')
+
+    expect(store.error).toBe('DB_CORRUPT')
+    expect(result).toEqual([])
+  })
+
+  it('does not set DB_CORRUPT for other non-array errors', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const store = useTasksStore()
+    store.dbPath = '/test/db'
+    mockElectronAPI.queryDb.mockResolvedValueOnce({ error: 'permission denied' })
+
+    await store.query('SELECT 1')
+
+    expect(store.error).toBeNull()
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('tasks query'),
+      expect.anything()
+    )
+    warnSpy.mockRestore()
+  })
 })
 
 

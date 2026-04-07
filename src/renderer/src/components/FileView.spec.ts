@@ -103,7 +103,7 @@ describe('FileView', () => {
       },
     })
     await flushPromises()
-    const saveBtn = wrapper.findAll('button').find(b => {
+    const saveBtn = wrapper.findAll('v-btn').find(b => {
       const text = b.text().toLowerCase()
       return text.includes('save') || text.includes('enregistrer') || text.includes('sauvegarder')
     })

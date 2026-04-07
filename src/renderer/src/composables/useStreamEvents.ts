@@ -39,6 +39,11 @@ export function useStreamEvents(terminalId: string) {
         for (const block of e.message.content) {
           if (block.type === 'text' && block.text != null) {
             block._html = renderMarkdown(block.text)
+          } else if (block.type === 'tool_use' && block.name === 'AskUserQuestion' && !block.input?.['question']) {
+            // T1764: input.question is lost after Electron IPC structured-clone — bridge from
+            // the synthetic ask_user event present in the same micro-batch.
+            const askUserEv = pendingEvents.find(pe => pe.type === 'ask_user' && pe.text)
+            if (askUserEv?.text) block._question = askUserEv.text
           } else if (block.type === 'tool_result') {
             const raw = !block.content ? '' : typeof block.content === 'string' ? block.content : Array.isArray(block.content) ? block.content.map(c => c.text ?? '').join('\n') : String(block.content)
             const stripped = raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')

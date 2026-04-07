@@ -15,37 +15,34 @@ defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-function onKey(e: KeyboardEvent) {
+function onKey(e: KeyboardEvent): void {
   if (e.key === 'Escape') emit('close')
 }
-
 onMounted(() => document.addEventListener('keydown', onKey))
 onUnmounted(() => document.removeEventListener('keydown', onKey))
+
+function handleItem(item: ContextMenuItem): void {
+  item.action()
+  emit('close')
+}
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      class="fixed inset-0 z-[200]"
-      @click="emit('close')"
-      @contextmenu.prevent="emit('close')"
-    >
-      <div
-        class="absolute bg-surface-primary border border-edge-default rounded-lg shadow-2xl py-1 min-w-[188px]"
-        :style="{ left: `${x}px`, top: `${y}px` }"
-        @click.stop
-      >
-        <template v-for="(item, i) in items" :key="i">
-          <div v-if="item.separator" class="my-1 border-t border-edge-subtle" />
-          <button
-            v-else
-            class="w-full flex items-center px-3 py-1.5 text-sm text-left text-content-tertiary hover:bg-surface-secondary hover:text-content-primary transition-colors"
-            @click="item.action(); emit('close')"
-          >
-            {{ item.label }}
-          </button>
-        </template>
-      </div>
-    </div>
-  </Teleport>
+  <v-menu
+    :model-value="true"
+    :target="[x, y]"
+    :close-on-content-click="false"
+    @update:model-value="(v) => !v && emit('close')"
+  >
+    <v-list density="compact" min-width="188">
+      <template v-for="(item, i) in items" :key="i">
+        <v-divider v-if="item.separator" />
+        <v-list-item
+          v-else
+          :title="item.label"
+          @click="handleItem(item)"
+        />
+      </template>
+    </v-list>
+  </v-menu>
 </template>

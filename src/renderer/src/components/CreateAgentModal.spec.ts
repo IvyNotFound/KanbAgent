@@ -41,17 +41,14 @@ describe('CreateAgentModal', () => {
       },
     })
 
-    // Find the close button (SVG X icon)
-    const closeBtn = wrapper.findAll('button').find(b => {
-      const svg = b.find('svg')
-      return svg.exists() && !b.text().trim()
-    })
+    // Find the close button by data-testid (v-btn with icon="mdi-close")
+    const closeBtn = wrapper.find('[data-testid="btn-close"]')
     expect(closeBtn?.exists()).toBe(true)
     await closeBtn!.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
-  it('shows name error when submitting empty name', async () => {
+  it('shows submit button disabled when name is empty', async () => {
     const wrapper = shallowMount(CreateAgentModal, {
       global: {
         plugins: [createTestingPinia({
@@ -61,9 +58,10 @@ describe('CreateAgentModal', () => {
       },
     })
 
-    // Submit button should be disabled when name is empty
-    const submitBtn = wrapper.findAll('button').find(b => b.attributes('disabled') !== undefined)
-    expect(submitBtn?.exists()).toBe(true)
+    // Submit v-btn should be disabled when name is empty
+    const submitBtn = wrapper.find('[data-testid="btn-submit"]')
+    expect(submitBtn.exists()).toBe(true)
+    expect(submitBtn.attributes('disabled')).toBeDefined()
   })
 
   it('renders thinking mode buttons (auto/disabled)', () => {
@@ -75,8 +73,9 @@ describe('CreateAgentModal', () => {
         stubs: teleportStub,
       },
     })
-    const buttons = wrapper.findAll('button')
-    const autoBtn = buttons.find(b => b.text().trim() === 'Auto' || b.text().trim() === 'auto')
+    // v-btn elements are custom elements in test context (isCustomElement: tag => tag.startsWith('v-'))
+    const vBtns = wrapper.findAll('v-btn')
+    const autoBtn = vBtns.find(b => b.text().trim() === 'Auto' || b.text().trim() === 'auto')
     expect(autoBtn?.exists()).toBe(true)
   })
 
@@ -90,7 +89,7 @@ describe('CreateAgentModal', () => {
       },
     })
 
-    const backdrop = wrapper.find('.fixed.inset-0')
+    const backdrop = wrapper.find('[data-testid="create-agent-backdrop"]')
     await backdrop.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })

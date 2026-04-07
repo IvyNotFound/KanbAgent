@@ -29,8 +29,6 @@
     "prevPage": "Zurück",
     "nextPage": "Weiter",
     "pageOf": "Seite {page} / {total} ({count} Aufgaben)",
-    "listView": "Listenansicht",
-    "treeView": "Baumansicht",
     "staleTasks": "{count} veraltete Aufgabe | {count} veraltete Aufgaben"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Maximieren"
   },
   "tabBar": {
-    "openWslTerminal": "WSL-Terminal öffnen",
     "closeTab": "Schließen",
     "unsaved": "Nicht gespeicherte Änderungen",
     "closeFileTitle": "Datei schließen",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Agentenqualität",
-    "all": "Alle",
     "refresh": "Aktualisieren",
     "loading": "Laden…",
     "error": "Fehler: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Projekt-Ablehnungsrate",
     "noRejections": "Keine Ablehnungen erkannt",
     "heuristicNote": "Heuristische Erkennung — Reviewer-Kommentare mit \"reject\", \"return\" oder \"todo\"",
-    "colTotal": "Gesamt",
-    "colRejected": "Ablehnungen",
-    "colRate": "Quote",
-    "colBar": "Balken"
+    "colAgent": "Agent",
+    "colRejections": "Abgel./Ges.",
+    "colRate": "Quote"
   },
   "sessionActivityChart": {
     "title": "Sitzungsaktivität — letzte 14 Tage",
@@ -578,7 +573,10 @@
     "streaming": "In Bearbeitung…",
     "waitingMessages": "Warten auf Nachrichten…",
     "turns": "{n} Runde | {n} Runden",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Nachricht senden…",
+    "askQuestion": "Agent-Frage",
+    "replyPlaceholder": "An Agent antworten…"
   },
   "task": {
     "running": "Aufgabe in Bearbeitung",
@@ -610,7 +608,8 @@
     "colSource": "Quellcode",
     "colTests": "Tests",
     "colFiles": "Dateien",
-    "scannedAt": "Gescannt am {date}"
+    "scannedAt": "Gescannt am {date}",
+    "languageDetail": "Sprachdetails"
   },
   "update": {
     "available": "Aktualisierung {version} verfügbar",

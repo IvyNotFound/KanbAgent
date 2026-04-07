@@ -10,7 +10,7 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useToast } from '@renderer/composables/useToast'
-import { agentFg, agentBg, agentBorder, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
 import { isStale, staleDuration } from '@renderer/utils/staleTask'
 
 const { t, locale } = useI18n()
@@ -96,104 +96,111 @@ const staleTooltip = computed(() => {
 })
 
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
-const EFFORT_BADGE: Record<number, string> = {
-  1: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  2: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  3: 'bg-red-500/20 text-red-400 border-red-500/30',
-}
+const EFFORT_COLOR: Record<number, string> = { 1: 'chip-effort-s', 2: 'chip-effort-m', 3: 'chip-effort-l' }
 
-const PRIORITY_BADGE: Record<string, string> = {
-  critical: 'bg-red-500/20 text-red-400 border-red-500/30',
-  high:     'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  normal:   'bg-surface-tertiary text-content-muted border-edge-default',
-  low:      '',
-}
-const PRIORITY_LABEL: Record<string, string> = {
-  critical: '!!',
-  high:     '!',
-  normal:   '—',
-  low:      '',
-}
+const plainDescription = computed(() => {
+  if (!props.task.description) return ''
+  return props.task.description
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/(\*{1,3}|_{1,3})(.*?)\1/g, '$2')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/^>\s+/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/^[-*_]{3,}\s*$/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim()
+})
 </script>
 
 <template>
-  <div
-    class="bg-surface-secondary border border-edge-default rounded-lg p-3 hover:border-content-faint transition-colors cursor-pointer min-h-[120px] flex flex-col"
+  <v-card
+    class="task-card"
+    variant="flat"
+    :ripple="false"
     :draggable="task.status === 'todo' || task.status === 'in_progress'"
+    :style="{
+      backgroundColor: 'var(--surface-secondary)',
+      border: '1px solid var(--edge-default)',
+      borderRadius: 'var(--shape-md)',
+    }"
     @click="store.openTask(task)"
     @dragstart="onDragStart"
     @contextmenu="onContextMenu"
   >
-    <!-- Top row: title + effort/priority -->
-    <div class="flex items-start justify-between gap-2 mb-2">
-      <div class="flex items-start gap-1.5 flex-1 min-w-0">
-        <span
-          v-if="task.status === 'in_progress'"
-          class="mt-1 shrink-0 w-2 h-2 rounded-full bg-cyan-400 animate-pulse"
-          :title="t('task.running')"
-          :aria-label="t('task.running')"
-        />
-        <p class="text-sm text-content-primary font-medium leading-snug min-w-0 break-words">{{ task.title }}</p>
+    <!-- Card body: unified section with consistent gap between zones -->
+    <v-card-text class="card-body pa-4 pb-0">
+      <!-- Top row: title + effort/priority badges -->
+      <div class="card-top ga-2">
+        <div class="card-title-area">
+          <p class="card-title text-body-2">{{ task.title }}</p>
+        </div>
+        <div class="card-badge-row ga-1">
+          <v-chip v-if="isStaleTask" size="x-small" variant="tonal" color="warning" :title="staleTooltip">⚠</v-chip>
+          <v-chip v-if="task.priority === 'critical'" size="x-small" variant="tonal" color="chip-priority-critical">!!</v-chip>
+          <v-chip v-if="task.priority === 'high'" size="x-small" variant="tonal" color="chip-priority-high">!</v-chip>
+          <v-chip v-if="task.priority === 'normal'" size="x-small" variant="tonal" color="default">—</v-chip>
+          <v-chip v-if="task.effort" size="x-small" variant="tonal" :color="EFFORT_COLOR[task.effort]">{{ EFFORT_LABEL[task.effort] }}</v-chip>
+        </div>
       </div>
-      <div class="flex items-center gap-1 shrink-0">
-        <span
-          v-if="isStaleTask"
-          class="text-xs font-bold px-1.5 py-0.5 rounded font-mono border bg-orange-500/20 text-orange-400 border-orange-500/30"
-          :title="staleTooltip"
-        >⚠</span>
-        <span
-          v-if="task.priority && task.priority !== 'normal' && task.priority !== 'low'"
-          :class="['text-xs font-bold px-1.5 py-0.5 rounded font-mono border', PRIORITY_BADGE[task.priority]]"
-        >{{ PRIORITY_LABEL[task.priority] }}</span>
-        <span
-          v-if="task.effort"
-          :class="['text-xs font-bold px-1.5 py-0.5 rounded font-mono border', EFFORT_BADGE[task.effort]]"
-        >{{ EFFORT_LABEL[task.effort] }}</span>
-      </div>
-    </div>
 
-    <!-- Badges: perimeter + agent avatars -->
-    <div v-if="task.scope || task.agent_name || assigneeAvatars.length > 0" class="flex flex-wrap gap-1 mb-2">
-      <span
-        v-if="task.scope"
-        class="text-xs px-1.5 py-0.5 rounded font-mono border"
-        :style="{
-          color: perimeterFg(task.scope),
-          backgroundColor: perimeterBg(task.scope),
-          borderColor: perimeterBorder(task.scope),
-        }"
-      >{{ task.scope }}</span>
-      <!-- Multi-agent avatars (≤3 + overflow badge) -->
-      <div v-if="assigneeAvatars.length > 0" class="flex items-center gap-0.5">
-        <div
-          v-for="av in visibleAvatars"
-          :key="av.agent_id"
-          class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold border"
-          :style="{ color: agentFg(av.agent_name), backgroundColor: agentBg(av.agent_name), borderColor: agentBorder(av.agent_name) }"
-          :title="av.agent_name"
-        >{{ av.agent_name.slice(0, 2).toUpperCase() }}</div>
-        <div
-          v-if="overflowCount > 0"
-          class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-surface-tertiary text-content-muted border border-edge-default"
-        >+{{ overflowCount }}</div>
+      <!-- Badges: perimeter + agent avatars -->
+      <div v-if="task.scope || task.agent_name || assigneeAvatars.length > 0" class="card-meta mt-3">
+        <v-chip
+          v-if="task.scope"
+          size="x-small"
+          variant="tonal"
+          rounded="sm"
+          :style="{
+            color: perimeterFg(task.scope),
+            backgroundColor: perimeterBg(task.scope),
+          }"
+        >
+          {{ task.scope }}
+        </v-chip>
+        <!-- Multi-agent avatars (≤3 + overflow badge) -->
+        <div v-if="assigneeAvatars.length > 0" class="card-avatars">
+          <v-avatar
+            v-for="av in visibleAvatars"
+            :key="av.agent_id"
+            :size="20"
+            :style="{ color: agentFg(av.agent_name), backgroundColor: agentBg(av.agent_name) }"
+            :title="av.agent_name"
+            class="text-caption font-weight-bold"
+          >
+            {{ av.agent_name.slice(0, 2).toUpperCase() }}
+          </v-avatar>
+          <v-chip v-if="overflowCount > 0" size="x-small" variant="tonal">+{{ overflowCount }}</v-chip>
+        </div>
+        <!-- Fallback: single agent badge when no task_agents rows -->
+        <AgentBadge v-else-if="task.agent_name" :name="task.agent_name" :perimetre="task.agent_scope" />
       </div>
-      <!-- Fallback: single agent badge when no task_agents rows -->
-      <AgentBadge v-else-if="task.agent_name" :name="task.agent_name" :perimetre="task.agent_scope" />
-    </div>
+
+      <!-- Description excerpt: up to 2 lines, fills body to balance footer -->
+      <p v-if="task.description" class="card-description text-body-2 mt-3">{{ plainDescription }}</p>
+    </v-card-text>
 
     <!-- Footer: dates left, #id right -->
-    <div :class="['flex items-end justify-between gap-2 mt-auto pt-2', (task.scope || task.agent_name) && 'border-t border-edge-default/50']">
-      <div class="flex flex-col gap-0.5">
-        <p class="text-xs text-content-subtle">
-          <span class="text-content-muted">{{ t('taskDetail.created') }}</span> {{ formattedCreatedAt }}
-        </p>
-        <p class="text-xs text-content-subtle">
-          <span class="text-content-muted">{{ t('taskDetail.updated') }}</span> {{ formattedUpdatedAt }}
-        </p>
+    <v-card-text
+      class="card-footer-section mt-auto"
+      :class="{ 'card-footer-bordered': task.scope || task.agent_name }"
+    >
+      <div class="card-footer ga-2">
+        <div class="card-dates">
+          <p class="card-date text-caption">
+            <v-icon size="10">mdi-clock-plus-outline</v-icon> {{ formattedCreatedAt }}
+          </p>
+          <p class="card-date text-caption">
+            <v-icon size="10">mdi-clock-edit-outline</v-icon> {{ formattedUpdatedAt }}
+          </p>
+        </div>
+        <span class="card-id">#{{ task.id }}</span>
       </div>
-      <span class="text-xs text-content-faint font-mono shrink-0">#{{ task.id }}</span>
-    </div>
-  </div>
+    </v-card-text>
+  </v-card>
 
   <ContextMenu
     v-if="contextMenu"
@@ -203,3 +210,114 @@ const PRIORITY_LABEL: Record<string, string> = {
     @close="contextMenu = null"
   />
 </template>
+
+<style scoped>
+.task-card {
+  /* background / border / border-radius set via :style binding — overrides Vuetify without !important */
+  cursor: pointer;
+  min-height: 96px;
+  flex-shrink: 0; /* prevent compression in flex column when many cards present */
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--md-duration-short3) var(--md-easing-standard);
+}
+/* MD3 state layer — translucent overlay on hover instead of border-color change */
+.task-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgba(var(--v-theme-on-surface), 0);
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
+  pointer-events: none;
+  z-index: 0;
+}
+.task-card:hover::after {
+  background-color: rgba(var(--v-theme-on-surface), var(--md-state-hover));
+}
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.card-title-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+.card-title {
+  color: var(--content-primary);
+  font-weight: 500;
+  line-height: 1.35;
+  min-width: 0;
+  word-break: break-word;
+}
+.card-badge-row {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.card-avatars {
+  display: flex;
+  align-items: center;
+}
+/* MD3 avatar group: overlapping stack */
+.card-avatars :deep(.v-avatar + .v-avatar) {
+  margin-left: -6px;
+}
+/* :deep() required — v-avatar border has no Vuetify prop; adds MD3 visual separation in overlapping stack */
+.card-avatars :deep(.v-avatar) {
+  border: 1.5px solid var(--surface-secondary);
+}
+/* Compact footer: reduces vertical padding vs Vuetify pa-3 default (12px → 6/8px) */
+.card-footer-section {
+  padding: 8px 16px 10px;
+}
+/* Increased specificity beats Vuetify v-card-text flex/display overrides (T1607) */
+.task-card .card-description {
+  color: var(--content-muted);
+  line-height: 1.4;
+  margin: 0;
+  /* T1607: pure max-height + overflow approach — more reliable in Electron/Chromium than -webkit-line-clamp
+     which can be defeated by Vuetify v-card-text flex/display overrides on todo/done columns */
+  overflow: hidden;
+  max-height: calc(2 * 1.4 * 0.875rem); /* 2 lines × line-height × text-body-2 font-size */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.card-footer-bordered {
+  border-top: 1px solid color-mix(in srgb, var(--edge-subtle) 50%, transparent);
+}
+.card-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.card-date {
+  color: var(--content-subtle);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.card-id {
+  font-size: 0.75rem;
+  color: var(--content-faint);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  flex-shrink: 0;
+}
+</style>

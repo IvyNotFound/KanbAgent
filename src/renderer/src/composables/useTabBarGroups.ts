@@ -9,7 +9,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import type { Ref } from 'vue'
 import { useTabsStore } from '@renderer/stores/tabs'
 import type { Tab } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentHue, isDark, colorVersion } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, hexToRgb, isDark, colorVersion } from '@renderer/utils/agentColor'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -123,16 +123,13 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
       const isActive = activeId === tab.id
       if (!tab.agentName) {
         map.set(tab.id, isActive
-          ? (isDark() ? { color: '#f4f4f5', backgroundColor: '#27272a' } : { color: '#18181b', backgroundColor: '#e4e4e7' })
+          ? { color: 'rgb(var(--v-theme-on-surface))', backgroundColor: 'rgb(var(--v-theme-surface-variant))' }
           : {})
         continue
       }
-      const h = agentHue(tab.agentName)
       map.set(tab.id, isActive
         ? { color: agentFg(tab.agentName), backgroundColor: agentBg(tab.agentName) }
-        : (isDark()
-          ? { color: `hsla(${h}, 65%, 65%, 0.65)`, backgroundColor: `hsla(${h}, 38%, 16%, 0.55)` }
-          : { color: `hsla(${h}, 55%, 40%, 0.7)`, backgroundColor: `hsla(${h}, 45%, 92%, 0.6)` }))
+        : { color: agentFg(tab.agentName), backgroundColor: agentBg(tab.agentName), opacity: '0.65' })
     }
     return map
   })
@@ -144,16 +141,68 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
     for (const group of groupedTerminalTabs.value) {
       const name = group.agentName
       if (!name) {
-        map.set(name, isDark() ? { color: '#a1a1aa', backgroundColor: '#27272a' } : { color: '#52525b', backgroundColor: '#e4e4e7' })
+        map.set(name, { color: 'rgb(var(--v-theme-on-surface-variant))', backgroundColor: 'rgb(var(--v-theme-surface-variant))' })
         continue
       }
       const isActive = group.tabs.some(t => t.id === activeId)
-      const h = agentHue(name)
       map.set(name, isActive
         ? { color: agentFg(name), backgroundColor: agentBg(name) }
-        : (isDark()
-          ? { color: `hsla(${h}, 65%, 65%, 0.65)`, backgroundColor: `hsla(${h}, 38%, 16%, 0.55)` }
-          : { color: `hsla(${h}, 55%, 40%, 0.7)`, backgroundColor: `hsla(${h}, 45%, 92%, 0.6)` }))
+        : { color: agentFg(name), backgroundColor: agentBg(name), opacity: '0.65' })
+    }
+    return map
+  })
+
+  // Group envelope styles: tinted border + subtle background from agentBg.
+  // Active group gets stronger border/bg to reinforce hierarchy.
+  const groupEnvelopeStyleMap = computed<Map<string | null, Record<string, string>>>(() => {
+    void colorVersion.value
+    const activeId = store.activeTabId
+    const map = new Map<string | null, Record<string, string>>()
+    for (const group of groupedTerminalTabs.value) {
+      const name = group.agentName
+      if (!name) {
+        map.set(name, {
+          border: '1.5px solid rgba(var(--v-theme-outline-variant), 1)',
+          background: 'rgba(var(--v-theme-surface-variant), 0.5)',
+        })
+        continue
+      }
+      const isActive = group.tabs.some(t => t.id === activeId)
+      const rgb = hexToRgb(agentBg(name))
+      if (rgb) {
+        map.set(name, {
+          border: `1.5px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isActive ? 0.45 : 0.25})`,
+          background: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isActive ? 0.12 : 0.06})`,
+        })
+      } else {
+        map.set(name, {
+          border: '1.5px solid rgba(var(--v-theme-outline-variant), 1)',
+          background: 'rgba(var(--v-theme-surface-variant), 0.5)',
+        })
+      }
+    }
+    return map
+  })
+
+  // Active sub-tab: rgba(agentBg, 0.60) background. Text color via CSS .tab-sub--active.
+  // Inactive agent tab: rgba(agentBg, 0.08) via --sub-tab-bg CSS custom prop (hover can override).
+  const subTabBgMap = computed<Map<string, Record<string, string>>>(() => {
+    void colorVersion.value
+    const activeId = store.activeTabId
+    const map = new Map<string, Record<string, string>>()
+    for (const tab of store.tabs) {
+      if (!tab.agentName) {
+        map.set(tab.id, {})
+        continue
+      }
+      const rgb = hexToRgb(agentBg(tab.agentName))
+      if (activeId === tab.id) {
+        map.set(tab.id, { backgroundColor: agentBg(tab.agentName), color: agentFg(tab.agentName) })
+      } else {
+        map.set(tab.id, rgb
+          ? { backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.60)`, color: agentFg(tab.agentName) }
+          : {})
+      }
     }
     return map
   })
@@ -164,7 +213,7 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
     for (const tab of store.tabs) {
       map.set(tab.id, tab.agentName
         ? { backgroundColor: agentFg(tab.agentName) }
-        : { backgroundColor: '#a78bfa' }) // violet-400
+        : { backgroundColor: isDark() ? '#a1a1aa' : '#71717a' }) // zinc-400/500
     }
     return map
   })
@@ -178,6 +227,6 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
     terminalTabs, fileTabs,
     collapsedAgents, groupedTerminalTabs,
     toggleGroup, isGroupCollapsed, isGroupActive, activateAgentGroup,
-    tabStyleMap, agentTabStyleMap, indicatorStyleMap, subTabLabel,
+    tabStyleMap, agentTabStyleMap, groupEnvelopeStyleMap, subTabBgMap, indicatorStyleMap, subTabLabel,
   }
 }

@@ -119,9 +119,10 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     })
     await flushPromises()
     // Auto/Disabled buttons are only rendered when thinkingMode=true
-    const buttons = wrapper.findAll('button')
-    const hasThinkingBtn = buttons.some(b => b.text() === 'Auto')
-    expect(hasThinkingBtn).toBe(false)
+    // Vuetify not registered in test env — v-btn renders as custom HTML element <v-btn>
+    const vbtns = wrapper.findAll('v-btn')
+    const hasAutoBtn = vbtns.some(b => b.text().trim() === 'Auto')
+    expect(hasAutoBtn).toBe(false)
   })
 
   it('disables launch button and shows help message when no instances are detected (T1088)', async () => {
@@ -143,16 +144,12 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     await flushPromises()
 
     // Launch button should be disabled
-    const buttons = wrapper.findAll('button')
-    const launchBtn = buttons.find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('lancer') || text.includes('launch')
-    })
-    expect(launchBtn).toBeDefined()
-    expect(launchBtn!.attributes('disabled')).toBeDefined()
+    const launchBtn = wrapper.find('[data-testid="btn-launch"]')
+    expect(launchBtn.exists()).toBe(true)
+    expect(launchBtn.attributes('disabled')).toBeDefined()
 
     // Help message should be visible
-    const helpMsg = wrapper.find('p.text-amber-500')
+    const helpMsg = wrapper.find('[data-testid="no-instance-warning"]')
     expect(helpMsg.exists()).toBe(true)
   })
 
@@ -170,12 +167,12 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
       },
     })
     await flushPromises()
-    const buttons = wrapper.findAll('button')
-    const hasAutoBtn = buttons.some(b => b.text() === 'Auto')
+    const vbtns = wrapper.findAll('v-btn')
+    const hasAutoBtn = vbtns.some(b => b.text().trim() === 'Auto')
     expect(hasAutoBtn).toBe(true)
   })
 
-  it('hides resume checkbox for Codex (convResume=false)', async () => {
+  it('hides resume switch for Codex (convResume=false)', async () => {
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
     api.queryDb.mockResolvedValue([{ claude_conv_id: 'conv-abc' }])
 
@@ -192,9 +189,10 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
       },
     })
     await flushPromises()
-    // No resume checkbox should appear for codex
-    const checkboxes = wrapper.findAll('input[type="checkbox"]')
-    expect(checkboxes.length).toBe(1) // only multiInstance checkbox
+    // No resume switch should appear for codex — only worktree switch
+    // Vuetify not registered in test env — v-switch renders as custom HTML element <v-switch>
+    const switches = wrapper.findAll('v-switch')
+    expect(switches.length).toBe(1) // only multiInstance switch
   })
 
   it('launch for Codex passes undefined thinkingMode (T1088: requires instance)', async () => {
@@ -216,11 +214,8 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
     const { useTabsStore } = await import('@renderer/stores/tabs')
     const tabsStore = useTabsStore()
 
-    const launchBtn = wrapper.findAll('button').find(b => {
-      const text = b.text().toLowerCase()
-      return text.includes('lancer') || text.includes('launch')
-    })
-    await launchBtn!.trigger('click')
+    const launchBtn = wrapper.find('[data-testid="btn-launch"]')
+    await launchBtn.trigger('click')
     await flushPromises()
 
     const call = (tabsStore.addTerminal as ReturnType<typeof vi.fn>).mock.calls[0]

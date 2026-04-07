@@ -3,7 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
-import { agentFg, agentBorder } from '@renderer/utils/agentColor'
+import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
+import { agentBg, agentFg, agentAccent } from '@renderer/utils/agentColor'
 import type { Agent } from '@renderer/types'
 
 const { t } = useI18n()
@@ -12,6 +13,7 @@ const emit = defineEmits<{ close: []; saved: [] }>()
 
 const store = useTasksStore()
 const settingsStore = useSettingsStore()
+const { confirm } = useConfirmDialog()
 
 const name = ref(props.agent.name)
 const thinkingMode = ref<'auto' | 'disabled'>(
@@ -36,6 +38,14 @@ const newPerimetreName = ref('')
 const addingPerimetre = ref(false)
 const perimètreError = ref<string | null>(null)
 
+// Worktree toggle bridge: v-btn-toggle needs primitive string values
+const worktreeToggleValue = computed({
+  get: () => worktreeEnabled.value === null ? 'inherit' : worktreeEnabled.value === 1 ? 'on' : 'off',
+  set: (val: string) => {
+    worktreeEnabled.value = val === 'inherit' ? null : val === 'on' ? 1 : 0
+  },
+})
+
 onMounted(async () => {
   if (store.dbPath) {
     const result = await window.electronAPI.getAgentSystemPrompt(store.dbPath, props.agent.id)
@@ -49,7 +59,11 @@ onMounted(async () => {
 
 async function deleteAgent() {
   if (!store.dbPath) return
-  const confirmed = window.confirm(t('agent.deleteAgentConfirm', { name: props.agent.name }))
+  const confirmed = await confirm({
+    title: t('agent.deleteAgent'),
+    message: t('agent.deleteAgentConfirm', { name: props.agent.name }),
+    type: 'danger',
+  })
   if (!confirmed) return
   deleting.value = true
   error.value = null
@@ -117,264 +131,252 @@ async function save() {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      @click.self="emit('close')"
-    >
-      <div class="w-[750px] bg-surface-primary border border-edge-default rounded-xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+  <v-dialog model-value max-width="750" scrollable @update:model-value="emit('close')">
+    <div data-testid="agent-edit-backdrop" @click.self="emit('close')">
+    <v-card class="d-flex flex-column" style="max-height: 85vh;">
 
         <!-- Header -->
-        <div
-          class="flex items-center justify-between px-5 py-4 border-b border-edge-subtle"
-          :style="{ borderLeftColor: agentFg(agent.name), borderLeftWidth: '3px' }"
-        >
-          <div>
-            <p class="text-xs text-content-subtle uppercase tracking-wider font-semibold mb-0.5">{{ t('agent.editTitle') }}</p>
-            <p class="text-base font-mono font-semibold" :style="{ color: agentFg(agent.name) }">
-              {{ agent.name }}
-            </p>
+        <div class="modal-header">
+          <div class="d-flex align-center ga-3">
+            <div class="agent-avatar" :style="{ background: agentBg(agent.name), color: agentFg(agent.name) }">
+              {{ agent.name.slice(0, 1).toUpperCase() }}
+            </div>
+            <div>
+              <p class="text-caption" style="color: var(--content-muted); line-height: 1.2;">{{ t('agent.editTitle') }}</p>
+              <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary); line-height: 1.3;">{{ agent.name }}</h2>
+            </div>
           </div>
-          <button
-            class="w-7 h-7 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors text-sm"
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            data-testid="btn-close"
+            :style="{ color: agentAccent(agent.name) }"
             @click="emit('close')"
-          >✕</button>
+          />
         </div>
 
         <!-- Body -->
-        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div class="modal-body">
 
           <!-- Nom -->
-          <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('sidebar.name') }}</label>
-            <input
-              v-model="name"
-              class="w-full bg-surface-secondary border border-edge-default rounded-lg px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors"
-              placeholder="nom-de-l-agent"
-              @keydown.enter="save"
-              @keydown.esc="emit('close')"
-            />
-          </div>
+          <v-text-field
+            v-model="name"
+            :label="t('sidebar.name')"
+            placeholder="nom-de-l-agent"
+            variant="outlined"
+            :color="agentAccent(agent.name)"
+            @keydown.enter="save"
+            @keydown.esc="emit('close')"
+          />
 
           <!-- Thinking mode -->
           <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('launch.thinkingMode') }}</label>
-            <div class="flex gap-2">
-              <button
-                :class="[
-                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
-                  thinkingMode === 'auto'
-                    ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300'
-                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                ]"
-                @click="thinkingMode = 'auto'"
-              >{{ t('launch.auto') }}</button>
-              <button
-                :class="[
-                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
-                  thinkingMode === 'disabled'
-                    ? 'border-amber-500/60 bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300'
-                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                ]"
-                @click="thinkingMode = 'disabled'"
-              >{{ t('launch.disabled') }}</button>
-            </div>
-            <p class="text-[10px] text-content-faint mt-1.5">{{ t('launch.thinkingNote') }}</p>
+            <div class="field-label text-label-medium mb-2">{{ t('launch.thinkingMode') }}</div>
+            <v-btn-toggle v-model="thinkingMode" mandatory :color="agentAccent(agent.name)" variant="outlined" density="compact" class="agent-toggle" :style="{ '--toggle-accent': agentAccent(agent.name) }">
+              <v-btn value="auto">{{ t('launch.auto') }}</v-btn>
+              <v-btn value="disabled">{{ t('launch.disabled') }}</v-btn>
+            </v-btn-toggle>
+            <p class="text-caption text-disabled mt-1">{{ t('launch.thinkingNote') }}</p>
           </div>
 
           <!-- Modèle préféré -->
-          <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.preferredModel') }}</label>
-            <input
-              v-model="preferredModel"
-              type="text"
-              placeholder="anthropic/claude-opus-4-5"
-              class="w-full bg-surface-secondary border border-edge-default rounded-lg px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors"
-            />
-            <p class="text-[10px] text-content-faint mt-1.5">{{ t('agent.preferredModelNote') }}</p>
-          </div>
+          <v-text-field
+            v-model="preferredModel"
+            :label="t('agent.preferredModel')"
+            placeholder="anthropic/claude-opus-4-5"
+            :hint="t('agent.preferredModelNote')"
+            persistent-hint
+            variant="outlined"
+            :color="agentAccent(agent.name)"
+          />
 
           <!-- Tâches autorisées (--allowedTools) -->
-          <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">
-              {{ t('agent.allowedTools') }}
-              <span class="normal-case font-normal text-content-faint ml-1">(--allowedTools)</span>
-            </label>
-            <textarea
-              v-model="allowedTools"
-              rows="3"
-              spellcheck="false"
-              placeholder="Bash,Edit,Read,Write,Glob,Grep&#10;Laisser vide = tous les outils autorisés"
-              class="w-full bg-surface-secondary border border-edge-default rounded-lg px-3 py-2 text-xs font-mono text-content-secondary placeholder-content-faint resize-none outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors leading-relaxed"
-            />
-            <p class="text-[10px] text-content-faint mt-1.5">{{ t('agent.allowedToolsNote') }}</p>
-          </div>
+          <v-textarea
+            v-model="allowedTools"
+            :label="t('agent.allowedTools')"
+            rows="3"
+            spellcheck="false"
+            :hint="t('agent.allowedToolsNote')"
+            persistent-hint
+            variant="outlined"
+            :color="agentAccent(agent.name)"
+          />
 
           <!-- Auto-launch toggle -->
-          <div class="flex items-center justify-between py-1">
-            <div>
-              <p class="text-xs font-semibold text-content-muted uppercase tracking-wider">{{ t('agent.autoLaunch') }}</p>
-              <p class="text-[10px] text-content-faint mt-0.5">{{ t('agent.autoLaunchDesc') }}</p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              :aria-checked="autoLaunch"
-              class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1 focus:ring-offset-surface-primary"
-              :class="autoLaunch ? 'bg-violet-500' : 'bg-surface-secondary border-edge-default'"
-              @click="autoLaunch = !autoLaunch"
-            >
-              <span
-                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200"
-                :class="autoLaunch ? 'translate-x-4' : 'translate-x-0'"
-              />
-            </button>
-          </div>
+          <v-switch
+            v-model="autoLaunch"
+            :label="t('agent.autoLaunch')"
+            :hint="t('agent.autoLaunchDesc')"
+            persistent-hint
+            :color="agentAccent(agent.name)"
+            :style="{ '--switch-accent': agentAccent(agent.name) }"
+            density="compact"
+            inset
+            class="agent-switch"
+          />
 
           <!-- Max sessions parallèles -->
-          <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.maxSessions') }}</label>
-            <input
-              v-model="maxSessions"
-              type="text"
-              inputmode="numeric"
-              :placeholder="t('agent.maxSessionsUnlimited')"
-              class="w-full bg-surface-secondary border border-edge-default rounded-lg px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors"
-              :class="{ 'border-red-500 focus:ring-red-500 focus:border-red-500': maxSessionsInvalid }"
-            />
-            <p class="text-[10px] text-content-faint mt-1.5">{{ t('agent.maxSessionsNote') }}</p>
-            <p v-if="maxSessionsInvalid" class="text-[10px] text-red-400 mt-1">{{ t('agent.maxSessionsError') }}</p>
-          </div>
+          <v-text-field
+            v-model="maxSessions"
+            :label="t('agent.maxSessions')"
+            :placeholder="t('agent.maxSessionsUnlimited')"
+            inputmode="numeric"
+            :error-messages="maxSessionsInvalid ? t('agent.maxSessionsError') : ''"
+            :hint="t('agent.maxSessionsNote')"
+            persistent-hint
+            variant="outlined"
+            :color="agentAccent(agent.name)"
+          />
 
           <!-- Permission mode -->
           <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.permissionMode') }}</label>
-            <div class="flex gap-2">
-              <button
-                :class="[
-                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
-                  permissionMode === 'default'
-                    ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300'
-                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                ]"
-                @click="permissionMode = 'default'"
-              >{{ t('agent.permissionModeDefault') }}</button>
-              <button
-                :class="[
-                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
-                  permissionMode === 'auto'
-                    ? 'border-red-500/60 bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-300'
-                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                ]"
-                @click="permissionMode = 'auto'"
-              >{{ t('agent.permissionModeAuto') }}</button>
-            </div>
-            <p v-if="permissionMode === 'auto'" class="text-[10px] text-red-400 dark:text-red-400 mt-1.5 font-medium">⚠ {{ t('agent.permissionModeWarning') }}</p>
+            <div class="field-label text-label-medium mb-2">{{ t('agent.permissionMode') }}</div>
+            <v-btn-toggle v-model="permissionMode" mandatory :color="agentAccent(agent.name)" variant="outlined" density="compact" class="agent-toggle" :style="{ '--toggle-accent': agentAccent(agent.name) }">
+              <v-btn value="default">{{ t('agent.permissionModeDefault') }}</v-btn>
+              <v-btn value="auto">{{ t('agent.permissionModeAuto') }}</v-btn>
+            </v-btn-toggle>
+            <p v-if="permissionMode === 'auto'" class="text-caption text-error mt-1">
+              <v-icon size="small" color="error">mdi-alert</v-icon> {{ t('agent.permissionModeWarning') }}
+            </p>
           </div>
 
           <!-- Worktree isolation (T1143) -->
           <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.worktreeEnabled') }}</label>
-            <div class="flex gap-2">
-              <button
-                :class="[
-                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
-                  worktreeEnabled === null
-                    ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300'
-                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                ]"
-                @click="worktreeEnabled = null"
-              >
-                {{ t('agent.worktreeInherit') }}
-              </button>
-              <button
-                :class="[
-                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
-                  worktreeEnabled === 1
-                    ? 'border-emerald-500/60 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                ]"
-                @click="worktreeEnabled = 1"
-              >
-                {{ t('agent.worktreeOn') }}
-              </button>
-              <button
-                :class="[
-                  'flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-all',
-                  worktreeEnabled === 0
-                    ? 'border-amber-500/60 bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300'
-                    : 'border-edge-default bg-surface-secondary/40 text-content-muted hover:border-content-faint'
-                ]"
-                @click="worktreeEnabled = 0"
-              >
-                {{ t('agent.worktreeOff') }}
-              </button>
-            </div>
-            <p v-if="worktreeEnabled === null" class="text-[10px] text-content-faint mt-1.5">
+            <div class="field-label text-label-medium mb-2">{{ t('agent.worktreeEnabled') }}</div>
+            <v-btn-toggle v-model="worktreeToggleValue" mandatory :color="agentAccent(agent.name)" variant="outlined" density="compact" class="agent-toggle" :style="{ '--toggle-accent': agentAccent(agent.name) }">
+              <v-btn value="inherit">{{ t('agent.worktreeInherit') }}</v-btn>
+              <v-btn value="on">{{ t('agent.worktreeOn') }}</v-btn>
+              <v-btn value="off">{{ t('agent.worktreeOff') }}</v-btn>
+            </v-btn-toggle>
+            <p v-if="worktreeEnabled === null" class="text-caption text-medium-emphasis mt-1">
               {{ t('agent.worktreeCurrentGlobal', { status: settingsStore.worktreeDefault ? t('agent.worktreeOn') : t('agent.worktreeOff') }) }}
             </p>
-            <p class="text-[10px] text-content-faint mt-1">{{ t('agent.worktreeNote') }}</p>
+            <p class="text-caption text-disabled mt-1">{{ t('agent.worktreeNote') }}</p>
           </div>
 
           <!-- Périmètres -->
           <div>
-            <label class="block text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">{{ t('agent.perimeter') }}</label>
-            <div v-if="store.perimetresData.length === 0" class="text-xs text-content-faint italic mb-2">{{ t('agent.noPerimetre') }}</div>
-            <div v-else class="flex flex-wrap gap-1.5 mb-2">
-              <span
-                v-for="p in store.perimetresData"
-                :key="p.id"
-                class="px-2 py-0.5 rounded text-xs font-mono bg-surface-secondary border border-edge-default text-content-secondary"
-              >{{ p.name }}</span>
+            <div class="field-label text-label-medium mb-2">{{ t('agent.perimeter') }}</div>
+            <div v-if="store.perimetresData.length === 0" class="text-caption text-disabled mb-2" style="font-style: italic;">{{ t('agent.noPerimetre') }}</div>
+            <div v-else class="d-flex flex-wrap ga-1 mb-2">
+              <v-chip v-for="p in store.perimetresData" :key="p.id" size="small" label>{{ p.name }}</v-chip>
             </div>
-            <div class="flex gap-2">
-              <input
+            <div class="d-flex ga-2">
+              <v-text-field
                 v-model="newPerimetreName"
-                class="flex-1 bg-surface-secondary border border-edge-default rounded-lg px-3 py-1.5 text-xs font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-colors"
                 :placeholder="t('agent.newPerimetrePlaceholder')"
+                density="compact"
+                variant="outlined"
+                hide-details
+                :color="agentAccent(agent.name)"
+                class="flex-grow-1"
                 @keydown.enter="addPerimetre"
                 @keydown.esc="newPerimetreName = ''"
               />
-              <button
-                class="px-3 py-1.5 text-xs font-medium rounded-lg border border-edge-default bg-surface-secondary text-content-secondary hover:border-violet-500 hover:text-violet-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              <v-btn
                 :disabled="addingPerimetre || !newPerimetreName.trim()"
+                :color="agentAccent(agent.name)"
+                size="small"
+                variant="outlined"
                 @click="addPerimetre"
-              >{{ t('agent.newPerimetre') }}</button>
+              >{{ t('agent.newPerimetre') }}</v-btn>
             </div>
-            <div v-if="perimètreError" class="mt-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800/50 rounded-md">
-              <p class="text-xs text-red-700 dark:text-red-400">{{ perimètreError }}</p>
-            </div>
+            <p v-if="perimètreError" class="text-caption text-error mt-1">{{ perimètreError }}</p>
           </div>
 
           <!-- Erreur -->
-          <div v-if="error" class="px-3 py-2 bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800/50 rounded-md">
-            <p class="text-xs text-red-700 dark:text-red-400">{{ error }}</p>
-          </div>
+          <v-alert v-if="error" type="error" variant="tonal" density="compact">
+            {{ error }}
+          </v-alert>
 
         </div>
 
         <!-- Footer -->
-        <div class="flex items-center justify-between gap-2 px-5 py-4 border-t border-edge-subtle bg-surface-base/50">
-          <button
-            class="px-4 py-2 text-sm font-medium text-red-500 hover:text-red-400 hover:bg-red-950/20 border border-red-800/40 hover:border-red-700/60 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        <div class="modal-footer">
+          <v-btn
+            color="error"
+            variant="outlined"
             :disabled="deleting || saving"
             @click="deleteAgent"
-          >{{ deleting ? t('agent.deleting') : t('agent.deleteAgent') }}</button>
-          <div class="flex items-center gap-2">
-            <button
-              class="px-4 py-2 text-sm text-content-muted hover:text-content-secondary hover:bg-surface-secondary rounded-lg transition-colors"
-              @click="emit('close')"
-            >{{ t('common.cancel') }}</button>
-            <button
-              class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              :style="{ backgroundColor: agentFg(agent.name) + '22', color: agentFg(agent.name), borderColor: agentBorder(agent.name), borderWidth: '1px' }"
+          >{{ deleting ? t('agent.deleting') : t('agent.deleteAgent') }}</v-btn>
+          <div class="d-flex align-center ga-2">
+            <v-btn variant="text" :style="{ color: agentAccent(agent.name) }" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
+            <v-btn
+              data-testid="btn-save"
+              :color="agentAccent(agent.name)"
+              variant="outlined"
               :disabled="saving || deleting || !name.trim() || maxSessionsInvalid"
               @click="save"
-            >{{ saving ? t('common.saving') : t('common.save') }}</button>
+            >{{ saving ? t('common.saving') : t('common.save') }}</v-btn>
           </div>
         </div>
 
-      </div>
+    </v-card>
     </div>
-  </Teleport>
+  </v-dialog>
 </template>
+
+<style scoped>
+/* Card layout */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+
+/* Header avatar */
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Field labels for toggle sections */
+.field-label {
+  font-size: 12px;
+  color: var(--content-muted);
+}
+
+/* Input text color — force on-surface to override Vuetify :color tint in dark mode (T1684) */
+.modal-body :deep(.v-field__input) {
+  color: rgb(var(--v-theme-on-surface)) !important;
+}
+
+/* Switch track color — force agent hex in teleported dialog (Vuetify hex color doesn't cascade correctly) */
+.agent-switch :deep(.v-selection-control--dirty .v-switch__track) {
+  background-color: var(--switch-accent) !important;
+}
+
+/* btn-toggle active state — :color prop ineffective in teleported dialog (T1608) */
+.agent-toggle :deep(.v-btn--active) {
+  color: var(--toggle-accent) !important;
+  border-color: var(--toggle-accent) !important;
+}
+</style>

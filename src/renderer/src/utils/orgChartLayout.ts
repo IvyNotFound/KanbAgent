@@ -47,11 +47,19 @@ export const CHILD_H_GAP = 14
 export const GROUP_GAP = 22
 export const CANVAS_PAD = 32
 
-export const DOT_COLORS: Record<DotStatus, string> = {
-  cyan: '#06b6d4',
-  green: '#22c55e',
-  yellow: '#eab308',
-  red: '#ef4444',
+export const DOT_COLORS_DARK: Record<DotStatus, string> = {
+  cyan: '#67e8f9',
+  green: '#86efac',
+  yellow: '#fde047',
+  red: '#fca5a5',
+  gray: '#a1a1aa',
+}
+
+export const DOT_COLORS_LIGHT: Record<DotStatus, string> = {
+  cyan: '#0891b2',
+  green: '#16a34a',
+  yellow: '#ca8a04',
+  red: '#dc2626',
   gray: '#52525b',
 }
 

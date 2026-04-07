@@ -3,7 +3,21 @@ import { resolve } from 'path'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          // Suppress "Failed to resolve component: v-xxx" warnings in tests
+          // by treating all Vuetify components (v-*) as known custom elements.
+          // Exception: v-treeview must NOT be treated as a custom element —
+          // Vue's compiler uses a different (broken) code path for custom elements
+          // with named slots (#item, #header), causing "Codegen node is missing" errors.
+          // T1668: v-treeview with named slots requires proper component slot compilation.
+          isCustomElement: (tag) => tag.startsWith('v-') && tag !== 'v-treeview',
+        },
+      },
+    }),
+  ],
   test: {
     // Global test configuration
     globals: true,
@@ -55,6 +69,10 @@ export default defineConfig({
     alias: {
       '@renderer': resolve(__dirname, 'src/renderer/src'),
       '@': resolve(__dirname, 'src/renderer/src'),
+      // T1523: route better-sqlite3 to a WASM stub so Vitest (Node v25.6.1,
+      // MODULE_VERSION 141) does not load the native binary compiled for Electron
+      // (MODULE_VERSION 145). Electron itself still uses the native binary at runtime.
+      'better-sqlite3': resolve(__dirname, 'src/main/__mocks__/better-sqlite3-vitest.ts'),
     },
   },
 })

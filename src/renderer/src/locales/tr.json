@@ -29,8 +29,6 @@
     "prevPage": "Önceki",
     "nextPage": "Sonraki",
     "pageOf": "Sayfa {page} / {total} ({count} görev)",
-    "listView": "Liste görünümü",
-    "treeView": "Ağaç görünümü",
     "staleTasks": "{count} durağan görev | {count} durağan görev"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Büyüt"
   },
   "tabBar": {
-    "openWslTerminal": "WSL terminali aç",
     "closeTab": "Kapat",
     "unsaved": "Kaydedilmemiş değişiklikler",
     "closeFileTitle": "Dosyayı kapat",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Ajan Kalitesi",
-    "all": "Tümü",
     "refresh": "Yenile",
     "loading": "Yükleniyor…",
     "error": "Hata: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Proje red oranı",
     "noRejections": "Red tespit edilmedi",
     "heuristicNote": "Buluşsal tespit — 'reject', 'return', 'todo' içeren inceleme yorumlarını algılar",
-    "colTotal": "Toplam",
-    "colRejected": "Reddedilen",
-    "colRate": "Oran",
-    "colBar": "Çubuk"
+    "colAgent": "Ajan",
+    "colRejections": "Red./Toplam",
+    "colRate": "Oran"
   },
   "sessionActivityChart": {
     "title": "Oturum Aktivitesi — Son 14 Gün",
@@ -578,7 +573,10 @@
     "streaming": "Devam ediyor…",
     "waitingMessages": "Mesajlar bekleniyor…",
     "turns": "{n} tur | {n} tur",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Mesaj gönder…",
+    "askQuestion": "Ajan sorusu",
+    "replyPlaceholder": "Ajana yanıt ver…"
   },
   "task": {
     "running": "Görev devam ediyor",
@@ -610,7 +608,8 @@
     "colSource": "Kaynak",
     "colTests": "Testler",
     "colFiles": "Dosyalar",
-    "scannedAt": "{date} tarihinde tarandı"
+    "scannedAt": "{date} tarihinde tarandı",
+    "languageDetail": "Dil detayları"
   },
   "update": {
     "available": "{version} güncellemesi mevcut",

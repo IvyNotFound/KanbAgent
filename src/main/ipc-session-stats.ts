@@ -205,11 +205,11 @@ export function registerSessionStatsHandlers(): void {
           dbPath,
           `SELECT t.id, t.title, t.status
            FROM task_links tl JOIN tasks t ON t.id = tl.from_task
-           WHERE tl.to_task = ? AND tl.type = 'blocks' AND t.status NOT IN ('done','archived')
+           WHERE tl.to_task = ? AND tl.type = 'blocks' AND t.status != 'archived'
            UNION
            SELECT t.id, t.title, t.status
            FROM task_links tl JOIN tasks t ON t.id = tl.to_task
-           WHERE tl.from_task = ? AND tl.type = 'depends_on' AND t.status NOT IN ('done','archived')`,
+           WHERE tl.from_task = ? AND tl.type = 'depends_on' AND t.status != 'archived'`,
           [taskId, taskId]
         ) as Array<{ id: number; title: string; status: string }>
         if (blockers.length) {

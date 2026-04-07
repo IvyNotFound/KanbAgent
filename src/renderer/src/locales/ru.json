@@ -29,8 +29,6 @@
     "prevPage": "Назад",
     "nextPage": "Вперёд",
     "pageOf": "Страница {page} / {total} ({count} задач)",
-    "listView": "Список",
-    "treeView": "Дерево",
     "staleTasks": "{count} зависшая задача | {count} зависших задач"
   },
   "taskCard": {
@@ -315,7 +313,6 @@
     "maximize": "Развернуть"
   },
   "tabBar": {
-    "openWslTerminal": "Открыть терминал WSL",
     "closeTab": "Закрыть",
     "unsaved": "Несохранённые изменения",
     "closeFileTitle": "Закрыть файл",
@@ -466,7 +463,6 @@
   },
   "quality": {
     "title": "Качество агентов",
-    "all": "Все",
     "refresh": "Обновить",
     "loading": "Загрузка…",
     "error": "Ошибка: {msg}",
@@ -474,10 +470,9 @@
     "rejectionRate": "Процент отклонений по проекту",
     "noRejections": "Отклонений не обнаружено",
     "heuristicNote": "Эвристическое обнаружение — комментарии проверяющих, содержащие «reject», «return» или «todo»",
-    "colTotal": "Всего",
-    "colRejected": "Отклонено",
-    "colRate": "Процент",
-    "colBar": "Столбец"
+    "colAgent": "Агент",
+    "colRejections": "Откл./Вс.",
+    "colRate": "Ставка"
   },
   "sessionActivityChart": {
     "title": "Активность сессий — последние 14 дней",
@@ -578,7 +573,10 @@
     "streaming": "В процессе…",
     "waitingMessages": "Ожидание сообщений…",
     "turns": "{n} ход | {n} ходов",
-    "ctx": "ctx"
+    "ctx": "ctx",
+    "inputPlaceholder": "Отправить сообщение…",
+    "askQuestion": "Вопрос агента",
+    "replyPlaceholder": "Ответить агенту…"
   },
   "task": {
     "running": "Задача выполняется",
@@ -610,7 +608,8 @@
     "colSource": "Источник",
     "colTests": "Тесты",
     "colFiles": "Файлы",
-    "scannedAt": "Сканировано {date}"
+    "scannedAt": "Сканировано {date}",
+    "languageDetail": "Детали языков"
   },
   "update": {
     "available": "Доступно обновление {version}",

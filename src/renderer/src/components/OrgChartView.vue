@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useAgentsStore } from '@renderer/stores/agents'
-import { agentFg } from '@renderer/utils/agentColor'
+import { agentFg, isDark, colorVersion } from '@renderer/utils/agentColor'
 import {
   type AgentRow,
   type LayoutGroup,
@@ -13,7 +13,8 @@ import {
   GROUP_HEADER_H,
   GROUP_GAP,
   CANVAS_PAD,
-  DOT_COLORS,
+  DOT_COLORS_DARK,
+  DOT_COLORS_LIGHT,
   buildGroupLayout,
   buildFlatGroup,
   flattenGroups,
@@ -125,6 +126,11 @@ const layout = computed<{ groups: LayoutGroup[]; totalW: number; totalH: number 
 const allGroupsFlat = computed(() => flattenGroups(layout.value.groups))
 const allAgentsFlat = computed(() => allGroupsFlat.value.flatMap(g => g.agents))
 
+const dotColors = computed(() => {
+  void colorVersion.value
+  return isDark() ? DOT_COLORS_DARK : DOT_COLORS_LIGHT
+})
+
 // ── Pan/zoom ──────────────────────────────────────────────────────────────────
 
 const transform = ref({ x: 0, y: 0, scale: 1 })
@@ -189,43 +195,37 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-surface-base overflow-hidden">
+  <div class="oc-view">
     <!-- Header -->
-    <div class="shrink-0 flex items-center justify-between px-5 py-2.5 border-b border-edge-subtle">
-      <div class="flex items-center gap-3">
-        <h2 class="text-xl font-semibold text-content-primary">{{ t('orgchart.agentsTitle') }}</h2>
-        <span v-if="loading" class="text-[10px] text-content-faint animate-pulse">•••</span>
+    <div class="oc-header">
+      <div class="oc-header-left">
+        <h2 class="oc-title text-h6 font-weight-medium">{{ t('orgchart.agentsTitle') }}</h2>
+        <span v-if="loading" class="oc-loading text-label-medium">•••</span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="oc-header-right">
         <!-- Legend -->
-        <div class="hidden sm:flex items-center gap-3 mr-3">
-          <span v-for="(color, key) in DOT_COLORS" :key="key" class="flex items-center gap-1 text-[10px] text-content-faint">
-            <span class="w-2 h-2 rounded-full inline-block" :style="{ background: color }"></span>
+        <div class="oc-legend">
+          <span v-for="(color, key) in dotColors" :key="key" class="oc-legend-item text-label-medium">
+            <span class="oc-legend-dot" :style="{ background: color }"></span>
             <span>{{ key === 'cyan' ? t('orgchart.status.active') : key === 'green' ? t('orgchart.status.todo') : key === 'yellow' ? t('orgchart.status.idle') : key === 'red' ? t('orgchart.status.blocked') : t('orgchart.status.inactive') }}</span>
           </span>
         </div>
-        <button
-          class="px-2.5 py-1 text-xs bg-surface-secondary hover:bg-surface-tertiary text-content-muted rounded transition-colors"
-          @click="fitView"
-        >Fit</button>
-        <button
-          class="px-2.5 py-1 text-xs text-content-subtle hover:text-content-secondary transition-colors"
-          @click="fetchData"
-        >&#8635;</button>
+        <v-btn variant="tonal" size="small" class="oc-btn text-caption" @click="fitView">Fit</v-btn>
+        <v-btn icon="mdi-refresh" variant="text" size="small" :loading="loading" :title="t('common.refresh')" @click="fetchData" />
       </div>
     </div>
 
     <!-- Empty state -->
-    <div v-if="!loading && agents.length === 0" class="flex items-center justify-center flex-1">
-      <p class="text-sm text-content-faint italic">{{ t('orgchart.noAgents') }}</p>
+    <div v-if="!loading && agents.length === 0" class="oc-empty">
+      <p class="oc-empty-text text-body-2">{{ t('orgchart.noAgents') }}</p>
     </div>
 
     <!-- SVG Canvas -->
     <svg
       v-else
       ref="svgEl"
-      class="flex-1 w-full"
-      :class="dragging ? 'cursor-grabbing' : 'cursor-grab'"
+      class="oc-svg"
+      :class="dragging ? 'oc-svg--grabbing' : 'oc-svg--grab'"
       @wheel.passive="onWheel"
       @mousedown="onMouseDown"
     >
@@ -238,8 +238,8 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
             :width="group.w"
             :height="group.h"
             rx="8"
-            :fill="group.depth === 0 ? '#18181b' : '#27272a'"
-            :stroke="group.depth === 0 ? '#3f3f46' : '#52525b'"
+            :style="{ fill: group.depth === 0 ? 'rgb(var(--v-theme-surface-primary))' : 'rgb(var(--v-theme-surface-secondary))' }"
+            :stroke="group.depth === 0 ? 'rgb(var(--v-theme-edge-default))' : 'rgb(var(--v-theme-content-faint))'"
             stroke-width="1"
           />
           <text
@@ -249,7 +249,7 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
             font-size="11"
             font-family="ui-monospace, monospace"
             font-weight="600"
-            fill="#a1a1aa"
+            :style="{ fill: 'rgb(var(--v-theme-content-muted))' }"
           >{{ group.label }}</text>
         </g>
 
@@ -261,15 +261,15 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
             :width="CARD_W"
             :height="CARD_H"
             rx="8"
-            fill="#1c1c1e"
-            stroke="#3f3f46"
+            :style="{ fill: 'rgb(var(--v-theme-surface-base))' }"
+            stroke="rgb(var(--v-theme-edge-default))"
             stroke-width="1"
           />
           <circle
             :cx="node.x + CARD_W - 12"
             :cy="node.y + 12"
             r="5"
-            :fill="DOT_COLORS[node.status]"
+            :fill="dotColors[node.status]"
           >
             <animate
               v-if="node.status === 'cyan'"
@@ -292,17 +292,58 @@ watch(() => store.dbPath, async () => { await fetchData(); fitView() })
             :y="node.y + 38"
             font-size="10"
             font-family="ui-monospace, monospace"
-            fill="#71717a"
+            :style="{ fill: 'rgb(var(--v-theme-content-subtle))' }"
           >{{ node.type }}</text>
           <text
             :x="node.x + 10"
             :y="node.y + 56"
             font-size="10"
             font-family="ui-sans-serif, system-ui, sans-serif"
-            :fill="DOT_COLORS[node.status]"
+            :fill="dotColors[node.status]"
           >{{ node.status === 'cyan' ? t('orgchart.status.active') : node.status === 'green' ? t('orgchart.status.todoAssigned') : node.status === 'yellow' ? t('orgchart.status.idle') : node.status === 'red' ? t('orgchart.status.blocked') : t('orgchart.status.inactive') }}</text>
         </g>
       </g>
     </svg>
   </div>
 </template>
+
+<style scoped>
+.oc-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  overflow: hidden;
+}
+.oc-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge-subtle);
+}
+.oc-header-left { display: flex; align-items: center; gap: 12px; }
+.oc-title { color: var(--content-primary); margin: 0; }
+.oc-loading {}
+@keyframes ocPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.oc-header-right { display: flex; align-items: center; gap: 8px; }
+.oc-legend { display: flex; align-items: center; gap: 12px; margin-right: 12px; }
+.oc-legend-item { display: flex; align-items: center; gap: 4px; color: var(--content-faint); 
+}
+.oc-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.oc-btn {
+  color: var(--content-muted) !important;
+}
+.oc-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+.oc-empty-text {}
+.oc-svg { flex: 1; width: 100%; }
+.oc-svg--grab { cursor: grab; }
+.oc-svg--grabbing { cursor: grabbing; }
+</style>

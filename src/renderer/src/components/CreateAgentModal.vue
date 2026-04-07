@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { agentAccent, agentBg, agentFg } from '@renderer/utils/agentColor'
 import type { Agent } from '@renderer/types'
 
 const props = defineProps<{
@@ -48,6 +49,14 @@ const nameError = ref('')
 
 const isScoped = computed(() => SCOPED_TYPES.includes(type.value))
 
+// Worktree toggle bridge: v-btn-toggle needs primitive string values
+const worktreeToggleValue = computed({
+  get: () => worktreeEnabled.value === null ? 'inherit' : worktreeEnabled.value === 1 ? 'on' : 'off',
+  set: (val: string) => {
+    worktreeEnabled.value = val === 'inherit' ? null : val === 'on' ? 1 : 0
+  },
+})
+
 watch(type, () => {
   if (!isScoped.value) perimetre.value = ''
 })
@@ -57,11 +66,10 @@ watch(name, () => { nameError.value = '' })
 /**
  * Normalizes the agent name on each keystroke: lowercase + spaces→hyphens.
  * Enforces the kebab-case convention used throughout the project (e.g. dev-front-vuejs).
- * Uses :value + @input instead of v-model to apply normalization before Vue sets the ref.
+ * Uses :model-value + @update:model-value instead of v-model to apply normalization before Vue sets the ref.
  */
-function onNameInput(event: Event) {
-  const raw = (event.target as HTMLInputElement).value
-  name.value = raw.toLowerCase().replace(/ /g, '-')
+function onNameInput(value: string) {
+  name.value = value.toLowerCase().replace(/ /g, '-')
 }
 
 function defaultDescription(agentType: string): string {
@@ -96,7 +104,7 @@ onMounted(async () => {
         systemPromptSuffix.value = result.systemPromptSuffix ?? ''
         thinkingMode.value = result.thinkingMode === 'disabled' ? 'disabled' : 'auto'
         preferredModel.value = result.preferredModel ?? preferredModel.value
-        if (systemPrompt.value || systemPromptSuffix.value) showPrompt.value = true
+        // showPrompt stays false — always collapsed on open, even if content exists
       }
     }
   }
@@ -194,195 +202,187 @@ function handleKeydown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-      @click.self="emit('close')"
-      @keydown="handleKeydown"
-    >
-      <div class="bg-surface-primary border border-edge-default rounded-xl shadow-2xl w-[750px] flex flex-col max-h-[85vh]">
+  <v-dialog model-value max-width="750" scrollable @update:model-value="emit('close')">
+    <div data-testid="create-agent-backdrop" @click.self="emit('close')">
+    <v-card class="d-flex flex-column" style="max-height: 85vh;" @keydown="handleKeydown">
         <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-edge-subtle shrink-0">
-          <h2 class="text-base font-semibold text-content-primary">{{ isEditMode ? t('agent.editTitle') : t('agent.newTitle') }}</h2>
-          <button
-            class="w-7 h-7 flex items-center justify-center rounded text-content-subtle hover:text-content-secondary hover:bg-surface-secondary transition-colors"
+        <div class="modal-header">
+          <template v-if="isEditMode && agent">
+            <div class="d-flex align-center ga-3">
+              <div class="agent-avatar" :style="{ background: agentBg(agent.name), color: agentFg(agent.name) }">
+                {{ agent.name.slice(0, 1).toUpperCase() }}
+              </div>
+              <div>
+                <p class="text-caption" style="color: var(--content-muted); line-height: 1.2;">{{ t('agent.editTitle') }}</p>
+                <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary); line-height: 1.3;">{{ agent.name }}</h2>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <h2 class="text-body-1 font-weight-medium" style="color: var(--content-primary)">{{ t('agent.newTitle') }}</h2>
+          </template>
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            data-testid="btn-close"
+            :color="isEditMode && agent ? agentAccent(agent.name) : undefined"
             @click="emit('close')"
-          >
-            <svg viewBox="0 0 16 16" fill="currentColor" class="w-3.5 h-3.5">
-              <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
-            </svg>
-          </button>
+          />
         </div>
 
         <!-- Form -->
-        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-
+        <div class="modal-body">
           <!-- Nom -->
-          <div>
-            <label class="block text-xs text-content-muted mb-1">{{ t('sidebar.name') }} <span class="text-red-400">*</span></label>
-            <input
-              :value="name"
-              :class="[
-                'w-full bg-surface-secondary border rounded-md px-3 py-2 text-sm text-content-primary font-mono outline-none focus:ring-1 focus:ring-violet-500 transition-colors',
-                nameError ? 'border-red-500' : 'border-edge-default'
-              ]"
-              type="text"
-              autofocus
-              placeholder="dev-back-api"
-              @input="onNameInput"
-            />
-            <p v-if="nameError" class="text-xs text-red-400 mt-1">{{ nameError }}</p>
-            <p v-else class="text-xs text-content-faint mt-1">{{ t('agent.nameFormatShort') }}</p>
-          </div>
+          <v-text-field
+            :model-value="name"
+            autofocus
+            placeholder="dev-back-api"
+            :label="`${t('sidebar.name')} *`"
+            :error-messages="nameError"
+            :hint="t('agent.nameFormatShort')"
+            persistent-hint
+            variant="outlined"
+            :color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+            @update:model-value="onNameInput"
+          />
 
           <!-- Type -->
-          <div>
-            <label class="block text-xs text-content-muted mb-1">{{ t('agent.type') }}</label>
-            <div class="grid grid-cols-4 gap-1">
-              <button
-                v-for="t in ALL_TYPES"
-                :key="t"
-                :class="[
-                  'py-1.5 px-2 rounded text-xs font-mono transition-colors',
-                  type === t ? 'bg-violet-600 text-white' : 'bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
-                ]"
-                @click="type = t"
-              >{{ t }}</button>
-            </div>
-          </div>
+          <v-select
+            v-model="type"
+            :items="ALL_TYPES"
+            :label="t('agent.type')"
+            variant="outlined"
+            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+            hide-details
+          />
 
           <!-- Périmètre (scoped only) -->
-          <div v-if="isScoped">
-            <label class="block text-xs text-content-muted mb-1">{{ t('agent.perimeter') }}</label>
-            <input
-              v-model="perimetre"
-              list="perimetres-list"
-              type="text"
-              placeholder="front-vuejs"
-              class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-primary font-mono outline-none focus:ring-1 focus:ring-violet-500"
-            />
-            <datalist id="perimetres-list">
-              <option v-for="p in store.perimetresData" :key="p.id" :value="p.name" />
-            </datalist>
-          </div>
+          <v-combobox
+            v-if="isScoped"
+            v-model="perimetre"
+            :items="store.perimetresData.map(p => p.name)"
+            :label="t('agent.perimeter')"
+            placeholder="front-vuejs"
+            variant="outlined"
+            density="compact"
+            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+            hide-details
+          />
 
           <!-- Description (pour CLAUDE.md) — create mode uniquement -->
-          <div v-if="!isEditMode">
-            <label class="block text-xs text-content-muted mb-1">{{ t('sidebar.description') }} <span class="text-content-faint">(CLAUDE.md)</span></label>
-            <input
-              v-model="description"
-              type="text"
-              class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm text-content-tertiary outline-none focus:ring-1 focus:ring-violet-500"
-            />
-          </div>
+          <v-text-field
+            v-if="!isEditMode"
+            v-model="description"
+            :label="`${t('sidebar.description')} (CLAUDE.md)`"
+            variant="outlined"
+          />
 
           <!-- Thinking mode -->
           <div>
-            <label class="block text-xs text-content-muted mb-1">{{ t('launch.thinkingMode') }}</label>
-            <div class="flex gap-2">
-              <button
-                :class="['flex-1 py-1.5 text-xs rounded transition-colors', thinkingMode === 'auto' ? 'bg-violet-600 text-white' : 'bg-surface-secondary text-content-muted hover:bg-surface-tertiary']"
-                @click="thinkingMode = 'auto'"
-              >{{ t('launch.auto') }}</button>
-              <button
-                :class="['flex-1 py-1.5 text-xs rounded transition-colors', thinkingMode === 'disabled' ? 'bg-violet-600 text-white' : 'bg-surface-secondary text-content-muted hover:bg-surface-tertiary']"
-                @click="thinkingMode = 'disabled'"
-              >{{ t('launch.disabled') }}</button>
-            </div>
+            <div class="field-label text-label-medium mb-2">{{ t('launch.thinkingMode') }}</div>
+            <v-btn-toggle v-model="thinkingMode" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" variant="outlined" density="compact">
+              <v-btn value="auto">{{ t('launch.auto') }}</v-btn>
+              <v-btn value="disabled">{{ t('launch.disabled') }}</v-btn>
+            </v-btn-toggle>
           </div>
 
           <!-- Modèle préféré -->
-          <div>
-            <label class="block text-xs text-content-muted mb-1">{{ t('agent.preferredModel') }}</label>
-            <input
-              v-model="preferredModel"
-              type="text"
-              placeholder="anthropic/claude-opus-4-5"
-              class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 transition-colors"
-            />
-            <p class="text-xs text-content-faint mt-1">{{ t('agent.preferredModelNote') }}</p>
-          </div>
+          <v-text-field
+            v-model="preferredModel"
+            :label="t('agent.preferredModel')"
+            placeholder="anthropic/claude-opus-4-5"
+            :hint="t('agent.preferredModelNote')"
+            persistent-hint
+            variant="outlined"
+            :color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+          />
 
           <!-- Sessions parallèles max (edit mode uniquement) -->
-          <div v-if="isEditMode">
-            <label class="block text-xs text-content-muted mb-1">{{ t('agent.maxSessions') }}</label>
-            <input
-              v-model="maxSessions"
-              type="text"
-              inputmode="numeric"
-              :placeholder="t('agent.maxSessionsUnlimited')"
-              class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-sm font-mono text-content-primary outline-none focus:ring-1 focus:ring-violet-500 transition-colors"
-              :class="{ 'border-red-500 focus:ring-red-500': maxSessionsInvalid }"
-            />
-            <p class="text-xs text-content-faint mt-1">{{ t('agent.maxSessionsNote') }}</p>
-            <p v-if="maxSessionsInvalid" class="text-xs text-red-400 mt-1">{{ t('agent.maxSessionsError') }}</p>
-          </div>
+          <v-text-field
+            v-if="isEditMode"
+            v-model="maxSessions"
+            :label="t('agent.maxSessions')"
+            :placeholder="t('agent.maxSessionsUnlimited')"
+            inputmode="numeric"
+            :error-messages="maxSessionsInvalid ? t('agent.maxSessionsError') : ''"
+            :hint="t('agent.maxSessionsNote')"
+            persistent-hint
+            variant="outlined"
+            :color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+          />
 
           <!-- Worktree isolation (edit mode uniquement) -->
           <div v-if="isEditMode">
-            <label class="block text-xs text-content-muted mb-1">{{ t('agent.worktreeEnabled') }}</label>
-            <div class="flex gap-2">
-              <button
-                :class="[
-                  'flex-1 py-1.5 text-xs rounded transition-colors border',
-                  worktreeEnabled === null
-                    ? 'border-violet-500/60 bg-violet-100 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300'
-                    : 'border-edge-default bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
-                ]"
-                @click="worktreeEnabled = null"
-              >{{ t('agent.worktreeInherit') }}</button>
-              <button
-                :class="[
-                  'flex-1 py-1.5 text-xs rounded transition-colors border',
-                  worktreeEnabled === 1
-                    ? 'border-emerald-500/60 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-                    : 'border-edge-default bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
-                ]"
-                @click="worktreeEnabled = 1"
-              >{{ t('agent.worktreeOn') }}</button>
-              <button
-                :class="[
-                  'flex-1 py-1.5 text-xs rounded transition-colors border',
-                  worktreeEnabled === 0
-                    ? 'border-amber-500/60 bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300'
-                    : 'border-edge-default bg-surface-secondary text-content-muted hover:bg-surface-tertiary'
-                ]"
-                @click="worktreeEnabled = 0"
-              >{{ t('agent.worktreeOff') }}</button>
-            </div>
-            <p v-if="worktreeEnabled === null" class="text-xs text-content-faint mt-1">
+            <div class="field-label text-label-medium mb-2">{{ t('agent.worktreeEnabled') }}</div>
+            <v-btn-toggle v-model="worktreeToggleValue" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" variant="outlined" density="compact">
+              <v-btn value="inherit">{{ t('agent.worktreeInherit') }}</v-btn>
+              <v-btn value="on">{{ t('agent.worktreeOn') }}</v-btn>
+              <v-btn value="off">{{ t('agent.worktreeOff') }}</v-btn>
+            </v-btn-toggle>
+            <p v-if="worktreeEnabled === null" class="text-caption text-medium-emphasis mt-1">
               {{ t('agent.worktreeCurrentGlobal', { status: settingsStore.worktreeDefault ? t('agent.worktreeOn') : t('agent.worktreeOff') }) }}
             </p>
-            <p class="text-xs text-content-faint mt-1">{{ t('agent.worktreeNote') }}</p>
+            <p class="text-caption text-disabled mt-1">{{ t('agent.worktreeNote') }}</p>
           </div>
 
           <!-- System prompt (optionnel, collapsible) -->
-          <div>
-            <button
-              class="flex items-center gap-1.5 text-xs text-content-subtle hover:text-content-tertiary transition-colors"
+          <div class="prompt-section">
+            <div
+              class="prompt-header"
+              role="button"
+              tabindex="0"
               @click="showPrompt = !showPrompt"
+              @keydown.enter="showPrompt = !showPrompt"
+              @keydown.space.prevent="showPrompt = !showPrompt"
             >
-              <svg :class="['w-3 h-3 transition-transform', showPrompt ? 'rotate-90' : '']" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M6 3.5l5 4.5-5 4.5V3.5z"/>
-              </svg>
-              System prompt {{ isEditMode ? '' : t('agent.systemPromptOptional') }}
-            </button>
-            <div v-if="showPrompt" class="mt-2 flex flex-col gap-2">
-              <textarea
+              <div class="d-flex align-center ga-2 flex-1 min-width-0">
+                <v-icon :class="['prompt-arrow', showPrompt ? 'prompt-arrow--open' : '']" size="15">mdi-chevron-right</v-icon>
+                <span class="prompt-title">System prompt</span>
+                <span v-if="!isEditMode" class="prompt-optional">{{ t('agent.systemPromptOptional') }}</span>
+              </div>
+              <v-chip
+                v-if="systemPrompt || systemPromptSuffix"
+                size="x-small"
+                variant="tonal"
+                class="ml-auto flex-shrink-0"
+              >
+                {{ systemPrompt.length + systemPromptSuffix.length }} chars
+              </v-chip>
+            </div>
+            <div v-if="!showPrompt && (systemPrompt || systemPromptSuffix)" class="prompt-preview-line">
+              {{ (systemPrompt || systemPromptSuffix).slice(0, 100).trim() }}{{ (systemPrompt || systemPromptSuffix).length > 100 ? '…' : '' }}
+            </div>
+            <div v-if="showPrompt" class="prompt-expanded-body">
+              <v-textarea
                 v-model="systemPrompt"
-                rows="14"
+                rows="8"
                 spellcheck="true"
                 :placeholder="t('agent.systemPromptPlaceholder')"
-                class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-xs text-content-tertiary font-mono outline-none focus:ring-1 focus:ring-violet-500 resize-y"
+                hide-details
+                variant="outlined"
+                :color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+                :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
               />
               <div v-if="isEditMode">
-                <label class="block text-xs text-content-subtle mb-1">{{ t('agent.hiddenSuffix') }} <span class="text-content-faint">({{ t('agent.hiddenSuffixCode') }})</span></label>
-                <textarea
+                <div class="field-label-subtle text-label-medium mb-1">
+                  {{ t('agent.hiddenSuffix') }}
+                  <span class="field-label-note">({{ t('agent.hiddenSuffixCode') }})</span>
+                </div>
+                <v-textarea
                   v-model="systemPromptSuffix"
-                  rows="12"
+                  rows="6"
                   spellcheck="true"
                   :placeholder="t('agent.systemPromptSuffixPlaceholder')"
-                  class="w-full bg-surface-secondary border border-edge-default rounded-md px-3 py-2 text-xs text-content-tertiary font-mono outline-none focus:ring-1 focus:ring-violet-500 resize-y"
+                  hide-details
+                  variant="outlined"
+                  :color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+                  :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
                 />
               </div>
             </div>
@@ -390,36 +390,152 @@ function handleKeydown(e: KeyboardEvent) {
         </div>
 
         <!-- Footer -->
-        <div class="px-5 py-3 border-t border-edge-subtle flex flex-col gap-2 shrink-0">
-          <p v-if="deleteError" class="text-xs text-red-400">{{ deleteError }}</p>
-          <div class="flex items-center justify-between">
+        <div class="modal-footer">
+          <p v-if="deleteError" class="text-caption text-error">{{ deleteError }}</p>
+          <div class="d-flex align-center justify-space-between">
             <!-- Left: destructive action isolated from primary actions -->
             <div>
-              <button
+              <v-btn
                 v-if="isEditMode"
-                class="px-4 py-1.5 text-sm bg-red-700 hover:bg-red-600 text-white rounded-md transition-colors disabled:opacity-50"
+                color="error"
+                variant="outlined"
                 :disabled="deleting || loading"
                 @click="deleteAgent"
-              >{{ deleting ? t('agent.deleting') : t('agent.deleteAgent') }}</button>
+              >
+                {{ deleting ? t('agent.deleting') : t('agent.deleteAgent') }}
+              </v-btn>
             </div>
             <!-- Right: primary actions + shortcut hint near the submit button -->
-            <div class="flex items-center gap-3">
-              <span class="text-xs text-content-faint">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
-              <button
-                class="px-4 py-1.5 text-sm text-content-muted hover:text-content-secondary transition-colors"
-                @click="emit('close')"
-              >{{ t('common.cancel') }}</button>
-              <button
-                class="px-4 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded-md transition-colors disabled:opacity-50"
+            <div class="d-flex align-center ga-3">
+              <span class="text-caption text-disabled">{{ isEditMode ? t('agent.saveShortcut') : t('agent.createShortcut') }}</span>
+              <v-btn variant="text" :color="isEditMode && agent ? agentAccent(agent.name) : undefined" @click="emit('close')">{{ t('common.cancel') }}</v-btn>
+              <v-btn
+                :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+                data-testid="btn-submit"
                 :disabled="loading || !name.trim() || (isEditMode && maxSessionsInvalid)"
                 @click="submit"
               >
                 {{ loading ? (isEditMode ? t('common.saving') : t('agent.creating')) : (isEditMode ? t('common.save') : t('agent.create')) }}
-              </button>
+              </v-btn>
             </div>
           </div>
         </div>
-      </div>
+    </v-card>
     </div>
-  </Teleport>
+  </v-dialog>
 </template>
+
+<style scoped>
+/* Card layout */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--edge-subtle);
+  flex-shrink: 0;
+}
+.modal-body {
+  flex: 1;
+  min-height: 0; /* allow flex item to shrink below content height so overflow-y: auto works */
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--edge-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Labels for toggle sections */
+.field-label {
+  font-size: 12px;
+  color: var(--content-muted);
+}
+.field-label-subtle {
+  font-size: 12px;
+  color: var(--content-subtle);
+}
+.field-label-note {
+  color: var(--content-faint);
+  margin-left: 4px;
+}
+
+/* Input text color — force on-surface to override Vuetify :color tint in dark mode (T1684) */
+.modal-body :deep(.v-field__input) {
+  color: rgb(var(--v-theme-on-surface)) !important;
+}
+
+/* System prompt section */
+.prompt-section {
+  border: 1px solid var(--edge-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.prompt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(var(--v-theme-surface-variant), 0.25);
+  gap: 8px;
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
+}
+.prompt-header:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.45);
+}
+.prompt-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--content-secondary);
+}
+.prompt-optional {
+  font-size: 11px;
+  color: var(--content-muted);
+}
+.prompt-preview-line {
+  padding: 4px 14px 8px 36px;
+  font-size: 11px;
+  color: var(--content-muted);
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(var(--v-theme-surface-variant), 0.1);
+}
+.prompt-arrow {
+  color: var(--content-muted);
+  flex-shrink: 0;
+  transition: transform var(--md-duration-short3) var(--md-easing-standard);
+}
+.prompt-arrow--open {
+  transform: rotate(90deg);
+}
+.prompt-expanded-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Header avatar (edit mode) */
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+</style>

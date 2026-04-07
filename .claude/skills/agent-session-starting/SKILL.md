@@ -67,7 +67,7 @@ If no tasks → ask the user what to work on, or wait for review to create ticke
 
 | Name | Scope |
 |---|---|
-| dev-front-vuejs | renderer/ — Vue 3 + TS + Tailwind |
+| dev-front-vuejs | renderer/ — Vue 3 + TS + Vuetify 3 (Material Design 3) |
 | dev-back-electron | main/ — Electron + Node + SQLite |
 | test-front-vuejs | tests renderer |
 | test-back-electron | tests main |

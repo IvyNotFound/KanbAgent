@@ -50,9 +50,9 @@ describe('CommandPalette', () => {
         stubs: teleportStub,
       },
     })
-    // With modelValue=false, v-if hides the palette content
-    const inner = wrapper.find('.fixed')
-    expect(inner.exists()).toBe(false)
+    // With modelValue=false, v-if on the inner wrapper hides all palette content
+    const input = wrapper.find('[data-testid="search-input"]')
+    expect(input.exists()).toBe(false)
   })
 
   it('renders search input when modelValue is true', () => {
@@ -63,7 +63,7 @@ describe('CommandPalette', () => {
         stubs: teleportStub,
       },
     })
-    const input = wrapper.find('input[type="text"]')
+    const input = wrapper.find('[data-testid="search-input"]')
     expect(input.exists()).toBe(true)
   })
 
@@ -76,7 +76,8 @@ describe('CommandPalette', () => {
       },
     })
 
-    const backdrop = wrapper.find('.fixed.inset-0')
+    // v-dialog handles the overlay click; the inner wrapper has @click.self as a test-compat fallback
+    const backdrop = wrapper.find('[data-testid="palette-backdrop"]')
     await backdrop.trigger('click')
     expect(wrapper.emitted('update:modelValue')).toHaveLength(1)
     expect(wrapper.emitted('update:modelValue')![0]).toEqual([false])

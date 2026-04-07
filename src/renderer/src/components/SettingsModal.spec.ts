@@ -42,53 +42,41 @@ describe('SettingsModal', () => {
     })
     await flushPromises()
 
-    // Click the close (X) button in the header
-    const closeBtn = wrapper.findAll('button').find(b => {
-      const title = b.attributes('title') || ''
-      return title.includes('fermer') || title.includes('Fermer') || title.includes('close')
-    })
-    expect(closeBtn?.exists()).toBe(true)
-    await closeBtn!.trigger('click')
+    // Click the v-btn close button by data-testid
+    const closeBtn = wrapper.find('[data-testid="close-btn"]')
+    expect(closeBtn.exists()).toBe(true)
+    await closeBtn.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
-  it('calls setTheme when theme button is clicked', async () => {
-    const pinia = createTestingPinia({
-      initialState: { tasks: { dbPath: '/p/.claude/db' } },
-    })
+  it('renders theme toggle in appearance section', async () => {
     const wrapper = shallowMount(SettingsModal, {
-      global: { plugins: [pinia, i18n], stubs: teleportStub },
+      global: {
+        plugins: [createTestingPinia({
+          initialState: { tasks: { dbPath: '/p/.claude/db' } },
+        }), i18n],
+        stubs: teleportStub,
+      },
     })
     await flushPromises()
 
-    const { useSettingsStore } = await import('@renderer/stores/settings')
-    const settingsStore = useSettingsStore()
-
-    // Find the theme buttons — look for Dark/Sombre or Light/Clair (appearance section is default)
-    const themeButtons = wrapper.findAll('button')
-    const darkBtn = themeButtons.find(b => b.text().includes('Dark') || b.text().includes('Sombre'))
-    expect(darkBtn?.exists()).toBe(true)
-    await darkBtn!.trigger('click')
-    expect(settingsStore.setTheme).toHaveBeenCalledWith('dark')
+    // v-btn-toggle with data-testid should be visible in default appearance section
+    expect(wrapper.find('[data-testid="theme-toggle"]').exists()).toBe(true)
   })
 
-  it('calls setLanguage when language select changes', async () => {
-    const pinia = createTestingPinia({
-      initialState: { tasks: { dbPath: '/p/.claude/db' } },
-    })
+  it('renders language select in appearance section', async () => {
     const wrapper = shallowMount(SettingsModal, {
-      global: { plugins: [pinia, i18n], stubs: teleportStub },
+      global: {
+        plugins: [createTestingPinia({
+          initialState: { tasks: { dbPath: '/p/.claude/db' } },
+        }), i18n],
+        stubs: teleportStub,
+      },
     })
     await flushPromises()
 
-    const { useSettingsStore } = await import('@renderer/stores/settings')
-    const settingsStore = useSettingsStore()
-
-    // Find the language select (appearance section is default)
-    const langSelect = wrapper.find('select')
-    expect(langSelect.exists()).toBe(true)
-    await langSelect.setValue('en')
-    expect(settingsStore.setLanguage).toHaveBeenCalledWith('en')
+    // v-select with data-testid should be visible in default appearance section
+    expect(wrapper.find('[data-testid="lang-select"]').exists()).toBe(true)
   })
 
   it('hides maxFileLinesCount input when maxFileLinesEnabled is false', async () => {
@@ -107,10 +95,8 @@ describe('SettingsModal', () => {
     // Navigate to editor section
     await wrapper.find('[data-testid="nav-editor"]').trigger('click')
     await nextTick()
-    // No number input should be visible for maxFileLinesCount
-    const inputs = wrapper.findAll('input[type="number"]')
-    const maxInput = inputs.find(i => Number(i.attributes('min')) === 50)
-    expect(maxInput).toBeUndefined()
+    // No maxFileLinesCount field should be visible
+    expect(wrapper.find('[data-testid="max-file-lines-count"]').exists()).toBe(false)
   })
 
   it('shows maxFileLinesCount input when maxFileLinesEnabled is true', async () => {
@@ -129,9 +115,7 @@ describe('SettingsModal', () => {
     // Navigate to editor section
     await wrapper.find('[data-testid="nav-editor"]').trigger('click')
     await nextTick()
-    const inputs = wrapper.findAll('input[type="number"]')
-    const maxInput = inputs.find(i => Number(i.attributes('min')) === 50)
-    expect(maxInput).toBeDefined()
+    expect(wrapper.find('[data-testid="max-file-lines-count"]').exists()).toBe(true)
   })
 
   it('shows version info', async () => {

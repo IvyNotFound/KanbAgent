@@ -14,22 +14,14 @@ const emit = defineEmits<{
   (e: 'navigate', taskId: number): void
 }>()
 
-/** Link type values as stored in the DB. */
-type LinkType = 'blocks' | 'depends_on' | 'related_to' | 'duplicates'
-
-const LINK_TYPE_COLOR: Record<string, string> = {
-  'blocks':     'bg-red-500/20 text-red-400 border-red-500/30',
-  'depends_on': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  'related_to': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  'duplicates': 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+const STATUS_STYLE: Record<string, { color: string; background: string; border: string }> = {
+  todo:        { color: 'rgb(var(--v-theme-warning))',   background: 'rgba(var(--v-theme-warning),0.12)',   border: 'rgba(var(--v-theme-warning),0.3)' },
+  in_progress: { color: 'rgb(var(--v-theme-secondary))', background: 'rgba(var(--v-theme-secondary),0.12)', border: 'rgba(var(--v-theme-secondary),0.3)' },
+  done:        { color: 'rgb(var(--v-theme-content-muted))', background: 'rgba(var(--v-theme-content-subtle),0.12)', border: 'rgba(var(--v-theme-content-subtle),0.3)' },
+  archived:    { color: 'rgb(var(--v-theme-content-subtle))', background: 'rgba(var(--v-theme-content-faint),0.12)', border: 'rgba(var(--v-theme-content-faint),0.3)' },
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  todo:        'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  in_progress: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  done:        'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  archived:    'bg-zinc-700/20 text-zinc-500 border-zinc-700/30',
-}
+const fallbackStatus = STATUS_STYLE.todo
 
 /** Tasks this task blocks or that this task depends on (outgoing) */
 const outgoing = computed(() =>
@@ -71,93 +63,179 @@ function linkedTaskStatus(link: TaskLink): string {
   return link.from_task === props.taskId ? link.to_status : link.from_status
 }
 
-function typeBadgeLabel(link: TaskLink): string {
-  const type = link.type as LinkType
-  const isSource = link.from_task === props.taskId
-  if (type === 'blocks') return isSource ? t('taskDetail.blocks') : t('taskDetail.blockedBy')
-  if (type === 'depends_on') return isSource ? t('taskDetail.blockedBy') : t('taskDetail.blocks')
-  if (type === 'related_to') return t('taskDetail.relatedTo')
-  if (type === 'duplicates') return 'duplicates'
-  return type
-}
 </script>
 
 <template>
-  <div class="flex flex-col gap-1">
+  <div class="dep-graph">
     <!-- No links -->
-    <p v-if="!hasLinks" class="text-xs text-content-faint italic">
+    <p v-if="!hasLinks" class="no-links">
       {{ t('taskDetail.noDependencies') }}
     </p>
 
     <template v-else>
       <!-- Outgoing: this task blocks or depends on -->
-      <div v-if="outgoing.length > 0" class="mb-1">
-        <p class="text-[10px] text-content-faint mb-1">{{ t('taskDetail.blocks') }}</p>
-        <div class="space-y-1">
+      <div v-if="outgoing.length > 0" class="dep-section">
+        <p class="dep-section-label text-label-medium">{{ t('taskDetail.blocks') }}</p>
+        <div class="dep-list">
           <button
             v-for="link in outgoing"
             :key="link.id"
-            class="w-full flex items-center gap-1.5 text-left hover:bg-surface-secondary rounded px-1 py-0.5 transition-colors group"
+            type="button"
+            class="dep-row"
             @click="emit('navigate', linkedTaskId(link))"
           >
-            <span :class="['text-[9px] px-1.5 py-0.5 rounded-full border font-medium shrink-0', LINK_TYPE_COLOR[link.type] ?? LINK_TYPE_COLOR['related_to']]">
-              {{ typeBadgeLabel(link) }}
-            </span>
-            <span :class="['text-[9px] px-1 py-0.5 rounded border font-mono shrink-0', STATUS_COLOR[linkedTaskStatus(link)] ?? STATUS_COLOR.todo]">
-              {{ linkedTaskStatus(link) }}
-            </span>
-            <span class="text-xs text-content-secondary truncate group-hover:text-content-primary transition-colors">
-              #{{ linkedTaskId(link) }} {{ linkedTaskTitle(link) }}
-            </span>
+            <span
+              class="dep-status-dot"
+              :style="{ backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color }"
+              :title="linkedTaskStatus(link)"
+            ></span>
+            <span class="dep-id">#{{ linkedTaskId(link) }}</span>
+            <span class="dep-title">{{ linkedTaskTitle(link) }}</span>
           </button>
         </div>
       </div>
 
       <!-- Incoming: blocked by or depended upon by -->
-      <div v-if="incoming.length > 0" class="mb-1">
-        <p class="text-[10px] text-content-faint mb-1">{{ t('taskDetail.blockedBy') }}</p>
-        <div class="space-y-1">
+      <div v-if="incoming.length > 0" class="dep-section">
+        <p class="dep-section-label text-label-medium">{{ t('taskDetail.blockedBy') }}</p>
+        <div class="dep-list">
           <button
             v-for="link in incoming"
             :key="link.id"
-            class="w-full flex items-center gap-1.5 text-left hover:bg-surface-secondary rounded px-1 py-0.5 transition-colors group"
+            type="button"
+            class="dep-row"
             @click="emit('navigate', linkedTaskId(link))"
           >
-            <span :class="['text-[9px] px-1.5 py-0.5 rounded-full border font-medium shrink-0', LINK_TYPE_COLOR[link.type] ?? LINK_TYPE_COLOR['related_to']]">
-              {{ typeBadgeLabel(link) }}
-            </span>
-            <span :class="['text-[9px] px-1 py-0.5 rounded border font-mono shrink-0', STATUS_COLOR[linkedTaskStatus(link)] ?? STATUS_COLOR.todo]">
-              {{ linkedTaskStatus(link) }}
-            </span>
-            <span class="text-xs text-content-secondary truncate group-hover:text-content-primary transition-colors">
-              #{{ linkedTaskId(link) }} {{ linkedTaskTitle(link) }}
-            </span>
+            <span
+              class="dep-status-dot"
+              :style="{ backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color }"
+              :title="linkedTaskStatus(link)"
+            ></span>
+            <span class="dep-id">#{{ linkedTaskId(link) }}</span>
+            <span class="dep-title">{{ linkedTaskTitle(link) }}</span>
           </button>
         </div>
       </div>
 
       <!-- Related: related_to, duplicates -->
-      <div v-if="related.length > 0">
-        <p class="text-[10px] text-content-faint mb-1">{{ t('taskDetail.relatedTo') }}</p>
-        <div class="space-y-1">
+      <div v-if="related.length > 0" class="dep-section">
+        <p class="dep-section-label text-label-medium">{{ t('taskDetail.relatedTo') }}</p>
+        <div class="dep-list">
           <button
             v-for="link in related"
             :key="link.id"
-            class="w-full flex items-center gap-1.5 text-left hover:bg-surface-secondary rounded px-1 py-0.5 transition-colors group"
+            type="button"
+            class="dep-row"
             @click="emit('navigate', linkedTaskId(link))"
           >
-            <span :class="['text-[9px] px-1.5 py-0.5 rounded-full border font-medium shrink-0', LINK_TYPE_COLOR[link.type] ?? LINK_TYPE_COLOR['related_to']]">
-              {{ link.type }}
-            </span>
-            <span :class="['text-[9px] px-1 py-0.5 rounded border font-mono shrink-0', STATUS_COLOR[linkedTaskStatus(link)] ?? STATUS_COLOR.todo]">
-              {{ linkedTaskStatus(link) }}
-            </span>
-            <span class="text-xs text-content-secondary truncate group-hover:text-content-primary transition-colors">
-              #{{ linkedTaskId(link) }} {{ linkedTaskTitle(link) }}
-            </span>
+            <span
+              class="dep-status-dot"
+              :style="{ backgroundColor: (STATUS_STYLE[linkedTaskStatus(link)] ?? fallbackStatus).color }"
+              :title="linkedTaskStatus(link)"
+            ></span>
+            <span class="dep-id">#{{ linkedTaskId(link) }}</span>
+            <span class="dep-title">{{ linkedTaskTitle(link) }}</span>
           </button>
         </div>
       </div>
     </template>
   </div>
 </template>
+
+<style scoped>
+.dep-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.no-links {
+  color: var(--content-faint);
+  font-style: italic;
+  font-size: 0.8125rem;
+  margin: 0;
+}
+
+.dep-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dep-section-label {
+  color: var(--content-muted);
+  margin: 0 0 4px;
+}
+
+.dep-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Native button replaces v-btn block — gives full control over text wrapping */
+.dep-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  text-align: left;
+  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
+  color: inherit;
+}
+
+/* MD3 state layer on hover */
+.dep-row:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.dep-row:focus-visible {
+  outline: 2px solid rgba(var(--v-theme-primary), 0.4);
+  outline-offset: 1px;
+}
+
+.dep-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  /* align dot to center of first text line (0.8125rem * 1.5 line-height ≈ 18px → center at ~9px → top ~5px) */
+  margin-top: 5px;
+}
+
+.dep-id {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--content-muted);
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: right;
+  line-height: 1.5;
+}
+
+.dep-title {
+  font-size: 0.8125rem; /* body-small MD3 — was 0.6875rem (text-caption) */
+  color: var(--content-secondary);
+  min-width: 0; /* critical: allows flex child to shrink below content width */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+  text-align: left;
+  transition: color var(--md-duration-short3) var(--md-easing-standard);
+}
+
+.dep-row:hover .dep-title {
+  color: var(--content-primary);
+}
+</style>

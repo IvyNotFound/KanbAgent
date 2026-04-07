@@ -18,6 +18,7 @@ import { registerAgentStreamHandlers } from './agent-stream'
 import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks, getHookSecret } from './hookServer'
 import { setupAutoUpdater, registerUpdaterIpc } from './updater'
 import { cleanupOrphanWorktreesAtStartup } from './worktree-cleanup'
+import { stopAllDbDaemons } from './db-daemon'
 
 // ── GPU flags for improved rendering performance ─────────────────────────────────
 // These MUST be set BEFORE app.whenReady() to take effect
@@ -204,6 +205,7 @@ app.whenReady().then(async () => {
 })
 app.on('window-all-closed', () => {
   hookServer?.close()
+  stopAllDbDaemons()
   if (process.platform !== 'darwin') app.quit()
 })
 app.on('activate', () => {

@@ -76,32 +76,16 @@ describe('tabs — initial state shape (L67-69 StringLiterals + L71 activeTabId)
     expect(dashboard.permanent).toBe(true)
   })
 
-  it('has timeline as third permanent tab with correct id, type, title', () => {
-    const store = useTabsStore()
-    const timeline = store.tabs.find(t => t.type === 'timeline')!
-    expect(timeline.id).toBe('timeline')
-    expect(timeline.type).toBe('timeline')
-    expect(timeline.title).toBe('Timeline')
-    expect(timeline.permanent).toBe(true)
-  })
-
-  it('has exactly 3 permanent tabs initially', () => {
+  it('has exactly 2 permanent tabs initially (backlog + dashboard)', () => {
     const store = useTabsStore()
     const permanentTabs = store.tabs.filter(t => t.permanent)
-    expect(permanentTabs).toHaveLength(3)
+    expect(permanentTabs).toHaveLength(2)
   })
 
   it('activeTabId is "backlog" initially (not empty string, L71 StringLiteral)', () => {
     const store = useTabsStore()
     expect(store.activeTabId).toBe('backlog')
     expect(store.activeTabId).not.toBe('')
-  })
-
-  it('timeline has permanent=true (not false, L69 BooleanLiteral mutation)', () => {
-    const store = useTabsStore()
-    const timeline = store.tabs.find(t => t.type === 'timeline')!
-    expect(timeline.permanent).toBe(true)
-    expect(timeline.permanent).not.toBe(false)
   })
 
   it('backlog tab id equals activeTabId on init (closing backlog is prevented)', () => {

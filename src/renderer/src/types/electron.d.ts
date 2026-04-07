@@ -22,6 +22,7 @@ declare global {
       fsListDir(dirPath: string, allowedDir: string): Promise<FileNode[]>
       fsReadFile(filePath: string, allowedDir: string): Promise<{ success: boolean; content?: string; error?: string }>
       fsWriteFile(filePath: string, content: string, allowedDir: string): Promise<{ success: boolean; error?: string }>
+      fsSaveImage(base64: string, mediaType: string): Promise<{ success: true; path: string }>
       windowMinimize(): Promise<void>
       windowMaximize(): Promise<void>
       windowClose(): Promise<void>
@@ -72,8 +73,7 @@ declare global {
       onAgentStream(id: string, cb: (event: Record<string, unknown>) => void): () => void
       onAgentConvId(id: string, cb: (convId: string) => void): () => void
       onAgentExit(id: string, cb: (exitCode: number | null) => void): () => void
-      openWslTerminal(): Promise<{ success: boolean; error?: string }>
-      /** Open a URL in the system default browser. Only http/https URLs are allowed (security). */
+/** Open a URL in the system default browser. Only http/https URLs are allowed (security). */
       openExternal(url: string): Promise<void>
       /** Git log with task ID extraction (T760/T761). Returns [] when not a git repo. */
       gitLog(projectPath: string, options?: { limit?: number; since?: string }): Promise<Array<{ hash: string; date: string; subject: string; author: string; taskIds: number[] }>>

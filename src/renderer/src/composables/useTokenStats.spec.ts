@@ -368,47 +368,47 @@ describe('cacheHitColor', () => {
     localStorage.clear()
   })
 
-  it('returns emerald color when cacheHitRate > 50', async () => {
+  it('returns #34d399 when cacheHitRate > 50', async () => {
     const { cacheHitColor, globalStats } = await setupComposable()
     // rate = 51%: cache_read=51, tokens_in=49
     globalStats.value = { tokens_in: 49, tokens_out: 0, tokens_cache_read: 51, tokens_cache_write: 0, total: 49, session_count: 1 }
-    expect(cacheHitColor.value).toContain('emerald')
+    expect(cacheHitColor.value).toBe('#34d399')
   })
 
-  it('returns faint color when cacheHitRate === 50 (not > 50)', async () => {
+  it('returns #fbbf24 when cacheHitRate === 50 (not > 50)', async () => {
     const { cacheHitColor, globalStats } = await setupComposable()
     // rate = 50%: cache_read=100, tokens_in=100
     globalStats.value = { tokens_in: 100, tokens_out: 0, tokens_cache_read: 100, tokens_cache_write: 0, total: 100, session_count: 1 }
     // 50 is NOT > 50, so checks >= 20: 50 >= 20 → amber
-    expect(cacheHitColor.value).toContain('amber')
+    expect(cacheHitColor.value).toBe('#fbbf24')
   })
 
-  it('returns amber color when cacheHitRate >= 20 and <= 50', async () => {
+  it('returns #fbbf24 when cacheHitRate >= 20 and <= 50', async () => {
     const { cacheHitColor, globalStats } = await setupComposable()
     // rate = 25%: cache_read=25, tokens_in=75
     globalStats.value = { tokens_in: 75, tokens_out: 0, tokens_cache_read: 25, tokens_cache_write: 0, total: 75, session_count: 1 }
-    expect(cacheHitColor.value).toContain('amber')
+    expect(cacheHitColor.value).toBe('#fbbf24')
   })
 
-  it('returns amber when cacheHitRate === 20 (boundary >= 20)', async () => {
+  it('returns #fbbf24 when cacheHitRate === 20 (boundary >= 20)', async () => {
     const { cacheHitColor, globalStats } = await setupComposable()
     // rate = 20%: cache_read=1, tokens_in=4 → 1/5 * 100 = 20
     globalStats.value = { tokens_in: 4, tokens_out: 0, tokens_cache_read: 1, tokens_cache_write: 0, total: 4, session_count: 1 }
-    expect(cacheHitColor.value).toContain('amber')
+    expect(cacheHitColor.value).toBe('#fbbf24')
   })
 
-  it('returns faint color when cacheHitRate < 20', async () => {
+  it('returns var(--content-faint) when cacheHitRate < 20', async () => {
     const { cacheHitColor, globalStats } = await setupComposable()
     // rate = 0%: all tokens_in, no cache_read
     globalStats.value = { tokens_in: 100, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 100, session_count: 1 }
-    expect(cacheHitColor.value).toContain('faint')
+    expect(cacheHitColor.value).toBe('var(--content-faint)')
   })
 
-  it('returns faint color when cacheHitRate === 19 (boundary < 20)', async () => {
+  it('returns var(--content-faint) when cacheHitRate === 19 (boundary < 20)', async () => {
     const { cacheHitColor, globalStats } = await setupComposable()
     // Need ~19% — use values that round to 19: cache_read=19, tokens_in=81 → 19/100 * 100 = 19
     globalStats.value = { tokens_in: 81, tokens_out: 0, tokens_cache_read: 19, tokens_cache_write: 0, total: 81, session_count: 1 }
-    expect(cacheHitColor.value).toContain('faint')
+    expect(cacheHitColor.value).toBe('var(--content-faint)')
   })
 })
 

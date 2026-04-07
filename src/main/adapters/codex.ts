@@ -54,19 +54,47 @@ export const codexAdapter: CliAdapter = {
 
   parseLine(line: string): StreamEvent | null {
     if (!line.trim()) return null
-    // Codex emits JSON events — attempt parse first, fallback to text wrapping.
+    // Codex emits OpenAI-compatible JSON events — attempt parse first, fallback to text wrapping.
     try {
       const parsed = JSON.parse(line) as Record<string, unknown>
-      // Normalize to StreamEvent shape (type field required)
-      if (typeof parsed.type === 'string') {
-        return parsed as unknown as StreamEvent
+      if (typeof parsed.type !== 'string') {
+        // JSON object without type — wrap as text
+        return { type: 'text', text: line }
       }
-      // JSON object without type — wrap as text
-      return { type: 'text', text: line }
+      // Handle OpenAI response.* events
+      if (parsed.type.startsWith('response.')) {
+        // response.output_item.added with function_call → tool_use block
+        if (parsed.type === 'response.output_item.added') {
+          const item = parsed.item as Record<string, unknown> | undefined
+          if (item?.type === 'function_call') {
+            let input: Record<string, unknown> = {}
+            try {
+              input = JSON.parse(typeof item.arguments === 'string' ? item.arguments : '{}') as Record<string, unknown>
+            } catch { /* malformed arguments — fall back to empty */ }
+            return {
+              type: 'assistant',
+              message: {
+                role: 'assistant',
+                content: [{
+                  type: 'tool_use',
+                  name: typeof item.name === 'string' ? item.name : 'unknown',
+                  input,
+                  tool_use_id: typeof item.call_id === 'string' ? item.call_id : undefined,
+                }],
+              },
+            } as StreamEvent
+          }
+        }
+        // response.completed and other lifecycle events — not displayed
+        return null
+      }
+      // Non-response events — pass through as-is (e.g. future Codex event types)
+      return parsed as unknown as StreamEvent
     } catch {
       // Plain text line — wrap as assistant text event
       return { type: 'text', text: line }
     }
+    // ask_user: N/A — --approval-mode full-auto suppresses all interactive prompts. (T1708)
   },
 
   /**

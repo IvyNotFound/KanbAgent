@@ -53,6 +53,11 @@ export const useTasksStore = defineStore('tasks', () => {
     if (!dbPath.value) return []
     const result = await window.electronAPI.queryDb(dbPath.value, sql, params)
     if (!Array.isArray(result)) {
+      const r = result as { success?: boolean; error?: string } | null
+      if (r && typeof r === 'object' && r.success === false && r.error === 'DB_CORRUPT') {
+        error.value = 'DB_CORRUPT'
+        return []
+      }
       console.warn('[tasks query] Unexpected result type:', result)
       return []
     }
