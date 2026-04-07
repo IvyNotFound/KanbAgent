@@ -22,6 +22,7 @@ declare global {
       fsListDir(dirPath: string, allowedDir: string): Promise<FileNode[]>
       fsReadFile(filePath: string, allowedDir: string): Promise<{ success: boolean; content?: string; error?: string }>
       fsWriteFile(filePath: string, content: string, allowedDir: string): Promise<{ success: boolean; error?: string }>
+      fsSaveImage(base64: string, mediaType: string): Promise<{ success: true; path: string }>
       windowMinimize(): Promise<void>
       windowMaximize(): Promise<void>
       windowClose(): Promise<void>

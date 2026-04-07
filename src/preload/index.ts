@@ -93,6 +93,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fsWriteFile: (filePath: string, content: string, allowedDir: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('fs:writeFile', filePath, content, allowedDir),
 
+  fsSaveImage: (base64: string, mediaType: string): Promise<{ success: true; path: string }> =>
+    ipcRenderer.invoke('fs:saveImage', base64, mediaType),
+
   // ── Window ─────────────────────────────────────────────────────────────────
 
   windowMinimize: (): Promise<void> => ipcRenderer.invoke('window-minimize'),

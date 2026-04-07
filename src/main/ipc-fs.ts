@@ -6,8 +6,8 @@
  * @module ipc-fs
  */
 
-import { ipcMain } from 'electron'
-import { readFile, writeFile, readdir } from 'fs/promises'
+import { ipcMain, app } from 'electron'
+import { readFile, writeFile, readdir, mkdir } from 'fs/promises'
 import type { Dirent } from 'fs'
 import { join, resolve, sep } from 'path'
 import { assertProjectPathAllowed } from './db'
@@ -63,8 +63,23 @@ export const ALLOWED_WRITE_EXTENSIONS = ['.md', '.ts', '.js', '.json', '.txt', '
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
-/** Register filesystem IPC handlers (listDir, readFile, writeFile). */
+/** Register filesystem IPC handlers (listDir, readFile, writeFile, saveImage). */
 export function registerFsHandlers(): void {
+  /**
+   * Save a base64-encoded image to a temp directory.
+   * @param base64Data - Base64-encoded image data
+   * @param mediaType - MIME type (image/png, image/webp, image/jpeg, etc.)
+   * @returns {{ success: true, path: string }} Absolute path to the saved file
+   */
+  ipcMain.handle('fs:saveImage', async (_event, base64Data: string, mediaType: string): Promise<{ success: true; path: string }> => {
+    const ext = mediaType.includes('png') ? 'png' : mediaType.includes('webp') ? 'webp' : 'jpg'
+    const dir = join(app.getPath('temp'), 'kanbagent', 'images')
+    await mkdir(dir, { recursive: true })
+    const filename = `img-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const filePath = join(dir, filename)
+    await writeFile(filePath, Buffer.from(base64Data, 'base64'))
+    return { success: true, path: filePath }
+  })
   /**
    * List directory contents (directories first, sorted). Path must be within allowedDir.
    * @param dirPath - Directory to list
