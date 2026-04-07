@@ -70,12 +70,12 @@ watch(() => store.dbPath, fetchQuality)
     </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="quality-state pa-8">
+    <div v-else-if="error" class="quality-state pa-4">
       <p class="quality-state-text quality-state-text--error text-caption">{{ t('quality.error', { msg: error }) }}</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="rows.length === 0" class="quality-state pa-8">
+    <div v-else-if="rows.length === 0" class="quality-state pa-4">
       <p class="quality-state-text text-caption">{{ t('quality.empty') }}</p>
     </div>
 
@@ -215,7 +215,7 @@ watch(() => store.dbPath, fetchQuality)
 }
 
 /* Per-agent table — 4 cols: agent | count | bar | rate */
-.quality-table { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+.quality-table { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
 .quality-cols {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) auto minmax(0, 2fr) minmax(0, 1fr);
