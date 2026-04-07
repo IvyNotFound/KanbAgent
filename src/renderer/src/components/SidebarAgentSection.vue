@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * SidebarAgentSection — section agents + groupes de la sidebar (T815/T946/T1668).
- * Utilise v-treeview (Vuetify MD3) pour l'arbre des groupes avec connecteurs natifs.
- * SidebarGroupNode n'est plus utilisé — tout est inlinés ici via les slots #header/#item.
- */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
@@ -27,8 +22,6 @@ const tabsStore = useTabsStore()
 const { push: pushToast } = useToast()
 
 // ── Composables ───────────────────────────────────────────────────────────────
-const dragDrop = useSidebarDragDrop()
-const sidebarGroups = useSidebarGroups()
 
 const {
   dragOverGroupId,
@@ -37,7 +30,7 @@ const {
   onGroupDragOver,
   onGroupDragLeave,
   onGroupDrop,
-} = dragDrop
+} = useSidebarDragDrop()
 
 const {
   confirmDeleteGroup,
@@ -58,7 +51,7 @@ const {
   cancelCreateSubgroup,
   handleDeleteGroup,
   onConfirmDeleteGroup,
-} = sidebarGroups
+} = useSidebarGroups()
 
 // ── Tree node types ───────────────────────────────────────────────────────────
 
@@ -77,18 +70,19 @@ interface AgentTreeNode {
   agent: Agent
 }
 
-// Helper to cast unknown slot item to known types (v-treeview types item as unknown)
+// v-treeview types slot item as unknown — these helpers restore the type safely
 function asGroup(item: unknown): GroupTreeNode { return item as GroupTreeNode }
 function asAgent(item: unknown): AgentTreeNode { return item as AgentTreeNode }
 
-// Helper to call v-treeview's expand/collapse toggle handler (may be array of fns)
+// Calls v-treeview's internal expand/collapse handler (Vuetify private API, may be array)
 function callToggle(handler: unknown, e: MouseEvent): void {
   e.stopPropagation()
   const h = handler as ((ev: MouseEvent) => void) | ((ev: MouseEvent) => void)[] | undefined
   if (Array.isArray(h)) { h.forEach(fn => fn(e)) } else { h?.(e) }
 }
 
-// ── Build tree for v-treeview ─────────────────────────────────────────────────
+// ── Tree items ────────────────────────────────────────────────────────────────
+
 const treeItems = computed<GroupTreeNode[]>(() => {
   const agents = store.agents
 
@@ -119,6 +113,9 @@ const treeItems = computed<GroupTreeNode[]>(() => {
 })
 
 // ── Opened state (localStorage-synced) ───────────────────────────────────────
+// Key `sidebar-group-{id}`: 'true' = collapsed, 'false' / absent = expanded (inverted semantics —
+// do not change, would break existing user state)
+
 const openedSet = ref(new Set<string>())
 const initializedGroupIds = new Set<number>()
 
@@ -163,6 +160,7 @@ function handleOpenedUpdate(newOpened: unknown): void {
 }
 
 // ── Modal state ───────────────────────────────────────────────────────────────
+
 const launchTarget = ref<Agent | null>(null)
 const showCreateAgent = ref(false)
 const editAgentTarget = ref<Agent | null>(null)
@@ -170,6 +168,7 @@ const contextMenu = ref<{ x: number; y: number; agent: Agent } | null>(null)
 const groupContextMenu = ref<{ x: number; y: number; group: AgentGroup } | null>(null)
 
 // ── Computed ──────────────────────────────────────────────────────────────────
+
 const openTerminalAgents = computed(() => {
   const set = new Set<string>()
   for (const tab of tabsStore.tabs) {
@@ -198,6 +197,7 @@ function isAgentSelected(id: number | string): boolean {
 }
 
 // ── Agent actions ─────────────────────────────────────────────────────────────
+
 function openAgentSession(agent: Agent): void {
   const terminalCount = tabsStore.tabs.filter(t => t.type === 'terminal' && t.agentName === agent.name).length
   const maxSessions = agent.max_sessions ?? 1
@@ -238,6 +238,7 @@ function contextMenuItemsFor(agent: Agent): ContextMenuItem[] {
 }
 
 // ── Group actions ─────────────────────────────────────────────────────────────
+
 function openGroupContextMenu(event: MouseEvent, group: AgentGroup): void {
   event.preventDefault()
   event.stopPropagation()
@@ -268,11 +269,14 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 
 <template>
   <div class="agent-section py-3 px-4">
+    <!-- Reset agent filter -->
     <div v-if="store.selectedAgentId !== null" class="reset-row mb-2">
-      <v-btn variant="text" size="small" color="primary" class="reset-btn text-caption" @click="store.selectedAgentId = null">{{ t('sidebar.reset') }}</v-btn>
+      <v-btn variant="text" size="small" color="primary" class="reset-btn text-caption" @click="store.selectedAgentId = null">
+        {{ t('sidebar.reset') }}
+      </v-btn>
     </div>
 
-    <!-- Création de groupe inline (top-level) — MD3 v-text-field -->
+    <!-- Inline group creation (top-level) -->
     <div v-if="creatingGroup" class="group-create-row ga-1 mb-2">
       <v-text-field
         v-model="newGroupName"
@@ -289,7 +293,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       <v-btn variant="text" density="compact" size="x-small" class="icon-btn icon-btn--cancel text-caption" @click="cancelCreateGroup">✕</v-btn>
     </div>
 
-    <!-- ── Groupes hiérarchiques via v-treeview MD3 (T1668) ── -->
+    <!-- Hierarchical groups via v-treeview -->
     <v-treeview
       v-show="treeItems.length > 0"
       :items="treeItems"
@@ -303,8 +307,10 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       class="pa-0 tree-section"
       @update:opened="handleOpenedUpdate"
     >
-      <!-- GROUP HEADER — default slot only, no nested named slots to avoid Vue compiler issue.
-           callToggle handles expand/collapse manually via props.onToggleExpand. -->
+      <!-- GROUP HEADER
+           callToggle drives expand/collapse via Vuetify's internal onToggleExpand.
+           v-show (not v-if) on rename input and group name — Vue compiler generates
+           invalid code for v-if/v-else inside Vuetify slots. -->
       <template #header="{ props, item }">
         <div
           class="group-dnd-zone"
@@ -316,10 +322,8 @@ async function duplicateAgent(agent: Agent): Promise<void> {
           @drop="onGroupDrop($event, asGroup(item).group.id)"
           @contextmenu.prevent="openGroupContextMenu($event, asGroup(item).group)"
         >
-          <!-- v-list-item avec indentation CSS native (.v-treeview-group cascade) -->
           <v-list-item :title="undefined" class="group-item pa-0">
             <div class="group-header-row px-1">
-              <!-- Bouton toggle expand/collapse -->
               <v-btn
                 variant="text"
                 density="compact"
@@ -336,7 +340,6 @@ async function duplicateAgent(agent: Agent): Promise<void> {
                 </v-icon>
               </v-btn>
 
-              <!-- Renommage inline ou nom du groupe — v-show évite le bug Vue codegen -->
               <v-text-field
                 v-show="renamingGroupId === asGroup(item).group.id"
                 v-model="renameGroupName"
@@ -355,7 +358,6 @@ async function duplicateAgent(agent: Agent): Promise<void> {
                 @dblclick="startRename(asGroup(item).group)"
               >{{ asGroup(item).group.name }}</span>
 
-              <!-- Boutons d'action -->
               <v-btn variant="text" density="compact" size="x-small" class="header-btn" :title="t('sidebar.renameGroup')" @click.stop="startRename(asGroup(item).group)">
                 <v-icon size="12">mdi-pencil</v-icon>
               </v-btn>
@@ -365,8 +367,11 @@ async function duplicateAgent(agent: Agent): Promise<void> {
             </div>
           </v-list-item>
 
-          <div v-show="dragOverGroupId === asGroup(item).group.id" class="drop-hint text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
+          <div v-show="dragOverGroupId === asGroup(item).group.id" class="drop-hint text-label-medium">
+            {{ t('sidebar.dropAgentHere') }}
+          </div>
 
+          <!-- Inline subgroup creation -->
           <div v-show="creatingSubgroupForId === asGroup(item).group.id" class="subgroup-create-row ga-1 mb-1 pl-8">
             <v-text-field
               v-model="newSubgroupName"
@@ -385,7 +390,8 @@ async function duplicateAgent(agent: Agent): Promise<void> {
         </div>
       </template>
 
-      <!-- AGENT LEAF — indentation native via contexte VTreeviewGroup -->
+      <!-- AGENT LEAF — indentation provided by v-treeview context
+           v-show on all 3 status states — same Vue/Vuetify slot compiler constraint as above -->
       <template #item="{ item }">
         <div
           class="agent-item"
@@ -404,7 +410,6 @@ async function duplicateAgent(agent: Agent): Promise<void> {
           >
             <div class="agent-row">
               <span class="agent-status">
-                <!-- v-show sur les 3 états — évite bug Vue codegen v-if/v-else dans slot Vuetify -->
                 <v-progress-circular v-show="tabsStore.isAgentActive(asAgent(item).agent.name)" class="status-spinner" indeterminate :size="12" :width="2" :style="{ color: agentAccent(asAgent(item).agent.name) }" />
                 <v-icon v-show="hasOpenTerminal(asAgent(item).agent.name) && !tabsStore.isAgentActive(asAgent(item).agent.name)" class="status-pulse" size="12" :style="{ color: agentAccent(asAgent(item).agent.name) }">mdi-circle-medium</v-icon>
                 <span v-show="!tabsStore.isAgentActive(asAgent(item).agent.name) && !hasOpenTerminal(asAgent(item).agent.name)" class="status-dot" :style="{ backgroundColor: agentAccent(asAgent(item).agent.name) }" />
@@ -421,7 +426,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       </template>
     </v-treeview>
 
-    <!-- ── Non groupés ── -->
+    <!-- Ungrouped agents -->
     <div
       class="ungrouped-zone mb-2"
       :class="{ 'drag-target': dragOverGroupId === '__ungrouped__' }"
@@ -429,13 +434,13 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       @dragleave="onGroupDragLeave"
       @drop="onGroupDrop($event, null)"
     >
-      <!-- MD3 list subheader -->
       <v-list-subheader class="section-label text-label-medium px-1">
         {{ t('sidebar.ungrouped') }}
       </v-list-subheader>
-      <div v-if="dragOverGroupId === '__ungrouped__'" class="drop-hint text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
+      <div v-if="dragOverGroupId === '__ungrouped__'" class="drop-hint text-label-medium">
+        {{ t('sidebar.dropAgentHere') }}
+      </div>
 
-      <!-- MD3 v-list + v-list-item for agents -->
       <v-list density="compact" bg-color="transparent" class="pa-0">
         <div
           v-for="agent in ungroupedAgents"
@@ -468,23 +473,25 @@ async function duplicateAgent(agent: Agent): Promise<void> {
             </div>
           </v-list-item>
         </div>
-        <div v-if="ungroupedAgents.length === 0 && store.agents.length > 0 && dragOverGroupId !== '__ungrouped__'" class="empty-msg py-1 px-2 text-label-medium">{{ t('sidebar.dropAgentHere') }}</div>
+        <div v-if="ungroupedAgents.length === 0 && store.agents.length > 0 && dragOverGroupId !== '__ungrouped__'" class="empty-msg py-1 px-2 text-label-medium">
+          {{ t('sidebar.dropAgentHere') }}
+        </div>
       </v-list>
-      <div v-if="store.agents.length === 0" class="no-agents-msg pa-2 text-body-2">{{ t('sidebar.noAgent') }}</div>
+      <div v-if="store.agents.length === 0" class="no-agents-msg pa-2 text-body-2">
+        {{ t('sidebar.noAgent') }}
+      </div>
     </div>
 
-    <!-- Bouton nouveau groupe -->
+    <!-- Bottom actions -->
     <v-btn v-if="!creatingGroup" variant="text" block size="small" height="36" class="add-btn text-caption" prepend-icon="mdi-plus" @click="startCreateGroup">
       {{ t('sidebar.newGroup') }}
     </v-btn>
-
-    <!-- Bouton ajouter agent -->
     <v-btn variant="text" block size="small" height="36" class="add-btn mt-1 text-caption" prepend-icon="mdi-plus" @click="showCreateAgent = true">
       {{ t('sidebar.addAgent') }}
     </v-btn>
   </div>
 
-  <!-- Modales agents -->
+  <!-- Modals -->
   <LaunchSessionModal v-if="launchTarget" :agent="launchTarget" @close="launchTarget = null" />
   <CreateAgentModal v-if="showCreateAgent" @close="showCreateAgent = false" @created="store.refresh()" @toast="(msg, type) => pushToast(msg, type === 'success' ? 'info' : 'error')" />
   <CreateAgentModal v-if="editAgentTarget" mode="edit" :agent="editAgentTarget" @close="editAgentTarget = null" @saved="editAgentTarget = null; store.refresh()" @toast="(msg, type) => pushToast(msg, type === 'success' ? 'info' : 'error')" />
@@ -499,11 +506,15 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   overflow-y: auto;
   min-height: 0;
 }
+
 .reset-row {
   display: flex;
   justify-content: flex-end;
 }
-.group-create-row {
+
+/* Inline group / subgroup creation rows */
+.group-create-row,
+.subgroup-create-row {
   display: flex;
   align-items: center;
 }
@@ -518,14 +529,14 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   height: 24px !important;
 }
 .icon-btn--confirm { color: rgb(var(--v-theme-secondary)) !important; }
-.icon-btn--cancel { color: var(--content-faint) !important; }
+.icon-btn--cancel  { color: var(--content-faint) !important; }
 
 /* v-treeview groups section */
 .tree-section {
   margin-bottom: 8px;
 }
 
-/* GROUP DnD zone — wraps VTreeviewItem, handles drag events */
+/* Group DnD zone — wraps the v-treeview item, handles drag events */
 .group-dnd-zone {
   border-radius: var(--shape-xs);
   transition: all var(--md-duration-short3) var(--md-easing-standard);
@@ -535,12 +546,19 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.4);
 }
 
-/* GROUP ITEM — inner VTreeviewItem styling */
-/* MD3 state layer hover (8% on-surface) */
+/* MD3 state layer hover */
 :deep(.group-item:hover:not(.v-list-item--active)) {
   background: rgba(var(--v-theme-on-surface), 0.08);
 }
-/* MD3 Label Medium for group names */
+
+/* Group header layout — flex row inside v-list-item */
+.group-header-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+
 .group-name {
   flex: 1;
   font-weight: 500;
@@ -558,7 +576,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   min-width: 0;
 }
 
-/* Action buttons (rename/delete) — revealed on hover */
+/* Action buttons — revealed on group hover */
 .header-btn {
   width: 20px !important;
   min-width: 20px !important;
@@ -570,10 +588,9 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   transition: opacity var(--md-duration-short3) var(--md-easing-standard);
 }
 .header-btn--danger:hover { color: rgb(var(--v-theme-error)) !important; }
-/* Reveal header-btn when hovering the DnD zone (outer wrapper) */
 .group-dnd-zone:hover .header-btn { opacity: 1; }
 
-/* DROP hint */
+/* Drop hint */
 .drop-hint {
   margin: 0 4px 4px;
   padding: 4px 0;
@@ -581,12 +598,6 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   text-align: center;
   border: 1px dashed rgba(var(--v-theme-primary), 0.4);
   border-radius: var(--shape-xs);
-}
-
-/* Subgroup creation row */
-.subgroup-create-row {
-  display: flex;
-  align-items: center;
 }
 
 /* Ungrouped zone drag-target highlight */
@@ -598,6 +609,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   background: rgba(var(--v-theme-primary), 0.1);
   box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.4);
 }
+
 .section-label {
   min-height: 32px !important;
   font-weight: 500;
@@ -606,7 +618,6 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   user-select: none;
 }
 
-/* Agent item styles shared with ungrouped section — defined in main.css */
 .no-agents-msg {
   color: var(--content-faint);
 }
