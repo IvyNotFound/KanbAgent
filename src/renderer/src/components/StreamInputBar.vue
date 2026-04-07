@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -16,6 +16,8 @@ const props = defineProps<{
   accentOnFg: string
   /** T1707: pending AskUserQuestion text — changes placeholder and shows banner */
   pendingQuestion?: string
+  /** T1772: prefill the textarea when user clicks an AskUserQuestion option chip */
+  prefillAnswer?: string
 }>()
 
 const inputPlaceholder = computed(() =>
@@ -33,6 +35,11 @@ const inputText = ref('')
 const attachments = ref<Attachment[]>([])
 
 defineExpose({ inputText })
+
+// T1772: prefill textarea when a chip option is selected
+watch(() => props.prefillAnswer, (val) => {
+  if (val) inputText.value = val
+})
 
 async function handlePaste(e: ClipboardEvent): Promise<void> {
   const items = Array.from(e.clipboardData?.items ?? [])

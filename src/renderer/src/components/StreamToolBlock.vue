@@ -17,6 +17,7 @@
  * Collapse state is managed externally by the parent (StreamView) via the `collapsed` prop
  * and the `toggleCollapsed` emit.
  */
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { StreamContentBlock } from '@renderer/types/stream'
 import ToolInputView from './ToolInputView.vue'
@@ -38,7 +39,47 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   toggleCollapsed: [key: string, defaultCollapsed: boolean]
+  /** T1772: emitted when user clicks an AskUserQuestion option chip */
+  selectOption: [label: string]
 }>()
+
+/** T1772: extract first question from AskUserQuestion input.questions[] */
+const firstQuestion = computed(() => {
+  if (props.block.type !== 'tool_use' || props.block.name !== 'AskUserQuestion') return null
+  const questions = props.block.input?.questions
+  if (!Array.isArray(questions) || questions.length === 0) return null
+  return questions[0] as {
+    question?: string
+    multiSelect?: boolean
+    options?: Array<{ label: string; description?: string }>
+  }
+})
+
+/** T1772: local selection state for option chips */
+const selectedOptions = ref<string[]>([])
+
+/** T1772: handle option chip click — single/multi select logic + emit */
+function handleOptionClick(label: string): void {
+  const multiSelect = firstQuestion.value?.multiSelect ?? false
+  if (multiSelect) {
+    const idx = selectedOptions.value.indexOf(label)
+    if (idx >= 0) {
+      selectedOptions.value.splice(idx, 1)
+    } else {
+      selectedOptions.value.push(label)
+    }
+    if (selectedOptions.value.length > 0) {
+      emit('selectOption', selectedOptions.value.join(', '))
+    }
+  } else {
+    if (selectedOptions.value[0] === label) {
+      selectedOptions.value = []
+    } else {
+      selectedOptions.value = [label]
+      emit('selectOption', label)
+    }
+  }
+}
 
 /**
  * Builds the collapse-state map key for a given event + block position.
@@ -92,7 +133,25 @@ function resultPreview(html: string | undefined): string {
       <span class="ask-question-label text-caption">{{ t('stream.askQuestion') }}</span>
     </div>
     <div class="ask-question-body px-4 py-3 text-body-2">
-      {{ block._question || block.input?.question }}
+      {{ firstQuestion?.question || block._question || block.input?.question }}
+    </div>
+    <!-- T1772: clickable option chips — only when input.questions[0].options present -->
+    <div
+      v-if="firstQuestion?.options?.length"
+      class="ask-question-options px-4 pb-3 d-flex flex-wrap ga-2"
+      data-testid="ask-question-options"
+    >
+      <v-chip
+        v-for="option in firstQuestion.options"
+        :key="option.label"
+        variant="tonal"
+        :color="selectedOptions.includes(option.label) ? 'info' : 'surface-variant'"
+        class="text-caption ask-question-chip"
+        :title="option.description"
+        @click="handleOptionClick(option.label)"
+      >
+        {{ option.label }}
+      </v-chip>
     </div>
   </div>
 
@@ -195,6 +254,13 @@ function resultPreview(html: string | undefined): string {
   cursor: text;
   font-style: italic;
   line-height: 1.6;
+}
+/* T1772: option chips — pointer cursor, subtle hover brightness */
+.ask-question-chip {
+  cursor: pointer !important;
+}
+.ask-question-chip:hover {
+  filter: brightness(1.12);
 }
 
 /* T1530: redesign — left-accent bar (code-block pattern) instead of card */

@@ -67,6 +67,12 @@ import { ref } from 'vue'
 const sessionId = ref<string | null>(null)
 const ptyId = ref<string | null>(null)
 const agentStopped = ref(false)
+/** T1772: prefill answer from AskUserQuestion option chip click */
+const prefillAnswer = ref<string | undefined>(undefined)
+
+function handleSelectOption(label: string): void {
+  prefillAnswer.value = label
+}
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 
@@ -442,6 +448,7 @@ onUnmounted(() => {
                 :accent-on-color="accentOnColor"
                 :accent-text="accentText"
                 @toggle-collapsed="toggleCollapsed"
+                @select-option="handleSelectOption"
               />
             </template>
           </div>
@@ -518,6 +525,7 @@ onUnmounted(() => {
       :accent-text="accentText"
       :accent-on-fg="userBubbleTextColor"
       :pending-question="pendingQuestion ?? undefined"
+      :prefill-answer="prefillAnswer"
       @send="handleSend"
       @stop="handleStop"
     />
