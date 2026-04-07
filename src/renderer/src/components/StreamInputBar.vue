@@ -18,26 +18,59 @@ const inputPlaceholder = computed(() =>
   props.pendingQuestion ? t('stream.replyPlaceholder') : t('stream.inputPlaceholder')
 )
 
+interface Attachment { path: string; objectUrl: string }
+
 const emit = defineEmits<{
-  send: [text: string]
+  send: [text: string, attachments: Attachment[]]
   stop: []
 }>()
 
 const inputText = ref('')
+const attachments = ref<Attachment[]>([])
 
 defineExpose({ inputText })
 
-function sendMessage(): void {
-  const text = inputText.value.trim()
-  if (!text || !props.sessionId) return
-  emit('send', text)
+async function handlePaste(e: ClipboardEvent): Promise<void> {
+  const items = Array.from(e.clipboardData?.items ?? [])
+  const imageItem = items.find(i => i.type.startsWith('image/'))
+  if (!imageItem) return
+  e.preventDefault()
+  const blob = imageItem.getAsFile()
+  if (!blob) return
+  const objectUrl = URL.createObjectURL(blob)
+  const reader = new FileReader()
+  reader.onload = async () => {
+    const dataUrl = reader.result as string
+    const [header, base64] = dataUrl.split(',')
+    const mediaType = header.split(':')[1].split(';')[0]
+    try {
+      const result = await window.electronAPI.fsSaveImage(base64, mediaType)
+      if (result.success) {
+        attachments.value.push({ path: result.path, objectUrl })
+      }
+    } catch {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }
+  reader.readAsDataURL(blob)
+}
+
+function handleSend(): void {
+  let text = inputText.value.trim()
+  const atts = attachments.value.slice()
+  if (atts.length > 0) {
+    text += (text ? '\n' : '') + atts.map(a => `📎 ${a.path}`).join('\n')
+  }
+  if ((!text && atts.length === 0) || !props.sessionId) return
+  emit('send', text, atts)
   inputText.value = ''
+  attachments.value = []
 }
 
 function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    sendMessage()
+    handleSend()
   }
 }
 
@@ -59,6 +92,35 @@ function stopAgent(): void {
     <v-icon icon="mdi-help-circle-outline" size="small" class="pending-question-icon" />
     <span class="pending-question-text text-caption text-truncate">{{ pendingQuestion }}</span>
   </div>
+  <!-- ── Attachment strip (T1717) — shown when images are pasted -->
+  <div
+    v-if="attachments.length > 0"
+    class="attachment-strip d-flex flex-wrap ga-2 pa-2"
+    data-testid="attachment-strip"
+  >
+    <div
+      v-for="(att, i) in attachments"
+      :key="att.path"
+      class="position-relative"
+    >
+      <img
+        :src="att.objectUrl"
+        class="attachment-thumb"
+        alt=""
+      />
+      <v-btn
+        icon
+        size="x-small"
+        variant="flat"
+        color="error"
+        class="position-absolute attachment-remove"
+        aria-label="Remove attachment"
+        @click="attachments.splice(i, 1)"
+      >
+        <v-icon size="x-small">mdi-close</v-icon>
+      </v-btn>
+    </div>
+  </div>
   <!-- ── Input zone (T681: items-end aligne boutons sur bas textarea) ─── -->
   <div class="input-bar d-flex align-end ga-2 px-5 py-4" :class="{ 'pt-2': pendingQuestion }">
     <v-textarea
@@ -73,6 +135,7 @@ function stopAgent(): void {
       base-color="outline"
       class="flex-1-1 text-body-2"
       @keydown="handleKeydown"
+      @paste="handlePaste"
     />
     <!-- Stop button (T683, T1536, T1569) — always visible, disabled when not actionable -->
     <v-btn
@@ -95,11 +158,11 @@ function stopAgent(): void {
       rounded="lg"
       variant="flat"
       size="x-large"
-      :disabled="!inputText.trim() || !sessionId"
+      :disabled="(!inputText.trim() && attachments.length === 0) || !sessionId"
       class="action-btn send-btn flex-shrink-0"
       aria-label="Send"
       data-testid="send-button"
-      @click="sendMessage"
+      @click="handleSend"
     >
       <v-icon icon="mdi-send" size="28" />
     </v-btn>
@@ -120,6 +183,23 @@ function stopAgent(): void {
   color: var(--content-muted);
   font-style: italic;
   min-width: 0;
+}
+
+/* T1717: image attachment strip above the input field */
+.attachment-strip {
+  background: var(--surface-secondary);
+  border-top: 1px solid var(--edge-subtle);
+  padding: 8px 12px;
+}
+.attachment-thumb {
+  max-height: 80px;
+  max-width: 120px;
+  border-radius: 4px;
+  display: block;
+}
+.attachment-remove {
+  top: -8px;
+  right: -8px;
 }
 
 .input-bar {

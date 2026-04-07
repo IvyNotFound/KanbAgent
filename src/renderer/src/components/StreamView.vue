@@ -29,7 +29,7 @@ import githubUrl from 'highlight.js/styles/github.css?url'
 
 // Re-export stream types so existing consumers keep their import paths (T816).
 export type { StreamContentBlock, StreamEvent } from '@renderer/types/stream'
-import type { StreamEvent } from '@renderer/types/stream'
+import type { StreamEvent, StreamContentBlock } from '@renderer/types/stream'
 
 const props = defineProps<{
   /** Tab identifier — used to look up tab config in tabsStore. */
@@ -146,33 +146,6 @@ const accentOnColor = computed(() => {
   return isDark() ? '#FFFFFF' : '#1C1B1F'
 })
 
-// T1707: detect a pending AskUserQuestion — last tool_use without a matching tool_result
-const pendingQuestion = computed<string | null>(() => {
-  for (let i = events.value.length - 1; i >= 0; i--) {
-    const event = events.value[i]
-    if (event.type !== 'assistant' || !event.message) continue
-    for (const block of event.message.content) {
-      if (block.type === 'tool_use' && block.name === 'AskUserQuestion') {
-        const toolUseId = block.tool_use_id
-        if (!toolUseId) {
-          // Fallback: no tool_use_id — pending if no user event follows this assistant event
-          const hasFollowingUser = events.value.slice(i + 1).some(e => e.type === 'user')
-          if (!hasFollowingUser) return (block.input?.question as string) ?? null
-        } else {
-          const hasResult = events.value.some(e =>
-            e.type === 'user' && e.message?.content.some(b =>
-              b.type === 'tool_result' && b.tool_use_id === toolUseId
-            )
-          )
-          if (!hasResult) return (block.input?.question as string) ?? null
-        }
-      }
-    }
-    break // Only inspect the last assistant event
-  }
-  return null
-})
-
 // Suppresses empty user bubbles from autonomous Claude reasoning (T679).
 const displayEvents = computed(() =>
   events.value.filter(event => {
@@ -235,9 +208,13 @@ const sessionContextMap = computed(() => {
 
 // ── IPC handlers ──────────────────────────────────────────────────────────────
 
-async function handleSend(text: string): Promise<void> {
+async function handleSend(text: string, atts: { path: string; objectUrl: string }[] = []): Promise<void> {
   agentStopped.value = false
-  const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text }] } }
+  const content: StreamContentBlock[] = [
+    ...(text ? [{ type: 'text' as const, text }] : []),
+    ...atts.map(a => ({ type: 'image_ref' as const, path: a.path, objectUrl: a.objectUrl })),
+  ]
+  const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content } }
   assignEventId(userEvent)
   events.value.push(userEvent)
   scrollToBottom(true)

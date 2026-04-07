@@ -35,7 +35,7 @@ describe('StreamInputBar (T842)', () => {
     await nextTick()
     await wrapper.find('v-textarea').trigger('keydown', { key: 'Enter', shiftKey: false })
     expect(wrapper.emitted('send')).toBeTruthy()
-    expect(wrapper.emitted('send')![0]).toEqual(['Hello world'])
+    expect(wrapper.emitted('send')![0]).toEqual(['Hello world', []])
     wrapper.unmount()
   })
 
@@ -45,7 +45,7 @@ describe('StreamInputBar (T842)', () => {
     await nextTick()
     await wrapper.find('[data-testid="send-button"]').trigger('click')
     expect(wrapper.emitted('send')).toBeTruthy()
-    expect(wrapper.emitted('send')![0]).toEqual(['Click send'])
+    expect(wrapper.emitted('send')![0]).toEqual(['Click send', []])
     wrapper.unmount()
   })
 
