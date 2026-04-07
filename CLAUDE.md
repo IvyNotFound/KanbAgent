@@ -20,7 +20,7 @@ Scopes: `front-vuejs` (`renderer/`, Vue 3 + TS + Vuetify 3 (Material Design 3), 
 
 Conventions: english (conv & code) · mandatory tests · Conventional Commits
 
-**Version: `0.36.2`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Beta: MAJOR → `arch` + lead validation.
+**Version: `0.36.3`** | Lead: IvyNotFound → `main` | `npm run dev/build/test/release` | Beta: MAJOR → `arch` + lead validation.
 
 ---
 
