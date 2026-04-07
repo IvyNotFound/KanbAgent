@@ -563,7 +563,7 @@ onUnmounted(() => {
   line-height: 1.5;
   word-break: break-words;
   border: 1px solid var(--edge-subtle);
-  background: var(--surface-card);
+  background: var(--surface-secondary);
   color: var(--content-primary);
 }
 
