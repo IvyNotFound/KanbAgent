@@ -189,8 +189,7 @@ function resultPreview(html: string | undefined): string {
   letter-spacing: 0.05em;
 }
 .ask-question-body {
-  /* T1764: use Vuetify MD3 token directly — var(--content-primary) can fail in scoped styles */
-  color: rgba(var(--v-theme-on-surface), 0.87);
+  color: var(--content-primary);
   user-select: text;
   cursor: text;
   font-style: italic;
