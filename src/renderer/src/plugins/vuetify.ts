@@ -50,8 +50,8 @@ const vuetifyPlugin = createVuetify({
           error: '#ef4444',               // brand-red
           info: '#3b82f6',                // blue-500
           success: '#40c4ff',             // light-blue-A200 — non-green, avoids app-wide green bleed
-          surface: '#141316',             // neutral tone 6
-          background: '#141316',          // neutral tone 6
+          surface: '#1c1b1e',             // neutral T10 — sidebar elevated above background
+          background: '#141316',          // neutral T6 — app background
           'on-surface': '#e6e1e6',        // neutral tone 90
           // Container colors — rose + error kept from brand palette
           'secondary-container': '#4c0519',    // secondaryContainer dark (rose tonal)
@@ -63,7 +63,7 @@ const vuetifyPlugin = createVuetify({
           'surface-primary': '#1c1b1e',    // neutral T10
           'surface-secondary': '#2b292d',  // neutral T17
           'surface-tertiary': '#363438',   // neutral T22
-          'surface-dialog': '#1c1b1e',     // neutral T10 — dialog elevation (darkened to restore contrast with internal sections T17/T22)
+          'surface-dialog': '#232027',     // neutral T14 — dialog elevated above surface T10 (sidebar), below surface-secondary T17
           'surface-variant': '#49454E',        // MD3 surfaceVariant dark — NV tone 30
           'on-surface-variant': '#CAC4CF',     // MD3 onSurfaceVariant dark — NV tone 80
           // Content tokens (MD3 neutral palette)
@@ -116,8 +116,8 @@ const vuetifyPlugin = createVuetify({
           error: '#ef4444',               // brand-red
           info: '#3b82f6',                // blue-500
           success: '#0288d1',             // material blue-700 — non-green, avoids app-wide green bleed
-          surface: '#fdf8fd',             // neutral tone 98
-          background: '#f2ecf1',          // neutral tone 94
+          surface: '#f2ecf1',             // neutral T94 — sidebar elevated above background
+          background: '#e8e2e8',          // neutral T90 — app background (darker base for contrast)
           'on-surface': '#1c1b1e',        // neutral tone 10
           // Container colors — rose + error kept from brand palette
           'secondary-container': '#ffe4e8',    // secondaryContainer light (rose-100)
@@ -125,10 +125,10 @@ const vuetifyPlugin = createVuetify({
           'error-container': '#fee2e2',        // errorContainer light (red-100)
           'on-error-container': '#991b1b',     // onErrorContainer light (red-800)
           // Surface tokens (MD3 neutral palette — seed #8b5cf6)
-          'surface-base': '#f2ecf1',       // neutral T94
-          'surface-primary': '#fdf8fd',    // neutral T98
-          'surface-secondary': '#ece7eb',  // neutral T92
-          'surface-tertiary': '#ece7eb',   // neutral T92
+          'surface-base': '#e8e2e8',       // neutral T90 — matches background
+          'surface-primary': '#f7f2f7',    // neutral T96 — columns (above sidebar T94)
+          'surface-secondary': '#fdf8fd',  // neutral T98 — cards (elevated above columns T96)
+          'surface-tertiary': '#ece7eb',   // neutral T92 — deep nesting (below background, distinct from secondary)
           'surface-dialog': '#fdf8fd',     // neutral T98 — dialogs float near white
           'surface-variant': '#E7E0EB',        // MD3 surfaceVariant light — NV tone 90
           'on-surface-variant': '#615D66',     // MD3 onSurfaceVariant light — NV tone 40
