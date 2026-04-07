@@ -294,7 +294,6 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       v-show="treeItems.length > 0"
       :items="treeItems"
       item-value="id"
-      item-title="name"
       item-children="children"
       :opened="openedGroups"
       open-strategy="multiple"
