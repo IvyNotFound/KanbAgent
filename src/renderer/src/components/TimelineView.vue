@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentAccent } from '@renderer/utils/agentColor'
+import { agentAccent, agentFg, agentBg } from '@renderer/utils/agentColor'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -286,19 +286,18 @@ const legendItems = computed(() => [
       <h2 class="text-h6 font-weight-medium tl-title flex-shrink-0">{{ t('timeline.title') }}</h2>
       <div class="tl-filter-sep" />
       <!-- Period presets: clicking resets the viewport to that range -->
-      <v-chip-group v-model="selectedPeriod" mandatory class="flex-shrink-0">
-        <v-chip
+      <v-btn-toggle v-model="selectedPeriod" mandatory density="compact" variant="outlined" class="flex-shrink-0">
+        <v-btn
           v-for="item in periodItems"
           :key="item.value"
           :value="item.value"
-          size="small"
-          filter
-          variant="tonal"
+          size="x-small"
+          class="text-label-medium"
           @click="setViewportPeriod(item.value)"
         >
           {{ item.title }}
-        </v-chip>
-      </v-chip-group>
+        </v-btn>
+      </v-btn-toggle>
       <!-- Agent filter chips -->
       <template v-if="allAgents.length > 0">
         <div class="tl-filter-sep" />
@@ -308,10 +307,11 @@ const legendItems = computed(() => [
             v-for="name in allAgents"
             :key="name"
             :value="name"
+            variant="outlined"
             size="small"
-            filter
-            variant="tonal"
-            :color="agentAccent(name)"
+            :style="selectedAgents.includes(name)
+              ? { color: agentFg(name), backgroundColor: agentBg(name), borderColor: agentFg(name) + '66' }
+              : {}"
           >
             {{ name }}
           </v-chip>
