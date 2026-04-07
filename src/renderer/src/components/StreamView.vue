@@ -643,6 +643,8 @@ onUnmounted(() => {
   line-height: 1.625;
   user-select: text;
   cursor: text;
+  /* Explicit reset — --stream-accent-fg must not leak into markdown prose (T1746) */
+  color: var(--content-primary);
 }
 
 /* result footer */
