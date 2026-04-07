@@ -113,9 +113,9 @@ function resultPreview(html: string | undefined): string {
       <v-icon
         :icon="isCollapsed(eventId, blockIdx, false) ? 'mdi-chevron-right' : 'mdi-chevron-down'"
         size="small"
-        :style="{ color: accentText }"
+        :style="{ color: accentOnColor }"
       />
-      <span class="tool-name" :style="{ color: accentText }">{{ block.name }}</span>
+      <span class="tool-name" :style="{ color: accentOnColor }">{{ block.name }}</span>
       <span class="tool-label">{{ t('stream.tool') }}</span>
     </v-btn>
     <div
