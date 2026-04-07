@@ -505,6 +505,7 @@ onUnmounted(() => {
       :agent-stopped="agentStopped"
       :session-id="sessionId"
       :accent-fg="accentFg"
+      :accent-text="accentText"
       :accent-on-fg="userBubbleTextColor"
       :pending-question="pendingQuestion ?? undefined"
       @send="handleSend"

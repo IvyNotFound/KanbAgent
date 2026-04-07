@@ -10,6 +10,8 @@ const props = defineProps<{
   agentStopped: boolean
   sessionId: string | null
   accentFg: string
+  /** T1753: light accent for textarea outline (agentAccent, not agentFg) */
+  accentText: string
   /** T1739: on-color for the send button icon (black on light accent, white on dark accent) */
   accentOnFg: string
   /** T1707: pending AskUserQuestion text — changes placeholder and shows banner */
@@ -133,7 +135,7 @@ function stopAgent(): void {
       rounded="lg"
       :placeholder="inputPlaceholder"
       hide-details
-      :color="accentFg"
+      :color="accentText"
       base-color="outline"
       class="flex-1-1 text-body-2"
       @keydown="handleKeydown"
