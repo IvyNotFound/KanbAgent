@@ -1,8 +1,10 @@
 <script setup lang="ts">
 /**
- * SidebarFileTree — arborescence de fichiers du projet dans la sidebar (T815).
+ * SidebarFileTree — arborescence de fichiers du projet dans la sidebar (T815/T1710).
+ * Utilise v-treeview (Vuetify MD3) avec lazy loading natif via load-children.
+ * Remplace l'ancienne approche flattenTree() + paddingLeft manuel.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
 import type { FileNode } from '@renderer/types'
@@ -14,107 +16,116 @@ const props = defineProps<{
 const { t } = useI18n()
 const tabsStore = useTabsStore()
 
+// Cast helper — v-treeview slots type item as unknown
+function asFile(item: unknown): FileNode { return item as FileNode }
+
+// Helper matching SidebarAgentSection pattern — calls the onToggleExpand handler array or fn
+function callToggle(handler: unknown, e: MouseEvent): void {
+  e.stopPropagation()
+  const h = handler as ((ev: MouseEvent) => void) | ((ev: MouseEvent) => void)[] | undefined
+  if (Array.isArray(h)) { h.forEach(fn => fn(e)) } else { h?.(e) }
+}
+
 const sidebarTree = ref<FileNode[]>([])
-const sidebarOpenDirs = ref(new Set<string>())
 const loadingSidebarTree = ref(false)
-const loadingDirs = ref(new Set<string>())
+
+// Tracks which dir paths have already been fetched — prevents re-fetch on re-expand
+const loadedDirs = new Set<string>()
+
+/** Prepare top-level or child nodes: dirs get children: [] to signal v-treeview expandability */
+function prepareNodes(nodes: FileNode[]): FileNode[] {
+  return nodes.map(node =>
+    node.isDir ? { ...node, children: node.children ?? [] } : node
+  )
+}
 
 async function loadSidebarTree(): Promise<void> {
   if (!props.projectPath) return
   loadingSidebarTree.value = true
   sidebarTree.value = []
-  sidebarOpenDirs.value = new Set()
+  loadedDirs.clear()
   try {
     const nodes = (await window.electronAPI.fsListDir(props.projectPath, props.projectPath)) as FileNode[]
-    sidebarTree.value = nodes
+    sidebarTree.value = prepareNodes(nodes)
   } finally {
     loadingSidebarTree.value = false
   }
 }
 
-async function toggleSidebarDir(path: string, node: FileNode): Promise<void> {
-  if (loadingDirs.value.has(path)) return
-  const next = new Set(sidebarOpenDirs.value)
-  if (next.has(path)) {
-    next.delete(path)
-    sidebarOpenDirs.value = next
-  } else {
-    if (node.children === undefined && props.projectPath) {
-      const loading = new Set(loadingDirs.value)
-      loading.add(path)
-      loadingDirs.value = loading
-      try {
-        const children = await window.electronAPI.fsListDir(node.path, props.projectPath)
-        node.children = children as FileNode[]
-      } finally {
-        const loading2 = new Set(loadingDirs.value)
-        loading2.delete(path)
-        loadingDirs.value = loading2
-      }
-    }
-    next.add(path)
-    sidebarOpenDirs.value = next
-  }
+/**
+ * loadChildren — appelé par v-treeview quand children.length === 0 (premier expand d'un dossier).
+ * Mute node.children avec les enfants fetched via IPC. loadedDirs évite le double-fetch.
+ */
+async function loadChildren(node: unknown): Promise<void> {
+  const fileNode = node as FileNode
+  if (!props.projectPath || loadedDirs.has(fileNode.path)) return
+  loadedDirs.add(fileNode.path)
+  const children = (await window.electronAPI.fsListDir(fileNode.path, props.projectPath)) as FileNode[]
+  fileNode.children = prepareNodes(children)
 }
-
-function isDirOpen(path: string): boolean {
-  return sidebarOpenDirs.value.has(path)
-}
-
-function flattenTree(
-  nodes: FileNode[],
-  depth = 0,
-  result: Array<{ node: FileNode; depth: number }> = []
-): Array<{ node: FileNode; depth: number }> {
-  for (const node of nodes) {
-    result.push({ node, depth })
-    if (node.isDir && isDirOpen(node.path) && node.children?.length) {
-      flattenTree(node.children, depth + 1, result)
-    }
-  }
-  return result
-}
-
-const flatSidebarTree = computed(() => flattenTree(sidebarTree.value))
 
 onMounted(() => loadSidebarTree())
 
-defineExpose({ loadSidebarTree })
+defineExpose({ loadSidebarTree, loadChildren, sidebarTree })
 </script>
 
 <template>
-  <!-- MD3 v-list for file tree items (default slot only — avoids Vue 3.5 named-slot + v-for compiler issue) -->
   <div class="file-tree-content">
     <v-progress-linear v-if="loadingSidebarTree" indeterminate color="primary" />
     <div v-else-if="!projectPath" class="empty-state text-caption">
       {{ t('common.noProject') }}
     </div>
-    <div v-else-if="flatSidebarTree.length === 0 && !loadingSidebarTree" class="empty-state text-caption">
+    <div v-else-if="sidebarTree.length === 0" class="empty-state text-caption">
       {{ t('sidebar.emptyFolder') }}
     </div>
-    <v-list v-else density="compact" bg-color="transparent" class="pa-0">
-      <!-- Tree items — indentation via paddingLeft, icons + name in default slot -->
-      <v-list-item
-        v-for="item in flatSidebarTree"
-        :key="item.node.path"
-        density="compact"
-        rounded="sm"
-        :class="[item.node.isDir ? 'tree-item--dir' : 'tree-item--file']"
-        :style="{ paddingLeft: `${6 + item.depth * 12}px` }"
-        @click="item.node.isDir ? toggleSidebarDir(item.node.path, item.node) : tabsStore.openFile(item.node.path, item.node.name)"
-      >
-        <div class="tree-row">
-          <!-- Icône dossier ouvert/fermé ou fichier — single element avoids slot fragment issue -->
-          <v-icon
-            :class="['tree-icon', item.node.isDir && isDirOpen(item.node.path) ? 'tree-icon--open' : item.node.isDir ? 'tree-icon--closed' : 'tree-icon--file']"
-            size="14"
-          >
-            {{ item.node.isDir && isDirOpen(item.node.path) ? 'mdi-folder-open' : item.node.isDir ? 'mdi-folder' : 'mdi-file-outline' }}
-          </v-icon>
-          <span :class="['tree-name', 'text-label-medium', item.node.isDir ? 'tree-name--dir' : 'tree-name--file']">{{ item.node.name }}</span>
-        </div>
-      </v-list-item>
-    </v-list>
+    <!-- v-treeview MD3 — remplace flattenTree() + v-list + paddingLeft manuel (T1710) -->
+    <v-treeview
+      v-else
+      :items="sidebarTree"
+      item-value="path"
+      item-title="name"
+      item-children="children"
+      :load-children="loadChildren"
+      open-strategy="multiple"
+      density="compact"
+      bg-color="transparent"
+      class="pa-0"
+    >
+      <!-- Dossier — icône folder-open/folder selon état, click toggle via onToggleExpand -->
+      <template #header="{ props: itemProps, item, loading }">
+        <v-list-item
+          :title="undefined"
+          density="compact"
+          class="dir-item"
+          @click="callToggle(itemProps.onToggleExpand, $event)"
+        >
+          <div class="tree-row">
+            <v-icon
+              size="14"
+              :class="itemProps.ariaExpanded ? 'tree-icon tree-icon--open' : 'tree-icon tree-icon--closed'"
+            >
+              {{ itemProps.ariaExpanded ? 'mdi-folder-open' : 'mdi-folder' }}
+            </v-icon>
+            <span class="tree-name tree-name--dir text-label-medium">{{ asFile(item).name }}</span>
+            <v-progress-circular v-if="loading" indeterminate :size="10" :width="1" class="loading-spinner" />
+          </div>
+        </v-list-item>
+      </template>
+
+      <!-- Fichier feuille — click ouvre l'onglet correspondant -->
+      <template #item="{ item }">
+        <v-list-item
+          density="compact"
+          class="file-item"
+          @click="tabsStore.openFile(asFile(item).path, asFile(item).name)"
+        >
+          <div class="tree-row">
+            <v-icon class="tree-icon tree-icon--file" size="14">mdi-file-outline</v-icon>
+            <span class="tree-name tree-name--file text-label-medium">{{ asFile(item).name }}</span>
+          </div>
+        </v-list-item>
+      </template>
+    </v-treeview>
   </div>
   <v-divider />
   <div class="tree-footer">
@@ -134,7 +145,6 @@ defineExpose({ loadSidebarTree })
   padding: 12px 16px;
   color: var(--content-faint);
 }
-/* Tree item row layout */
 .tree-row {
   display: flex;
   align-items: center;
@@ -149,25 +159,26 @@ defineExpose({ loadSidebarTree })
   flex-shrink: 0;
   transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
-/* MD3 primary color for folder icons instead of warning */
 .tree-icon--open { color: rgb(var(--v-theme-primary)); }
 .tree-icon--closed { color: rgba(var(--v-theme-primary), 0.7); }
 .tree-icon--file { color: var(--content-subtle); }
-.tree-item--file:hover .tree-icon--file { color: var(--content-muted); }
 .tree-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  /* font-family: monospace removed — inherits system-ui via main.css (MD3 Label Large) */
   transition: color var(--md-duration-short3) var(--md-easing-standard);
 }
 .tree-name--dir {
   color: var(--content-secondary);
   font-weight: 500;
 }
-.tree-item--dir:hover .tree-name--dir { color: var(--content-primary); }
+.dir-item:hover .tree-name--dir { color: var(--content-primary); }
 .tree-name--file { color: var(--content-muted); }
-.tree-item--file:hover .tree-name--file { color: var(--content-secondary); }
+.file-item:hover .tree-name--file { color: var(--content-secondary); }
+.loading-spinner {
+  color: var(--content-subtle);
+  flex-shrink: 0;
+}
 .tree-footer {
   padding: 8px 16px;
   flex-shrink: 0;
