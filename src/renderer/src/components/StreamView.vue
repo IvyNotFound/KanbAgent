@@ -114,7 +114,9 @@ const pendingQuestion = computed<string | null>(() => {
           : events.value.slice(i + 1).some((e) => e.type === 'user')
         if (!answered) {
           const q = (askBlock.input as Record<string, unknown> | undefined)?.question
-          return typeof q === 'string' ? q : null
+          // T1764: if input.question is not a string, do NOT return null here — fall through
+          // to Source 2 (synthetic ask_user event) which may have the text.
+          if (typeof q === 'string') return q
         }
         break
       }

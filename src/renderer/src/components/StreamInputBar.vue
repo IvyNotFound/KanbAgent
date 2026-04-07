@@ -185,7 +185,8 @@ function stopAgent(): void {
   flex-shrink: 0;
 }
 .pending-question-text {
-  color: var(--content-muted);
+  /* T1764: use Vuetify MD3 token directly — var(--content-muted) can fail in scoped styles */
+  color: rgba(var(--v-theme-on-surface), 0.6);
   font-style: italic;
   min-width: 0;
 }

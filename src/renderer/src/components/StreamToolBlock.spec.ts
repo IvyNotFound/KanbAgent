@@ -71,4 +71,34 @@ describe('StreamToolBlock (T842)', () => {
     expect(wrapper.text()).toContain('/x.ts')
     wrapper.unmount()
   })
+
+  // T1764: AskUserQuestion block rendering
+  it('renders AskUserQuestion block with data-testid and question text (T1764)', () => {
+    const block: StreamContentBlock = {
+      type: 'tool_use',
+      name: 'AskUserQuestion',
+      input: { question: 'What is your preferred language?' },
+    }
+    const wrapper = mount(StreamToolBlock, {
+      props: { ...defaultProps, block },
+      global: { plugins: [i18n, pinia] },
+    })
+    expect(wrapper.find('[data-testid="block-ask-question"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('What is your preferred language?')
+    wrapper.unmount()
+  })
+
+  it('AskUserQuestion block does NOT render as generic tool_use (T1764)', () => {
+    const block: StreamContentBlock = {
+      type: 'tool_use',
+      name: 'AskUserQuestion',
+      input: { question: 'Pick one.' },
+    }
+    const wrapper = mount(StreamToolBlock, {
+      props: { ...defaultProps, block },
+      global: { plugins: [i18n, pinia] },
+    })
+    expect(wrapper.find('[data-testid="block-tool-use"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
 })
