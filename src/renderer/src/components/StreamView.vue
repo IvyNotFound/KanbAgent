@@ -58,6 +58,14 @@ const sessionId = ref<string | null>(null)
 const ptyId = ref<string | null>(null)
 const agentStopped = ref(false)
 
+// Lightbox state — T1718
+const lightboxOpen = ref<boolean>(false)
+const lightboxSrc = ref<string>('')
+function openLightbox(src: string): void {
+  lightboxSrc.value = src
+  lightboxOpen.value = true
+}
+
 // ── Computed ──────────────────────────────────────────────────────────────────
 
 const isStreaming = computed(() => {
@@ -82,11 +90,14 @@ const accentBg = computed(() => { void colorVersion.value; return agentName.valu
 const accentBorder = computed(() => { void colorVersion.value; return agentName.value ? agentBorder(agentName.value) : 'hsl(270, 30%, 32%)' })
 
 // Suppresses empty user bubbles from autonomous Claude reasoning (T679).
+// Also shows user events that contain image_ref blocks (T1718).
 const displayEvents = computed(() =>
   events.value.filter(event => {
     if (event.type !== 'user') return true
     if (!event.message) return false
-    return event.message.content.filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim().length > 0
+    const hasText = event.message.content.filter(b => b.type === 'text').map(b => b.text ?? '').join('').trim().length > 0
+    const hasImages = event.message.content.some(b => b.type === 'image_ref')
+    return hasText || hasImages
   })
 )
 
@@ -296,7 +307,15 @@ onUnmounted(() => {
             :style="{ borderColor: accentBorder }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
-              <span v-if="block.type === 'text'">{{ parsePromptContext(block.text ?? '').base }}</span>
+              <div v-if="block.type === 'text'" v-html="renderMarkdown(parsePromptContext(block.text ?? '').base)" />
+              <img
+                v-else-if="block.type === 'image_ref' && block.objectUrl"
+                :src="block.objectUrl"
+                class="user-thumbnail"
+                alt=""
+                data-testid="user-thumbnail"
+                @click="openLightbox(block.objectUrl!)"
+              />
             </template>
           </div>
         </div>
@@ -393,5 +412,199 @@ onUnmounted(() => {
       @send="handleSend"
       @stop="handleStop"
     />
+
+    <!-- Lightbox dialog — fullscreen image preview on thumbnail click (T1718) -->
+    <v-dialog v-model="lightboxOpen" max-width="90vw" data-testid="lightbox-dialog">
+      <v-card>
+        <v-img :src="lightboxSrc" max-height="85vh" contain />
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" @click="lightboxOpen = false">{{ t('common.close') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
+
+<style scoped>
+.stream-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--surface-base);
+  color: var(--content-primary);
+}
+
+.stream-accent-bar {
+  height: 2px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.stream-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.stream-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--content-subtle);
+}
+
+/* system:init */
+.block-system-init {
+  color: var(--content-subtle);
+  font-style: italic;
+}
+.init-session-id {
+  font-family: ui-monospace, monospace;
+}
+.init-ctx-btn {
+  font-style: normal !important;
+  color: var(--content-faint) !important;
+  font-size: inherit !important;
+}
+.init-ctx-body {
+  font-style: normal;
+  color: var(--content-faint);
+  white-space: pre-wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+/* error blocks */
+.block-error {
+  display: flex;
+  align-items: flex-start;
+  background: rgba(var(--v-theme-error), 0.12);
+  border: 1px solid rgba(var(--v-theme-error), 0.4);
+  border-radius: var(--shape-sm);
+  color: rgb(var(--v-theme-error));
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+}
+.error-icon {
+  flex-shrink: 0;
+  color: rgb(var(--v-theme-error));
+}
+.error-body {
+  user-select: text;
+  cursor: text;
+}
+.error-type {
+  font-weight: 600;
+  color: rgb(var(--v-theme-error));
+}
+.error-text {
+  white-space: pre-wrap;
+}
+.error-stderr {
+  color: rgba(var(--v-theme-error), 0.8);
+  white-space: pre-wrap;
+}
+.error-body-inline {
+  white-space: pre-wrap;
+  user-select: text;
+  cursor: text;
+}
+
+/* user bubble */
+.block-user {
+  display: flex;
+  justify-content: flex-end;
+}
+.user-bubble {
+  border-radius: 20px 20px 4px 20px;
+  max-width: 70%;
+  overflow-wrap: break-word;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  user-select: text;
+  cursor: text;
+}
+
+/* image thumbnail in user bubble — T1718 */
+.user-thumbnail {
+  display: block;
+  max-height: 160px;
+  max-width: 240px;
+  border-radius: 8px;
+  cursor: pointer;
+  object-fit: contain;
+  margin-top: 4px;
+}
+
+/* assistant wrapper — left-aligned flex column */
+.block-assistant {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* assistant text block — chat bubble, left side */
+.block-text {
+  border-radius: 4px 20px 20px 20px;
+  background: var(--surface-secondary);
+  border: none;
+  max-width: 85%;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  user-select: text;
+  cursor: text;
+}
+
+/* result footer */
+.block-result {
+  border-top: 1px solid var(--edge-subtle);
+}
+.result-session-id {
+  font-family: ui-monospace, monospace;
+  color: var(--content-faint);
+}
+
+/* streaming indicator */
+.streaming-indicator {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.bounce-dots {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.bounce-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: streamBounce 1s infinite;
+}
+.bounce-dot--d1 { animation-delay: 150ms; }
+.bounce-dot--d2 { animation-delay: 300ms; }
+@keyframes streamBounce {
+  0%, 100% { transform: translateY(0); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+  50% { transform: translateY(-4px); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+}
+.thinking-text {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.thinking-label { flex-shrink: 0; font-weight: 500; }
+.thinking-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  opacity: 0.75;
+  color: var(--content-muted);
+}
+.streaming-label { opacity: 0.75; }
+</style>

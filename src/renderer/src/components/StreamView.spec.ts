@@ -409,6 +409,36 @@ describe('StreamView', () => {
     expect(wrapper.find('[data-testid="streaming-indicator"]').exists()).toBe(true)
   })
 
+  it('renders image_ref block as thumbnail in user bubble (T1718)', async () => {
+    const event: StreamEvent = {
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [{ type: 'image_ref', path: '/tmp/img.png', objectUrl: 'blob:test-url' }],
+      },
+    }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    const block = wrapper.find('[data-testid="block-user"]')
+    expect(block.exists()).toBe(true)
+    const img = wrapper.find('[data-testid="user-thumbnail"]')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('src')).toBe('blob:test-url')
+  })
+
+  it('shows user bubble for image-only message (no text) (T1718)', async () => {
+    const event: StreamEvent = {
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [{ type: 'image_ref', path: '/tmp/img.png', objectUrl: 'blob:only-image' }],
+      },
+    }
+    const { wrapper } = await mountStream([event])
+    await nextTick()
+    expect(wrapper.find('[data-testid="block-user"]').exists()).toBe(true)
+  })
+
   it('normal assistant/user/result blocks unaffected by error types (T694)', async () => {
     const assistant: StreamEvent = {
       type: 'assistant',
