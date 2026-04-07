@@ -116,7 +116,7 @@ function resultPreview(html: string | undefined): string {
         :style="{ color: accentOnColor }"
       />
       <span class="tool-name" :style="{ color: accentOnColor }">{{ block.name }}</span>
-      <span class="tool-label">{{ t('stream.tool') }}</span>
+      <span class="tool-label" :style="{ color: accentOnColor, opacity: 0.75 }">{{ t('stream.tool') }}</span>
     </v-btn>
     <div
       v-show="!isCollapsed(eventId, blockIdx, false)"
@@ -255,8 +255,6 @@ function resultPreview(html: string | undefined): string {
 
 .tool-label {
   margin-left: auto;
-  color: var(--content-muted);
-  opacity: 0.6;
 }
 
 /* T1532: line count as pill badge, pushed to right via ml-auto on the span */
