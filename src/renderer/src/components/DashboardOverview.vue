@@ -10,7 +10,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentFg } from '@renderer/utils/agentColor'
+import { agentAccent } from '@renderer/utils/agentColor'
 import ActivityHeatmap from './ActivityHeatmap.vue'
 import SessionActivityChart from './SessionActivityChart.vue'
 import SuccessRateChart from './SuccessRateChart.vue'
@@ -311,7 +311,7 @@ function priorityColor(priority: string): string {
                       <span
                         v-if="task.agent_name"
                         class="text-label-medium"
-                        :style="{ color: agentFg(task.agent_name) }"
+                        :style="{ color: agentAccent(task.agent_name) }"
                       >{{ task.agent_name }}</span>
                       <span
                         v-if="task.priority && task.priority !== 'normal'"
@@ -353,7 +353,7 @@ function priorityColor(priority: string): string {
                   <span
                     v-if="entry.agent_name"
                     class="text-label-medium font-mono agent-label shrink-0"
-                    :style="{ color: agentFg(entry.agent_name) }"
+                    :style="{ color: agentAccent(entry.agent_name) }"
                   >{{ entry.agent_name }}</span>
                   <span v-else class="text-caption text-disabled agent-label shrink-0">—</span>
                   <div class="task-meta-inner">
