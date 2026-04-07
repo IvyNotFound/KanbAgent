@@ -68,7 +68,7 @@ function formatDate(iso: string): string {
 }
 
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
-const EFFORT_COLOR: Record<number, string> = { 1: 'info', 2: 'warning', 3: 'error' }
+const EFFORT_COLOR: Record<number, string> = { 1: 'chip-effort-s', 2: 'chip-effort-m', 3: 'chip-effort-l' }
 
 async function onTaskDropped(taskId: number, targetStatut: string): Promise<void> {
   const task = store.tasks.find(t => t.id === taskId)
@@ -255,8 +255,8 @@ const archivedGroupsSorted = computed(() => {
                         backgroundColor: perimeterBg(task.scope),
                       }"
                     >{{ task.scope }}</v-chip>
-                    <v-chip v-if="task.priority === 'critical'" size="x-small" variant="tonal" color="error">!!</v-chip>
-                    <v-chip v-if="task.priority === 'high'" size="x-small" variant="tonal" color="warning">!</v-chip>
+                    <v-chip v-if="task.priority === 'critical'" size="x-small" variant="tonal" color="chip-priority-critical">!!</v-chip>
+                    <v-chip v-if="task.priority === 'high'" size="x-small" variant="tonal" color="chip-priority-high">!</v-chip>
                     <v-chip size="x-small" variant="tonal" class="arc-id-chip">#{{ task.id }}</v-chip>
                     <v-chip v-if="task.effort" size="x-small" variant="tonal" :color="EFFORT_COLOR[task.effort]">{{ EFFORT_LABEL[task.effort] }}</v-chip>
                     <v-chip size="x-small" variant="tonal" class="arc-date-chip">{{ formatDate(task.updated_at) }}</v-chip>

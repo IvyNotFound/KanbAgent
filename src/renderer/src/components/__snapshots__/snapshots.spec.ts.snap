@@ -327,6 +327,7 @@ exports[`TaskCard — snapshots > matches snapshot: done task without agent or p
         <!--v-if-->
         <!--v-if-->
         <!--v-if-->
+        <!--v-if-->
       </div>
     </div><!-- Badges: perimeter + agent avatars -->
     <!--v-if-->
