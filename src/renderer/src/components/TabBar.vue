@@ -358,9 +358,9 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
-  height: 40px;
+  height: 44px;
   align-self: center;
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 2px 3px;
 }
 /* Pill header — agent identity, always visible */
@@ -369,12 +369,12 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   align-items: center;
   gap: 5px;
   padding: 0 10px;
-  height: 32px;
+  height: 36px;
   font-size: 11px;
   font-weight: 600;
   transition: filter var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
-  border-radius: 16px;
+  border-radius: 18px;
   flex-shrink: 0;
   cursor: pointer;
   border: none;
@@ -411,13 +411,13 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   align-items: center;
   gap: 5px;
   padding: 0 10px;
-  height: 32px;
+  height: 36px;
   font-size: 11px;
   font-weight: 500;
   transition: background var(--md-duration-short3) var(--md-easing-standard),
               color var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
-  border-radius: 12px;
+  border-radius: 14px;
   flex-shrink: 0;
   cursor: pointer;
   background-color: var(--sub-tab-bg, transparent);
