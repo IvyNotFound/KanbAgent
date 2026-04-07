@@ -117,258 +117,303 @@ function onDefaultCliChange(v: string) {
 </script>
 
 <template>
-  <!-- scrollable removed: content panel handles its own scroll independently (Discord-style) -->
-  <v-dialog model-value max-width="700" :height="700" @update:model-value="emit('close')">
-    <v-card class="d-flex flex-column" style="max-height: 85vh;" @keydown="handleKeydown">
+  <v-dialog model-value width="760" height="560" @update:model-value="emit('close')">
+    <v-card class="d-flex flex-column" height="100%" @keydown="handleKeydown">
 
-        <!-- Header -->
-        <div class="modal-header">
-          <h2 class="text-subtitle-1 font-weight-medium" style="color: var(--content-primary)">{{ t('settings.title') }}</h2>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            size="small"
-            :title="t('settings.fermer')"
-            data-testid="close-btn"
-            @click="emit('close')"
+      <!-- Header -->
+      <div class="d-flex align-center justify-space-between px-5 py-3" style="flex-shrink: 0;">
+        <span class="text-subtitle-1 font-weight-medium">{{ t('settings.title') }}</span>
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          size="small"
+          :title="t('settings.fermer')"
+          data-testid="close-btn"
+          @click="emit('close')"
+        />
+      </div>
+      <v-divider />
+
+      <!-- Body: nav rail + content panel -->
+      <div class="d-flex flex-grow-1" style="min-height: 0; overflow: hidden;">
+
+        <!-- Nav rail -->
+        <v-list
+          nav
+          density="compact"
+          bg-color="transparent"
+          style="width: 200px; flex-shrink: 0;"
+          class="pa-2"
+        >
+          <v-list-item
+            v-for="s in sections"
+            :key="s.id"
+            rounded="lg"
+            color="primary"
+            :prepend-icon="SECTION_ICONS[s.id]"
+            :title="t(s.labelKey)"
+            :active="activeSection === s.id"
+            :data-testid="`nav-${s.id}`"
+            @click="activeSection = s.id"
           />
-        </div>
+        </v-list>
 
-        <!-- Body: sidebar + content panel -->
-        <div class="d-flex flex-grow-1" style="min-height: 0;">
+        <v-divider vertical />
 
-          <!-- Sidebar navigation -->
-          <v-list
-            nav
-            density="compact"
-            bg-color="transparent"
-            class="pa-1"
-            style="width: 176px; flex-shrink: 0; border-right: 1px solid var(--edge-subtle);"
-          >
-            <v-list-item
-              v-for="s in sections"
-              :key="s.id"
-              :prepend-icon="SECTION_ICONS[s.id]"
-              :title="t(s.labelKey)"
-              :active="activeSection === s.id"
-              :data-testid="`nav-${s.id}`"
-              color="primary"
-              @click="activeSection = s.id"
-            />
-          </v-list>
+        <!-- Content panel -->
+        <div style="flex: 1; overflow-y: auto;" class="pa-4 d-flex flex-column ga-3">
 
-          <!-- Content panel: scrolls independently, sidebar stays fixed -->
-          <div class="settings-content">
+          <!-- Appearance: Language + Theme -->
+          <template v-if="activeSection === 'appearance'">
+            <v-sheet rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.language') }}</p>
+              <v-select
+                :model-value="settingsStore.language"
+                :items="availableLocales"
+                item-title="label"
+                item-value="code"
+                variant="outlined"
+                density="compact"
+                hide-details
+                data-testid="lang-select"
+                @update:model-value="(v) => settingsStore.setLanguage(v as Language)"
+              />
+            </v-sheet>
+            <v-sheet rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.theme') }}</p>
+              <v-btn-toggle
+                :model-value="settingsStore.theme"
+                mandatory
+                color="primary"
+                variant="outlined"
+                density="compact"
+                data-testid="theme-toggle"
+                @update:model-value="(v) => settingsStore.setTheme(v as Theme)"
+              >
+                <v-btn value="dark">{{ t('settings.dark') }}</v-btn>
+                <v-btn value="light">{{ t('settings.light') }}</v-btn>
+              </v-btn-toggle>
+            </v-sheet>
+          </template>
 
-            <!-- Appearance: Language + Theme -->
-            <template v-if="activeSection === 'appearance'">
-              <div class="settings-section">
-                <p class="settings-label text-label-medium">{{ t('settings.language') }}</p>
-                <v-select
-                  :model-value="settingsStore.language"
-                  :items="availableLocales"
-                  item-title="label"
-                  item-value="code"
-                  density="compact"
+          <!-- Automation: Auto-launch + Auto-review + Worktree -->
+          <template v-else-if="activeSection === 'automation'">
+            <v-sheet rounded="lg" border class="pa-4">
+              <div class="d-flex align-center justify-space-between ga-4">
+                <div>
+                  <p class="text-body-2 font-weight-medium">{{ t('settings.autoLaunch') }}</p>
+                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.autoLaunchDesc') }}</p>
+                </div>
+                <v-switch
                   hide-details
-                  data-testid="lang-select"
-                  @update:model-value="(v) => settingsStore.setLanguage(v as Language)"
+                  density="compact"
+                  color="primary"
+                  :model-value="settingsStore.autoLaunchAgentSessions"
+                  @update:model-value="settingsStore.setAutoLaunchAgentSessions(Boolean($event))"
                 />
               </div>
-              <div class="settings-section">
-                <p class="settings-label text-label-medium">{{ t('settings.theme') }}</p>
-                <v-btn-toggle
-                  :model-value="settingsStore.theme"
-                  mandatory
+            </v-sheet>
+            <v-sheet rounded="lg" border class="pa-4">
+              <div class="d-flex align-center justify-space-between ga-4">
+                <div>
+                  <p class="text-body-2 font-weight-medium">{{ t('settings.autoReview') }}</p>
+                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.autoReviewDesc') }}</p>
+                </div>
+                <v-switch
+                  hide-details
+                  density="compact"
                   color="primary"
+                  :model-value="settingsStore.autoReviewEnabled"
+                  @update:model-value="settingsStore.setAutoReviewEnabled(Boolean($event))"
+                />
+              </div>
+              <div v-if="settingsStore.autoReviewEnabled" class="d-flex align-center ga-2 mt-3">
+                <label class="text-body-2 text-medium-emphasis">{{ t('settings.autoReviewThreshold') }}</label>
+                <v-text-field
+                  type="number"
+                  :model-value="settingsStore.autoReviewThreshold"
+                  :min="3"
+                  :max="100"
                   variant="outlined"
                   density="compact"
-                  data-testid="theme-toggle"
-                  @update:model-value="(v) => settingsStore.setTheme(v as Theme)"
-                >
-                  <v-btn value="dark">{{ t('settings.dark') }}</v-btn>
-                  <v-btn value="light">{{ t('settings.light') }}</v-btn>
-                </v-btn-toggle>
-              </div>
-            </template>
-
-            <!-- Automation: Auto-launch + Auto-review -->
-            <template v-else-if="activeSection === 'automation'">
-              <div class="settings-section">
-                <div class="d-flex align-center justify-space-between ga-4">
-                  <div>
-                    <p class="settings-label text-label-medium">{{ t('settings.autoLaunch') }}</p>
-                    <p class="settings-desc text-caption">{{ t('settings.autoLaunchDesc') }}</p>
-                  </div>
-                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.autoLaunchAgentSessions" @update:model-value="settingsStore.setAutoLaunchAgentSessions(Boolean($event))" />
-                </div>
-              </div>
-              <div class="settings-section">
-                <div class="d-flex align-center justify-space-between ga-4 mb-2">
-                  <div>
-                    <p class="settings-label text-label-medium">{{ t('settings.autoReview') }}</p>
-                    <p class="settings-desc text-caption">{{ t('settings.autoReviewDesc') }}</p>
-                  </div>
-                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.autoReviewEnabled" @update:model-value="settingsStore.setAutoReviewEnabled(Boolean($event))" />
-                </div>
-                <div v-if="settingsStore.autoReviewEnabled" class="d-flex align-center ga-2 mt-2">
-                  <label class="settings-desc text-caption">{{ t('settings.autoReviewThreshold') }}</label>
-                  <v-text-field
-                    type="number"
-                    :model-value="settingsStore.autoReviewThreshold"
-                    :min="3"
-                    :max="100"
-                    density="compact"
-                    hide-details
-                    style="width: 80px"
-                    @update:model-value="(v) => settingsStore.setAutoReviewThreshold(Number(v))"
-                  />
-                </div>
-              </div>
-              <div class="settings-section">
-                <div class="d-flex align-center justify-space-between ga-4">
-                  <div>
-                    <p class="settings-label text-label-medium">{{ t('settings.worktreeDefault') }}</p>
-                    <p class="settings-desc text-caption">{{ t('settings.worktreeDefaultDesc') }}</p>
-                  </div>
-                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.worktreeDefault" @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, Boolean($event))" />
-                </div>
-              </div>
-            </template>
-
-            <!-- Editor: Max file lines -->
-            <template v-else-if="activeSection === 'editor'">
-              <div class="settings-section">
-                <div class="d-flex align-center justify-space-between ga-4 mb-2">
-                  <div>
-                    <p class="settings-label text-label-medium">{{ t('settings.maxFileLinesEnabled') }}</p>
-                    <p class="settings-desc text-caption">{{ t('settings.maxFileLinesEnabledDesc') }}</p>
-                  </div>
-                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.maxFileLinesEnabled" @update:model-value="settingsStore.setMaxFileLinesEnabled(Boolean($event))" />
-                </div>
-                <div v-if="settingsStore.maxFileLinesEnabled" class="d-flex align-center ga-2 mt-2">
-                  <label class="settings-desc text-caption">{{ t('settings.maxFileLinesCount') }}</label>
-                  <v-text-field
-                    type="number"
-                    :model-value="settingsStore.maxFileLinesCount"
-                    :min="50"
-                    :max="10000"
-                    density="compact"
-                    hide-details
-                    style="width: 96px"
-                    data-testid="max-file-lines-count"
-                    @update:model-value="(v) => settingsStore.setMaxFileLinesCount(Number(v))"
-                  />
-                </div>
-              </div>
-            </template>
-
-            <!-- CLI & Agents -->
-            <template v-else-if="activeSection === 'cli'">
-              <div class="settings-section">
-                <p class="settings-label text-label-medium">{{ t('settings.aiCodingAssistants') }}</p>
-                <p class="settings-desc mb-3 text-caption">{{ t('settings.aiCodingAssistantsDesc') }}</p>
-                <CliDetectionList
-                  :instances="settingsStore.allCliInstances"
-                  :enabled="settingsStore.enabledClis"
-                  :loading="settingsStore.detectingClis"
-                  @refresh="settingsStore.refreshCliDetection()"
-                  @toggle="settingsStore.toggleCli($event)"
-                />
-              </div>
-              <div class="settings-section">
-                <p class="settings-label text-label-medium">{{ t('settings.defaultCliInstance') }}</p>
-                <div v-if="availableDistros.length === 0" class="settings-desc text-caption">—</div>
-                <v-select
-                  v-else
-                  :model-value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
-                  :items="availableDistroItems"
-                  density="compact"
                   hide-details
-                  @update:model-value="(v) => onDefaultCliChange(v as string)"
+                  style="width: 80px"
+                  @update:model-value="(v) => settingsStore.setAutoReviewThreshold(Number(v))"
                 />
               </div>
-              <div class="settings-section">
-                <p class="settings-label text-label-medium">{{ t('settings.opencodeDefaultModel') }}</p>
-                <p class="settings-desc mb-2 text-caption">{{ t('settings.opencodeDefaultModelHint') }}</p>
+            </v-sheet>
+            <v-sheet rounded="lg" border class="pa-4">
+              <div class="d-flex align-center justify-space-between ga-4">
+                <div>
+                  <p class="text-body-2 font-weight-medium">{{ t('settings.worktreeDefault') }}</p>
+                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.worktreeDefaultDesc') }}</p>
+                </div>
+                <v-switch
+                  hide-details
+                  density="compact"
+                  color="primary"
+                  :model-value="settingsStore.worktreeDefault"
+                  @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, Boolean($event))"
+                />
+              </div>
+            </v-sheet>
+          </template>
+
+          <!-- Editor: Max file lines -->
+          <template v-else-if="activeSection === 'editor'">
+            <v-sheet rounded="lg" border class="pa-4">
+              <div class="d-flex align-center justify-space-between ga-4">
+                <div>
+                  <p class="text-body-2 font-weight-medium">{{ t('settings.maxFileLinesEnabled') }}</p>
+                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.maxFileLinesEnabledDesc') }}</p>
+                </div>
+                <v-switch
+                  hide-details
+                  density="compact"
+                  color="primary"
+                  :model-value="settingsStore.maxFileLinesEnabled"
+                  @update:model-value="settingsStore.setMaxFileLinesEnabled(Boolean($event))"
+                />
+              </div>
+              <div v-if="settingsStore.maxFileLinesEnabled" class="d-flex align-center ga-2 mt-3">
+                <label class="text-body-2 text-medium-emphasis">{{ t('settings.maxFileLinesCount') }}</label>
                 <v-text-field
-                  :model-value="settingsStore.opencodeDefaultModel"
-                  placeholder="anthropic/claude-opus-4-5"
+                  type="number"
+                  :model-value="settingsStore.maxFileLinesCount"
+                  :min="50"
+                  :max="10000"
+                  variant="outlined"
                   density="compact"
                   hide-details
-                  @blur="(e: FocusEvent) => store.dbPath && settingsStore.setOpencodeDefaultModel(store.dbPath, (e.target as HTMLInputElement).value)"
+                  style="width: 96px"
+                  data-testid="max-file-lines-count"
+                  @update:model-value="(v) => settingsStore.setMaxFileLinesCount(Number(v))"
                 />
               </div>
-            </template>
+            </v-sheet>
+          </template>
 
-            <!-- Notifications -->
-            <template v-else-if="activeSection === 'notifications'">
-              <div class="settings-section">
-                <div class="d-flex align-center justify-space-between ga-4">
-                  <div>
-                    <p class="settings-label text-label-medium">{{ t('settings.notifications') }}</p>
-                    <p class="settings-desc text-caption">{{ t('settings.notificationsDesc') }}</p>
-                  </div>
-                  <v-switch hide-details density="compact" color="primary" :model-value="settingsStore.notificationsEnabled" @update:model-value="settingsStore.setNotificationsEnabled(Boolean($event))" />
-                </div>
-              </div>
-            </template>
+          <!-- CLI & Agents -->
+          <template v-else-if="activeSection === 'cli'">
+            <v-sheet rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-1">{{ t('settings.aiCodingAssistants') }}</p>
+              <p class="text-body-2 text-medium-emphasis mb-3">{{ t('settings.aiCodingAssistantsDesc') }}</p>
+              <CliDetectionList
+                :instances="settingsStore.allCliInstances"
+                :enabled="settingsStore.enabledClis"
+                :loading="settingsStore.detectingClis"
+                @refresh="settingsStore.refreshCliDetection()"
+                @toggle="settingsStore.toggleCli($event)"
+              />
+            </v-sheet>
+            <v-sheet rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.defaultCliInstance') }}</p>
+              <div v-if="availableDistros.length === 0" class="text-body-2 text-medium-emphasis">—</div>
+              <v-select
+                v-else
+                :model-value="settingsStore.defaultCliInstance || (availableDistros[0] ? `${availableDistros[0].cli}:${availableDistros[0].distro}` : '')"
+                :items="availableDistroItems"
+                variant="outlined"
+                density="compact"
+                hide-details
+                @update:model-value="(v) => onDefaultCliChange(v as string)"
+              />
+            </v-sheet>
+            <v-sheet rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-1">{{ t('settings.opencodeDefaultModel') }}</p>
+              <p class="text-body-2 text-medium-emphasis mb-2">{{ t('settings.opencodeDefaultModelHint') }}</p>
+              <v-text-field
+                :model-value="settingsStore.opencodeDefaultModel"
+                placeholder="anthropic/claude-opus-4-5"
+                variant="outlined"
+                density="compact"
+                hide-details
+                @blur="(e: FocusEvent) => store.dbPath && settingsStore.setOpencodeDefaultModel(store.dbPath, (e.target as HTMLInputElement).value)"
+              />
+            </v-sheet>
+          </template>
 
-            <!-- Application: Updates + About + Export + DB -->
-            <template v-else-if="activeSection === 'application'">
-              <div class="settings-section">
-                <p class="settings-label mb-3 text-label-medium">{{ t('settings.updates') }}</p>
-                <div class="d-flex align-center justify-space-between">
-                  <span class="settings-desc text-caption">
-                    {{ t('settings.version') }}: <span class="font-mono">{{ settingsStore.appInfo.version }}</span>
-                  </span>
-                  <v-btn
-                    color="primary"
-                    :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
-                    @click="checkUpdaterNow"
-                  >{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}</v-btn>
+          <!-- Notifications -->
+          <template v-else-if="activeSection === 'notifications'">
+            <v-sheet rounded="lg" border class="pa-4">
+              <div class="d-flex align-center justify-space-between ga-4">
+                <div>
+                  <p class="text-body-2 font-weight-medium">{{ t('settings.notifications') }}</p>
+                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.notificationsDesc') }}</p>
                 </div>
-                <div v-if="updaterStatus !== 'idle' && updaterStatus !== 'checking'" class="mt-2">
-                  <span :class="['text-body-2 font-weight-medium', updaterStatus === 'available' || updaterStatus === 'downloaded' ? 'text-amber' : updaterStatus === 'up-to-date' ? 'text-emerald' : updaterStatus === 'error' ? 'text-red' : '']">
-                    <template v-if="updaterStatus === 'up-to-date'">{{ t('settings.upToDate') }}</template>
-                    <template v-else-if="updaterStatus === 'available'">{{ t('settings.updateAvailable') }}</template>
-                    <template v-else-if="updaterStatus === 'downloading'">{{ t('settings.downloading') }}</template>
-                    <template v-else-if="updaterStatus === 'downloaded'">{{ t('settings.downloaded') }}</template>
-                    <template v-else-if="updaterStatus === 'error'">{{ t('settings.updateError') }}</template>
-                  </span>
-                </div>
+                <v-switch
+                  hide-details
+                  density="compact"
+                  color="primary"
+                  :model-value="settingsStore.notificationsEnabled"
+                  @update:model-value="settingsStore.setNotificationsEnabled(Boolean($event))"
+                />
               </div>
-              <div class="settings-section">
-                <p class="settings-label mb-2 text-label-medium">{{ t('settings.about') }}</p>
-                <p class="settings-desc text-caption">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
-                <p class="settings-desc mt-1 text-caption">{{ t('settings.aboutDesc') }}</p>
-              </div>
-              <div v-if="store.dbPath" class="settings-section">
-                <p class="settings-label mb-3 text-label-medium">{{ t('settings.exportData') }}</p>
+            </v-sheet>
+          </template>
+
+          <!-- Application: Updates + About + Export + DB -->
+          <template v-else-if="activeSection === 'application'">
+            <v-sheet rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-3">{{ t('settings.updates') }}</p>
+              <div class="d-flex align-center justify-space-between">
+                <span class="text-body-2 text-medium-emphasis">
+                  {{ t('settings.version') }}: <code>{{ settingsStore.appInfo.version }}</code>
+                </span>
                 <v-btn
                   color="primary"
-                  prepend-icon="mdi-download"
-                  :disabled="exporting"
-                  @click="showExportConfirm = true"
-                >{{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}</v-btn>
+                  :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
+                  @click="checkUpdaterNow"
+                >{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}</v-btn>
               </div>
-              <div v-if="store.dbPath" class="settings-section">
-                <p class="settings-label mb-2 text-label-medium">{{ t('settings.database') }}</p>
-                <p class="settings-desc font-mono text-caption" style="word-break: break-all;">{{ store.dbPath }}</p>
+              <div v-if="updaterStatus !== 'idle' && updaterStatus !== 'checking'" class="mt-2">
+                <span
+                  :class="[
+                    'text-body-2 font-weight-medium',
+                    (updaterStatus === 'available' || updaterStatus === 'downloaded') ? 'text-warning' :
+                    updaterStatus === 'up-to-date' ? 'text-secondary' :
+                    updaterStatus === 'error' ? 'text-error' : ''
+                  ]"
+                >
+                  <template v-if="updaterStatus === 'up-to-date'">{{ t('settings.upToDate') }}</template>
+                  <template v-else-if="updaterStatus === 'available'">{{ t('settings.updateAvailable') }}</template>
+                  <template v-else-if="updaterStatus === 'downloading'">{{ t('settings.downloading') }}</template>
+                  <template v-else-if="updaterStatus === 'downloaded'">{{ t('settings.downloaded') }}</template>
+                  <template v-else-if="updaterStatus === 'error'">{{ t('settings.updateError') }}</template>
+                </span>
               </div>
-            </template>
+            </v-sheet>
+            <v-sheet rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.about') }}</p>
+              <p class="text-body-2 text-medium-emphasis">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
+              <p class="text-body-2 text-medium-emphasis mt-1">{{ t('settings.aboutDesc') }}</p>
+            </v-sheet>
+            <v-sheet v-if="store.dbPath" rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-3">{{ t('settings.exportData') }}</p>
+              <v-btn
+                color="primary"
+                prepend-icon="mdi-download"
+                :disabled="exporting"
+                @click="showExportConfirm = true"
+              >{{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}</v-btn>
+            </v-sheet>
+            <v-sheet v-if="store.dbPath" rounded="lg" border class="pa-4">
+              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.database') }}</p>
+              <p class="text-body-2 text-medium-emphasis" style="font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace; word-break: break-all;">{{ store.dbPath }}</p>
+            </v-sheet>
+          </template>
 
-          </div>
         </div>
+      </div>
     </v-card>
   </v-dialog>
 
-  <!-- Export confirmation nested dialog -->
+  <!-- Export confirmation dialog -->
   <v-dialog v-model="showExportConfirm" max-width="360">
     <v-card class="pa-5">
-      <h3 class="text-body-1 font-weight-medium mb-2" style="color: var(--content-primary)">{{ t('settings.exportConfirmTitle') }}</h3>
-      <p class="text-body-2 mb-2" style="color: var(--content-muted)">{{ t('settings.exportConfirmMsg') }}</p>
-      <p class="text-caption mb-4" style="color: rgb(var(--v-theme-warning));">{{ t('settings.exportConfirmWarn') }}</p>
+      <h3 class="text-body-1 font-weight-medium mb-2">{{ t('settings.exportConfirmTitle') }}</h3>
+      <p class="text-body-2 text-medium-emphasis mb-2">{{ t('settings.exportConfirmMsg') }}</p>
+      <p class="text-caption text-warning mb-4">{{ t('settings.exportConfirmWarn') }}</p>
       <div class="d-flex ga-2 justify-end">
         <v-btn variant="text" @click="showExportConfirm = false">{{ t('settings.exportCancel') }}</v-btn>
         <v-btn color="primary" @click="exportZip">{{ t('settings.exportConfirm') }}</v-btn>
@@ -376,55 +421,3 @@ function onDefaultCliChange(v: string) {
     </v-card>
   </v-dialog>
 </template>
-
-<style scoped>
-/* Modal layout */
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--edge-subtle);
-  flex-shrink: 0;
-}
-
-/* Content panel: scrolls independently — sidebar stays fixed (Discord-style) */
-.settings-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* Section containers */
-.settings-section {
-  border: 1px solid var(--edge-subtle);
-  border-radius: var(--shape-sm);
-  padding: 12px 16px;
-}
-
-/* Settings labels and descriptions
-   surface-dialog = zinc-800 (#27272a) — content-subtle/faint fail WCAG AA on this bg.
-   content-tertiary (zinc-300) → ~8.8:1 on zinc-800 ✓  content-muted (zinc-400) → ~5.1:1 ✓ */
-.settings-label {
-  font-weight: 500;
-  color: var(--content-tertiary);
-  margin-bottom: 8px;
-}
-.settings-desc {
-  color: var(--content-muted);
-}
-
-/* Typography utilities */
-.font-mono {
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  color: var(--content-tertiary);
-}
-
-/* Updater status colors */
-.text-amber { color: rgb(var(--v-theme-warning)); }
-.text-emerald { color: rgb(var(--v-theme-secondary)); }
-.text-red { color: rgb(var(--v-theme-error)); }
-</style>
