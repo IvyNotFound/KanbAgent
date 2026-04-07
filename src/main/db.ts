@@ -157,8 +157,18 @@ export async function writeDbNative<T = void>(dbPath: string, fn: (db: Database.
  */
 export async function queryLive(dbPath: string, query: string, params: unknown[]): Promise<unknown[]> {
   const db = getDb(dbPath)
-  const stmt = db.prepare(query)
-  return params.length > 0 ? stmt.all(...params) : stmt.all()
+  try {
+    const stmt = db.prepare(query)
+    return params.length > 0 ? stmt.all(...params) : stmt.all()
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'SQLITE_CORRUPT') {
+      clearDbCacheEntry(dbPath)
+      const wrapped = new Error('DB_CORRUPT: ' + dbPath)
+      ;(wrapped as Error & { code: string }).code = 'SQLITE_CORRUPT'
+      throw wrapped
+    }
+    throw err
+  }
 }
 
 // ── Migration ────────────────────────────────────────────────────────────────

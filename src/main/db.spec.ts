@@ -213,6 +213,17 @@ describe('queryLive (T1157)', () => {
     await queryLive(dbPath, 'SELECT * FROM agents WHERE id = ?', [42])
     expect(mockAll).toHaveBeenCalledWith(42)
   })
+
+  it('should catch SQLITE_CORRUPT, clear pool entry via db.close(), and rethrow with SQLITE_CORRUPT code (T1760)', async () => {
+    clearDbCacheEntry(dbPath)
+    mockClose.mockClear()
+
+    const corruptErr = Object.assign(new Error('database disk image is malformed'), { code: 'SQLITE_CORRUPT' })
+    mockPrepare.mockReturnValue({ all: vi.fn().mockImplementation(() => { throw corruptErr }) })
+
+    await expect(queryLive(dbPath, 'SELECT * FROM tasks', [])).rejects.toMatchObject({ code: 'SQLITE_CORRUPT' })
+    expect(mockClose).toHaveBeenCalled()
+  })
 })
 
 // ── FORBIDDEN_WRITE_PATTERN ─────────────────────────────────────────────────

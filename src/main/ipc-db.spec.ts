@@ -262,6 +262,27 @@ describe('IPC DB handlers', () => {
     })
   })
 
+  // ── query-db : SQLITE_CORRUPT handling (T1760) ──────────────────────────────
+
+  describe('query-db — SQLITE_CORRUPT handling (T1760)', () => {
+    const dbPath = '/fake/project.db'
+
+    it('should return { success: false, error: DB_CORRUPT, rows: [] } when queryLive rejects with SQLITE_CORRUPT', async () => {
+      const corruptErr = Object.assign(new Error('database disk image is malformed'), { code: 'SQLITE_CORRUPT' })
+      vi.mocked(mockedQueryLive).mockRejectedValueOnce(corruptErr)
+
+      const result = await callHandler('query-db', dbPath, 'SELECT * FROM tasks')
+      expect(result).toMatchObject({ success: false, error: 'DB_CORRUPT', rows: [] })
+    })
+
+    it('should still throw for non-SQLITE_CORRUPT errors', async () => {
+      const genericErr = new Error('some other db error')
+      vi.mocked(mockedQueryLive).mockRejectedValueOnce(genericErr)
+
+      await expect(callHandler('query-db', dbPath, 'SELECT * FROM tasks')).rejects.toThrow('some other db error')
+    })
+  })
+
   // ── migrate-db ────────────────────────────────────────────────────────────
 
   describe('migrate-db handler', () => {
