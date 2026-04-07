@@ -252,7 +252,6 @@ function contextMenuItemsFor(agent: Agent): ContextMenuItem[] {
     : (hasOpenTerminal(agent.name) ? t('sidebar.goToSession') : t('sidebar.openSession'))
   return [
     { label: primaryLabel, action: () => openAgentSession(agent) },
-    { label: t('sidebar.viewLogs'), action: () => tabsStore.addLogs(agent.id) },
     { label: t('sidebar.viewTasks'), action: () => store.toggleAgentFilter(agent.id) },
     { separator: true, label: '', action: () => {} },
     { label: t('sidebar.editAgent'), action: () => { editAgentTarget.value = agent } },
