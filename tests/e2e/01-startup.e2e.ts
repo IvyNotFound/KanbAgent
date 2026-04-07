@@ -31,8 +31,8 @@ test('app shows DB selector (project picker) on first launch', async () => {
   const { page } = handle
   // DbSelector shows an "Open" and "Create new" option when no project is loaded
   // These map to t('dbSelector.open') and t('dbSelector.createNew')
-  // We test by CSS class pattern: the two-column grid of project actions
-  const actionGrid = page.locator('.grid.grid-cols-2')
+  // We test by CSS class pattern: the action grid in DbSelector (MD3 rewrite)
+  const actionGrid = page.locator('.action-grid')
   await expect(actionGrid).toBeVisible({ timeout: 10_000 })
 })
 

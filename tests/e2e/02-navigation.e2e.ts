@@ -22,13 +22,12 @@ test.afterEach(async () => {
 
 test('TitleBar renders window controls (minimize/maximize/close)', async () => {
   const { page } = handle
-  // Window control buttons are at the right end of the title bar
-  // Each is 46px wide (w-[46px] in TitleBar.vue)
-  const controls = page.locator('.h-full.flex.items-stretch')
+  // Window control buttons are at the right end of the title bar (MD3 rewrite)
+  const controls = page.locator('.titlebar-controls')
   await expect(controls).toBeVisible({ timeout: 10_000 })
 
-  // Three button-like elements for minimize/maximize/close
-  const buttons = page.locator('.h-full.flex.items-stretch button, .h-full.flex.items-stretch div[class*="w-\\[46px\\]"]')
+  // Three .win-btn elements for minimize/maximize/close
+  const buttons = page.locator('.win-btn')
   const count = await buttons.count()
   expect(count).toBeGreaterThanOrEqual(3)
 })
@@ -42,9 +41,8 @@ test('search bar (Ctrl+K) is visible in title bar', async () => {
 
 test('DbSelector shows tagline text', async () => {
   const { page } = handle
-  // The DbSelector always shows the logo icon area regardless of locale
-  // The violet icon container is identifiable by its CSS class
-  const iconContainer = page.locator('.w-14.h-14.rounded-2xl')
+  // The DbSelector always shows the logo avatar regardless of locale (MD3 rewrite)
+  const iconContainer = page.locator('.logo-avatar')
   await expect(iconContainer).toBeVisible({ timeout: 10_000 })
 })
 
