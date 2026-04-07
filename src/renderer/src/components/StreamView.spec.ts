@@ -305,12 +305,12 @@ describe('StreamView', () => {
     expect(userBlock.classes()).toContain('block-user')
   })
 
-  it('stop-button is hidden when agent is not streaming (T683, T1536)', async () => {
-    // T1536: button stays in DOM (visibility:hidden) to prevent Send button from shifting
+  it('stop-button is disabled when agent is not streaming (T683, T1536, T1569)', async () => {
+    // T1569: button stays in DOM with :disabled=true when isStreaming=false
     const { wrapper } = await mountStream([])
     const btn = wrapper.find('[data-testid="stop-button"]')
     expect(btn.exists()).toBe(true)
-    expect((btn.element as HTMLElement).style.visibility).toBe('hidden')
+    expect(btn.attributes('disabled')).toBeDefined()
   })
 
   it('stop-button is visible when isStreaming=true and ptyId set (T683)', async () => {
@@ -337,8 +337,8 @@ describe('StreamView', () => {
     expect(mockElectronAPI.agentKill).toHaveBeenCalledWith('agent-stream-1')
   })
 
-  it('stop-button becomes hidden after click (agentStopped flag, T683, T1536)', async () => {
-    // T1536: button stays in DOM (visibility:hidden) rather than being removed from DOM
+  it('stop-button becomes disabled after click (agentStopped flag, T683, T1536, T1569)', async () => {
+    // T1569: button stays in DOM with :disabled=true after click (agentStopped=true)
     const event: StreamEvent = {
       type: 'assistant',
       message: { role: 'assistant', content: [{ type: 'text', text: 'En cours…' }] },
@@ -349,7 +349,7 @@ describe('StreamView', () => {
     await nextTick()
     const btn = wrapper.find('[data-testid="stop-button"]')
     expect(btn.exists()).toBe(true)
-    expect((btn.element as HTMLElement).style.visibility).toBe('hidden')
+    expect(btn.attributes('disabled')).toBeDefined()
   })
 
   it('renders error:spawn event as red error block (T694)', async () => {
