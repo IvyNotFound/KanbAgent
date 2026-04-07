@@ -68,7 +68,7 @@ function formatDate(iso: string): string {
 }
 
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
-const EFFORT_COLOR: Record<number, string> = { 1: 'secondary', 2: 'warning', 3: 'error' }
+const EFFORT_COLOR: Record<number, string> = { 1: 'info', 2: 'warning', 3: 'error' }
 
 async function onTaskDropped(taskId: number, targetStatut: string): Promise<void> {
   const task = store.tasks.find(t => t.id === taskId)
