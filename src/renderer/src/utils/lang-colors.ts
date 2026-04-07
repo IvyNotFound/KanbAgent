@@ -47,6 +47,37 @@ const LANG_COLORS: Record<string, { light: string; dark: string }> = {
   Dockerfile:  { dark: '#38bdf8', light: '#075985' },
   Svelte:      { dark: '#fb7185', light: '#9f1239' },
   SCSS:        { dark: '#f9a8d4', light: '#9d174d' },
+  // Additional systems / compiled
+  Scala:          { dark: '#f87171', light: '#991b1b' },
+  Haskell:        { dark: '#a78bfa', light: '#4c1d95' },
+  Dart:           { dark: '#67e8f9', light: '#0c4a6e' },
+  Zig:            { dark: '#f6ad55', light: '#7c3c00' },
+  Nim:            { dark: '#fde68a', light: '#78350f' },
+  Lua:            { dark: '#93c5fd', light: '#1e3a8a' },
+  Perl:           { dark: '#c084fc', light: '#581c87' },
+  'Objective-C':  { dark: '#94a3b8', light: '#334155' },
+  Elixir:         { dark: '#d8b4fe', light: '#6b21a8' },
+  Julia:          { dark: '#a5f3fc', light: '#155e75' },
+  // Config / infra / templating
+  HCL:            { dark: '#c084fc', light: '#7e22ce' },
+  Makefile:       { dark: '#86efac', light: '#166534' },
+  XML:            { dark: '#fca5a5', light: '#9b1c1c' },
+  GraphQL:        { dark: '#f472b6', light: '#9d174d' },
+  SASS:           { dark: '#f9a8d4', light: '#831843' },
+  Less:           { dark: '#818cf8', light: '#312e81' },
+  Astro:          { dark: '#fb923c', light: '#7c2d12' },
+  // Shells / scripting
+  PowerShell:     { dark: '#38bdf8', light: '#0369a1' },
+  Bash:           { dark: '#bef264', light: '#365314' },
+  Fish:           { dark: '#6ee7b7', light: '#065f46' },
+  // Data / notebook
+  R:              { dark: '#60a5fa', light: '#1e40af' },
+  Jupyter:        { dark: '#f97316', light: '#9a3412' },
+  // Functional / exotic
+  Clojure:        { dark: '#6ee7b7', light: '#134e4a' },
+  Erlang:         { dark: '#fda4af', light: '#9f1239' },
+  OCaml:          { dark: '#fb923c', light: '#7c2d12' },
+  'F#':           { dark: '#93c5fd', light: '#1e40af' },
 }
 
 /**
