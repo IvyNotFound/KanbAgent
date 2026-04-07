@@ -498,7 +498,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
     <v-btn v-if="!creatingGroup" variant="text" block size="small" height="36" class="add-btn text-body-2" prepend-icon="mdi-plus" @click="startCreateGroup">
       {{ t('sidebar.newGroup') }}
     </v-btn>
-    <v-btn variant="text" block size="small" height="36" class="add-btn mt-1 text-caption" prepend-icon="mdi-plus" @click="showCreateAgent = true">
+    <v-btn variant="text" block size="small" height="36" class="add-btn mt-1 text-body-2" prepend-icon="mdi-plus" @click="showCreateAgent = true">
       {{ t('sidebar.addAgent') }}
     </v-btn>
   </div>
