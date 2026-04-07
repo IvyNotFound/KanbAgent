@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Tab } from '@renderer/stores/tabs'
-import { agentAccent } from '@renderer/utils/agentColor'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
 import { useTabBarGroups } from '@renderer/composables/useTabBarGroups'
 import ContextMenu from './ContextMenu.vue'
@@ -27,8 +26,8 @@ function onFixedTabChange(val: string | null | undefined) {
 const {
   store, terminalTabs, fileTabs,
   groupedTerminalTabs,
-  toggleGroup, isGroupCollapsed, isGroupActive, activateAgentGroup,
-  tabStyleMap, agentTabStyleMap, indicatorStyleMap, subTabLabel,
+  toggleGroup, isGroupCollapsed, activateAgentGroup,
+  agentTabStyleMap, subTabBgMap, indicatorStyleMap, subTabLabel,
 } = useTabBarGroups(scrollContainer)
 
 // ── Scroll state ─────────────────────────────────────────────────────────────
@@ -201,11 +200,6 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
             v-if="isGroupCollapsed(group.agentName)"
             class="tab-group-count"
           >{{ group.tabs.length }}</span>
-          <span
-            v-if="isGroupActive(group)"
-            class="tab-agent-indicator"
-            :style="group.agentName ? { backgroundColor: agentAccent(group.agentName) } : { backgroundColor: 'rgb(var(--v-theme-primary))' }"
-          ></span>
         </button>
 
         <!-- Sous-onglets session (masqués si groupe collapsé) -->
@@ -214,7 +208,8 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
             <button
               v-ripple
               class="tab-sub text-body-2"
-              :style="tabStyleMap.get(tab.id)"
+              :class="{ 'tab-sub--active': store.activeTabId === tab.id }"
+              :style="subTabBgMap.get(tab.id)"
               :title="subTabLabel(tab)"
               @click="store.setActive(tab.id)"
               @mousedown="onMiddleClick($event, tab)"
@@ -227,6 +222,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
                 @click.stop="handleCloseTab(tab)"
               >✕</span>
               <span
+                v-if="store.activeTabId === tab.id"
                 class="tab-sub-indicator"
                 :style="indicatorStyleMap.get(tab.id)"
               ></span>
@@ -361,45 +357,40 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 }
 .tab-group {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  border-radius: var(--shape-sm) var(--shape-sm) 0 0;
+  padding: 0 4px;
+  margin: 0 2px;
 }
 .tab-group-sep {
   border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  margin-right: 4px;
-  padding-right: 4px;
+  margin-right: 2px;
 }
+/* Pill header — MD3 group header floating centered in the 48px bar */
 .tab-agent {
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 0 12px;
+  height: 36px;
+  align-self: center;
   font-weight: 500;
-  transition: all var(--md-duration-short3) var(--md-easing-standard);
+  transition: filter var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
-  border-radius: var(--shape-xs) var(--shape-xs) 0 0;
+  border-radius: 18px;
   flex-shrink: 0;
   cursor: pointer;
-  background: none;
   border: none;
 }
 .tab-agent:hover {
-  background: rgba(var(--v-theme-on-surface), 0.08);
+  filter: brightness(1.1);
 }
-/* Pressed — MD3 state layer 12% */
 .tab-agent:active {
-  background: rgba(var(--v-theme-on-surface), 0.12);
-}
-/* Active indicator — positioning extracted from inline style */
-.tab-agent-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
+  filter: brightness(0.9);
 }
 .tab-agent-name {
   max-width: 80px;
@@ -419,27 +410,33 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
   opacity: 0.7;
   flex-shrink: 0;
 }
+/* Secondary tab — flush-bottom (align-self: stretch overrides parent align-items: center) */
 .tab-sub {
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 16px;
-  min-width: 90px;
+  padding: 0 14px;
+  min-width: 80px;
+  font-size: 11px;
   font-weight: 500;
-  transition: all var(--md-duration-short3) var(--md-easing-standard);
+  transition: background var(--md-duration-short3) var(--md-easing-standard);
   user-select: none;
-  border-radius: var(--shape-xs) var(--shape-xs) 0 0;
+  border-radius: var(--shape-sm) var(--shape-sm) 0 0;
   flex-shrink: 0;
   cursor: pointer;
   background: none;
   border: none;
+  align-self: stretch;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
-.tab-sub:hover {
+.tab-sub--active {
+  color: rgba(var(--v-theme-on-surface), 0.87);
+}
+.tab-sub:not(.tab-sub--active):hover {
   background: rgba(var(--v-theme-on-surface), 0.08);
 }
-/* Pressed — MD3 state layer 12% */
-.tab-sub:active {
+.tab-sub:not(.tab-sub--active):active {
   background: rgba(var(--v-theme-on-surface), 0.12);
 }
 /* Active indicator — positioning extracted from inline style */

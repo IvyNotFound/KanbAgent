@@ -9,7 +9,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import type { Ref } from 'vue'
 import { useTabsStore } from '@renderer/stores/tabs'
 import type { Tab } from '@renderer/stores/tabs'
-import { agentFg, agentBg, isDark, colorVersion } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, hexToRgb, isDark, colorVersion } from '@renderer/utils/agentColor'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -152,6 +152,25 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
     return map
   })
 
+  // Background for active sub-tabs only: rgba(agentBg, 0.35) active, {} inactive.
+  // Text color is handled in CSS (on-surface) — agentFg is reserved for the indicator.
+  const subTabBgMap = computed<Map<string, Record<string, string>>>(() => {
+    void colorVersion.value
+    const activeId = store.activeTabId
+    const map = new Map<string, Record<string, string>>()
+    for (const tab of store.tabs) {
+      if (activeId === tab.id && tab.agentName) {
+        const rgb = hexToRgb(agentBg(tab.agentName))
+        map.set(tab.id, rgb
+          ? { backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)` }
+          : {})
+      } else {
+        map.set(tab.id, {})
+      }
+    }
+    return map
+  })
+
   const indicatorStyleMap = computed<Map<string, Record<string, string>>>(() => {
     void colorVersion.value
     const map = new Map<string, Record<string, string>>()
@@ -172,6 +191,6 @@ export function useTabBarGroups(scrollContainer: Ref<HTMLDivElement | null>) {
     terminalTabs, fileTabs,
     collapsedAgents, groupedTerminalTabs,
     toggleGroup, isGroupCollapsed, isGroupActive, activateAgentGroup,
-    tabStyleMap, agentTabStyleMap, indicatorStyleMap, subTabLabel,
+    tabStyleMap, agentTabStyleMap, subTabBgMap, indicatorStyleMap, subTabLabel,
   }
 }
