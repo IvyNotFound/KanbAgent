@@ -160,7 +160,7 @@ export function useTaskRefresh(deps: TaskRefreshDeps) {
     })
   }
 
-  function watchForDb(path: string): void {
+  function watchForDb(path: string, onFound?: (dbPath: string) => Promise<void> | void): void {
     if (dbWatchInterval) clearInterval(dbWatchInterval)
     dbWatchInterval = setInterval(async () => {
       if (document.visibilityState === 'hidden') return
@@ -168,9 +168,8 @@ export function useTaskRefresh(deps: TaskRefreshDeps) {
       if (db) {
         clearInterval(dbWatchInterval!)
         dbWatchInterval = null
-        return db
+        await onFound?.(db)
       }
-      return null
     }, 2000)
   }
 
