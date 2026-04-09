@@ -10,11 +10,11 @@ import type { CliType, CliCapabilities } from '@shared/cli-types'
 // T1036 / R2 — T1012 will eventually expose this via IPC; until then, source-of-truth is here.
 export const CLI_CAPABILITIES: Record<CliType, CliCapabilities> = {
   claude:   { worktree: true, profileSelection: true,  systemPrompt: true,  thinkingMode: true,  convResume: true,  modelSelection: true  },
-  codex:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: false },
+  codex:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: true  },
   gemini:   { worktree: true, profileSelection: false, systemPrompt: false, thinkingMode: false, convResume: false, modelSelection: true  },
   opencode: { worktree: true, profileSelection: false, systemPrompt: false, thinkingMode: false, convResume: false, modelSelection: true  },
   aider:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: true  },
-  goose:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: false },
+  goose:    { worktree: true, profileSelection: false, systemPrompt: true,  thinkingMode: false, convResume: false, modelSelection: true  },
 }
 
 export const CLI_LABELS: Record<CliType, string> = {

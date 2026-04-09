@@ -37,6 +37,10 @@ export const codexAdapter: CliAdapter = {
       args.push('--instructions', opts.systemPromptFile)
     }
 
+    if (opts.modelId) {
+      args.push('--model', opts.modelId)
+    }
+
     // Note: Codex does not expose a stable conversation ID (no --resume in phase 1).
     // Note: thinkingMode and permissionMode are Claude-specific — ignored here.
 

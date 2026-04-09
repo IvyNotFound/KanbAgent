@@ -104,6 +104,18 @@ describe('codexAdapter.buildCommand', () => {
     const spec = codexAdapter.buildCommand({})
     expect(spec.args).not.toContain('--instructions')
   })
+
+  it('injects --model flag when modelId is provided (T1822)', () => {
+    const spec = codexAdapter.buildCommand({ modelId: 'o4-mini' })
+    expect(spec.args).toContain('--model')
+    const idx = spec.args.indexOf('--model')
+    expect(spec.args[idx + 1]).toBe('o4-mini')
+  })
+
+  it('does not inject --model when modelId is absent (T1822)', () => {
+    const spec = codexAdapter.buildCommand({})
+    expect(spec.args).not.toContain('--model')
+  })
 })
 
 // ── codexAdapter.parseLine ────────────────────────────────────────────────────

@@ -117,4 +117,16 @@ describe('gooseAdapter.buildCommand', () => {
     const spec = gooseAdapter.buildCommand({ binaryName: 'goose' })
     expect(spec.command).toBe('goose')
   })
+
+  it('injects --model flag when modelId is provided (T1822)', () => {
+    const spec = gooseAdapter.buildCommand({ modelId: 'claude-sonnet-4-6' })
+    expect(spec.args).toContain('--model')
+    const idx = spec.args.indexOf('--model')
+    expect(spec.args[idx + 1]).toBe('claude-sonnet-4-6')
+  })
+
+  it('does not inject --model when modelId is absent (T1822)', () => {
+    const spec = gooseAdapter.buildCommand({})
+    expect(spec.args).not.toContain('--model')
+  })
 })

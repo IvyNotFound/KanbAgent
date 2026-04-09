@@ -44,6 +44,10 @@ export const gooseAdapter: CliAdapter = {
       args.push('--system-prompt', opts.systemPromptFile)
     }
 
+    if (opts.modelId) {
+      args.push('--model', opts.modelId)
+    }
+
     return { command: cmd, args }
   },
 

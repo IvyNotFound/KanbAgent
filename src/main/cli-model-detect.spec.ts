@@ -282,11 +282,16 @@ describe('getModelsForCli — caching', () => {
     expect(models[0].id).toBe('gemini-2.5-pro')
   })
 
-  it('returns empty array for CLIs without models (codex, goose)', async () => {
-    const codex = await getModelsForCli('codex')
-    const goose = await getModelsForCli('goose')
-    expect(codex).toEqual([])
-    expect(goose).toEqual([])
+  it('returns static models for codex (T1822)', async () => {
+    const models = await getModelsForCli('codex')
+    expect(models.length).toBeGreaterThan(0)
+    expect(models[0].id).toBe('o3')
+  })
+
+  it('returns static models for goose (T1822)', async () => {
+    const models = await getModelsForCli('goose')
+    expect(models.length).toBeGreaterThan(0)
+    expect(models[0].id).toBe('gpt-4.1')
   })
 })
 

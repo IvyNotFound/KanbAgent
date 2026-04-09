@@ -48,5 +48,16 @@ export const CLI_STATIC_MODELS: Partial<Record<CliType, CliModelDef[]>> = {
     { id: 'gpt-4o', label: 'GPT-4o', modelId: 'gpt-4o' },
     { id: 'o3', label: 'o3', modelId: 'o3' },
   ],
+  codex: [
+    { id: 'o3', label: 'o3', modelId: 'o3' },
+    { id: 'o4-mini', label: 'o4 Mini', modelId: 'o4-mini' },
+    { id: 'gpt-4.1', label: 'GPT-4.1', modelId: 'gpt-4.1' },
+    { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', modelId: 'gpt-4.1-mini' },
+  ],
+  goose: [
+    { id: 'gpt-4.1', label: 'GPT-4.1', modelId: 'gpt-4.1' },
+    { id: 'claude-sonnet-4-6', label: 'Claude Sonnet', modelId: 'claude-sonnet-4-6' },
+    { id: 'claude-opus-4-6', label: 'Claude Opus', modelId: 'claude-opus-4-6' },
+  ],
   opencode: [], // populated dynamically via cli:get-models
 }
