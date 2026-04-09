@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.40.1] - 2026-04-09
+
+### Bug Fixes
+- fix(test): update ActivityHeatmap assertion to match English i18n fallback (b0c761a)
+- fix(front-vuejs): strip mdi- prefix in mdiSvgSet icon lookup (T1888) (0594a5a)
+
 ## [0.40.0] - 2026-04-09
 
 ### Features
