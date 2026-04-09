@@ -4,7 +4,10 @@ import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { agentAccent, agentBg, agentFg } from '@renderer/utils/agentColor'
+import { CLI_LABELS } from '@renderer/utils/cliCapabilities'
 import type { Agent } from '@renderer/types'
+import type { CliType } from '@shared/cli-types'
+import type { CliModelDef } from '@shared/cli-models'
 
 const props = defineProps<{
   mode?: 'create' | 'edit'
@@ -45,6 +48,7 @@ const maxSessionsInvalid = computed(() => maxSessions.value !== '' && (!/^\d+$/.
 const maxSessionsDbValue = computed(() => maxSessions.value === '' ? -1 : parseInt(maxSessions.value))
 // Model identifier passed as --model to OpenCode (e.g. 'anthropic/claude-opus-4-5'). Trimmed on submit; empty string stored as null in DB.
 const preferredModel = ref('')
+const preferredCli = ref<string | null>(null)
 const showPrompt = ref(false)
 const loading = ref(false)
 const deleting = ref(false)
@@ -52,6 +56,34 @@ const deleteError = ref<string | null>(null)
 const nameError = ref('')
 
 const isScoped = computed(() => SCOPED_TYPES.includes(type.value))
+
+/** CLI types available for selection — derived from enabled CLIs that have detected instances */
+const cliItems = computed(() => {
+  const seen = new Set<string>()
+  for (const inst of settingsStore.allCliInstances) {
+    if (settingsStore.enabledClis.includes(inst.cli as CliType)) seen.add(inst.cli)
+  }
+  return Array.from(seen).map(cli => ({ title: CLI_LABELS[cli as CliType] ?? cli, value: cli }))
+})
+
+/** Effective CLI for model lookup: preferredCli or first enabled CLI */
+const effectiveCli = computed<CliType>(() =>
+  (preferredCli.value as CliType) ?? (settingsStore.enabledClis[0] as CliType) ?? 'claude'
+)
+
+/** Available models for the effective CLI */
+const availableModels = computed(() => {
+  const models: CliModelDef[] = settingsStore.cliModels[effectiveCli.value] ?? []
+  return models.map(m => ({ title: m.label, value: m.modelId }))
+})
+
+/** Human-readable label for the default model configured in settings */
+const defaultModelLabel = computed(() => {
+  const modelId = settingsStore.getDefaultModel(effectiveCli.value)
+  if (!modelId) return null
+  const models: CliModelDef[] = settingsStore.cliModels[effectiveCli.value] ?? []
+  return models.find(m => m.modelId === modelId)?.label ?? modelId
+})
 
 // Worktree toggle bridge: v-btn-toggle needs primitive string values
 const worktreeToggleValue = computed({
@@ -66,6 +98,12 @@ watch(type, () => {
 })
 
 watch(name, () => { nameError.value = '' })
+
+// Reset model selection when CLI changes — models are CLI-specific (skip during mount)
+const mounted = ref(false)
+watch(effectiveCli, () => {
+  if (mounted.value) preferredModel.value = ''
+})
 
 /**
  * Normalizes the agent name on each keystroke: lowercase + spaces→hyphens.
@@ -91,6 +129,15 @@ watch(type, (newType) => {
 }, { immediate: true })
 
 onMounted(async () => {
+  // Ensure CLI instances are detected (same pattern as LaunchSessionModal)
+  if (settingsStore.allCliInstances.length === 0) {
+    await settingsStore.refreshCliDetection()
+  }
+  // Load CLI models if not already cached
+  if (Object.keys(settingsStore.cliModels).length === 0) {
+    await settingsStore.loadCliModels()
+  }
+
   if (isEditMode.value && props.agent) {
     const a = props.agent
     name.value = a.name
@@ -99,6 +146,7 @@ onMounted(async () => {
     maxSessions.value = a.max_sessions === -1 ? '' : String(a.max_sessions ?? 3)
     worktreeEnabled.value = a.worktree_enabled ?? null
     preferredModel.value = a.preferred_model ?? ''
+    preferredCli.value = a.preferred_cli ?? null
     autoLaunch.value = a.auto_launch !== 0
     allowedToolsList.value = a.allowed_tools ? a.allowed_tools.split(',').map(s => s.trim()).filter(Boolean) : []
     permissionMode.value = a.permission_mode === 'auto' ? 'auto' : 'default'
@@ -109,11 +157,13 @@ onMounted(async () => {
         systemPrompt.value = result.systemPrompt ?? ''
         systemPromptSuffix.value = result.systemPromptSuffix ?? ''
         preferredModel.value = result.preferredModel ?? preferredModel.value
+        preferredCli.value = result.preferredCli ?? preferredCli.value
         permissionMode.value = result.permissionMode === 'auto' ? 'auto' : 'default'
         // showPrompt stays false — always collapsed on open, even if content exists
       }
     }
   }
+  mounted.value = true
 })
 
 async function submit() {
@@ -138,6 +188,7 @@ async function submit() {
         maxSessions: maxSessionsDbValue.value,
         worktreeEnabled: worktreeEnabled.value === null ? null : worktreeEnabled.value === 1,
         preferredModel: preferredModel.value.trim() || null,
+        preferredCli: preferredCli.value || null,
         allowedTools: allowedToolsList.value.length > 0 ? allowedToolsList.value.join(',') : null,
         autoLaunch: autoLaunch.value,
         permissionMode: permissionMode.value,
@@ -170,13 +221,14 @@ async function submit() {
       return
     }
 
-    // Apply extra fields not supported by createAgent IPC (allowedTools, autoLaunch, permissionMode)
-    const hasExtras = allowedToolsList.value.length > 0 || !autoLaunch.value || permissionMode.value !== 'default'
+    // Apply extra fields not supported by createAgent IPC (allowedTools, autoLaunch, permissionMode, preferredCli)
+    const hasExtras = allowedToolsList.value.length > 0 || !autoLaunch.value || permissionMode.value !== 'default' || preferredCli.value
     if (hasExtras && result.agentId) {
       await window.electronAPI.updateAgent(store.dbPath, result.agentId, {
         allowedTools: allowedToolsList.value.length > 0 ? allowedToolsList.value.join(',') : null,
         autoLaunch: autoLaunch.value,
         permissionMode: permissionMode.value,
+        preferredCli: preferredCli.value || null,
       })
     }
 
@@ -300,8 +352,36 @@ function handleKeydown(e: KeyboardEvent) {
             variant="outlined"
           />
 
-          <!-- Modèle préféré -->
+          <!-- Instance CLI préférée -->
+          <v-select
+            v-model="preferredCli"
+            :items="cliItems"
+            :label="t('launch.instance')"
+            :placeholder="t('agent.globalDefault')"
+            :hint="t('agent.preferredCliNote')"
+            persistent-hint
+            clearable
+            variant="outlined"
+            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+          />
+
+          <!-- Modèle préféré — v-select dynamique ou fallback texte libre -->
+          <v-select
+            v-if="availableModels.length > 0"
+            v-model="preferredModel"
+            :items="availableModels"
+            :label="t('launch.model')"
+            clearable
+            :placeholder="defaultModelLabel ? t('agent.settingsDefaultNamed', { model: defaultModelLabel }) : t('agent.settingsDefault')"
+            :hint="t('agent.preferredModelNote')"
+            persistent-hint
+            variant="outlined"
+            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+          />
           <v-text-field
+            v-else
             v-model="preferredModel"
             :label="t('launch.model')"
             placeholder="anthropic/claude-opus-4-5"
