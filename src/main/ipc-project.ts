@@ -10,7 +10,7 @@
 import { ipcMain, dialog, app, shell } from 'electron'
 import { access, copyFile, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { join, basename, resolve } from 'path'
-import { CLAUDE_MD_TEMPLATE, WORKFLOW_MD_TEMPLATE } from './project-templates'
+import { getProjectRules, WORKFLOW_MD_TEMPLATE } from './project-templates'
 import { GENERIC_AGENTS_BY_LANG } from './default-agents'
 import type { AgentLanguage } from './default-agents'
 import Database from 'better-sqlite3'
@@ -264,19 +264,51 @@ export function registerProjectHandlers(): void {
 
   /**
    * Initialize a new project: create .claude/ dir and deploy bundled templates locally.
+   * Generates CLI-agnostic project rules for each detected CLI (ADR-012).
    * @param projectPath - Registered project path
+   * @param lang - Agent prompt language (defaults to 'en')
+   * @param detectedClis - CLI names detected on the system (e.g. ['claude', 'gemini', 'codex'])
    * @returns {{ success: boolean, filesCreated?: string[], error?: string }}
    */
-  ipcMain.handle('init-new-project', async (_event, projectPath: string) => {
+  ipcMain.handle('init-new-project', async (
+    _event,
+    projectPath: string,
+    lang?: string,
+    detectedClis?: string[],
+  ) => {
     try {
       assertProjectPathAllowed(projectPath)
       const claudeDir = join(projectPath, '.claude')
       await mkdir(claudeDir, { recursive: true })
 
-      await writeFile(join(projectPath, 'CLAUDE.md'), CLAUDE_MD_TEMPLATE, 'utf-8')
-      await writeFile(join(claudeDir, 'WORKFLOW.md'), WORKFLOW_MD_TEMPLATE, 'utf-8')
+      const validLangs = Object.keys(GENERIC_AGENTS_BY_LANG) as AgentLanguage[]
+      const rulesLang: AgentLanguage = validLangs.includes(lang as AgentLanguage)
+        ? (lang as AgentLanguage)
+        : 'en'
+      const rules = getProjectRules(rulesLang)
+      const filesCreated: string[] = []
 
-      return { success: true, filesCreated: ['CLAUDE.md', '.claude/WORKFLOW.md'] }
+      // Always generate CLAUDE.md (safe default)
+      await writeFile(join(projectPath, 'CLAUDE.md'), rules, 'utf-8')
+      filesCreated.push('CLAUDE.md')
+
+      // Per-CLI rule files (ADR-012 Part A)
+      const clis = detectedClis ?? []
+      if (clis.includes('gemini')) {
+        await writeFile(join(projectPath, 'GEMINI.md'), rules, 'utf-8')
+        filesCreated.push('GEMINI.md')
+      }
+      if (clis.includes('codex')) {
+        const codexDir = join(projectPath, '.codex')
+        await mkdir(codexDir, { recursive: true })
+        await writeFile(join(codexDir, 'instructions.md'), rules, 'utf-8')
+        filesCreated.push('.codex/instructions.md')
+      }
+
+      await writeFile(join(claudeDir, 'WORKFLOW.md'), WORKFLOW_MD_TEMPLATE, 'utf-8')
+      filesCreated.push('.claude/WORKFLOW.md')
+
+      return { success: true, filesCreated }
     } catch (err) {
       console.error('[IPC init-new-project]', err)
       return { success: false, error: String(err) }
