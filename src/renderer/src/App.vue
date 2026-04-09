@@ -8,7 +8,7 @@ import Sidebar from '@renderer/components/Sidebar.vue'
 import BoardView from '@renderer/components/BoardView.vue'
 import DbSelector from '@renderer/components/DbSelector.vue'
 import TabBar from '@renderer/components/TabBar.vue'
-import TaskDetailModal from '@renderer/components/TaskDetailModal.vue'
+const TaskDetailModal = defineAsyncComponent(() => import('@renderer/components/TaskDetailModal.vue'))
 import ToastContainer from '@renderer/components/ToastContainer.vue'
 import ConfirmDialog from '@renderer/components/ConfirmDialog.vue'
 import UpdateNotification from '@renderer/components/UpdateNotification.vue'

@@ -2,13 +2,13 @@
 import { ref, computed, defineAsyncComponent, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import TokenStatsView from './TokenStatsView.vue'
-import GitCommitList from './GitCommitList.vue'
-import HookEventsView from './HookEventsView.vue'
-import ToolStatsPanel from './ToolStatsPanel.vue'
-import AgentLogsView from './AgentLogsView.vue'
 import DashboardOverview from './DashboardOverview.vue'
 
+const TokenStatsView = defineAsyncComponent(() => import('./TokenStatsView.vue'))
+const GitCommitList = defineAsyncComponent(() => import('./GitCommitList.vue'))
+const HookEventsView = defineAsyncComponent(() => import('./HookEventsView.vue'))
+const ToolStatsPanel = defineAsyncComponent(() => import('./ToolStatsPanel.vue'))
+const AgentLogsView = defineAsyncComponent(() => import('./AgentLogsView.vue'))
 const TopologyView = defineAsyncComponent(() => import('./TopologyView.vue'))
 const OrgChartView = defineAsyncComponent(() => import('./OrgChartView.vue'))
 const TelemetryView = defineAsyncComponent(() => import('./TelemetryView.vue'))
@@ -95,7 +95,7 @@ const subTabs = computed<{ id: SubTab; label: string }[]>(() => [
     <DashboardOverview v-if="activeSubTab === 'overview'" class="tab-content" />
 
     <!-- Token Stats -->
-    <TokenStatsView v-show="activeSubTab === 'tokenStats'" class="tab-content" />
+    <TokenStatsView v-if="activeSubTab === 'tokenStats'" class="tab-content" />
 
     <!-- Git -->
     <div v-if="activeSubTab === 'git'" class="tab-content git-root">
