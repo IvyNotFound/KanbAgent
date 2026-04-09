@@ -237,10 +237,12 @@
       "editor": "편집기",
       "cli": "CLI & 에이전트",
       "notifications": "알림",
-      "application": "애플리케이션"
+      "application": "애플리케이션",
+      "models": "모델"
     },
     "worktreeDefault": "기본 worktree 격리",
-    "worktreeDefaultDesc": "새 에이전트 세션마다 격리된 git worktree 생성"
+    "worktreeDefaultDesc": "새 에이전트 세션마다 격리된 git worktree 생성",
+    "modelsHint": "모델을 구성하려면 CLI & 에이전트에서 이 CLI를 활성화하세요"
   },
   "setup": {
     "missingDb": "데이터베이스를 찾을 수 없습니다",

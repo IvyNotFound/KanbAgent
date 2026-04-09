@@ -250,8 +250,10 @@
       "editor": "Éditeur",
       "cli": "CLI & Agents",
       "notifications": "Notifications",
-      "application": "Application"
-    }
+      "application": "Application",
+      "models": "Modèles"
+    },
+    "modelsHint": "Activez ce CLI dans CLI & Agents pour configurer son modèle"
   },
   "setup": {
     "missingDb": "Base de données manquante",

@@ -250,8 +250,10 @@
       "editor": "Editor",
       "cli": "CLI & Agents",
       "notifications": "Notifications",
-      "application": "Application"
-    }
+      "application": "Application",
+      "models": "Models"
+    },
+    "modelsHint": "Enable this CLI in CLI & Agents to configure its model"
   },
   "setup": {
     "missingDb": "Missing database",

@@ -237,10 +237,12 @@
       "editor": "Editor",
       "cli": "CLI & Agenter",
       "notifications": "Notifikationer",
-      "application": "Applikation"
+      "application": "Applikation",
+      "models": "Modeller"
     },
     "worktreeDefault": "Standard worktree-isolation",
-    "worktreeDefaultDesc": "Opret et isoleret git worktree for hver ny agentsession"
+    "worktreeDefaultDesc": "Opret et isoleret git worktree for hver ny agentsession",
+    "modelsHint": "Aktiver denne CLI under CLI & Agenter for at konfigurere dens model"
   },
   "setup": {
     "missingDb": "Manglende database",

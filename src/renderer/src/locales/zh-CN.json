@@ -237,10 +237,12 @@
       "editor": "编辑器",
       "cli": "CLI & 代理",
       "notifications": "通知",
-      "application": "应用程序"
+      "application": "应用程序",
+      "models": "模型"
     },
     "worktreeDefault": "默认 worktree 隔离",
-    "worktreeDefaultDesc": "为每个新代理会话创建独立的 git worktree"
+    "worktreeDefaultDesc": "为每个新代理会话创建独立的 git worktree",
+    "modelsHint": "在 CLI & 代理 中启用此 CLI 以配置其模型"
   },
   "setup": {
     "missingDb": "未找到数据库",

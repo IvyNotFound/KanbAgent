@@ -237,10 +237,12 @@
       "editor": "Edytor",
       "cli": "CLI & Agenci",
       "notifications": "Powiadomienia",
-      "application": "Aplikacja"
+      "application": "Aplikacja",
+      "models": "Modele"
     },
     "worktreeDefault": "Domyślna izolacja worktree",
-    "worktreeDefaultDesc": "Utwórz izolowany git worktree dla każdej nowej sesji agenta"
+    "worktreeDefaultDesc": "Utwórz izolowany git worktree dla każdej nowej sesji agenta",
+    "modelsHint": "Włącz to CLI w sekcji CLI & Agenci, aby skonfigurować jego model"
   },
   "setup": {
     "missingDb": "Brakująca baza danych",

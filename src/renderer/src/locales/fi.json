@@ -237,10 +237,12 @@
       "editor": "Editori",
       "cli": "CLI & Agentit",
       "notifications": "Ilmoitukset",
-      "application": "Sovellus"
+      "application": "Sovellus",
+      "models": "Mallit"
     },
     "worktreeDefault": "Oletusarvoinen worktree-eristys",
-    "worktreeDefaultDesc": "Luo eristetty git-worktree jokaiselle uudelle agentisessiolle"
+    "worktreeDefaultDesc": "Luo eristetty git-worktree jokaiselle uudelle agentisessiolle",
+    "modelsHint": "Ota tämä CLI käyttöön CLI & Agentit -osiossa mallin määrittämiseksi"
   },
   "setup": {
     "missingDb": "Tietokanta puuttuu",

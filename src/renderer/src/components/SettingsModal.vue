@@ -14,7 +14,7 @@ const emit = defineEmits<{
   (e: 'toast', message: string, type: 'success' | 'error'): void
 }>()
 
-type Section = 'appearance' | 'automation' | 'editor' | 'cli' | 'notifications' | 'application'
+type Section = 'appearance' | 'automation' | 'editor' | 'cli' | 'models' | 'notifications' | 'application'
 const activeSection = ref<Section>('appearance')
 
 const sections: Array<{ id: Section; labelKey: string }> = [
@@ -22,6 +22,7 @@ const sections: Array<{ id: Section; labelKey: string }> = [
   { id: 'automation', labelKey: 'settings.sections.automation' },
   { id: 'editor', labelKey: 'settings.sections.editor' },
   { id: 'cli', labelKey: 'settings.sections.cli' },
+  { id: 'models', labelKey: 'settings.sections.models' },
   { id: 'notifications', labelKey: 'settings.sections.notifications' },
   { id: 'application', labelKey: 'settings.sections.application' },
 ]
@@ -31,6 +32,7 @@ const SECTION_ICONS: Record<Section, string> = {
   automation: 'mdi-lightning-bolt',
   editor: 'mdi-file-document-outline',
   cli: 'mdi-console',
+  models: 'mdi-brain',
   notifications: 'mdi-bell-outline',
   application: 'mdi-information-outline',
 }
@@ -129,6 +131,11 @@ const availableDistroItems = computed(() =>
 // Per-CLI model selectors (T1803)
 const modelCapableClis = computed<CliType[]>(() =>
   settingsStore.enabledClis.filter(cli => CLI_CAPABILITIES[cli]?.modelSelection)
+)
+
+// All CLIs that support model selection, regardless of enabled state (T1824)
+const allModelCapableClis = computed<CliType[]>(() =>
+  (Object.keys(CLI_CAPABILITIES) as CliType[]).filter(cli => CLI_CAPABILITIES[cli]?.modelSelection)
 )
 
 function modelItems(cli: CliType): Array<{ title: string; value: string }> {
@@ -376,33 +383,51 @@ function onDefaultCliChange(v: string) {
                 @update:model-value="(v) => onDefaultCliChange(v as string)"
               />
             </v-sheet>
-            <v-sheet v-for="cli in modelCapableClis" :key="cli" rounded="lg" border class="pa-4">
+          </template>
+
+          <!-- Models (T1824) -->
+          <template v-else-if="activeSection === 'models'">
+            <v-sheet v-for="cli in allModelCapableClis" :key="cli" rounded="lg" border class="pa-4">
               <p class="text-body-2 font-weight-medium mb-1">
                 {{ CLI_LABELS[cli] }} — {{ t('settings.defaultModel') }}
               </p>
-              <p class="text-body-2 text-medium-emphasis mb-2">
-                {{ t('settings.defaultModelHint', { cli: CLI_LABELS[cli] }) }}
-              </p>
-              <v-select
-                v-if="modelItems(cli).length > 0"
-                :model-value="settingsStore.getDefaultModel(cli) || null"
-                :items="modelItems(cli)"
-                clearable
-                :placeholder="t('settings.cliDefault')"
-                variant="outlined"
-                density="compact"
-                hide-details
-                @update:model-value="(v: string | null) => store.dbPath && settingsStore.setDefaultModel(store.dbPath, cli, v ?? '')"
-              />
-              <v-text-field
-                v-else
-                :model-value="settingsStore.getDefaultModel(cli)"
-                :placeholder="t('settings.cliDefault')"
-                variant="outlined"
-                density="compact"
-                hide-details
-                @blur="(e: FocusEvent) => store.dbPath && settingsStore.setDefaultModel(store.dbPath, cli, (e.target as HTMLInputElement).value)"
-              />
+              <template v-if="settingsStore.enabledClis.includes(cli)">
+                <p class="text-body-2 text-medium-emphasis mb-2">
+                  {{ t('settings.defaultModelHint', { cli: CLI_LABELS[cli] }) }}
+                </p>
+                <v-select
+                  v-if="modelItems(cli).length > 0"
+                  :model-value="settingsStore.getDefaultModel(cli) || null"
+                  :items="modelItems(cli)"
+                  clearable
+                  :placeholder="t('settings.cliDefault')"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  @update:model-value="(v: string | null) => store.dbPath && settingsStore.setDefaultModel(store.dbPath, cli, v ?? '')"
+                />
+                <v-text-field
+                  v-else
+                  :model-value="settingsStore.getDefaultModel(cli)"
+                  :placeholder="t('settings.cliDefault')"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  @blur="(e: FocusEvent) => store.dbPath && settingsStore.setDefaultModel(store.dbPath, cli, (e.target as HTMLInputElement).value)"
+                />
+              </template>
+              <template v-else>
+                <p class="text-body-2 text-medium-emphasis mb-2">
+                  {{ t('settings.modelsHint') }}
+                </p>
+                <v-select
+                  disabled
+                  :placeholder="t('settings.cliDefault')"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                />
+              </template>
             </v-sheet>
           </template>
 

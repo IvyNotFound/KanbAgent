@@ -237,10 +237,12 @@
       "editor": "エディタ",
       "cli": "CLI & エージェント",
       "notifications": "通知",
-      "application": "アプリケーション"
+      "application": "アプリケーション",
+      "models": "モデル"
     },
     "worktreeDefault": "デフォルトのworktree分離",
-    "worktreeDefaultDesc": "新しいエージェントセッションごとに分離されたgit worktreeを作成します"
+    "worktreeDefaultDesc": "新しいエージェントセッションごとに分離されたgit worktreeを作成します",
+    "modelsHint": "モデルを設定するには、CLI & エージェントでこのCLIを有効にしてください"
   },
   "setup": {
     "missingDb": "データベースが見つかりません",

@@ -237,10 +237,12 @@
       "editor": "Редактор",
       "cli": "CLI и агенты",
       "notifications": "Уведомления",
-      "application": "Приложение"
+      "application": "Приложение",
+      "models": "Модели"
     },
     "worktreeDefault": "Изоляция worktree по умолчанию",
-    "worktreeDefaultDesc": "Создать изолированный git worktree для каждой новой сессии агента"
+    "worktreeDefaultDesc": "Создать изолированный git worktree для каждой новой сессии агента",
+    "modelsHint": "Включите этот CLI в разделе CLI и агенты для настройки модели"
   },
   "setup": {
     "missingDb": "База данных отсутствует",

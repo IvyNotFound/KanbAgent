@@ -237,10 +237,12 @@
       "editor": "المحرر",
       "cli": "CLI والوكلاء",
       "notifications": "الإشعارات",
-      "application": "التطبيق"
+      "application": "التطبيق",
+      "models": "النماذج"
     },
     "worktreeDefault": "عزل worktree الافتراضي",
-    "worktreeDefaultDesc": "إنشاء worktree git معزول لكل جلسة وكيل جديدة"
+    "worktreeDefaultDesc": "إنشاء worktree git معزول لكل جلسة وكيل جديدة",
+    "modelsHint": "قم بتفعيل هذا CLI في CLI والوكلاء لتهيئة نموذجه"
   },
   "setup": {
     "missingDb": "قاعدة البيانات مفقودة",

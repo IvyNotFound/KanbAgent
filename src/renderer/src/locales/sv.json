@@ -237,10 +237,12 @@
       "editor": "Redigerare",
       "cli": "CLI & Agenter",
       "notifications": "Aviseringar",
-      "application": "Applikation"
+      "application": "Applikation",
+      "models": "Modeller"
     },
     "worktreeDefault": "Standard worktree-isolering",
-    "worktreeDefaultDesc": "Skapa ett isolerat git worktree för varje ny agentsession"
+    "worktreeDefaultDesc": "Skapa ett isolerat git worktree för varje ny agentsession",
+    "modelsHint": "Aktivera denna CLI under CLI & Agenter för att konfigurera dess modell"
   },
   "setup": {
     "missingDb": "Databas saknas",

@@ -237,10 +237,12 @@
       "editor": "Düzenleyici",
       "cli": "CLI & Ajanlar",
       "notifications": "Bildirimler",
-      "application": "Uygulama"
+      "application": "Uygulama",
+      "models": "Modeller"
     },
     "worktreeDefault": "Varsayılan worktree yalıtımı",
-    "worktreeDefaultDesc": "Her yeni ajan oturumu için yalıtılmış bir git worktree oluştur"
+    "worktreeDefaultDesc": "Her yeni ajan oturumu için yalıtılmış bir git worktree oluştur",
+    "modelsHint": "Bu CLI'nin modelini yapılandırmak için CLI & Ajanlar bölümünde etkinleştirin"
   },
   "setup": {
     "missingDb": "Veritabanı bulunamadı",
