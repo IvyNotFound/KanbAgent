@@ -3,7 +3,30 @@
  * Shared by StreamView and its sub-components.
  */
 import { marked } from 'marked'
-import hljs from 'highlight.js'
+import hljs from 'highlight.js/lib/core'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import xml from 'highlight.js/lib/languages/xml'
+import css from 'highlight.js/lib/languages/css'
+import json from 'highlight.js/lib/languages/json'
+import python from 'highlight.js/lib/languages/python'
+import bash from 'highlight.js/lib/languages/bash'
+import sql from 'highlight.js/lib/languages/sql'
+import yaml from 'highlight.js/lib/languages/yaml'
+import diff from 'highlight.js/lib/languages/diff'
+import markdown from 'highlight.js/lib/languages/markdown'
+
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('yaml', yaml)
+hljs.registerLanguage('diff', diff)
+hljs.registerLanguage('markdown', markdown)
 import DOMPurify from 'dompurify'
 
 /** Escapes HTML special chars for safe plaintext display (T841). */
