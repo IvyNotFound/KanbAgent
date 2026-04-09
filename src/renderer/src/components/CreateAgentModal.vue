@@ -293,7 +293,7 @@ function handleKeydown(e: KeyboardEvent) {
           <!-- Modèle préféré -->
           <v-text-field
             v-model="preferredModel"
-            :label="t('agent.preferredModel')"
+            :label="t('launch.model')"
             placeholder="anthropic/claude-opus-4-5"
             :hint="t('agent.preferredModelNote')"
             persistent-hint
