@@ -603,7 +603,6 @@
     "askQuestion": "Agentfråga",
     "replyPlaceholder": "Svara till agent…",
     "permissionRequired": "Behörighet krävs",
-    "permissionTool": "Verktyg: {tool}",
     "permissionAllow": "Tillåt",
     "permissionDeny": "Neka",
     "permissionAllowed": "✓ Tillåtet: {tool}",

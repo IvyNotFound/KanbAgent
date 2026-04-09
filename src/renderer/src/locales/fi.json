@@ -603,7 +603,6 @@
     "askQuestion": "Agentin kysymys",
     "replyPlaceholder": "Vastaa agentille…",
     "permissionRequired": "Lupa vaaditaan",
-    "permissionTool": "Työkalu: {tool}",
     "permissionAllow": "Salli",
     "permissionDeny": "Estä",
     "permissionAllowed": "✓ Sallittu: {tool}",

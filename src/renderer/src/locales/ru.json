@@ -603,7 +603,6 @@
     "askQuestion": "Вопрос агента",
     "replyPlaceholder": "Ответить агенту…",
     "permissionRequired": "Требуется разрешение",
-    "permissionTool": "Инструмент: {tool}",
     "permissionAllow": "Разрешить",
     "permissionDeny": "Отклонить",
     "permissionAllowed": "✓ Разрешено: {tool}",

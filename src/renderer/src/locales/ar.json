@@ -603,7 +603,6 @@
     "askQuestion": "سؤال الوكيل",
     "replyPlaceholder": "الرد على الوكيل…",
     "permissionRequired": "مطلوب إذن",
-    "permissionTool": "الأداة: {tool}",
     "permissionAllow": "سماح",
     "permissionDeny": "رفض",
     "permissionAllowed": "✓ مسموح: {tool}",

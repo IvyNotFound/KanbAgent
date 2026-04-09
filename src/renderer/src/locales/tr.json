@@ -603,7 +603,6 @@
     "askQuestion": "Ajan sorusu",
     "replyPlaceholder": "Ajana yanıt ver…",
     "permissionRequired": "İzin gerekli",
-    "permissionTool": "Araç: {tool}",
     "permissionAllow": "İzin ver",
     "permissionDeny": "Reddet",
     "permissionAllowed": "✓ İzin verildi: {tool}",

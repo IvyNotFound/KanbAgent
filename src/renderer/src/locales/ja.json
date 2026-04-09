@@ -603,7 +603,6 @@
     "askQuestion": "エージェントからの質問",
     "replyPlaceholder": "エージェントに返信…",
     "permissionRequired": "許可が必要です",
-    "permissionTool": "ツール: {tool}",
     "permissionAllow": "許可",
     "permissionDeny": "拒否",
     "permissionAllowed": "✓ 許可済み: {tool}",

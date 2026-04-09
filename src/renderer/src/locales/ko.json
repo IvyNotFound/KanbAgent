@@ -603,7 +603,6 @@
     "askQuestion": "에이전트 질문",
     "replyPlaceholder": "에이전트에 답장…",
     "permissionRequired": "권한 필요",
-    "permissionTool": "도구: {tool}",
     "permissionAllow": "허용",
     "permissionDeny": "거부",
     "permissionAllowed": "✓ 허용됨: {tool}",

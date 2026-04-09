@@ -603,7 +603,6 @@
     "askQuestion": "代理问题",
     "replyPlaceholder": "回复代理…",
     "permissionRequired": "需要权限",
-    "permissionTool": "工具：{tool}",
     "permissionAllow": "允许",
     "permissionDeny": "拒绝",
     "permissionAllowed": "✓ 已允许：{tool}",

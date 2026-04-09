@@ -603,7 +603,6 @@
     "askQuestion": "Agentspørgsmål",
     "replyPlaceholder": "Svar til agent…",
     "permissionRequired": "Tilladelse påkrævet",
-    "permissionTool": "Værktøj: {tool}",
     "permissionAllow": "Tillad",
     "permissionDeny": "Afvis",
     "permissionAllowed": "✓ Tilladt: {tool}",
