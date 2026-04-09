@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
 import { agentBg, agentFg, agentAccent } from '@renderer/utils/agentColor'
+import { CLI_CAPABILITIES, CLI_LABELS } from '@renderer/utils/cliCapabilities'
 import type { Agent } from '@renderer/types'
+import type { CliType } from '@shared/cli-types'
+import type { CliModelDef } from '@shared/cli-models'
 
 const { t } = useI18n()
 const props = defineProps<{ agent: Agent }>()
@@ -29,14 +32,44 @@ const worktreeEnabled = ref<number | null>(props.agent.worktree_enabled ?? null)
 const maxSessions = ref(props.agent.max_sessions === -1 ? '' : String(props.agent.max_sessions ?? 3))
 const maxSessionsInvalid = computed(() => maxSessions.value !== '' && (!/^\d+$/.test(maxSessions.value) || parseInt(maxSessions.value) < 1))
 const maxSessionsDbValue = computed(() => maxSessions.value === '' ? -1 : parseInt(maxSessions.value))
-// Model identifier passed as --model to OpenCode (e.g. 'anthropic/claude-opus-4-5'). Trimmed on save; empty string stored as null in DB.
-const preferredModel = ref(props.agent.preferred_model ?? '')
+// CLI preference: null = global default
+const preferredCli = ref<string | null>(props.agent.preferred_cli ?? null)
+// Model identifier passed as --model flag. Null = use CLI/settings default.
+const preferredModel = ref<string | null>(props.agent.preferred_model ?? null)
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref<string | null>(null)
 const newPerimetreName = ref('')
 const addingPerimetre = ref(false)
 const perimètreError = ref<string | null>(null)
+const loading = ref(true)
+
+// Available CLIs: unique CLI types from enabled instances
+const availableClis = computed(() => {
+  return settingsStore.enabledClis.map(cli => ({
+    title: CLI_LABELS[cli] ?? cli,
+    value: cli,
+  }))
+})
+
+// Effective CLI for model filtering: agent preference or first enabled
+const effectiveCli = computed<CliType>(() =>
+  (preferredCli.value as CliType) ?? (settingsStore.enabledClis[0] as CliType) ?? 'claude'
+)
+
+// Whether the effective CLI supports model selection
+const cliSupportsModel = computed(() => CLI_CAPABILITIES[effectiveCli.value]?.modelSelection ?? false)
+
+// Available models for the effective CLI
+const availableModels = computed(() => {
+  const models: CliModelDef[] = settingsStore.cliModels[effectiveCli.value] ?? []
+  return models.map(m => ({ title: m.label, value: m.modelId }))
+})
+
+// Reset model when CLI changes — models are CLI-specific
+watch(preferredCli, () => {
+  if (!loading.value) preferredModel.value = null
+})
 
 // Worktree toggle bridge: v-btn-toggle needs primitive string values
 const worktreeToggleValue = computed({
@@ -47,14 +80,22 @@ const worktreeToggleValue = computed({
 })
 
 onMounted(async () => {
+  // Ensure CLI models are loaded for dropdown
+  if (Object.keys(settingsStore.cliModels).length === 0) {
+    await settingsStore.loadCliModels()
+  }
+
   if (store.dbPath) {
     const result = await window.electronAPI.getAgentSystemPrompt(store.dbPath, props.agent.id)
     if (result.success) {
       thinkingMode.value = result.thinkingMode === 'disabled' ? 'disabled' : 'auto'
       permissionMode.value = result.permissionMode === 'auto' ? 'auto' : 'default'
       preferredModel.value = result.preferredModel ?? preferredModel.value
+      preferredCli.value = result.preferredCli ?? preferredCli.value
     }
   }
+
+  loading.value = false
 })
 
 async function deleteAgent() {
@@ -115,7 +156,8 @@ async function save() {
       permissionMode: permissionMode.value,
       maxSessions: maxSessionsDbValue.value,
       worktreeEnabled: worktreeEnabled.value === null ? null : worktreeEnabled.value === 1,
-      preferredModel: preferredModel.value.trim() || null,
+      preferredModel: preferredModel.value ?? null,
+      preferredCli: preferredCli.value ?? null,
     })
     if (!result.success) {
       error.value = result.error ?? 'Erreur inconnue'
@@ -180,16 +222,39 @@ async function save() {
             <p class="text-caption text-disabled mt-1">{{ t('launch.thinkingNote') }}</p>
           </div>
 
-          <!-- Modèle préféré -->
-          <v-text-field
-            v-model="preferredModel"
-            :label="t('agent.preferredModel')"
-            placeholder="anthropic/claude-opus-4-5"
-            :hint="t('agent.preferredModelNote')"
-            persistent-hint
-            variant="outlined"
-            :color="agentAccent(agent.name)"
-          />
+          <!-- CLI preference -->
+          <div>
+            <div class="field-label text-label-medium mb-2">{{ t('agent.preferredCli') }}</div>
+            <v-select
+              v-model="preferredCli"
+              :items="availableClis"
+              clearable
+              :placeholder="t('agent.globalDefault')"
+              variant="outlined"
+              density="compact"
+              hide-details
+              :color="agentAccent(agent.name)"
+              :base-color="agentAccent(agent.name)"
+            />
+            <p class="text-caption text-disabled mt-1">{{ t('agent.preferredCliNote') }}</p>
+          </div>
+
+          <!-- Preferred model (filtered by CLI) -->
+          <div v-if="cliSupportsModel">
+            <div class="field-label text-label-medium mb-2">{{ t('agent.preferredModel') }}</div>
+            <v-select
+              v-model="preferredModel"
+              :items="availableModels"
+              clearable
+              :placeholder="t('agent.settingsDefault')"
+              variant="outlined"
+              density="compact"
+              hide-details
+              :color="agentAccent(agent.name)"
+              :base-color="agentAccent(agent.name)"
+            />
+            <p class="text-caption text-disabled mt-1">{{ t('agent.preferredModelNote') }}</p>
+          </div>
 
           <!-- Tâches autorisées (--allowedTools) -->
           <v-textarea

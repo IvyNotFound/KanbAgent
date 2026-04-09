@@ -382,8 +382,12 @@
       "devops": "커밋, 브랜치, CI/CD, 릴리스",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "preferredModel": "Preferred model (OpenCode)",
+    "preferredCli": "Preferred CLI",
+    "preferredCliNote": "Overrides the global default CLI for this agent",
+    "preferredModel": "Preferred model",
     "preferredModelNote": "Overrides the global model defined in settings",
+    "globalDefault": "Global default",
+    "settingsDefault": "Settings default",
     "worktreeEnabled": "Worktree 격리",
     "worktreeInherit": "상속",
     "worktreeOn": "활성화됨",

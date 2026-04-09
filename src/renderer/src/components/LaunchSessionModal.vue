@@ -89,21 +89,37 @@ onMounted(async () => {
     await settingsStore.refreshCliDetection()
   }
 
-  // Auto-select: prefer stored preference (cli:distro), fall back to default, then first (T1090)
+  // Auto-select: agent preferred CLI > stored preference > default > first (T1804/T1090)
   const instances = allAvailableInstances.value
   if (instances.length > 0) {
-    const stored = settingsStore.defaultCliInstance
-    const parsed = parseDefaultCliInstance(stored)
-    selectedInstance.value =
-      (stored
-        ? instances.find(i =>
-            i.distro === parsed.distro &&
-            (parsed.cli === null || i.cli === parsed.cli)
-          )
-        : undefined)
-      ?? instances.find(i => i.isDefault)
-      ?? instances[0]
-      ?? null
+    let picked: CliInstance | null = null
+
+    // 1. Agent preferred CLI — filter instances to that CLI first
+    if (props.agent.preferred_cli) {
+      const cliInstances = instances.filter(i => i.cli === props.agent.preferred_cli)
+      if (cliInstances.length > 0) {
+        picked = cliInstances.find(i => i.isDefault) ?? cliInstances[0]
+      }
+      // If preferred CLI has no instances, fall through to global default
+    }
+
+    // 2. Global stored preference
+    if (!picked) {
+      const stored = settingsStore.defaultCliInstance
+      const parsed = parseDefaultCliInstance(stored)
+      picked =
+        (stored
+          ? instances.find(i =>
+              i.distro === parsed.distro &&
+              (parsed.cli === null || i.cli === parsed.cli)
+            )
+          : undefined)
+        ?? instances.find(i => i.isDefault)
+        ?? instances[0]
+        ?? null
+    }
+
+    selectedInstance.value = picked
   }
 
   if (tasksStore.dbPath) {

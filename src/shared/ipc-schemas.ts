@@ -112,6 +112,8 @@ export const UpdateAgentDataSchema = z.object({
   worktreeEnabled: z.boolean().nullable().optional(),
   /** Model identifier forwarded as `--model` to OpenCode (e.g. `'anthropic/claude-opus-4-5'`). `null` means use the CLI default. */
   preferredModel: z.string().max(200).nullable().optional(),
+  /** Preferred CLI tool for this agent (e.g. `'claude'`, `'opencode'`). `null` means use the global default. */
+  preferredCli: z.string().max(50).nullable().optional(),
 })
 
 // ── Inferred TypeScript types ─────────────────────────────────────────────────

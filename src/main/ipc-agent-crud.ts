@@ -100,13 +100,13 @@ export function registerAgentCrudHandlers(): void {
       assertDbPathAllowed(dbPath)
       const rows = await queryLive(
         dbPath,
-        'SELECT system_prompt, system_prompt_suffix, thinking_mode, permission_mode, worktree_enabled, preferred_model FROM agents WHERE id = ?',
+        'SELECT system_prompt, system_prompt_suffix, thinking_mode, permission_mode, worktree_enabled, preferred_model, preferred_cli FROM agents WHERE id = ?',
         [agentId]
       )
       if (rows.length === 0) {
-        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null, preferredModel: null }
+        return { success: false, error: 'Agent not found', systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null, preferredModel: null, preferredCli: null }
       }
-      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null; permission_mode: string | null; worktree_enabled: number | null; preferred_model: string | null }
+      const row = rows[0] as { system_prompt: string | null; system_prompt_suffix: string | null; thinking_mode: string | null; permission_mode: string | null; worktree_enabled: number | null; preferred_model: string | null; preferred_cli: string | null }
       return {
         success: true,
         systemPrompt: row.system_prompt,
@@ -115,10 +115,11 @@ export function registerAgentCrudHandlers(): void {
         permissionMode: row.permission_mode,
         worktreeEnabled: row.worktree_enabled,
         preferredModel: row.preferred_model,
+        preferredCli: row.preferred_cli,
       }
     } catch (err) {
       console.error('[IPC get-agent-system-prompt]', err)
-      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null, preferredModel: null }
+      return { success: false, error: String(err), systemPrompt: null, systemPromptSuffix: null, thinkingMode: null, permissionMode: null, worktreeEnabled: null, preferredModel: null, preferredCli: null }
     }
   })
 
@@ -167,6 +168,7 @@ export function registerAgentCrudHandlers(): void {
     maxSessions?: number
     worktreeEnabled?: boolean | null
     preferredModel?: string | null
+    preferredCli?: string | null
   }) => {
     if (!PositiveIdSchema.safeParse(agentId).success) {
       return { success: false, error: 'Invalid agentId: must be a positive integer' }
@@ -196,6 +198,7 @@ export function registerAgentCrudHandlers(): void {
         if (updates.maxSessions !== undefined) { cols.push('max_sessions = ?'); vals.push(updates.maxSessions) }
         if (updates.worktreeEnabled !== undefined) { cols.push('worktree_enabled = ?'); vals.push(updates.worktreeEnabled === null ? null : updates.worktreeEnabled ? 1 : 0) }
         if (updates.preferredModel !== undefined) { cols.push('preferred_model = ?'); vals.push(updates.preferredModel || null) }
+        if (updates.preferredCli !== undefined) { cols.push('preferred_cli = ?'); vals.push(updates.preferredCli || null) }
         if (cols.length === 0) return
         vals.push(agentId)
         db.run(`UPDATE agents SET ${cols.join(', ')} WHERE id = ?`, vals)

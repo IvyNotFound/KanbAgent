@@ -30,7 +30,7 @@ declare global {
       renameAgent(dbPath: string, agentId: number, newName: string): Promise<{ success: boolean; error?: string }>
       updatePerimetre(dbPath: string, id: number, oldName: string, newName: string, description: string): Promise<{ success: boolean; error?: string }>
       updateAgentSystemPrompt(dbPath: string, agentId: number, systemPrompt: string): Promise<{ success: boolean; error?: string }>
-      getAgentSystemPrompt(dbPath: string, agentId: number): Promise<{ success: boolean; systemPrompt: string | null; systemPromptSuffix: string | null; thinkingMode: string | null; permissionMode: string | null; worktreeEnabled: number | null; error?: string }>
+      getAgentSystemPrompt(dbPath: string, agentId: number): Promise<{ success: boolean; systemPrompt: string | null; systemPromptSuffix: string | null; thinkingMode: string | null; permissionMode: string | null; worktreeEnabled: number | null; preferredModel: string | null; preferredCli: string | null; error?: string }>
       buildAgentPrompt(agentName: string, userPrompt: string): Promise<string>
       searchTasks(
         dbPath: string,

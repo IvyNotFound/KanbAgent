@@ -382,8 +382,12 @@
       "devops": "提交、分支、CI/CD、发布",
       "doc": "README、CONTRIBUTING、JSDoc"
     },
-    "preferredModel": "Preferred model (OpenCode)",
+    "preferredCli": "Preferred CLI",
+    "preferredCliNote": "Overrides the global default CLI for this agent",
+    "preferredModel": "Preferred model",
     "preferredModelNote": "Overrides the global model defined in settings",
+    "globalDefault": "Global default",
+    "settingsDefault": "Settings default",
     "worktreeEnabled": "Worktree 隔离",
     "worktreeInherit": "继承",
     "worktreeOn": "已启用",

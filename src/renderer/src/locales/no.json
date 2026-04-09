@@ -382,8 +382,12 @@
       "devops": "Commits, grener, CI/CD, utgivelser",
       "doc": "README, CONTRIBUTING, JSDoc"
     },
-    "preferredModel": "Preferred model (OpenCode)",
+    "preferredCli": "Preferred CLI",
+    "preferredCliNote": "Overrides the global default CLI for this agent",
+    "preferredModel": "Preferred model",
     "preferredModelNote": "Overrides the global model defined in settings",
+    "globalDefault": "Global default",
+    "settingsDefault": "Settings default",
     "worktreeEnabled": "Worktree-isolering",
     "worktreeInherit": "Arv",
     "worktreeOn": "Aktivert",

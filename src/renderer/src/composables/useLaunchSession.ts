@@ -98,10 +98,14 @@ export function useLaunchSession() {
       } else {
         // Auto-detect (drag-drop / relaunch path)
         const allInstances = await getCachedCliInstances()
-        let defaultCli = settingsStore.enabledClis[0] ?? 'claude'
+
+        // Agent preferred CLI > first enabled CLI (T1804)
+        let defaultCli = (agent.preferred_cli as CliType) ?? settingsStore.enabledClis[0] ?? 'claude'
         let cliInstances = allInstances.filter(i => i.cli === defaultCli)
         if (cliInstances.length === 0) {
-          for (const cli of settingsStore.enabledClis.slice(1)) {
+          // Preferred CLI not installed — fallback to enabled CLIs
+          for (const cli of settingsStore.enabledClis) {
+            if (cli === defaultCli) continue
             const candidates = allInstances.filter(i => i.cli === cli)
             if (candidates.length > 0) { defaultCli = cli; cliInstances = candidates; break }
           }
