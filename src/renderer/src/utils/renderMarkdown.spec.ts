@@ -91,15 +91,16 @@ describe('renderMarkdown', () => {
     expect(result).toMatch(/it(&#39;|')s fine/)
   })
 
-  it('strips XSS script tags', () => {
+  it('escapes XSS script tags — no executable <script> (T1841)', () => {
     const result = renderMarkdown('<script>alert("xss")</script>')
     expect(result).not.toContain('<script>')
-    expect(result).not.toContain('alert(')
+    expect(result).toContain('&lt;script&gt;')
   })
 
-  it('strips onerror attributes', () => {
+  it('escapes onerror attributes — no executable handler (T1841)', () => {
     const result = renderMarkdown('<img src="x" onerror="alert(1)">')
-    expect(result).not.toContain('onerror')
+    expect(result).not.toContain('<img')
+    expect(result).toContain('&lt;img')
   })
 
   // XSS regression tests — GHSA-v8jm-5vwx-cfxm (T848)
@@ -108,16 +109,16 @@ describe('renderMarkdown', () => {
     expect(result).not.toContain('javascript:')
   })
 
-  it('strips SVG onload payload', () => {
+  it('escapes SVG onload payload — no executable handler (T1841)', () => {
     const result = renderMarkdown('<svg onload="alert(1)"><rect/></svg>')
-    expect(result).not.toContain('onload')
-    expect(result).not.toContain('alert')
+    expect(result).not.toContain('<svg')
+    expect(result).toContain('&lt;svg')
   })
 
-  it('strips iframe injection', () => {
+  it('escapes iframe injection — no rendered iframe (T1841)', () => {
     const result = renderMarkdown('<iframe src="https://evil.example.com"></iframe>')
     expect(result).not.toContain('<iframe')
-    expect(result).not.toContain('evil.example.com')
+    expect(result).toContain('&lt;iframe')
   })
 
   it('returns empty string for empty input', () => {
@@ -159,5 +160,40 @@ describe('renderMarkdown', () => {
     const a = renderMarkdown('**test**')
     const b = renderMarkdown('**test**')
     expect(a).toBe(b)
+  })
+
+  // Raw HTML escaping — T1841
+  it('escapes block-level raw HTML — <div> displayed as text (T1841)', () => {
+    const result = renderMarkdown('<div>test</div>')
+    expect(result).not.toContain('<div>')
+    expect(result).toContain('&lt;div&gt;')
+    expect(result).toContain('test')
+  })
+
+  it('escapes inline raw HTML while preserving markdown — bold + <span> (T1841)', () => {
+    const result = renderMarkdown('**bold** and <span>html</span>')
+    expect(result).toContain('<strong>bold</strong>')
+    expect(result).not.toContain('<span>')
+    expect(result).toContain('&lt;span&gt;')
+  })
+
+  it('inline code with HTML tag displays correctly — no regression (T1841)', () => {
+    const result = renderMarkdown('Use `<code>` here')
+    expect(result).toContain('<code>')
+    expect(result).toContain('&lt;code&gt;')
+  })
+
+  it('fenced code blocks with HTML are not double-escaped (T1841)', () => {
+    const result = renderMarkdown('```html\n<div class="test">Hello</div>\n```')
+    expect(result).toContain('<pre class="hljs">')
+    expect(result).toContain('language-html')
+    // hljs highlights the HTML — should not contain double-escaped entities like &amp;lt;
+    expect(result).not.toContain('&amp;lt;')
+  })
+
+  it('escapes <table> raw HTML — displayed as text (T1841)', () => {
+    const result = renderMarkdown('<table><tr><td>cell</td></tr></table>')
+    expect(result).not.toContain('<table>')
+    expect(result).toContain('&lt;table&gt;')
   })
 })

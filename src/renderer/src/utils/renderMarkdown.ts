@@ -31,6 +31,10 @@ function ensureMarkedConfigured(): void {
           ? hljs.highlight(text, { language }).value
           : escapeHtml(text)
         return `<div class="code-block-wrapper"><button class="copy-code-btn" type="button" aria-label="Copy code">Copy</button><pre class="hljs"><code class="${language ? `language-${language}` : ''}">${highlighted}</code></pre></div>`
+      },
+      // Escape raw HTML (block & inline) so it displays as literal text instead of being rendered (T1841)
+      html({ text }: { text: string }) {
+        return escapeHtml(text)
       }
     }
   })
