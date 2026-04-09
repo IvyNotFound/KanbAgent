@@ -158,9 +158,9 @@ describe('useAutoLaunch T1105: no-task close — no fallback (T1246)', () => {
     expect(api.agentKill).not.toHaveBeenCalled()
   })
 
-  it('should NOT force-close no-task agent even after 5 minutes (T1246: fallback removed)', async () => {
-    // T1246: no fallback timer for no-task agents — they close only when session completes.
-    // queryDb always returns [] → session never found → tab stays open indefinitely.
+  it('should NOT force-close no-task agent before 120s fallback (T1820)', async () => {
+    // T1820: 120s safety fallback for no-task agents — tab stays open before that.
+    // queryDb always returns [] → session never found → tab stays open until fallback.
     const noTaskAgent = makeAgent({ id: 20, name: 'review-master', type: 'review' })
     agents.value = [noTaskAgent]
     useAutoLaunch({ tasks, agents, dbPath })
@@ -176,8 +176,8 @@ describe('useAutoLaunch T1105: no-task close — no fallback (T1246)', () => {
     tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 999 })]
     await nextTick()
 
-    // Past 5 minutes — no force-close since fallback was removed
-    await vi.advanceTimersByTimeAsync(80 + 5 * 60 * 1000 + 1000)
+    // 60s — before 120s fallback — tab must still be open
+    await vi.advanceTimersByTimeAsync(80 + 60 * 1000)
 
     expect(api.agentKill).not.toHaveBeenCalled()
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)

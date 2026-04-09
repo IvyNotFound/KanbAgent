@@ -147,8 +147,8 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
           if (tab.taskId) continue // task-linked tab: handled by Chemin 1
           if (!pendingCloses.has(tab.id)) {
             // lookbackMs=0: only match sessions that completed AFTER this schedule (T1242 Fix 3)
-            // fallbackMs=0: no forced close (T1246)
-            scheduleClose(tab, agent.id, 0, 0, NO_TASK_POST_COMPLETE_DELAY_MS)
+            // fallbackMs=120s: safety net for tabs that never get a session completion (T1820)
+            scheduleClose(tab, agent.id, 120_000, 0, NO_TASK_POST_COMPLETE_DELAY_MS)
           }
         }
       }
@@ -214,15 +214,13 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
     try {
       // Only detect sessions that completed AFTER the close was scheduled, preventing
       // false positives from previous sessions completed within the last few minutes.
+      // T1820: removed NOT EXISTS clause — zombie 'started' sessions were blocking detection.
+      // The ended_at >= notBefore filter is sufficient to avoid false positives.
       const rows = await window.electronAPI.queryDb(
         path,
         `SELECT id FROM sessions WHERE agent_id = ? AND status = 'completed' AND ended_at >= ?
-         AND NOT EXISTS (
-           SELECT 1 FROM sessions s2
-           WHERE s2.agent_id = ? AND s2.status = 'started' AND s2.id > sessions.id
-         )
          ORDER BY id DESC LIMIT 1`,
-        [agentId, notBefore, agentId]
+        [agentId, notBefore]
       ) as { id: number }[]
       if (rows.length > 0) {
         doClose(tabId)

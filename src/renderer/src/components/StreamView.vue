@@ -307,9 +307,9 @@ onMounted(async () => {
     unsubConvId = window.electronAPI.onAgentConvId(id, (convId: string) => { sessionId.value = convId })
     unsubExit = window.electronAPI.onAgentExit(id, (_exitCode: number | null) => {
       if (isStreaming.value) { const e: StreamEvent = { type: 'result' }; assignEventId(e); events.value.push(e) }
-      // Auto-close for non-Claude CLIs — Claude uses Stop hook (App.vue / T1370)
+      // Auto-close all agent tabs on process exit (T1820)
       const t = tabsStore.tabs.find(tb => tb.id === props.terminalId)
-      if (t && t.cli && t.cli !== 'claude') {
+      if (t) {
         const agent = agentsStore.agents.find(a => a.name === t.agentName)
         const isTaskCreator = t.agentName === 'task-creator' || agent?.type === 'task-creator'
         if (!isTaskCreator) {

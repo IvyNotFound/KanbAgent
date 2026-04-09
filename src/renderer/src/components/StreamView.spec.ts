@@ -525,7 +525,7 @@ describe('StreamView auto-close on process exit (T1373)', () => {
     expect(closeTabSpy).toHaveBeenCalledWith('test-terminal-1')
   })
 
-  it('does NOT close tab on exit for cli=claude (T1373)', async () => {
+  it('closes tab after 3s on exit for cli=claude (T1820)', async () => {
     const { tabsStore } = await mountWithCli('claude')
     const closeTabSpy = vi.spyOn(tabsStore, 'closeTab')
     vi.useFakeTimers()
@@ -533,8 +533,9 @@ describe('StreamView auto-close on process exit (T1373)', () => {
     const [, exitCallback] = vi.mocked(mockElectronAPI.onAgentExit).mock.calls[0] ?? []
     ;(exitCallback as (code: number | null) => void)(0)
 
-    vi.advanceTimersByTime(5000)
     expect(closeTabSpy).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(3000)
+    expect(closeTabSpy).toHaveBeenCalledWith('test-terminal-1')
   })
 
   it('does NOT close tab on exit when agentName=task-creator (T1373)', async () => {
