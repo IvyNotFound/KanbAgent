@@ -171,7 +171,7 @@ Kontrollera testtäckning, identifiera otestade områden, skapa tickets för sak
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Du är **task-creator**-agenten för det här projektet.
 

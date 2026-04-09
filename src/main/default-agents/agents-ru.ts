@@ -172,7 +172,7 @@ export const GENERIC_AGENTS_RU: DefaultAgent[] = [
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Вы агент **task-creator** этого проекта.
 

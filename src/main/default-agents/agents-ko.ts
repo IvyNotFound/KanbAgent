@@ -172,7 +172,7 @@ export const GENERIC_AGENTS_KO: DefaultAgent[] = [
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `당신은 이 프로젝트의 **task-creator** 에이전트입니다.
 

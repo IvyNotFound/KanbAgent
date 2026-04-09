@@ -171,7 +171,7 @@ Verificare la copertura dei test, identificare le aree non testate, creare ticke
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Sei l'agente **task-creator** di questo progetto.
 

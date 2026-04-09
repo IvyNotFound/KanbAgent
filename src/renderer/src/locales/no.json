@@ -380,7 +380,8 @@
       "reviewMaster": "Global revisjon, cross-scopearbeidrasjon",
       "arch": "ADR, grensesnitt, strukturelle beslutninger",
       "devops": "Commits, grener, CI/CD, utgivelser",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Oppgaveplanlegging & billetoppretting"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

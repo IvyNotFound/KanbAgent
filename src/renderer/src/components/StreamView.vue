@@ -311,7 +311,7 @@ onMounted(async () => {
       const t = tabsStore.tabs.find(tb => tb.id === props.terminalId)
       if (t) {
         const agent = agentsStore.agents.find(a => a.name === t.agentName)
-        const isTaskCreator = t.agentName === 'task-creator' || agent?.type === 'task-creator'
+        const isTaskCreator = t.agentName === 'task-creator' || agent?.type === 'planner'
         if (!isTaskCreator) {
           setTimeout(() => tabsStore.closeTab(props.terminalId), 3000)
         }

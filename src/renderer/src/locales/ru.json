@@ -380,7 +380,8 @@
       "reviewMaster": "Глобальный аудит, cross-scope арбитраж",
       "arch": "ADR, интерфейсы, структурные решения",
       "devops": "Коммиты, ветки, CI/CD, релизы",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Планирование задач & создание тикетов"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

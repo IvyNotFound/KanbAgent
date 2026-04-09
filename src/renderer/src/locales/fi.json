@@ -380,7 +380,8 @@
       "reviewMaster": "Globaali auditointi, cross-scope sovittelu",
       "arch": "ADR, rajapinnat, rakennepäätökset",
       "devops": "Commitit, haarat, CI/CD, julkaisut",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Tehtävien suunnittelu & tikettien luonti"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

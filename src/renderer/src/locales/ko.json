@@ -380,7 +380,8 @@
       "reviewMaster": "글로벌 감사 및 크로스 스코프 조정",
       "arch": "ADR, 인터페이스, 구조적 결정",
       "devops": "커밋, 브랜치, CI/CD, 릴리스",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "작업 계획 & 티켓 생성"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

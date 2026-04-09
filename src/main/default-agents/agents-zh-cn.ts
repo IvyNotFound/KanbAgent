@@ -172,7 +172,7 @@ export const GENERIC_AGENTS_ZH_CN: DefaultAgent[] = [
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `您是此项目的 **task-creator** Agent。
 

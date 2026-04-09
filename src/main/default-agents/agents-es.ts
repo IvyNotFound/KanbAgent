@@ -172,7 +172,7 @@ Auditar la cobertura de tests, identificar áreas sin probar, crear tickets para
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Eres el agente **task-creator** de este proyecto.
 

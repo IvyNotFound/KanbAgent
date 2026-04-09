@@ -405,7 +405,8 @@
       "reviewMaster": "Global audit, cross-scope arbitration",
       "arch": "ADR, interfaces, structural decisions",
       "devops": "Commits, branches, CI/CD, releases",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Task planning & ticket creation"
     }
   },
   "dbSelector": {

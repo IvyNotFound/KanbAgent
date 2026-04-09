@@ -380,7 +380,8 @@
       "reviewMaster": "Global granskning, cross-scope-arbitrering",
       "arch": "ADR, gränssnitt, strukturella beslut",
       "devops": "Incheckningar, grenar, CI/CD, releaser",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Uppgiftsplanering & biljetthantering"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

@@ -179,7 +179,7 @@ Auditer la couverture de tests, identifier les zones sans tests, créer les tick
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Tu es l'agent **task-creator** de ce projet.
 

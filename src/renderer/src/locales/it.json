@@ -380,7 +380,8 @@
       "reviewMaster": "Audit globale, arbitraggio cross-scope",
       "arch": "ADR, interfacce, decisioni strutturali",
       "devops": "Commit, branch, CI/CD, rilasci",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Pianificazione attività & creazione ticket"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

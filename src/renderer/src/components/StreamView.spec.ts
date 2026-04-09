@@ -550,8 +550,8 @@ describe('StreamView auto-close on process exit (T1373)', () => {
     expect(closeTabSpy).not.toHaveBeenCalled()
   })
 
-  it('does NOT close tab on exit when agent.type=task-creator (T1373)', async () => {
-    const { tabsStore } = await mountWithCli('aider', { agentType: 'task-creator' })
+  it('does NOT close tab on exit when agent.type=planner (T1373)', async () => {
+    const { tabsStore } = await mountWithCli('aider', { agentType: 'planner' })
     const closeTabSpy = vi.spyOn(tabsStore, 'closeTab')
     vi.useFakeTimers()
 

@@ -380,7 +380,8 @@
       "reviewMaster": "Globalny audyt, arbitraż między obwodami",
       "arch": "ADR, interfejsy, decyzje strukturalne",
       "devops": "Commity, gałęzie, CI/CD, wydania",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Planowanie zadań & tworzenie ticketów"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

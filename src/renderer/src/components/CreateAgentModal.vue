@@ -25,7 +25,7 @@ const store = useTasksStore()
 const settingsStore = useSettingsStore()
 
 const SCOPED_TYPES = ['dev', 'test', 'ux']
-const ALL_TYPES = ['dev', 'test', 'ux', 'review', 'review-master', 'arch', 'devops', 'doc', 'secu', 'perf', 'data']
+const ALL_TYPES = ['dev', 'test', 'ux', 'review', 'review-master', 'arch', 'devops', 'doc', 'secu', 'perf', 'data', 'planner']
 
 const name = ref('')
 const type = ref('dev')

@@ -71,11 +71,11 @@ function validateGenericAgents(agents: Agent[], label: string) {
       expect(agent!.scope).toBeNull()
     })
 
-    it('task-creator: name=task-creator, type=dev, scope=null', () => {
+    it('task-creator: name=task-creator, type=planner, scope=null', () => {
       const agent = findAgent(agents, 'task-creator')
       expect(agent).toBeDefined()
       expect(agent!.name).toBe('task-creator')
-      expect(agent!.type).toBe('dev')
+      expect(agent!.type).toBe('planner')
       expect(agent!.scope).toBeNull()
     })
 

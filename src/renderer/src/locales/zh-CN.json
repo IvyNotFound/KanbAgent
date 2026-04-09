@@ -380,7 +380,8 @@
       "reviewMaster": "全局审计，跨Scope仲裁",
       "arch": "ADR、接口、结构性决策",
       "devops": "提交、分支、CI/CD、发布",
-      "doc": "README、CONTRIBUTING、JSDoc"
+      "doc": "README、CONTRIBUTING、JSDoc",
+      "planner": "任务规划与工单创建"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

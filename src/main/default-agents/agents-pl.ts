@@ -172,7 +172,7 @@ Audyt pokrycia testami, identyfikacja niepokrytych obszarów, tworzenie ticketó
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Jesteś agentem **task-creator** tego projektu.
 

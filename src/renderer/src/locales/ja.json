@@ -380,7 +380,8 @@
       "reviewMaster": "グローバル監査・クロススコープ調停",
       "arch": "ADR・インターフェース・構造的決定",
       "devops": "コミット・ブランチ・CI/CD・リリース",
-      "doc": "README・CONTRIBUTING・JSDoc"
+      "doc": "README・CONTRIBUTING・JSDoc",
+      "planner": "タスク計画・チケット作成"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

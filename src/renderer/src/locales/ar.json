@@ -380,7 +380,8 @@
       "reviewMaster": "التدقيق الشامل وتحكيم النطاقات",
       "arch": "ADR، الواجهات، القرارات الهيكلية",
       "devops": "الالتزامات، الفروع، CI/CD، الإصدارات",
-      "doc": "README، CONTRIBUTING، JSDoc"
+      "doc": "README، CONTRIBUTING، JSDoc",
+      "planner": "تخطيط المهام وإنشاء التذاكر"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

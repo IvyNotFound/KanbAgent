@@ -171,7 +171,7 @@ Tarkasta testikattavuus, tunnista testaamattomat alueet, luo tikettejä puuttuvi
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Olet tämän projektin **task-creator**-agentti.
 

@@ -380,7 +380,8 @@
       "reviewMaster": "Global audit, tværgående scope-forhandling",
       "arch": "ADR, grænseflader, strukturelle beslutninger",
       "devops": "Commits, branches, CI/CD, releases",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Opgaveplanlægning & billetoprettelse"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

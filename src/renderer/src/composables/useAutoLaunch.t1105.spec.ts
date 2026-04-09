@@ -295,7 +295,7 @@ describe('useAutoLaunch T1254: task-creator guard in Chemin 1', () => {
   afterEach(() => { vi.useRealTimers() })
 
   it('should NOT close task-creator tab when its task transitions to done (Chemin 1)', async () => {
-    const taskCreator = makeAgent({ id: 30, name: 'task-creator', type: 'dev', auto_launch: 1 })
+    const taskCreator = makeAgent({ id: 30, name: 'task-creator', type: 'planner', auto_launch: 1 })
     agents.value = [taskCreator]
     useAutoLaunch({ tasks, agents, dbPath })
 

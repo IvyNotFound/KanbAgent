@@ -171,7 +171,7 @@ Testabdeckung prüfen, nicht getestete Bereiche identifizieren, Tickets für feh
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `Sie sind der **task-creator**-Agent dieses Projekts.
 

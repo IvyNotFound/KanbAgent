@@ -380,7 +380,8 @@
       "reviewMaster": "Global denetim ve çapraz scope tahkimi",
       "arch": "ADR, arayüzler ve yapısal kararlar",
       "devops": "Commit, dal, CI/CD, sürüm",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Görev planlama & bilet oluşturma"
     },
     "preferredCli": "Preferred CLI",
     "preferredCliNote": "Overrides the global default CLI for this agent",

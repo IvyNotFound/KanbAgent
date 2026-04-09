@@ -172,7 +172,7 @@ Audit test coverage, identify untested areas, create tickets for missing tests.
   },
   {
     name: 'task-creator',
-    type: 'dev',
+    type: 'planner',
     scope: null,
     system_prompt: `You are the **task-creator** agent for this project.
 

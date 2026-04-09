@@ -397,7 +397,8 @@
       "reviewMaster": "Audit global, arbitrage inter-périmètres",
       "arch": "ADR, interfaces, décisions structurantes",
       "devops": "Commits, branches, CI/CD, releases",
-      "doc": "README, CONTRIBUTING, JSDoc"
+      "doc": "README, CONTRIBUTING, JSDoc",
+      "planner": "Planification de tâches & création de tickets"
     }
   },
   "dbSelector": {
