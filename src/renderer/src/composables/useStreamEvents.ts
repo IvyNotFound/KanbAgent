@@ -134,7 +134,26 @@ export function useStreamEvents(terminalId: string) {
   // of keeping rendered HTML for ≤200 events is negligible for Electron, and it
   // eliminates 600-800 synchronous renderMarkdown calls on tab re-activation.
   watch(() => tabsStore.activeTabId === terminalId, (isActive) => {
-    if (!isActive) {
+    if (isActive) {
+      // T1855: render _html for blocks that arrived while the tab was hidden
+      for (const e of events.value) {
+        if (e.message?.content) {
+          for (const block of e.message.content) {
+            if (block.type === 'text' && block.text != null && !block._html) {
+              block._html = e.type === 'user'
+                ? renderMarkdown(parsePromptContext(block.text).base)
+                : renderMarkdown(block.text)
+            } else if (block.type === 'tool_result' && !block._html) {
+              const raw = !block.content ? '' : typeof block.content === 'string' ? block.content : Array.isArray(block.content) ? block.content.map(c => c.text ?? '').join('\n') : String(block.content)
+              block._html = renderMarkdown(raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, ''))
+            }
+          }
+        }
+        if (e.type === 'text' && e.text != null && !e._html) {
+          e._html = renderMarkdown(e.text)
+        }
+      }
+    } else {
       if (events.value.length > MAX_EVENTS_HIDDEN) {
         const evicted = events.value.splice(0, events.value.length - MAX_EVENTS_HIDDEN)
         const evictedIds = new Set(evicted.map(e => e._id))

@@ -457,17 +457,17 @@ exports[`ToastContainer — snapshots > matches snapshot: empty (no toasts) 1`] 
 
 exports[`ToastContainer — snapshots > matches snapshot: three toast types (error, warn, info) 1`] = `
 "<v-snackbar model-value="true" color="error" timeout="-1" location="bottom end"><span style="white-space: pre-line;">Connection failed</span>
-  <v-btn icon="" variant="plain" density="compact">
+  <v-btn icon="" variant="plain" density="compact" class="ml-3">
     <v-icon>mdi-close</v-icon>
   </v-btn>
 </v-snackbar>
 <v-snackbar model-value="true" color="warning" timeout="-1" location="bottom end"><span style="white-space: pre-line;">Slow response detected</span>
-  <v-btn icon="" variant="plain" density="compact">
+  <v-btn icon="" variant="plain" density="compact" class="ml-3">
     <v-icon>mdi-close</v-icon>
   </v-btn>
 </v-snackbar>
 <v-snackbar model-value="true" color="surface-variant" timeout="-1" location="bottom end"><span style="white-space: pre-line;">Changes saved</span>
-  <v-btn icon="" variant="plain" density="compact">
+  <v-btn icon="" variant="plain" density="compact" class="ml-3">
     <v-icon>mdi-close</v-icon>
   </v-btn>
 </v-snackbar>"
