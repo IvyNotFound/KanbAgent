@@ -94,6 +94,15 @@ export function killAgent(id: string): void {
   const proc = agents.get(id)
   if (!proc) return
   const pid = proc.pid
+
+  // Clear stream batching interval to prevent leak (T1851)
+  const timer = streamTimers.get(id)
+  if (timer) {
+    clearInterval(timer)
+    streamTimers.delete(id)
+  }
+  streamBatches.delete(id)
+
   try { proc.kill() } catch { /* already dead */ }
   agents.delete(id)
 
