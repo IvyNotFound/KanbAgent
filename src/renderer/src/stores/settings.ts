@@ -11,7 +11,8 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import i18n from '../plugins/i18n'
+import i18n, { loadLocaleMessages } from '../plugins/i18n'
+import type { AppLocale } from '../plugins/i18n'
 import { setDarkMode } from '../utils/agentColor'
 import { vuetifyThemeName } from '../plugins/vuetifyTheme'
 import type { CliType, CliInstance } from '@shared/cli-types'
@@ -112,7 +113,8 @@ export const useSettingsStore = defineStore('settings', () => {
    */
   const RTL_LOCALES: Language[] = ['ar']
 
-  function setLanguage(l: Language) {
+  async function setLanguage(l: Language) {
+    await loadLocaleMessages(l as AppLocale)
     language.value = l
     localStorage.setItem('language', l)
     // Sync to vue-i18n global locale for hot-switching

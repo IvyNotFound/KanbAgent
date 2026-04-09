@@ -74,16 +74,16 @@ describe('stores/settings', () => {
   })
 
   describe('setLanguage', () => {
-    it('should set language to fr', () => {
+    it('should set language to fr', async () => {
       const store = useSettingsStore()
-      store.setLanguage('fr')
+      await store.setLanguage('fr')
       expect(store.language).toBe('fr')
       expect(localStorage.getItem('language')).toBe('fr')
     })
 
-    it('should set language to en', () => {
+    it('should set language to en', async () => {
       const store = useSettingsStore()
-      store.setLanguage('en')
+      await store.setLanguage('en')
       expect(store.language).toBe('en')
       expect(localStorage.getItem('language')).toBe('en')
     })

@@ -5,28 +5,14 @@
  * Language is persisted in localStorage under the key 'language'.
  * Fallback locale: 'en'. Arabic (ar) is loaded but full RTL layout support is deferred.
  *
+ * Only en (fallback) and the user's saved locale are loaded eagerly.
+ * Other locales are loaded on demand via loadLocaleMessages().
+ *
  * @module plugins/i18n
  */
 
 import { createI18n } from 'vue-i18n'
-import fr from '../locales/fr.json'
 import en from '../locales/en.json'
-import es from '../locales/es.json'
-import pt from '../locales/pt.json'
-import ar from '../locales/ar.json'
-import ja from '../locales/ja.json'
-import ptBR from '../locales/pt-BR.json'
-import pl from '../locales/pl.json'
-import no from '../locales/no.json'
-import da from '../locales/da.json'
-import ru from '../locales/ru.json'
-import fi from '../locales/fi.json'
-import sv from '../locales/sv.json'
-import de from '../locales/de.json'
-import it from '../locales/it.json'
-import ko from '../locales/ko.json'
-import zhCN from '../locales/zh-CN.json'
-import tr from '../locales/tr.json'
 
 export type AppLocale =
   | 'fr'
@@ -48,35 +34,59 @@ export type AppLocale =
   | 'ko'
   | 'ja'
 
+const localeImportMap: Record<AppLocale, () => Promise<{ default: Record<string, unknown> }>> = {
+  en: () => import('../locales/en.json'),
+  fr: () => import('../locales/fr.json'),
+  es: () => import('../locales/es.json'),
+  pt: () => import('../locales/pt.json'),
+  'pt-BR': () => import('../locales/pt-BR.json'),
+  de: () => import('../locales/de.json'),
+  no: () => import('../locales/no.json'),
+  it: () => import('../locales/it.json'),
+  ar: () => import('../locales/ar.json'),
+  ru: () => import('../locales/ru.json'),
+  pl: () => import('../locales/pl.json'),
+  sv: () => import('../locales/sv.json'),
+  fi: () => import('../locales/fi.json'),
+  da: () => import('../locales/da.json'),
+  tr: () => import('../locales/tr.json'),
+  'zh-CN': () => import('../locales/zh-CN.json'),
+  ko: () => import('../locales/ko.json'),
+  ja: () => import('../locales/ja.json'),
+}
+
+const loadedLocales = new Set<AppLocale>(['en'])
+
 const savedLocale =
   (typeof localStorage !== 'undefined'
     ? (localStorage.getItem('language') as AppLocale | null)
     : null) ?? 'fr'
 
+const initialMessages: Record<string, Record<string, unknown>> = { en }
+
 const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
   fallbackLocale: 'en',
-  messages: {
-    fr,
-    en,
-    pt,
-    es,
-    ar,
-    ja,
-    'pt-BR': ptBR,
-    pl,
-    no,
-    da,
-    ru,
-    fi,
-    sv,
-    de,
-    it,
-    ko,
-    'zh-CN': zhCN,
-    tr,
-  },
+  messages: initialMessages,
 })
+
+/**
+ * Load locale messages on demand. No-op if already loaded.
+ */
+export async function loadLocaleMessages(locale: AppLocale): Promise<void> {
+  if (loadedLocales.has(locale)) return
+  const importFn = localeImportMap[locale]
+  if (!importFn) return
+  const messages = await importFn()
+  i18n.global.setLocaleMessage(locale, messages.default)
+  loadedLocales.add(locale)
+}
+
+/** Resolves when the saved locale is loaded. Immediate for 'en'. */
+export const i18nReady: Promise<void> =
+  savedLocale !== 'en'
+    ? loadLocaleMessages(savedLocale as AppLocale)
+    : Promise.resolve()
 
 export default i18n

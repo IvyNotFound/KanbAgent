@@ -62,22 +62,22 @@ describe('stores/settings — language init from localStorage', () => {
     expect(store.language).toBe('de')
   })
 
-  it('setLanguage persists and updates store', () => {
+  it('setLanguage persists and updates store', async () => {
     const store = useSettingsStore()
-    store.setLanguage('en')
+    await store.setLanguage('en')
     expect(store.language).toBe('en')
     expect(localStorage.getItem('language')).toBe('en')
   })
 
-  it('setLanguage("ar") sets document dir to rtl', () => {
+  it('setLanguage("ar") sets document dir to rtl', async () => {
     const store = useSettingsStore()
-    store.setLanguage('ar')
+    await store.setLanguage('ar')
     expect(document.documentElement.dir).toBe('rtl')
   })
 
-  it('setLanguage("fr") sets document dir to ltr', () => {
+  it('setLanguage("fr") sets document dir to ltr', async () => {
     const store = useSettingsStore()
-    store.setLanguage('fr')
+    await store.setLanguage('fr')
     expect(document.documentElement.dir).toBe('ltr')
   })
 })

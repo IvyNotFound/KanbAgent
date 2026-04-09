@@ -36,8 +36,9 @@ describe('i18n plugin — static instance', () => {
     expect(fallbackStr).toBe('en')
   })
 
-  it('has "fr" messages loaded (kills StringLiteral mutation on locale key)', async () => {
-    const { default: i18n } = await import('./i18n')
+  it('has "fr" messages loaded after i18nReady (kills StringLiteral mutation on locale key)', async () => {
+    const { default: i18n, i18nReady } = await import('./i18n')
+    await i18nReady
     const messages = i18n.global.getLocaleMessage('fr')
     expect(messages).toBeDefined()
     // fr.json has common.loading = "Chargement…"
@@ -51,13 +52,14 @@ describe('i18n plugin — static instance', () => {
     expect((messages as { common?: { loading?: string } }).common?.loading).toBe('Loading…')
   })
 
-  it('has messages for all 18 locales registered', async () => {
-    const { default: i18n } = await import('./i18n')
+  it('can load all 18 locales on demand via loadLocaleMessages', async () => {
+    const { default: i18n, loadLocaleMessages } = await import('./i18n')
     const expectedLocales = [
       'fr', 'en', 'es', 'pt', 'pt-BR', 'de', 'no', 'it',
       'ar', 'ru', 'pl', 'sv', 'fi', 'da', 'tr', 'zh-CN', 'ko', 'ja',
-    ]
+    ] as const
     for (const locale of expectedLocales) {
+      await loadLocaleMessages(locale)
       const msgs = i18n.global.getLocaleMessage(locale)
       expect(msgs, `Expected messages for locale "${locale}" to be defined`).toBeDefined()
       expect(Object.keys(msgs).length, `Expected messages for locale "${locale}" to be non-empty`).toBeGreaterThan(0)
