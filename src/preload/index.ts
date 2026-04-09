@@ -267,6 +267,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     dbPath?: string
     sessionId?: number
     cli?: string
+    /** Model ID to pass via --model flag (T1805). */
+    modelId?: string
     /** Initial message — for CLIs that take prompts as positional args (e.g. opencode). Skips the need for a separate agentSend call. */
     initialMessage?: string
   }): Promise<string> =>

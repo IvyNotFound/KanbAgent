@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "http",
-            "url": "http://127.0.0.1:27182/hooks/session-start",
+            "url": "http://172.17.240.1:27182/hooks/session-start",
             "timeout": 5
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "http",
-            "url": "http://127.0.0.1:27182/hooks/subagent-start",
+            "url": "http://172.17.240.1:27182/hooks/subagent-start",
             "timeout": 5
           }
         ]
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "http",
-            "url": "http://127.0.0.1:27182/hooks/subagent-stop",
+            "url": "http://172.17.240.1:27182/hooks/subagent-stop",
             "timeout": 5
           }
         ]
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "http",
-            "url": "http://127.0.0.1:27182/hooks/pre-tool-use",
+            "url": "http://172.17.240.1:27182/hooks/pre-tool-use",
             "timeout": 5
           }
         ]
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "http",
-            "url": "http://127.0.0.1:27182/hooks/post-tool-use",
+            "url": "http://172.17.240.1:27182/hooks/post-tool-use",
             "timeout": 5
           }
         ]
@@ -66,8 +66,45 @@
         "hooks": [
           {
             "type": "http",
-            "url": "http://127.0.0.1:27182/hooks/stop",
+            "url": "http://172.17.240.1:27182/hooks/stop",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://172.17.240.1:27182/hooks/instructions-loaded"
+          }
+        ]
+      }
+    ]
+  }
+}
+,
+            "url": "http://127.0.0.1:27182/hooks/post-tool-use",
+            "timeout": 5,
+            "headers": {
+              "Authorization": "Bearer 8ac929a33ae8fe0ab6be0e3c09855f5ccc0b1e866c7f5845e9b7b70ee825f325"
+            }
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://127.0.0.1:27182/hooks/stop",
+            "timeout": 15,
+            "headers": {
+              "Authorization": "Bearer 8ac929a33ae8fe0ab6be0e3c09855f5ccc0b1e866c7f5845e9b7b70ee825f325"
+            }
           }
         ]
       }

@@ -308,7 +308,10 @@
     "worktreeSourceGlobal": "paramétrage global",
     "worktreeSourceAgent": "paramétrage agent",
     "worktreeSourceManual": "modifié manuellement",
-    "refreshDetection": "Actualiser"
+    "refreshDetection": "Actualiser",
+    "model": "Modèle",
+    "modelDefault": "Défaut (depuis les paramètres)",
+    "modelNote": "Remplacer le modèle utilisé pour cette session. Laisser vide pour le défaut."
   },
   "titleBar": {
     "searchTitle": "Rechercher une tâche (Ctrl+K)",

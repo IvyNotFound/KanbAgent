@@ -165,6 +165,7 @@ describe('LaunchSessionModal — advanced features (T353)', () => {
       'stream',            // viewMode
       'claude',            // cli (T1014)
       undefined,           // workDir (multiInstance off)
+      undefined,           // modelId (T1805)
     )
   })
 })

@@ -308,7 +308,10 @@
     "worktreeSourceAgent": "agent setting",
     "worktreeSourceManual": "manually changed",
     "instance": "Instance",
-    "refreshDetection": "Refresh"
+    "refreshDetection": "Refresh",
+    "model": "Model",
+    "modelDefault": "Default (from settings)",
+    "modelNote": "Override the model used for this session. Leave empty to use the default."
   },
   "cli": {
     "claude": "Claude Code",

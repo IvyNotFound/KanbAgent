@@ -36,6 +36,8 @@ export interface LaunchOptions {
   activate?: boolean
   /** Task ID to associate (default: task.id when task is provided) */
   taskId?: number
+  /** Model ID to pass via --model flag (e.g. 'sonnet', 'opus') — T1805 */
+  modelId?: string
 }
 
 const CACHE_TTL_MS = 5 * 60 * 1000
@@ -203,7 +205,8 @@ export function useLaunchSession() {
         resolvedTaskId,
         'stream',
         resolvedCli,
-        resolvedWorkDir
+        resolvedWorkDir,
+        opts?.modelId
       )
 
       return 'ok'

@@ -40,6 +40,8 @@ export interface Tab {
   workDir?: string | null
   /** CLI type used to launch this terminal (T1014). null = default (claude). */
   cli?: CliType | null
+  /** Model ID selected at launch time — forwarded to agent:create (T1805). null = backend default. */
+  modelId?: string | null
   filePath?: string
   dirty?: boolean
   logsAgentId?: number | null
@@ -139,7 +141,7 @@ export const useTabsStore = defineStore('tabs', () => {
     activeTabId.value = 'dashboard'
   }
 
-  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'stream', cli?: CliType, workDir?: string): void {
+  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'stream', cli?: CliType, workDir?: string, modelId?: string): void {
     const id = `term-${Date.now()}-${++_tabCounter}`
     let title: string
     if (agentName) {
@@ -173,6 +175,7 @@ export const useTabsStore = defineStore('tabs', () => {
       viewMode: viewMode ?? 'stream',
       cli: cli ?? null,
       workDir: workDir ?? null,
+      modelId: modelId ?? null,
     })
     if (activate) activeTabId.value = id
   }

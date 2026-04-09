@@ -293,6 +293,7 @@ onMounted(async () => {
       claudeCommand: tab.claudeCommand ?? undefined,
       convId: tab.convId ?? undefined,
       cli: tab.cli ?? undefined,
+      modelId: tab.modelId ?? undefined,
       // For CLIs that use positional args (e.g. opencode), pass the initial message at spawn time.
       initialMessage: tab.autoSend ?? undefined,
     })

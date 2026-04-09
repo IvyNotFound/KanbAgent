@@ -10,6 +10,7 @@ import { useToast } from '@renderer/composables/useToast'
 import { CLI_CAPABILITIES, CLI_LABELS, CLI_BADGE, systemLabel as getSystemLabel } from '@renderer/utils/cliCapabilities'
 import type { Agent } from '@renderer/types'
 import type { CliType, CliInstance, CliCapabilities } from '@shared/cli-types'
+import type { CliModelDef } from '@shared/cli-models'
 
 const props = defineProps<{ agent: Agent }>()
 const emit = defineEmits<{ close: [] }>()
@@ -38,6 +39,14 @@ const multiInstance = ref(true)
 const worktreeSource = ref<'global' | 'agent' | 'manual'>('global')
 /** Error message if worktree creation fails */
 const worktreeError = ref<string | null>(null)
+/** Selected model override for this session (T1805) */
+const selectedModel = ref<string | null>(null)
+
+/** Available models for the currently selected CLI */
+const availableModels = computed(() => {
+  const models: CliModelDef[] = settingsStore.cliModels[selectedCli.value] ?? []
+  return models.map(m => ({ title: m.label, value: m.modelId }))
+})
 
 const fullSystemPrompt = computed(() => {
   const parts: string[] = []
@@ -119,6 +128,14 @@ onMounted(async () => {
     }
   }
 
+  // Load CLI models if not already cached (T1805)
+  if (Object.keys(settingsStore.cliModels).length === 0) {
+    await settingsStore.loadCliModels()
+  }
+
+  // Model pre-fill: agent preference > null (T1805)
+  selectedModel.value = props.agent.preferred_model ?? null
+
   // Cascade resolution: agent override > global default (T1143)
   const agentWorktree = props.agent.worktree_enabled
   if (agentWorktree !== null && agentWorktree !== undefined) {
@@ -135,6 +152,11 @@ onMounted(async () => {
 // Track manual override of worktree toggle (T1143)
 watch(multiInstance, () => {
   if (!loading.value) worktreeSource.value = 'manual'
+})
+
+// Reset model selection when CLI changes — models are CLI-specific (T1805)
+watch(selectedCli, () => {
+  if (!loading.value) selectedModel.value = null
 })
 
 async function launch() {
@@ -170,6 +192,7 @@ async function launch() {
       thinkingMode: activeThinking,
       systemPrompt: convId ? false : (activeSystemPrompt ?? ''),
       activate: true,
+      modelId: selectedModel.value ?? undefined,
     })
     if (result === 'session-limit') {
       const max = props.agent.max_sessions ?? MAX_AGENT_SESSIONS
@@ -264,6 +287,34 @@ async function launch() {
               </label>
             </div>
           </div>
+
+          <!-- Model selection — modelSelection CLIs only (T1805) -->
+          <Transition
+            enter-active-class="expand-enter-active"
+            enter-from-class="expand-enter-from"
+            enter-to-class="expand-enter-to"
+            leave-active-class="expand-leave-active"
+            leave-from-class="expand-leave-from"
+            leave-to-class="expand-leave-to"
+          >
+            <div v-if="caps.modelSelection && availableModels.length > 0">
+              <p class="section-title mb-2 text-body-2">{{ t('launch.model') }}</p>
+              <v-select
+                v-model="selectedModel"
+                :items="availableModels"
+                clearable
+                :placeholder="t('launch.modelDefault')"
+                variant="outlined"
+                density="compact"
+                hide-details
+                :base-color="agentAccent(agent.name)"
+                :color="agentAccent(agent.name)"
+              />
+              <p class="field-hint mt-1 text-caption">
+                {{ t('launch.modelNote') }}
+              </p>
+            </div>
+          </Transition>
 
           <!-- Resume session — convResume CLIs only (Claude) (T1036) -->
           <Transition
