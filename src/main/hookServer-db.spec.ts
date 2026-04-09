@@ -10,11 +10,11 @@ import { tmpdir } from 'node:os'
 
 // ── Hoisted mocks ──────────────────────────────────────────────────────────────
 
-const { mockWriteDb, mockWriteDbNative, mockAssertDbPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockDetectWslGatewayIp } = vi.hoisted(
+const { mockWriteDb, mockWriteDbNative, mockAssertProjectPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockDetectWslGatewayIp } = vi.hoisted(
   () => ({
     mockWriteDb: vi.fn(),
     mockWriteDbNative: vi.fn(),
-    mockAssertDbPathAllowed: vi.fn(), // no-op by default
+    mockAssertProjectPathAllowed: vi.fn(), // no-op by default
     mockAssertTranscriptPathAllowed: vi.fn(), // no-op by default — T1871
     mockInitHookSecret: vi.fn(),
     mockGetHookSecret: vi.fn().mockReturnValue('test-secret-db'),
@@ -25,7 +25,7 @@ const { mockWriteDb, mockWriteDbNative, mockAssertDbPathAllowed, mockAssertTrans
 vi.mock('./db', () => ({
   writeDb: mockWriteDb,
   writeDbNative: mockWriteDbNative,
-  assertDbPathAllowed: mockAssertDbPathAllowed,
+  assertProjectPathAllowed: mockAssertProjectPathAllowed,
   assertTranscriptPathAllowed: mockAssertTranscriptPathAllowed,
 }))
 

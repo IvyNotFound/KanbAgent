@@ -3,7 +3,7 @@
  *
  * Targets survived mutants:
  * - L107/L179: dbPath includes '.claude' subdirectory (StringLiteral)
- * - L111/L196: assertDbPathAllowed catch block empties (BlockStatement)
+ * - L111/L196: assertProjectPathAllowed catch block empties (BlockStatement)
  * - L119/L120: transcript read catch block (BlockStatement + StringLiteral)
  * - L153-154: writeDbNative catch block (BlockStatement)
  * - L228: req.url?.startsWith OptionalChaining
@@ -28,7 +28,7 @@ import { tmpdir } from 'node:os'
 
 const {
   mockWriteDbNative,
-  mockAssertDbPathAllowed,
+  mockAssertProjectPathAllowed,
   mockAssertTranscriptPathAllowed,
   mockInitHookSecret,
   mockGetHookSecret,
@@ -36,7 +36,7 @@ const {
   mockWebContentsSend,
 } = vi.hoisted(() => ({
   mockWriteDbNative: vi.fn(),
-  mockAssertDbPathAllowed: vi.fn(),
+  mockAssertProjectPathAllowed: vi.fn(),
   mockAssertTranscriptPathAllowed: vi.fn(),
   mockInitHookSecret: vi.fn(),
   mockGetHookSecret: vi.fn().mockReturnValue('secret-t1336'),
@@ -46,7 +46,7 @@ const {
 
 vi.mock('./db', () => ({
   writeDbNative: mockWriteDbNative,
-  assertDbPathAllowed: mockAssertDbPathAllowed,
+  assertProjectPathAllowed: mockAssertProjectPathAllowed,
   assertTranscriptPathAllowed: mockAssertTranscriptPathAllowed,
 }))
 
@@ -147,7 +147,7 @@ describe('handleStop — dbPath uses .claude subdirectory', () => {
     try { unlinkSync(tmpFile) } catch { /* ignore */ }
   })
 
-  it('assertDbPathAllowed is called with path containing .claude subdirectory', async () => {
+  it('assertProjectPathAllowed is called with cwd before dbPath construction', async () => {
     writeFileSync(tmpFile, makeTranscript(100, 50))
     mockWriteDbNative.mockResolvedValue(undefined)
 
@@ -157,12 +157,7 @@ describe('handleStop — dbPath uses .claude subdirectory', () => {
     })
     await new Promise((r) => setTimeout(r, 200))
 
-    expect(mockAssertDbPathAllowed).toHaveBeenCalledWith(
-      expect.stringContaining('.claude')
-    )
-    expect(mockAssertDbPathAllowed).toHaveBeenCalledWith(
-      expect.stringContaining('project.db')
-    )
+    expect(mockAssertProjectPathAllowed).toHaveBeenCalledWith('/my/project')
   })
 
   it('writeDbNative is called with path containing .claude/project.db', async () => {
@@ -182,10 +177,10 @@ describe('handleStop — dbPath uses .claude subdirectory', () => {
   })
 })
 
-// ── L111: assertDbPathAllowed catch returns early (handleStop) ────────────────
-// Kills: BlockStatement L111 "{}" — catch block emptied means assertDbPathAllowed rejection doesn't stop the flow
+// ── L111: assertProjectPathAllowed catch returns early (handleStop) ────────────────
+// Kills: BlockStatement L111 "{}" — catch block emptied means assertProjectPathAllowed rejection doesn't stop the flow
 
-describe('handleStop — catch block for assertDbPathAllowed prevents DB write', () => {
+describe('handleStop — catch block for assertProjectPathAllowed prevents DB write', () => {
   let server: http.Server
   let port: number
   const tmpFile = join(tmpdir(), 'hs4_assert_catch.jsonl')
@@ -201,9 +196,9 @@ describe('handleStop — catch block for assertDbPathAllowed prevents DB write',
     try { unlinkSync(tmpFile) } catch { /* ignore */ }
   })
 
-  it('returns early (no DB write) when assertDbPathAllowed throws', async () => {
+  it('returns early (no DB write) when assertProjectPathAllowed throws', async () => {
     writeFileSync(tmpFile, makeTranscript(100, 50))
-    mockAssertDbPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
+    mockAssertProjectPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
 
     await makeRequest(port, {
       path: '/hooks/stop',
@@ -311,16 +306,14 @@ describe('handleLifecycleEvent — dbPath uses .claude subdirectory', () => {
     await new Promise<void>((r) => server.close(() => r()))
   })
 
-  it('assertDbPathAllowed called with .claude/project.db for session-start', async () => {
+  it('assertProjectPathAllowed called with cwd for session-start', async () => {
     await makeRequest(port, {
       path: '/hooks/session-start',
       body: { session_id: 'conv-lc1', cwd: '/my/project' },
     })
     await new Promise((r) => setTimeout(r, 100))
 
-    expect(mockAssertDbPathAllowed).toHaveBeenCalledWith(
-      expect.stringContaining('.claude')
-    )
+    expect(mockAssertProjectPathAllowed).toHaveBeenCalledWith('/my/project')
   })
 
   it('writeDbNative called with .claude/project.db path for subagent-start', async () => {
@@ -337,10 +330,10 @@ describe('handleLifecycleEvent — dbPath uses .claude subdirectory', () => {
   })
 })
 
-// ── L196: handleLifecycleEvent assertDbPathAllowed catch block ────────────────
+// ── L196: handleLifecycleEvent assertProjectPathAllowed catch block ────────────────
 // Kills: BlockStatement L196 "{}" — empty catch means blocked path still writes to DB
 
-describe('handleLifecycleEvent — assertDbPathAllowed catch prevents DB write', () => {
+describe('handleLifecycleEvent — assertProjectPathAllowed catch prevents DB write', () => {
   let server: http.Server
   let port: number
 
@@ -355,7 +348,7 @@ describe('handleLifecycleEvent — assertDbPathAllowed catch prevents DB write',
   })
 
   it('skips writeDbNative when path is blocked for session-start', async () => {
-    mockAssertDbPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
+    mockAssertProjectPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
 
     await makeRequest(port, {
       path: '/hooks/session-start',
@@ -367,7 +360,7 @@ describe('handleLifecycleEvent — assertDbPathAllowed catch prevents DB write',
   })
 
   it('skips writeDbNative when path is blocked for subagent-stop', async () => {
-    mockAssertDbPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
+    mockAssertProjectPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
 
     await makeRequest(port, {
       path: '/hooks/subagent-stop',

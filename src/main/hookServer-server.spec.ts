@@ -9,10 +9,10 @@ import http from 'http'
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
-const { mockWriteDb, mockAssertDbPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockWebContentsSend, mockDetectWslGatewayIp } = vi.hoisted(
+const { mockWriteDb, mockAssertProjectPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockWebContentsSend, mockDetectWslGatewayIp } = vi.hoisted(
   () => ({
     mockWriteDb: vi.fn(),
-    mockAssertDbPathAllowed: vi.fn(), // no-op by default — allows all paths
+    mockAssertProjectPathAllowed: vi.fn(), // no-op by default — allows all paths
     mockAssertTranscriptPathAllowed: vi.fn(), // no-op by default — T1871
     mockInitHookSecret: vi.fn(),
     mockGetHookSecret: vi.fn().mockReturnValue('test-secret-abc123'),
@@ -23,7 +23,7 @@ const { mockWriteDb, mockAssertDbPathAllowed, mockAssertTranscriptPathAllowed, m
 
 vi.mock('./db', () => ({
   writeDbNative: mockWriteDb,
-  assertDbPathAllowed: mockAssertDbPathAllowed,
+  assertProjectPathAllowed: mockAssertProjectPathAllowed,
   assertTranscriptPathAllowed: mockAssertTranscriptPathAllowed,
 }))
 
@@ -340,16 +340,16 @@ describe('handleStop via HTTP', () => {
   })
 
   it('skips writeDb when cwd is not in the allowlist (T1175)', async () => {
-    mockAssertDbPathAllowed.mockImplementationOnce(() => {
+    mockAssertProjectPathAllowed.mockImplementationOnce(() => {
       throw new Error('DB_PATH_NOT_ALLOWED: /evil/.claude/project.db')
     })
-    // assertDbPathAllowed fires before transcript read — no need for a valid file
+    // assertProjectPathAllowed fires before transcript read — no need for a valid file
     await makeRequest(port, {
       path: '/hooks/stop',
       body: { session_id: 'c1', transcript_path: '/any/path.jsonl', cwd: '/evil' },
     })
     await new Promise((r) => setTimeout(r, 100))
-    expect(mockAssertDbPathAllowed).toHaveBeenCalled()
+    expect(mockAssertProjectPathAllowed).toHaveBeenCalled()
     expect(mockWriteDb).not.toHaveBeenCalled()
   })
 

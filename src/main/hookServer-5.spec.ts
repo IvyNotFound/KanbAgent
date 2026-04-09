@@ -18,14 +18,14 @@ import { tmpdir } from 'node:os'
 
 const {
   mockWriteDbNative,
-  mockAssertDbPathAllowed,
+  mockAssertProjectPathAllowed,
   mockAssertTranscriptPathAllowed,
   mockInitHookSecret,
   mockGetHookSecret,
   mockDetectWslGatewayIp,
 } = vi.hoisted(() => ({
   mockWriteDbNative: vi.fn(),
-  mockAssertDbPathAllowed: vi.fn(),
+  mockAssertProjectPathAllowed: vi.fn(),
   mockAssertTranscriptPathAllowed: vi.fn(),
   mockInitHookSecret: vi.fn(),
   mockGetHookSecret: vi.fn().mockReturnValue('secret-t1336b'),
@@ -34,7 +34,7 @@ const {
 
 vi.mock('./db', () => ({
   writeDbNative: mockWriteDbNative,
-  assertDbPathAllowed: mockAssertDbPathAllowed,
+  assertProjectPathAllowed: mockAssertProjectPathAllowed,
   assertTranscriptPathAllowed: mockAssertTranscriptPathAllowed,
 }))
 
@@ -257,9 +257,9 @@ describe('handleStop — console.warn on blocked cwd path', () => {
     try { unlinkSync(tmpFile) } catch { /* ignore */ }
   })
 
-  it('logs non-empty warning when assertDbPathAllowed throws in handleStop', async () => {
+  it('logs non-empty warning when assertProjectPathAllowed throws in handleStop', async () => {
     writeFileSync(tmpFile, makeTranscript(100, 50))
-    mockAssertDbPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
+    mockAssertProjectPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
 
     await makeRequest(port, {
       path: '/hooks/stop',
@@ -294,8 +294,8 @@ describe('handleLifecycleEvent — console.warn on blocked cwd path', () => {
     await new Promise<void>((r) => server.close(() => r()))
   })
 
-  it('logs non-empty warning when assertDbPathAllowed throws in lifecycle handler', async () => {
-    mockAssertDbPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
+  it('logs non-empty warning when assertProjectPathAllowed throws in lifecycle handler', async () => {
+    mockAssertProjectPathAllowed.mockImplementation(() => { throw new Error('not allowed') })
 
     await makeRequest(port, {
       path: '/hooks/session-start',
@@ -421,8 +421,8 @@ describe('startHookServer — .catch() arrow functions log errors', () => {
     // e.g. in parseTokensFromJSONLStream before the try/catch.
     // However, parseTokensFromJSONLStream is inside its own try/catch at L117.
     // Actually, any unhandled throw inside the async function would propagate.
-    // Let's make assertDbPathAllowed throw something that's not caught by the inner try/catch.
-    // Actually L109-114 has a try/catch for assertDbPathAllowed...
+    // Let's make assertProjectPathAllowed throw something that's not caught by the inner try/catch.
+    // Actually L109-114 has a try/catch for assertProjectPathAllowed...
     // The safest way: the catch at L153 is INSIDE handleStop. Even if writeDbNative rejects,
     // L153 catches it and handleStop() resolves. So L268 .catch() is never called in normal flow.
     // For L268 to be killed, we need a test where the .catch() IS called.

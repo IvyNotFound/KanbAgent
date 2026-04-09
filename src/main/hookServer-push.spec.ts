@@ -9,10 +9,10 @@ import http from 'http'
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
-const { mockWriteDb, mockAssertDbPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockWebContentsSend } = vi.hoisted(
+const { mockWriteDb, mockAssertProjectPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockWebContentsSend } = vi.hoisted(
   () => ({
     mockWriteDb: vi.fn(),
-    mockAssertDbPathAllowed: vi.fn(), // no-op by default — allows all paths
+    mockAssertProjectPathAllowed: vi.fn(), // no-op by default — allows all paths
     mockAssertTranscriptPathAllowed: vi.fn(), // no-op by default — T1871
     mockInitHookSecret: vi.fn(),
     mockGetHookSecret: vi.fn().mockReturnValue('test-secret-abc123'),
@@ -22,7 +22,7 @@ const { mockWriteDb, mockAssertDbPathAllowed, mockAssertTranscriptPathAllowed, m
 
 vi.mock('./db', () => ({
   writeDbNative: mockWriteDb,
-  assertDbPathAllowed: mockAssertDbPathAllowed,
+  assertProjectPathAllowed: mockAssertProjectPathAllowed,
   assertTranscriptPathAllowed: mockAssertTranscriptPathAllowed,
 }))
 
@@ -222,7 +222,7 @@ describe('handleLifecycleEvent via HTTP', () => {
   })
 
   it('skips writeDb when cwd is not in the allowlist (T1175)', async () => {
-    mockAssertDbPathAllowed.mockImplementationOnce(() => {
+    mockAssertProjectPathAllowed.mockImplementationOnce(() => {
       throw new Error('DB_PATH_NOT_ALLOWED: /evil/.claude/project.db')
     })
     await makeRequest(port, {

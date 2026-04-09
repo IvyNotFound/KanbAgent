@@ -20,7 +20,7 @@
 import http from 'http'
 import { join } from 'path'
 import type { BrowserWindow } from 'electron'
-import { writeDbNative, assertDbPathAllowed, assertTranscriptPathAllowed } from './db'
+import { writeDbNative, assertProjectPathAllowed, assertTranscriptPathAllowed } from './db'
 import { HOOK_PORT, getHookSecret, initHookSecret, detectWslGatewayIp } from './hookServer-inject'
 import { parseTokensFromJSONLStream, type TokenCounts } from './hookServer-tokens'
 
@@ -104,14 +104,14 @@ async function handleStop(payload: StopPayload): Promise<void> {
     return
   }
 
-  const dbPath = join(cwd, '.claude', 'project.db')
-
   try {
-    assertDbPathAllowed(dbPath)
+    assertProjectPathAllowed(cwd)
   } catch {
     console.warn('[hookServer] handleStop: cwd not in allowlist, ignoring', cwd)
     return
   }
+
+  const dbPath = join(cwd, '.claude', 'project.db')
 
   // T1871: Validate transcript_path is within cwd or ~/.claude/ before any file I/O
   try {
@@ -184,14 +184,14 @@ async function handleLifecycleEvent(
   const cwd = payload.cwd as string | undefined
   if (!convId || !cwd) return
 
-  const dbPath = join(cwd, '.claude', 'project.db')
-
   try {
-    assertDbPathAllowed(dbPath)
+    assertProjectPathAllowed(cwd)
   } catch {
     console.warn('[hookServer] handleLifecycleEvent: cwd not in allowlist, ignoring', cwd)
     return
   }
+
+  const dbPath = join(cwd, '.claude', 'project.db')
 
   try {
     await writeDbNative(dbPath, (db) => {

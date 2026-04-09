@@ -20,14 +20,14 @@ import { tmpdir } from 'node:os'
 
 const {
   mockWriteDbNative,
-  mockAssertDbPathAllowed,
+  mockAssertProjectPathAllowed,
   mockAssertTranscriptPathAllowed,
   mockInitHookSecret,
   mockGetHookSecret,
   mockDetectWslGatewayIp,
 } = vi.hoisted(() => ({
   mockWriteDbNative: vi.fn(),
-  mockAssertDbPathAllowed: vi.fn(),
+  mockAssertProjectPathAllowed: vi.fn(),
   mockAssertTranscriptPathAllowed: vi.fn(),
   mockInitHookSecret: vi.fn(),
   mockGetHookSecret: vi.fn().mockReturnValue('secret-t1336c'),
@@ -36,7 +36,7 @@ const {
 
 vi.mock('./db', () => ({
   writeDbNative: mockWriteDbNative,
-  assertDbPathAllowed: mockAssertDbPathAllowed,
+  assertProjectPathAllowed: mockAssertProjectPathAllowed,
   assertTranscriptPathAllowed: mockAssertTranscriptPathAllowed,
 }))
 
@@ -133,7 +133,7 @@ function makeTranscript(tokensIn: number, tokensOut: number): string {
 // Let's try: send with transcript_path present but missing session_id, cwd present.
 // Original: !convId=true → true → returns early
 // Mutant: !convId=true, !transcript_path=false → (true && false) = false → !cwd=false → guard=false
-// → continues! → parseTokensFromJSONLStream(validFile) → tokens > 0 → tries assertDbPathAllowed
+// → continues! → parseTokensFromJSONLStream(validFile) → tokens > 0 → tries assertProjectPathAllowed
 // → writeDbNative IS called with mutation but NOT with original
 
 describe('handleStop — guard condition covers each missing field independently (L102)', () => {
@@ -156,7 +156,7 @@ describe('handleStop — guard condition covers each missing field independently
     // session_id=absent, transcript_path=present, cwd=present
     // Original (||): !convId=true → returns early → writeDbNative NOT called
     // Mutant (&&): (!convId && !transcript_path) = (true && false)=false, !cwd=false → guard=false
-    //   → continues → reads tokens from file → assertDbPathAllowed → writeDbNative IS called
+    //   → continues → reads tokens from file → assertProjectPathAllowed → writeDbNative IS called
     writeFileSync(tmpFile, makeTranscript(100, 50))
     mockWriteDbNative.mockResolvedValue(undefined)
 
