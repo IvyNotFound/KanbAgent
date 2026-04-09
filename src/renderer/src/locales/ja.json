@@ -398,7 +398,6 @@
       "planner": "タスク計画・チケット作成"
     },
     "preferredCliNote": "このエージェントのグローバルデフォルトCLIを上書きします",
-    "preferredModel": "優先モデル",
     "preferredModelNote": "設定で定義されたグローバルモデルを上書きします",
     "globalDefault": "グローバルデフォルト",
     "settingsDefault": "設定のデフォルト",

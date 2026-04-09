@@ -398,7 +398,6 @@
       "planner": "Görev planlama & bilet oluşturma"
     },
     "preferredCliNote": "Bu ajan için genel varsayılan CLI'yi geçersiz kılar",
-    "preferredModel": "Tercih edilen model",
     "preferredModelNote": "Ayarlarda tanımlanan genel modeli geçersiz kılar",
     "globalDefault": "Genel varsayılan",
     "settingsDefault": "Ayar varsayılanı",

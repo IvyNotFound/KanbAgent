@@ -398,7 +398,6 @@
       "planner": "Planowanie zadań & tworzenie ticketów"
     },
     "preferredCliNote": "Nadpisuje globalne domyślne CLI dla tego agenta",
-    "preferredModel": "Preferowany model",
     "preferredModelNote": "Nadpisuje globalny model zdefiniowany w ustawieniach",
     "globalDefault": "Domyślne globalne",
     "settingsDefault": "Domyślne z ustawień",

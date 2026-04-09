@@ -398,7 +398,6 @@
       "planner": "Opgaveplanlægning & billetoprettelse"
     },
     "preferredCliNote": "Tilsidesætter den globale standard-CLI for denne agent",
-    "preferredModel": "Foretrukken model",
     "preferredModelNote": "Tilsidesætter den globale model defineret i indstillinger",
     "globalDefault": "Global standard",
     "settingsDefault": "Indstillingsstandard",

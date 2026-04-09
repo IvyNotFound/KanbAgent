@@ -398,7 +398,6 @@
       "planner": "任务规划与工单创建"
     },
     "preferredCliNote": "覆盖此代理的全局默认 CLI",
-    "preferredModel": "首选模型",
     "preferredModelNote": "覆盖设置中定义的全局模型",
     "globalDefault": "全局默认",
     "settingsDefault": "设置默认",

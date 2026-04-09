@@ -398,7 +398,6 @@
       "planner": "Tehtävien suunnittelu & tikettien luonti"
     },
     "preferredCliNote": "Ohittaa globaalin oletus-CLI:n tälle agentille",
-    "preferredModel": "Ensisijainen malli",
     "preferredModelNote": "Ohittaa asetuksissa määritetyn globaalin mallin",
     "globalDefault": "Yleinen oletus",
     "settingsDefault": "Asetusten oletus",

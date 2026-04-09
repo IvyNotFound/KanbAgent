@@ -398,7 +398,6 @@
       "planner": "Aufgabenplanung & Ticket-Erstellung"
     },
     "preferredCliNote": "Überschreibt die globale Standard-CLI für diesen Agenten",
-    "preferredModel": "Bevorzugtes Modell",
     "preferredModelNote": "Überschreibt das globale Modell aus den Einstellungen",
     "globalDefault": "Globaler Standard",
     "settingsDefault": "Einstellungsstandard",

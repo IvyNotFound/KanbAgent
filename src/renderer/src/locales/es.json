@@ -398,7 +398,6 @@
       "planner": "Planificación de tareas & creación de tickets"
     },
     "preferredCliNote": "Reemplaza el CLI predeterminado global para este agente",
-    "preferredModel": "Modelo preferido",
     "preferredModelNote": "Reemplaza el modelo global definido en los ajustes",
     "globalDefault": "Predeterminado global",
     "settingsDefault": "Predeterminado de ajustes",

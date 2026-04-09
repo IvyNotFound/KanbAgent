@@ -398,7 +398,6 @@
       "planner": "تخطيط المهام وإنشاء التذاكر"
     },
     "preferredCliNote": "يتجاوز CLI الافتراضي العام لهذا الوكيل",
-    "preferredModel": "النموذج المفضل",
     "preferredModelNote": "يتجاوز النموذج العام المحدد في الإعدادات",
     "globalDefault": "الافتراضي العام",
     "settingsDefault": "افتراضي الإعدادات",

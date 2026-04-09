@@ -398,7 +398,6 @@
       "planner": "Pianificazione attività & creazione ticket"
     },
     "preferredCliNote": "Sovrascrive il CLI predefinito globale per questo agente",
-    "preferredModel": "Modello preferito",
     "preferredModelNote": "Sovrascrive il modello globale definito nelle impostazioni",
     "globalDefault": "Predefinito globale",
     "settingsDefault": "Predefinito impostazioni",

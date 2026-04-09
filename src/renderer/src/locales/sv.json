@@ -398,7 +398,6 @@
       "planner": "Uppgiftsplanering & biljetthantering"
     },
     "preferredCliNote": "Åsidosätter den globala standard-CLI:n för denna agent",
-    "preferredModel": "Föredragen modell",
     "preferredModelNote": "Åsidosätter den globala modellen definierad i inställningar",
     "globalDefault": "Global standard",
     "settingsDefault": "Inställningsstandard",
