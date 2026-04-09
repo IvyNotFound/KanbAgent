@@ -37,6 +37,7 @@ const systemPrompt = ref('')
 const systemPromptSuffix = ref('')
 const description = ref('')
 const permissionMode = ref<'default' | 'auto'>('default')
+const allToolsEnabled = ref(false)
 const allowedToolsList = ref<string[]>([])
 const autoLaunch = ref(true)
 
@@ -148,6 +149,7 @@ onMounted(async () => {
     preferredModel.value = a.preferred_model ?? ''
     preferredCli.value = a.preferred_cli ?? null
     autoLaunch.value = a.auto_launch !== 0
+    allToolsEnabled.value = !a.allowed_tools
     allowedToolsList.value = a.allowed_tools ? a.allowed_tools.split(',').map(s => s.trim()).filter(Boolean) : []
     permissionMode.value = a.permission_mode === 'auto' ? 'auto' : 'default'
     // Load system_prompt and system_prompt_suffix from DB (may be more up-to-date than agent prop)
@@ -189,7 +191,7 @@ async function submit() {
         worktreeEnabled: worktreeEnabled.value === null ? null : worktreeEnabled.value === 1,
         preferredModel: preferredModel.value.trim() || null,
         preferredCli: preferredCli.value || null,
-        allowedTools: allowedToolsList.value.length > 0 ? allowedToolsList.value.join(',') : null,
+        allowedTools: allToolsEnabled.value ? null : (allowedToolsList.value.length > 0 ? allowedToolsList.value.join(',') : null),
         autoLaunch: autoLaunch.value,
         permissionMode: permissionMode.value,
       })
@@ -222,10 +224,10 @@ async function submit() {
     }
 
     // Apply extra fields not supported by createAgent IPC (allowedTools, autoLaunch, permissionMode, preferredCli)
-    const hasExtras = allowedToolsList.value.length > 0 || !autoLaunch.value || permissionMode.value !== 'default' || preferredCli.value
+    const hasExtras = (!allToolsEnabled.value && allowedToolsList.value.length > 0) || !autoLaunch.value || permissionMode.value !== 'default' || preferredCli.value
     if (hasExtras && result.agentId) {
       await window.electronAPI.updateAgent(store.dbPath, result.agentId, {
-        allowedTools: allowedToolsList.value.length > 0 ? allowedToolsList.value.join(',') : null,
+        allowedTools: allToolsEnabled.value ? null : (allowedToolsList.value.length > 0 ? allowedToolsList.value.join(',') : null),
         autoLaunch: autoLaunch.value,
         permissionMode: permissionMode.value,
         preferredCli: preferredCli.value || null,
@@ -392,33 +394,6 @@ function handleKeydown(e: KeyboardEvent) {
             :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
           />
 
-          <!-- Outils autorisés (--allowedTools) -->
-          <v-combobox
-            v-model="allowedToolsList"
-            :items="COMMON_TOOLS"
-            :label="t('agent.allowedTools')"
-            multiple
-            chips
-            closable-chips
-            :hint="t('agent.allowedToolsNote')"
-            persistent-hint
-            variant="outlined"
-            density="compact"
-            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
-            :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
-          />
-
-          <!-- Fermeture auto (auto_launch) -->
-          <v-switch
-            v-model="autoLaunch"
-            :label="t('agent.autoLaunch')"
-            :hint="t('agent.autoLaunchDesc')"
-            persistent-hint
-            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
-            density="compact"
-            inset
-          />
-
           <!-- Mode permissions -->
           <div>
             <div class="field-label text-label-medium mb-2">{{ t('agent.permissionMode') }}</div>
@@ -430,6 +405,49 @@ function handleKeydown(e: KeyboardEvent) {
               <v-icon size="small" color="error">mdi-alert</v-icon> {{ t('agent.permissionModeWarning') }}
             </p>
           </div>
+
+          <!-- Outils autorisés (--allowedTools) -->
+          <div>
+            <v-switch
+              v-model="allToolsEnabled"
+              :label="t('agent.allTools')"
+              :hint="t('agent.allToolsHint')"
+              persistent-hint
+              density="compact"
+              :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+              inset
+            />
+            <v-combobox
+              v-model="allowedToolsList"
+              :items="COMMON_TOOLS"
+              :label="t('agent.allowedTools')"
+              :disabled="allToolsEnabled"
+              multiple
+              chips
+              closable-chips
+              :hint="t('agent.allowedToolsNote')"
+              persistent-hint
+              variant="outlined"
+              density="compact"
+              class="mt-2"
+              :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+              :base-color="isEditMode && agent ? agentAccent(agent.name) : undefined"
+            />
+            <p v-if="permissionMode === 'auto'" class="text-caption text-warning mt-1">
+              <v-icon size="small" color="warning">mdi-information</v-icon> {{ t('agent.permissionAutoToolsHint') }}
+            </p>
+          </div>
+
+          <!-- Fermeture auto (auto_launch) -->
+          <v-switch
+            v-model="autoLaunch"
+            :label="t('agent.autoLaunch')"
+            :hint="t('agent.autoLaunchDesc')"
+            persistent-hint
+            :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            density="compact"
+            inset
+          />
 
           <!-- Sessions parallèles max (edit mode uniquement) -->
           <v-text-field
