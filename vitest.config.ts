@@ -4,6 +4,18 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [
+    // Vuetify components (v-table, etc.) render proper HTML wrappers at runtime,
+    // so HTML nesting spec warnings for v-* parents are false positives.
+    {
+      name: 'suppress-vuetify-nesting-warnings',
+      configResolved(config) {
+        const _warn = config.logger.warn
+        config.logger.warn = (...args: Parameters<typeof _warn>) => {
+          if (typeof args[0] === 'string' && args[0].includes('cannot be child of <v-')) return
+          _warn(...args)
+        }
+      },
+    },
     vue({
       template: {
         compilerOptions: {
