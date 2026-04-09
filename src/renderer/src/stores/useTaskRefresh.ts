@@ -37,7 +37,6 @@ export function useTaskRefresh(deps: TaskRefreshDeps) {
   const settingsStore = useSettingsStore()
 
   let pollInterval: ReturnType<typeof setInterval> | null = null
-  let agentPollInterval: ReturnType<typeof setInterval> | null = null
   let unsubDbChange: (() => void) | null = null
   let dbWatchInterval: ReturnType<typeof setInterval> | null = null
   let dbChangeDebounce: ReturnType<typeof setTimeout> | null = null
@@ -143,12 +142,10 @@ export function useTaskRefresh(deps: TaskRefreshDeps) {
   function startPolling(): void {
     stopPolling()
     pollInterval = setInterval(refresh, 30000)
-    agentPollInterval = setInterval(() => agentsStore.agentRefresh(), 30000)
   }
 
   function stopPolling(): void {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
-    if (agentPollInterval) { clearInterval(agentPollInterval); agentPollInterval = null }
   }
 
   function startWatching(path: string): void {
