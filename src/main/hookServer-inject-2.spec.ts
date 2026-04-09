@@ -293,7 +293,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
   })
 
   it('fileExists=true + no changes: does NOT call writeFile', async () => {
-    // All 7 hooks with matching URLs
+    // All 8 hooks with matching URLs
     const settings = {
       hooks: {
         Stop:               [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/stop' }] }],
@@ -303,6 +303,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
         PreToolUse:         [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/pre-tool-use' }] }],
         PostToolUse:        [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/post-tool-use' }] }],
         InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/instructions-loaded' }] }],
+        PermissionRequest:  [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/permission-request' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
@@ -380,6 +381,7 @@ describe('injectIntoWslDistros — auth injection into existing http hooks', () 
         PreToolUse: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/pre-tool-use', headers: { Authorization: `Bearer ${secret}` } }] }],
         PostToolUse: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/post-tool-use', headers: { Authorization: `Bearer ${secret}` } }] }],
         InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/instructions-loaded', headers: { Authorization: `Bearer ${secret}` } }] }],
+        PermissionRequest: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/permission-request', headers: { Authorization: `Bearer ${secret}` } }] }],
       },
     })
     const distroList = Buffer.from('Ubuntu\n', 'utf16le')
@@ -458,6 +460,7 @@ describe('injectIntoWslDistros — auth injection into existing http hooks', () 
         PreToolUse: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/pre-tool-use', headers: { Authorization: `Bearer ${secret}` } }] }],
         PostToolUse: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/post-tool-use', headers: { Authorization: `Bearer ${secret}` } }] }],
         InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/instructions-loaded', headers: { Authorization: `Bearer ${secret}` } }] }],
+        PermissionRequest: [{ hooks: [{ type: 'http', url: 'http://172.17.0.1:27182/hooks/permission-request', headers: { Authorization: `Bearer ${secret}` } }] }],
       },
     })
     const distroList = Buffer.from('Ubuntu\n', 'utf16le')
@@ -670,6 +673,7 @@ describe('injectHookUrls — hasHttp check via some() vs every()', () => {
         PreToolUse:         [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/pre-tool-use' }] }],
         PostToolUse:        [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/post-tool-use' }] }],
         InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/instructions-loaded' }] }],
+        PermissionRequest:  [{ hooks: [{ type: 'http', url: 'http://10.0.0.1:27182/hooks/permission-request' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))

@@ -283,6 +283,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   agentKill: (id: string): Promise<void> =>
     ipcRenderer.invoke('agent:kill', id),
 
+  /** Respond to a pending CLI permission request (T1816). */
+  permissionRespond: (permissionId: string, behavior: 'allow' | 'deny'): Promise<boolean> =>
+    ipcRenderer.invoke('agent:permission-respond', permissionId, behavior),
+
+  /** Subscribe to permission request events from the hook server (T1816). Returns unsubscribe fn. */
+  onPermissionRequest: (cb: (data: { permission_id: string; tool_name: string; tool_input: Record<string, unknown>; session_id: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { permission_id: string; tool_name: string; tool_input: Record<string, unknown>; session_id: string }) => cb(data)
+    ipcRenderer.on('agent:permission-request', handler)
+    return () => ipcRenderer.off('agent:permission-request', handler)
+  },
+
   /** Subscribe to JSONL stream events from the agent process. Returns unsubscribe fn. */
   onAgentStream: (id: string, cb: (event: Record<string, unknown>) => void): (() => void) => {
     const channel = `agent:stream:${id}`

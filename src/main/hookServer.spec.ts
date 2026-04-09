@@ -2,7 +2,7 @@
  * Tests for hookServer — JSONL transcript parsing (T737) + exports (T741) + WSL fix (T858)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls } from './hookServer'
+import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls, resolvePermission, pendingPermissions } from './hookServer'
 
 // ── Hoisted mocks (must be declared before vi.mock, which are hoisted) ────────
 const { mockNetworkInterfaces, mockReadFile, mockWriteFile, mockMkdir, mockExecSync } = vi.hoisted(() => ({
@@ -274,13 +274,13 @@ describe('injectHookUrls', () => {
     )
   })
 
-  it('creates all 7 hooks when settings.json exists but has no hooks section', async () => {
+  it('creates all 8 hooks when settings.json exists but has no hooks section', async () => {
     mockReadFile.mockResolvedValue('{}')
     await injectHookUrls('/fake/settings.json', '172.17.240.1')
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     expect(typeof written.hooks).toBe('object')
-    expect(Object.keys(written.hooks)).toHaveLength(7)
+    expect(Object.keys(written.hooks)).toHaveLength(8)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
     expect(written.hooks.SessionStart[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/session-start')
     expect(written.hooks.SubagentStart[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/subagent-start')
@@ -290,7 +290,7 @@ describe('injectHookUrls', () => {
     expect(written.hooks.InstructionsLoaded[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/instructions-loaded')
   })
 
-  it('does not write when all 7 hooks are present and URLs already match', async () => {
+  it('does not write when all 8 hooks are present and URLs already match', async () => {
     const settings = {
       hooks: {
         Stop:               [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] }],
@@ -300,6 +300,7 @@ describe('injectHookUrls', () => {
         PreToolUse:         [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
         PostToolUse:        [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
         InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/instructions-loaded' }] }],
+        PermissionRequest:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/permission-request' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
@@ -338,12 +339,13 @@ describe('injectHookUrls', () => {
           { hooks: [{ type: 'command', command: 'echo done' }] },
           { hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/stop' }] },
         ],
-        SessionStart:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
-        SubagentStart: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
+        SessionStart:       [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/session-start' }] }],
+        SubagentStart:      [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-start' }] }],
         SubagentStop:       [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/subagent-stop' }] }],
         PreToolUse:         [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/pre-tool-use' }] }],
         PostToolUse:        [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/post-tool-use' }] }],
         InstructionsLoaded: [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/instructions-loaded' }] }],
+        PermissionRequest:  [{ hooks: [{ type: 'http', url: 'http://172.17.240.1:27182/hooks/permission-request' }] }],
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
@@ -352,7 +354,7 @@ describe('injectHookUrls', () => {
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 
-  it('creates settings.json with all 7 hooks when file does not exist (ENOENT)', async () => {
+  it('creates settings.json with all 8 hooks when file does not exist (ENOENT)', async () => {
     const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     mockReadFile.mockRejectedValue(err)
 
@@ -361,7 +363,7 @@ describe('injectHookUrls', () => {
     expect(mockMkdir).toHaveBeenCalledWith('/fake/.claude', { recursive: true })
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
-    expect(Object.keys(written.hooks)).toHaveLength(7)
+    expect(Object.keys(written.hooks)).toHaveLength(8)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
   })
 
@@ -370,5 +372,59 @@ describe('injectHookUrls', () => {
     mockReadFile.mockRejectedValue(err)
     await injectHookUrls('/fake/settings.json', '172.17.240.1')
     expect(mockWriteFile).not.toHaveBeenCalled()
+  })
+})
+
+// ── resolvePermission (T1816) ────────────────────────────────────────────────
+
+describe('resolvePermission', () => {
+  afterEach(() => {
+    // Clean up any pending permissions left by tests
+    for (const [id, p] of pendingPermissions) {
+      clearTimeout(p.timer)
+      pendingPermissions.delete(id)
+    }
+  })
+
+  it('returns false for unknown permissionId', () => {
+    expect(resolvePermission('nonexistent', { behavior: 'allow' })).toBe(false)
+  })
+
+  it('resolves a pending permission and returns true', async () => {
+    const decision = { behavior: 'allow' as const }
+    let resolvedValue: { behavior: string } | undefined
+
+    const promise = new Promise<{ behavior: string }>((resolve) => {
+      const timer = setTimeout(() => resolve({ behavior: 'deny' }), 60_000)
+      pendingPermissions.set('test-1', { resolve, timer })
+    })
+    promise.then((v) => { resolvedValue = v })
+
+    const result = resolvePermission('test-1', decision)
+    expect(result).toBe(true)
+    expect(pendingPermissions.has('test-1')).toBe(false)
+
+    // Let the microtask resolve
+    await promise
+    expect(resolvedValue?.behavior).toBe('allow')
+  })
+
+  it('returns false on second call for same permissionId (already consumed)', () => {
+    const timer = setTimeout(() => {}, 60_000)
+    pendingPermissions.set('test-2', { resolve: () => {}, timer })
+
+    expect(resolvePermission('test-2', { behavior: 'deny' })).toBe(true)
+    expect(resolvePermission('test-2', { behavior: 'allow' })).toBe(false)
+  })
+
+  it('clears the timeout when resolved', () => {
+    const clearSpy = vi.spyOn(global, 'clearTimeout')
+    const timer = setTimeout(() => {}, 60_000)
+    pendingPermissions.set('test-3', { resolve: () => {}, timer })
+
+    resolvePermission('test-3', { behavior: 'allow' })
+
+    expect(clearSpy).toHaveBeenCalledWith(timer)
+    clearSpy.mockRestore()
   })
 })

@@ -87,6 +87,16 @@ vi.mock('./db', () => ({
   registerProjectPath: vi.fn(),
 }))
 
+// ── hookServer mock (T1816) ───────────────────────────────────────────────────
+const mockResolvePermission = vi.hoisted(() => vi.fn().mockReturnValue(true))
+vi.mock('./hookServer', () => ({
+  resolvePermission: mockResolvePermission,
+  pendingPermissions: new Map(),
+  startHookServer: vi.fn(),
+  setHookWindow: vi.fn(),
+  HOOK_PORT: 27182,
+}))
+
 // ── worktree-manager mock ──────────────────────────────────────────────────────
 const mockCreateWorktree = vi.hoisted(() => vi.fn().mockResolvedValue({ path: '/tmp/wt/branch-1', branch: 'session-1' }))
 const mockRemoveWorktree = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
@@ -329,6 +339,31 @@ describe('agent-stream', () => {
     const event = { sender: mockSender }
     // Should not throw for unknown id
     expect(() => killHandler(event, 'unknown')).not.toThrow()
+  })
+
+  // ── agent:permission-respond (T1816) ─────────────────────────────────────
+
+  it('agent:permission-respond calls resolvePermission with correct args', () => {
+    const handler = handlers.get('agent:permission-respond')!
+    const event = { sender: mockSender }
+    const result = handler(event, 'perm_123', 'allow')
+    expect(mockResolvePermission).toHaveBeenCalledWith('perm_123', { behavior: 'allow' })
+    expect(result).toBe(true)
+  })
+
+  it('agent:permission-respond accepts "deny" behavior', () => {
+    const handler = handlers.get('agent:permission-respond')!
+    const event = { sender: mockSender }
+    handler(event, 'perm_456', 'deny')
+    expect(mockResolvePermission).toHaveBeenCalledWith('perm_456', { behavior: 'deny' })
+  })
+
+  it('agent:permission-respond throws on invalid args', () => {
+    const handler = handlers.get('agent:permission-respond')!
+    const event = { sender: mockSender }
+    expect(() => handler(event, 123, 'allow')).toThrow('agent:permission-respond requires')
+    expect(() => handler(event, 'id', 'maybe')).toThrow('agent:permission-respond requires')
+    expect(() => handler(event, 'id', '')).toThrow('agent:permission-respond requires')
   })
 
   it('forwards spawn error as error:spawn event to renderer', async () => {

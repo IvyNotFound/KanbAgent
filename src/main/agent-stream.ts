@@ -42,6 +42,7 @@ import {
 } from './agent-stream-registry'
 import { resolveSpawnFn } from './spawn/index'
 import { attachStreamHandlers } from './spawn/stream-handlers'
+import { resolvePermission, type PermissionDecision } from './hookServer'
 
 // Re-export _testing for backward compat with spec files
 export { _testing } from './agent-stream-registry'
@@ -220,5 +221,19 @@ export function registerAgentStreamHandlers(): void {
   ipcMain.handle('agent:kill', (_event, id: string) => {
     if (typeof id !== 'string') throw new Error('agent:kill requires id: string')
     killAgent(id)
+  })
+
+  // T1816: Resolve a pending PermissionRequest from the hook server.
+  // Called by the renderer when the user approves or denies a tool permission.
+  ipcMain.handle('agent:permission-respond', (_event, permissionId: string, behavior: string) => {
+    if (typeof permissionId !== 'string' || (behavior !== 'allow' && behavior !== 'deny')) {
+      throw new Error('agent:permission-respond requires permissionId: string and behavior: "allow" | "deny"')
+    }
+    const decision: PermissionDecision = { behavior: behavior as 'allow' | 'deny' }
+    const resolved = resolvePermission(permissionId, decision)
+    if (!resolved) {
+      console.warn(`[agent-stream] permission-respond: unknown or expired permissionId=${permissionId}`)
+    }
+    return resolved
   })
 }

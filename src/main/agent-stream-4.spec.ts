@@ -89,6 +89,15 @@ vi.mock('./db', () => ({
   registerProjectPath: vi.fn(),
 }))
 
+// ── hookServer mock (T1816) ───────────────────────────────────────────────────
+vi.mock('./hookServer', () => ({
+  resolvePermission: vi.fn().mockReturnValue(true),
+  pendingPermissions: new Map(),
+  startHookServer: vi.fn(),
+  setHookWindow: vi.fn(),
+  HOOK_PORT: 27182,
+}))
+
 const mockCreateWorktree = vi.hoisted(() => vi.fn().mockResolvedValue({ path: '/tmp/wt/branch-1', branch: 'session-1' }))
 const mockRemoveWorktree = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 

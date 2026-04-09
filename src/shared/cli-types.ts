@@ -141,7 +141,7 @@ export interface TokenCounts {
  */
 export interface StreamEvent {
   /** Event type — normalized across adapters. */
-  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error' | 'ask_user'
+  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error' | 'ask_user' | 'permission_request'
   subtype?: string
   /** Conversation ID (extracted by extractConvId). */
   session_id?: string
@@ -166,6 +166,14 @@ export interface StreamEvent {
   text?: string
   cost_usd?: number
   num_turns?: number
+
+  // ── Permission request fields (T1816) ───────────────────────────────────────
+  /** Unique ID for correlating a permission request with its response. */
+  permission_id?: string
+  /** Tool name that requires permission (e.g. "Bash", "Write", "Edit"). */
+  tool_name?: string
+  /** Tool input arguments for the permission request. */
+  tool_input?: Record<string, unknown>
 }
 
 /**

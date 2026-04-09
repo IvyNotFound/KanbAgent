@@ -245,8 +245,8 @@ describe('hookServer-inject constants', () => {
     expect(HOOK_PORT).toBe(27182)
   })
 
-  it('HOOK_ROUTES contains all 7 expected routes', () => {
-    expect(Object.keys(HOOK_ROUTES)).toHaveLength(7)
+  it('HOOK_ROUTES contains all 8 expected routes', () => {
+    expect(Object.keys(HOOK_ROUTES)).toHaveLength(8)
     expect(HOOK_ROUTES.Stop).toBe('/hooks/stop')
     expect(HOOK_ROUTES.SessionStart).toBe('/hooks/session-start')
     expect(HOOK_ROUTES.SubagentStart).toBe('/hooks/subagent-start')
@@ -254,6 +254,7 @@ describe('hookServer-inject constants', () => {
     expect(HOOK_ROUTES.PreToolUse).toBe('/hooks/pre-tool-use')
     expect(HOOK_ROUTES.PostToolUse).toBe('/hooks/post-tool-use')
     expect(HOOK_ROUTES.InstructionsLoaded).toBe('/hooks/instructions-loaded')
+    expect(HOOK_ROUTES.PermissionRequest).toBe('/hooks/permission-request')
   })
 })
 

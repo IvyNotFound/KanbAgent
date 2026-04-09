@@ -75,6 +75,15 @@ vi.mock('./db', () => ({
   registerProjectPath: vi.fn(),
 }))
 
+// ── hookServer mock (T1816) ───────────────────────────────────────────────────
+vi.mock('./hookServer', () => ({
+  resolvePermission: vi.fn().mockReturnValue(true),
+  pendingPermissions: new Map(),
+  startHookServer: vi.fn(),
+  setHookWindow: vi.fn(),
+  HOOK_PORT: 27182,
+}))
+
 // ── agent:create local Windows spawn integration ──────────────────────────────
 
 import * as agentStream from './agent-stream'

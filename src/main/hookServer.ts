@@ -198,6 +198,125 @@ async function handleLifecycleEvent(
   }
 }
 
+// ── Permission request handler (T1816) ──────────────────────────────────────
+
+/** Default timeout for pending permission requests (ms). */
+const PERMISSION_TIMEOUT_MS = 120_000
+
+interface PendingPermission {
+  resolve: (decision: PermissionDecision) => void
+  timer: ReturnType<typeof setTimeout>
+}
+
+export interface PermissionDecision {
+  behavior: 'allow' | 'deny'
+  reason?: string
+}
+
+/**
+ * Map of pending permission requests awaiting user decision.
+ * Key: permission_id (UUID). Value: resolve callback + timeout timer.
+ * Exported so that the IPC handler (agent:permission-respond) can resolve entries.
+ */
+export const pendingPermissions = new Map<string, PendingPermission>()
+
+let permissionCounter = 0
+
+/**
+ * Handle a PermissionRequest hook from Claude Code CLI.
+ *
+ * Unlike other hooks, this handler is BLOCKING — it holds the HTTP response
+ * open until the user approves/denies via the renderer (or a timeout fires).
+ *
+ * Flow:
+ * 1. CLI → POST /hooks/permission-request → this handler
+ * 2. Push IPC `hook:event` with type `PermissionRequest` to renderer
+ * 3. Renderer shows popup → user clicks allow/deny
+ * 4. Renderer → IPC `agent:permission-respond` → resolves the pending Promise
+ * 5. HTTP response with decision → CLI proceeds
+ */
+function handlePermissionRequest(
+  payload: Record<string, unknown>,
+  res: http.ServerResponse
+): void {
+  const permissionId = `perm_${Date.now()}_${++permissionCounter}`
+  const toolName = (payload.tool_name as string) ?? 'unknown'
+  const toolInput = (payload.tool_input as Record<string, unknown>) ?? {}
+
+  // If no renderer is connected, deny immediately (safe default)
+  const win = hookWindow
+  if (!win || win.isDestroyed()) {
+    console.warn('[hookServer] PermissionRequest but no renderer — denying')
+    const body = JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PermissionRequest',
+        decision: { behavior: 'deny', reason: 'No renderer connected' },
+      },
+    })
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(body)
+    return
+  }
+
+  const promise = new Promise<PermissionDecision>((resolve) => {
+    const timer = setTimeout(() => {
+      pendingPermissions.delete(permissionId)
+      resolve({ behavior: 'deny', reason: 'Timeout — no user response' })
+    }, PERMISSION_TIMEOUT_MS)
+
+    pendingPermissions.set(permissionId, { resolve, timer })
+  })
+
+  // Push permission_request event to renderer via existing hook:event channel
+  const event: HookEvent = {
+    event: 'PermissionRequest',
+    payload: { ...payload, permission_id: permissionId },
+    ts: Date.now(),
+  }
+  win.webContents.send('hook:event', event)
+
+  // Also push as a synthetic StreamEvent on the agent:stream channel so StreamView can display it
+  const sessionId = payload.session_id as string | undefined
+  if (sessionId) {
+    win.webContents.send('agent:permission-request', {
+      permission_id: permissionId,
+      tool_name: toolName,
+      tool_input: toolInput,
+      session_id: sessionId,
+    })
+  }
+
+  console.log(`[hookServer] PermissionRequest ${permissionId}: tool=${toolName} — waiting for user decision`)
+
+  // Hold the HTTP response open until resolved
+  promise.then((decision) => {
+    const body = JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PermissionRequest',
+        decision,
+      },
+    })
+    if (!res.headersSent) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(body)
+    }
+    console.log(`[hookServer] PermissionRequest ${permissionId}: → ${decision.behavior}`)
+  })
+}
+
+/**
+ * Resolve a pending permission request. Called by the `agent:permission-respond` IPC handler.
+ * Returns true if the permission was found and resolved, false if expired/unknown.
+ */
+export function resolvePermission(permissionId: string, decision: PermissionDecision): boolean {
+  const pending = pendingPermissions.get(permissionId)
+  if (!pending) return false
+  clearTimeout(pending.timer)
+  pendingPermissions.delete(permissionId)
+  pending.resolve(decision)
+  return true
+}
+
 // ── Server ────────────────────────────────────────────────────────────────────
 
 const LIFECYCLE_ROUTES: Record<string, boolean> = {
@@ -254,15 +373,21 @@ export function startHookServer(userDataPath?: string): http.Server {
       chunks.push(c)
     })
     req.on('end', () => {
-      // Always respond 2xx immediately — hooks must never block Claude Code
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end('{}')
-
       try {
         const raw = Buffer.concat(chunks).toString()
         chunks.length = 0 // release buffer references immediately
         const payload = JSON.parse(raw) as Record<string, unknown>
         const url = req.url!
+
+        // PermissionRequest is BLOCKING — holds HTTP response until user decides (T1816)
+        if (url === '/hooks/permission-request') {
+          handlePermissionRequest(payload, res)
+          return
+        }
+
+        // All other hooks respond 2xx immediately — must never block Claude Code
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('{}')
 
         if (url === '/hooks/stop') {
           handleStop(payload as StopPayload).catch(err =>
@@ -278,6 +403,10 @@ export function startHookServer(userDataPath?: string): http.Server {
         }
       } catch (err) {
         console.warn('[hookServer] Failed to parse hook payload:', err)
+        if (!res.headersSent) {
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end('{}')
+        }
       }
     })
 

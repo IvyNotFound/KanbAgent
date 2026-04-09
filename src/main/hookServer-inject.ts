@@ -46,6 +46,16 @@ export const HOOK_ROUTES: Record<string, string> = {
   PreToolUse:          '/hooks/pre-tool-use',
   PostToolUse:         '/hooks/post-tool-use',
   InstructionsLoaded:  '/hooks/instructions-loaded',
+  PermissionRequest:   '/hooks/permission-request',
+}
+
+/**
+ * Hook events that require a longer timeout (seconds) because they block
+ * Claude CLI until a response is returned. Other events use the default
+ * (typically 5s, fire-and-forget).
+ */
+export const HOOK_TIMEOUTS: Record<string, number> = {
+  PermissionRequest: 120,
 }
 
 // ── Hook auth secret ──────────────────────────────────────────────────────────
@@ -165,7 +175,9 @@ export async function injectHookUrls(settingsPath: string, ip: string): Promise<
   // Add managed hook events that are missing, or inject http hook into existing events
   for (const [event, path] of Object.entries(HOOK_ROUTES)) {
     if (!settings.hooks[event]) {
-      settings.hooks[event] = [{ hooks: [{ type: 'http', url: `http://${ip}:${HOOK_PORT}${path}` }] }]
+      const entry: HookEntry = { type: 'http', url: `http://${ip}:${HOOK_PORT}${path}` }
+      if (HOOK_TIMEOUTS[event]) entry.timeout = HOOK_TIMEOUTS[event]
+      settings.hooks[event] = [{ hooks: [entry] }]
       changed = true
     } else {
       // Event exists (e.g. peon-ping command hooks) — add http hook if not already present
@@ -253,13 +265,17 @@ async function injectIntoDistroViaWsl(distro: string, wslIp: string | null): Pro
 
     for (const [event, path] of Object.entries(HOOK_ROUTES)) {
       if (!hooks[event]) {
-        hooks[event] = [{ hooks: [{ type: 'http', url: `http://${wslIp}:${HOOK_PORT}${path}` }] }]
+        const entry: HookEntry = { type: 'http', url: `http://${wslIp}:${HOOK_PORT}${path}` }
+        if (HOOK_TIMEOUTS[event]) entry.timeout = HOOK_TIMEOUTS[event]
+        hooks[event] = [{ hooks: [entry] }]
         changed = true
       } else {
         const groups = hooks[event]
         const hasHttp = groups.some(g => Array.isArray(g.hooks) && g.hooks.some(h => h.type === 'http'))
         if (!hasHttp) {
-          groups.push({ hooks: [{ type: 'http', url: `http://${wslIp}:${HOOK_PORT}${path}` }] })
+          const entry: HookEntry = { type: 'http', url: `http://${wslIp}:${HOOK_PORT}${path}` }
+          if (HOOK_TIMEOUTS[event]) entry.timeout = HOOK_TIMEOUTS[event]
+          groups.push({ hooks: [entry] })
           changed = true
         }
       }

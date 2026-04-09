@@ -94,7 +94,7 @@ describe('injectHookUrls (continued)', () => {
 
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
-    expect(Object.keys(written.hooks)).toHaveLength(7)
+    expect(Object.keys(written.hooks)).toHaveLength(8)
     // Existing Stop hook preserved
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
     // Missing hooks created
@@ -148,13 +148,13 @@ describe('injectIntoWslDistros', () => {
       `wsl.exe -d "Ubuntu" -- bash -c "mkdir -p ~/.claude && cat > ~/.claude/settings.json"`,
       expect.objectContaining({ input: expect.any(String), timeout: 5000, encoding: 'utf-8' })
     )
-    // Verify injected JSON contains all 7 hooks
+    // Verify injected JSON contains all 8 hooks
     const writeCall = mockExecSync.mock.calls.find((c) =>
       (c[0] as string).includes('mkdir -p')
     )
     expect(writeCall).toBeDefined()
     const written = JSON.parse((writeCall![1] as { input: string }).input)
-    expect(Object.keys(written.hooks)).toHaveLength(7)
+    expect(Object.keys(written.hooks)).toHaveLength(8)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://172.17.240.1:27182/hooks/stop')
   })
 
