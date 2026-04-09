@@ -13,6 +13,7 @@ import { PassThrough } from 'stream'
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 const mockUnlinkSync = vi.hoisted(() => vi.fn())
 const mockAppendFileSync = vi.hoisted(() => vi.fn())
+const mockWriteFile = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
 vi.mock('fs', () => {
   const fns = {
@@ -22,6 +23,11 @@ vi.mock('fs', () => {
   }
   return { default: fns, ...fns }
 })
+
+vi.mock('fs/promises', () => ({
+  writeFile: mockWriteFile,
+  default: { writeFile: mockWriteFile },
+}))
 
 // sender registry for webContents.fromId
 const senderRegistry = vi.hoisted(() => new Map<number, {
@@ -307,7 +313,7 @@ describe('agent-stream', () => {
         sessionId: 7,
       })
 
-      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
       expect(spCall?.[1]).toContain('Worktree: /tmp/wt/session-7 (branch: session-7)')
     })
 
@@ -319,7 +325,7 @@ describe('agent-stream', () => {
         // no projectPath → no worktree
       })
 
-      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
       expect(spCall?.[1]).toBe('Base prompt')
     })
   })

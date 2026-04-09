@@ -22,6 +22,7 @@ import { PassThrough } from 'stream'
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 const mockUnlinkSync = vi.hoisted(() => vi.fn())
 const mockAppendFileSync = vi.hoisted(() => vi.fn())
+const mockWriteFile = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
 vi.mock('fs', () => {
   const fns = {
@@ -31,6 +32,11 @@ vi.mock('fs', () => {
   }
   return { default: fns, ...fns }
 })
+
+vi.mock('fs/promises', () => ({
+  writeFile: mockWriteFile,
+  default: { writeFile: mockWriteFile },
+}))
 
 const senderRegistry = vi.hoisted(() => new Map<number, {
   id: number
@@ -1088,7 +1094,7 @@ describe('agent-stream part 4 — mutation targets', () => {
       const handler = handlers.get('agent:create')!
       await handler({ sender: mockSender }, { systemPrompt: 'my prompt' })
 
-      const spWriteCall = mockWriteFileSync.mock.calls.find(
+      const spWriteCall = mockWriteFile.mock.calls.find(
         ([p]: [unknown]) => String(p).includes('claude-sp-')
       )!
       const spPath = spWriteCall[0] as string

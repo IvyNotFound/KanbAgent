@@ -16,6 +16,7 @@ import { PassThrough } from 'stream'
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 const mockUnlinkSync = vi.hoisted(() => vi.fn())
 const mockAppendFileSync = vi.hoisted(() => vi.fn())
+const mockWriteFile = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
 vi.mock('fs', () => {
   const fns = {
@@ -25,6 +26,11 @@ vi.mock('fs', () => {
   }
   return { default: fns, ...fns }
 })
+
+vi.mock('fs/promises', () => ({
+  writeFile: mockWriteFile,
+  default: { writeFile: mockWriteFile },
+}))
 
 const senderRegistry = vi.hoisted(() => new Map<number, {
   id: number
@@ -230,8 +236,8 @@ describe('agent:create — local Windows spawn (T916)', () => {
     const handler = handlers.get('agent:create')!
     await handler({ sender: mockSender }, { wslDistro: 'local', thinkingMode: 'disabled' })
 
-    // Settings temp file must be written
-    const settingsCall = mockWriteFileSync.mock.calls.find(
+    // Settings temp file must be written (async writeFile from fs/promises)
+    const settingsCall = mockWriteFile.mock.calls.find(
       ([p]: [unknown]) => String(p).includes('claude-settings') && String(p).endsWith('.json')
     )
     expect(settingsCall).toBeDefined()
@@ -254,8 +260,8 @@ describe('agent:create — local Windows spawn (T916)', () => {
     const handler = handlers.get('agent:create')!
     await handler({ sender: mockSender }, { wslDistro: 'local', thinkingMode: 'disabled' })
 
-    // Find the settings temp file path
-    const settingsCall = mockWriteFileSync.mock.calls.find(
+    // Find the settings temp file path (async writeFile from fs/promises)
+    const settingsCall = mockWriteFile.mock.calls.find(
       ([p]: [unknown]) => String(p).includes('claude-settings') && String(p).endsWith('.json')
     )
     const settingsPath = String(settingsCall![0])
@@ -276,7 +282,7 @@ describe('agent:create — local Windows spawn (T916)', () => {
     const handler = handlers.get('agent:create')!
     await handler({ sender: mockSender }, { wslDistro: 'local' })
 
-    const settingsCall = mockWriteFileSync.mock.calls.find(
+    const settingsCall = mockWriteFile.mock.calls.find(
       ([p]: [unknown]) => String(p).includes('claude-settings') && String(p).endsWith('.json')
     )
     expect(settingsCall).toBeUndefined()

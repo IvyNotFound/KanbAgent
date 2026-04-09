@@ -19,6 +19,7 @@ import { PassThrough } from 'stream'
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 const mockUnlinkSync = vi.hoisted(() => vi.fn())
 const mockAppendFileSync = vi.hoisted(() => vi.fn())
+const mockWriteFile = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
 vi.mock('fs', () => {
   const fns = {
@@ -28,6 +29,11 @@ vi.mock('fs', () => {
   }
   return { default: fns, ...fns }
 })
+
+vi.mock('fs/promises', () => ({
+  writeFile: mockWriteFile,
+  default: { writeFile: mockWriteFile },
+}))
 
 // sender registry for webContents.fromId
 const senderRegistry = vi.hoisted(() => new Map<number, {

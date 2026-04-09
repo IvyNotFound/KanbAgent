@@ -19,7 +19,7 @@
  * @module agent-stream
  */
 import { ipcMain, app } from 'electron'
-import { writeFileSync } from 'fs'
+import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { queryLive, assertDbPathAllowed } from './db'
@@ -172,14 +172,14 @@ export function registerAgentStreamHandlers(): void {
     let spTempFile: string | undefined
     if (effectiveSystemPrompt) {
       spTempFile = join(tmpdir(), `claude-sp-${id}.txt`)
-      writeFileSync(spTempFile, effectiveSystemPrompt, 'utf-8')
+      await writeFile(spTempFile, effectiveSystemPrompt, 'utf-8')
     }
 
     // T1107: Write settings JSON to a temp file for Windows native (.cmd wrapper bypass).
     let settingsTempFile: string | undefined
     if (process.platform === 'win32' && opts.wslDistro === 'local' && opts.thinkingMode === 'disabled') {
       settingsTempFile = join(tmpdir(), `claude-settings-${id}.json`)
-      writeFileSync(settingsTempFile, JSON.stringify({ alwaysThinkingEnabled: false }), 'utf-8')
+      await writeFile(settingsTempFile, JSON.stringify({ alwaysThinkingEnabled: false }), 'utf-8')
     }
 
     // ── Spawn: delegate to platform strategy ─────────────────────────────────

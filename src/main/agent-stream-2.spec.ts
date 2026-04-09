@@ -13,6 +13,7 @@ import { PassThrough } from 'stream'
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 const mockUnlinkSync = vi.hoisted(() => vi.fn())
 const mockAppendFileSync = vi.hoisted(() => vi.fn())
+const mockWriteFile = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
 vi.mock('fs', () => {
   const fns = {
@@ -22,6 +23,11 @@ vi.mock('fs', () => {
   }
   return { default: fns, ...fns }
 })
+
+vi.mock('fs/promises', () => ({
+  writeFile: mockWriteFile,
+  default: { writeFile: mockWriteFile },
+}))
 
 // sender registry for webContents.fromId
 const senderRegistry = vi.hoisted(() => new Map<number, {
@@ -326,7 +332,7 @@ describe('agent-stream', () => {
       const event = { sender: mockSender }
       await handler(event, { systemPrompt: 'Base prompt' })
 
-      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
       expect(spCall?.[1]).toBe('Base prompt')
       // queryLive must NOT be called
       expect(mockQueryLive).not.toHaveBeenCalled()
@@ -341,7 +347,7 @@ describe('agent-stream', () => {
       const event = { sender: mockSender }
       await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: 5 })
 
-      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
       expect(spCall?.[1]).toBe('Base prompt\n\nActive tasks: #42 #67')
     })
 
@@ -351,7 +357,7 @@ describe('agent-stream', () => {
       const event = { sender: mockSender }
       await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: 5 })
 
-      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
+      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('claude-sp'))
       expect(spCall?.[1]).toBe('Base prompt')
     })
 
