@@ -19,6 +19,7 @@ import { useSettingsStore } from '@renderer/stores/settings'
 import { useAgentsStore } from '@renderer/stores/agents'
 import { agentFg, agentBg, agentBorder, agentAccent, colorVersion, getOnColor, isDark, hexToRgb } from '@renderer/utils/agentColor'
 import { renderMarkdown } from '@renderer/utils/renderMarkdown'
+import { parsePromptContext } from '@renderer/utils/parsePromptContext'
 import { useStreamEvents } from '@renderer/composables/useStreamEvents'
 import { useCopyCode } from '@renderer/composables/useCopyCode'
 import HookEventBar from './HookEventBar.vue'
@@ -59,7 +60,7 @@ function applyHljsTheme(theme: string): void {
 watch(() => settingsStore.theme, applyHljsTheme, { immediate: true })
 
 const {
-  events, collapsed, scrollContainer,
+  events, collapsed, scrollContainer, pendingQuestion,
   assignEventId, enqueueEvent,
   scrollToBottom, toggleCollapsed, cleanup,
 } = useStreamEvents(props.terminalId)
@@ -106,81 +107,28 @@ const activeThinkingText = computed<string | null>(() => {
   return last?.type === 'thinking' && last.text ? last.text : null
 })
 
-/**
- * Detect a pending AskUserQuestion in the current event stream.
- *
- * Source 1 (T1707): last assistant event contains a tool_use AskUserQuestion block
- *   with no matching tool_result (correlates via tool_use_id, falls back to user-event check).
- * Source 2 (T1708): a synthetic ask_user event was emitted by stream-handlers and
- *   no user reply has arrived yet. Source 1 takes priority to avoid double-detection.
- */
-const pendingQuestion = computed<string | null>(() => {
-  // Source 1 — tool_use AskUserQuestion without tool_result (Claude, T1707)
-  for (let i = events.value.length - 1; i >= 0; i--) {
-    const ev = events.value[i]
-    if (ev.type === 'user' || ev.type === 'result') break
-    if (ev.type === 'assistant' && ev.message) {
-      const askBlock = ev.message.content.find(
-        (b) => b.type === 'tool_use' && b.name === 'AskUserQuestion'
-      )
-      if (askBlock) {
-        const toolUseId = askBlock.tool_use_id
-        const answered = toolUseId
-          ? events.value.slice(i + 1).some(
-              (e) => e.type === 'assistant' &&
-                e.message?.content.some(
-                  (b) => b.type === 'tool_result' && b.tool_use_id === toolUseId
-                )
-            )
-          : events.value.slice(i + 1).some((e) => e.type === 'user')
-        if (!answered) {
-          const q = (askBlock.input as Record<string, unknown> | undefined)?.question
-          // T1764: if input.question is not a string, do NOT return null here — fall through
-          // to Source 2 (synthetic ask_user event) which may have the text.
-          if (typeof q === 'string') return q
-        }
-        break
-      }
-    }
-  }
-
-  // Source 2 — synthetic ask_user event without user reply (T1708)
-  for (let i = events.value.length - 1; i >= 0; i--) {
-    const ev = events.value[i]
-    if (ev.type === 'user') break
-    if (ev.type === 'ask_user' && ev.text) return ev.text
-  }
-
-  return null
-})
-
 const agentName = computed(() => tabsStore.tabs.find(t => t.id === props.terminalId)?.agentName ?? '')
 
-const accentFg = computed(() => { void colorVersion.value; return agentName.value ? agentFg(agentName.value) : 'rgb(var(--v-theme-secondary))' })
-const accentBg = computed(() => { void colorVersion.value; return agentName.value ? agentBg(agentName.value) : 'rgba(var(--v-theme-secondary), 0.1)' })
-const accentBorder = computed(() => { void colorVersion.value; return agentName.value ? agentBorder(agentName.value) : 'rgba(var(--v-theme-secondary), 0.3)' })
-// Accent bar color: agentBg at 0.70 opacity — softer than the full-opaque agentFg, coherent with tab capsule design (T1769)
-const accentBarColor = computed(() => {
+// Consolidated agent color computed — single colorVersion read, all values derived once (T1864).
+const agentColors = computed(() => {
   void colorVersion.value
-  if (!agentName.value) return 'rgb(var(--v-theme-secondary))'
-  const hex = agentBg(agentName.value)
-  const rgb = hexToRgb(hex)
-  return rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.70)` : hex
-})
-// MD3 on-color: dark text on light agent backgrounds, white on dark — ensures 4.5:1 contrast (T1500).
-const userBubbleTextColor = computed(() => getOnColor(accentFg.value))
-// On-color for text inside tool_use blocks (colored accentBg background) — T1544.
-const accentOnColor = computed(() => {
-  void colorVersion.value
-  const bg = accentBg.value
-  if (bg.startsWith('#')) return getOnColor(bg)
-  return isDark() ? '#FFFFFF' : '#1C1B1F'
-})
-// Text/dot color for agent accent on neutral dark surface — agentAccent() (lighten2 dark / darken1 light)
-// Use this instead of accentFg when agent color is displayed ON the surface, not on a badge bg (T1738)
-const accentText = computed(() => {
-  void colorVersion.value
-  return agentName.value ? agentAccent(agentName.value) : 'rgb(var(--v-theme-secondary))'
+  const name = agentName.value
+  const s = 'rgb(var(--v-theme-secondary))'
+  if (!name) {
+    return {
+      fg: s, bg: 'rgba(var(--v-theme-secondary), 0.1)', border: 'rgba(var(--v-theme-secondary), 0.3)',
+      barColor: s, bubbleTextColor: isDark() ? '#FFFFFF' : '#1C1B1F', onColor: isDark() ? '#FFFFFF' : '#1C1B1F', text: s,
+    }
+  }
+  const fg = agentFg(name)
+  const bg = agentBg(name)
+  const border = agentBorder(name)
+  const rgb = hexToRgb(bg)
+  const barColor = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.70)` : bg
+  const bubbleTextColor = getOnColor(fg)
+  const onColor = bg.startsWith('#') ? getOnColor(bg) : isDark() ? '#FFFFFF' : '#1C1B1F'
+  const text = agentAccent(name)
+  return { fg, bg, border, barColor, bubbleTextColor, onColor, text }
 })
 
 // Suppresses empty user bubbles from autonomous Claude reasoning (T679).
@@ -210,26 +158,6 @@ const visibleInitIds = computed(() => {
   return ids
 })
 
-/**
- * Extract session/task context block from a launch prompt.
- * Returns { context, base } — context is null if no prefix detected.
- */
-function parsePromptContext(text: string): { context: string | null; base: string } {
-  const dashSep = '\n---\n'
-  const dashIdx = text.indexOf(dashSep)
-  if (dashIdx !== -1 && text.startsWith('=== IDENTIFIANTS ===')) {
-    return { context: text.slice(0, dashIdx), base: text.slice(dashIdx + dashSep.length) }
-  }
-  const arrowIdx = text.indexOf(' -> ')
-  if (arrowIdx !== -1) {
-    const context = text.slice(0, arrowIdx)
-    if (context.includes('Session préc.:') || context.includes('Tâches:')) {
-      return { context, base: text.slice(arrowIdx + 4) }
-    }
-  }
-  return { context: null, base: text }
-}
-
 const sessionContextMap = computed(() => {
   const map = new Map<number, string>()
   let lastInitId: number | null = null
@@ -250,10 +178,11 @@ const sessionContextMap = computed(() => {
 
 async function handleSend(text: string, atts: { path: string; objectUrl: string }[] = []): Promise<void> {
   agentStopped.value = false
+  pendingQuestion.value = null
   // Strip 📎 path lines for display — agent still receives the full text with paths (T1736)
   const displayText = text.replace(/(\n)?📎 [^\n]+/g, '').trim()
   const content: StreamContentBlock[] = [
-    ...(displayText ? [{ type: 'text' as const, text: displayText }] : []),
+    ...(displayText ? [{ type: 'text' as const, text: displayText, _html: renderMarkdown(displayText) }] : []),
     ...atts.map(a => ({ type: 'image_ref' as const, path: a.path, objectUrl: a.objectUrl })),
   ]
   const userEvent: StreamEvent = { type: 'user', message: { role: 'user', content } }
@@ -291,7 +220,7 @@ async function handlePermissionRespond(permissionId: string, behavior: 'allow' |
     : t('stream.permissionDenied', { tool: perm.tool_name })
   const userEvent: StreamEvent = {
     type: 'user',
-    message: { role: 'user', content: [{ type: 'text', text: label }] },
+    message: { role: 'user', content: [{ type: 'text', text: label, _html: renderMarkdown(label) }] },
   }
   assignEventId(userEvent)
   events.value.push(userEvent)
@@ -359,7 +288,7 @@ onMounted(async () => {
     })
 
     if (tab.autoSend) {
-      const autoEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text: tab.autoSend }] } }
+      const autoEvent: StreamEvent = { type: 'user', message: { role: 'user', content: [{ type: 'text', text: tab.autoSend, _html: renderMarkdown(parsePromptContext(tab.autoSend).base) }] } }
       assignEventId(autoEvent)
       events.value.push(autoEvent)
       scrollToBottom(true)
@@ -401,10 +330,10 @@ onUnmounted(() => {
 <template>
   <div class="stream-view">
     <!-- Agent color accent header bar (T680) -->
-    <div v-if="agentName" class="stream-accent-bar" :style="{ background: accentBarColor }" />
+    <div v-if="agentName" class="stream-accent-bar" :style="{ background: agentColors.barColor }" />
 
     <!-- Messages scroll area -->
-    <div ref="scrollContainer" class="stream-scroll pa-4 ga-3" :style="{ '--stream-accent-fg': accentText }">
+    <div ref="scrollContainer" class="stream-scroll pa-4 ga-3" :style="{ '--stream-accent-fg': agentColors.text }">
       <div
         v-if="displayEvents.length === 0 && !isStreaming"
         class="stream-empty text-caption"
@@ -464,10 +393,10 @@ onUnmounted(() => {
         >
           <div
             class="user-bubble stream-markdown-user py-3 px-4 text-body-2"
-            :style="{ background: accentFg, color: userBubbleTextColor }"
+            :style="{ background: agentColors.fg, color: agentColors.bubbleTextColor }"
           >
             <template v-for="(block, bIdx) in event.message.content" :key="bIdx">
-              <div v-if="block.type === 'text'" v-html="renderMarkdown(parsePromptContext(block.text ?? '').base)" />
+              <div v-if="block.type === 'text'" v-html="block._html ?? ''" />
               <img
                 v-else-if="block.type === 'image_ref' && block.objectUrl"
                 :src="block.objectUrl"
@@ -498,11 +427,11 @@ onUnmounted(() => {
                 :event-id="event._id!"
                 :block-idx="bIdx"
                 :collapsed="collapsed"
-                :accent-fg="accentFg"
-                :accent-bg="accentBg"
-                :accent-border="accentBorder"
-                :accent-on-color="accentOnColor"
-                :accent-text="accentText"
+                :accent-fg="agentColors.fg"
+                :accent-bg="agentColors.bg"
+                :accent-border="agentColors.border"
+                :accent-on-color="agentColors.onColor"
+                :accent-text="agentColors.text"
                 @toggle-collapsed="toggleCollapsed"
                 @select-option="handleSelectOption"
               />
@@ -552,13 +481,13 @@ onUnmounted(() => {
       <div
         v-if="isStreaming"
         class="streaming-indicator ga-2 text-caption"
-        :style="{ color: accentText }"
+        :style="{ color: agentColors.text }"
         data-testid="streaming-indicator"
       >
         <span class="bounce-dots">
-          <span class="bounce-dot" :style="{ backgroundColor: accentText }" />
-          <span class="bounce-dot bounce-dot--d1" :style="{ backgroundColor: accentText }" />
-          <span class="bounce-dot bounce-dot--d2" :style="{ backgroundColor: accentText }" />
+          <span class="bounce-dot" :style="{ backgroundColor: agentColors.text }" />
+          <span class="bounce-dot bounce-dot--d1" :style="{ backgroundColor: agentColors.text }" />
+          <span class="bounce-dot bounce-dot--d2" :style="{ backgroundColor: agentColors.text }" />
         </span>
         <span v-if="activeThinkingText" class="thinking-text ga-1">
           <span class="thinking-label" data-testid="thinking-label">{{ t('stream.thinking') }}</span>
@@ -576,8 +505,8 @@ onUnmounted(() => {
       v-for="perm in pendingPermissions"
       :key="perm.permission_id"
       :permission="perm"
-      :accent-fg="accentFg"
-      :accent-text="accentText"
+      :accent-fg="agentColors.fg"
+      :accent-text="agentColors.text"
       @respond="handlePermissionRespond"
     />
 
@@ -587,9 +516,9 @@ onUnmounted(() => {
       :pty-id="ptyId"
       :agent-stopped="agentStopped"
       :session-id="sessionId"
-      :accent-fg="accentFg"
-      :accent-text="accentText"
-      :accent-on-fg="userBubbleTextColor"
+      :accent-fg="agentColors.fg"
+      :accent-text="agentColors.text"
+      :accent-on-fg="agentColors.bubbleTextColor"
       :pending-question="pendingQuestion ?? undefined"
       :prefill-answer="prefillAnswer"
       @send="handleSend"

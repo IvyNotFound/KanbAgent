@@ -8,6 +8,7 @@
 import { ref, watch, nextTick } from 'vue'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { renderMarkdown } from '@renderer/utils/renderMarkdown'
+import { parsePromptContext } from '@renderer/utils/parsePromptContext'
 import type { StreamEvent } from '@renderer/types/stream'
 
 /** Maximum number of events retained in the active-tab sliding window (T1167). */
@@ -21,6 +22,8 @@ export function useStreamEvents(terminalId: string) {
   const events = ref<StreamEvent[]>([])
   const collapsed = ref<Record<string, boolean>>({})
   const scrollContainer = ref<HTMLElement | null>(null)
+  /** Incremental pendingQuestion — set on AskUserQuestion, cleared on user/result (T1864). */
+  const pendingQuestion = ref<string | null>(null)
 
   let nextEventId = 1
   function assignEventId(e: StreamEvent): void {
@@ -35,23 +38,52 @@ export function useStreamEvents(terminalId: string) {
     if (pendingEvents.length === 0) { flushPending = false; return }
     for (const e of pendingEvents) {
       assignEventId(e)
+      // Incremental pendingQuestion tracking (T1864): clear on user/result events
+      if (e.type === 'user' || e.type === 'result') {
+        pendingQuestion.value = null
+      }
       if (e.message?.content) {
-        for (const block of e.message.content) {
-          if (block.type === 'text' && block.text != null) {
-            block._html = renderMarkdown(block.text)
-          } else if (block.type === 'tool_use' && block.name === 'AskUserQuestion' && !block.input?.['question']) {
-            // T1764: input.question is lost after Electron IPC structured-clone — bridge from
-            // the synthetic ask_user event present in the same micro-batch.
-            const askUserEv = pendingEvents.find(pe => pe.type === 'ask_user' && pe.text)
-            if (askUserEv?.text) block._question = askUserEv.text
-          } else if (block.type === 'tool_result') {
-            const raw = !block.content ? '' : typeof block.content === 'string' ? block.content : Array.isArray(block.content) ? block.content.map(c => c.text ?? '').join('\n') : String(block.content)
-            const stripped = raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')
-            block._lineCount = stripped.split('\n').length
-            block._isLong = block._lineCount > 15
-            block._html = renderMarkdown(stripped)
+        // Pre-render user text blocks with parsePromptContext (T1864)
+        if (e.type === 'user') {
+          for (const block of e.message.content) {
+            if (block.type === 'text' && block.text != null) {
+              block._html = renderMarkdown(parsePromptContext(block.text).base)
+            }
+          }
+        } else {
+          for (const block of e.message.content) {
+            if (block.type === 'text' && block.text != null) {
+              block._html = renderMarkdown(block.text)
+            } else if (block.type === 'tool_use' && block.name === 'AskUserQuestion') {
+              // Incremental pendingQuestion tracking (T1864): set on AskUserQuestion
+              const q = (block.input as Record<string, unknown> | undefined)?.question
+              if (typeof q === 'string') {
+                pendingQuestion.value = q
+              } else if (block._question) {
+                pendingQuestion.value = block._question
+              }
+              if (!block.input?.['question']) {
+                // T1764: input.question is lost after Electron IPC structured-clone — bridge from
+                // the synthetic ask_user event present in the same micro-batch.
+                const askUserEv = pendingEvents.find(pe => pe.type === 'ask_user' && pe.text)
+                if (askUserEv?.text) {
+                  block._question = askUserEv.text
+                  pendingQuestion.value = askUserEv.text
+                }
+              }
+            } else if (block.type === 'tool_result') {
+              const raw = !block.content ? '' : typeof block.content === 'string' ? block.content : Array.isArray(block.content) ? block.content.map(c => c.text ?? '').join('\n') : String(block.content)
+              const stripped = raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')
+              block._lineCount = stripped.split('\n').length
+              block._isLong = block._lineCount > 15
+              block._html = renderMarkdown(stripped)
+            }
           }
         }
+      }
+      // Incremental pendingQuestion tracking (T1864): set on ask_user synthetic events
+      if (e.type === 'ask_user' && e.text) {
+        pendingQuestion.value = e.text
       }
       // Pre-render markdown for top-level text events (non-Claude CLIs) — T1197
       if (e.type === 'text' && e.text != null) {
@@ -114,9 +146,11 @@ export function useStreamEvents(terminalId: string) {
       // Re-render _html when tab becomes active again (T1135)
       for (const ev of events.value) {
         if (ev.message?.content) {
+          // User text blocks use parsePromptContext before rendering (T1864)
+          const isUser = ev.type === 'user'
           for (const block of ev.message.content) {
             if (block.type === 'text' && block.text != null && !block._html) {
-              block._html = renderMarkdown(block.text)
+              block._html = isUser ? renderMarkdown(parsePromptContext(block.text).base) : renderMarkdown(block.text)
             } else if (block.type === 'tool_result' && !block._html) {
               const raw = !block.content ? '' : typeof block.content === 'string' ? block.content : Array.isArray(block.content) ? block.content.map(c => c.text ?? '').join('\n') : String(block.content)
               const stripped = raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')
@@ -141,10 +175,11 @@ export function useStreamEvents(terminalId: string) {
     events.value = []
     collapsed.value = {}
     pendingEvents = []
+    pendingQuestion.value = null
   }
 
   return {
-    events, collapsed, scrollContainer,
+    events, collapsed, scrollContainer, pendingQuestion,
     assignEventId, enqueueEvent, flushEvents,
     scrollToBottom, toggleCollapsed, cleanup,
   }
