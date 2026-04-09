@@ -29,7 +29,9 @@
     "prevPage": "Previous",
     "nextPage": "Next",
     "pageOf": "Page {page} / {total} ({count} tasks)",
-    "staleTasks": "{count} stale task | {count} stale tasks"
+    "staleTasks": "{count} stale task | {count} stale tasks",
+    "review": "Review",
+    "reviewLaunchFailed": "Review launch failed"
   },
   "taskCard": {
     "relaunchAgent": "Relaunch agent",

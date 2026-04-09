@@ -2,10 +2,11 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { agentFg, agentBg, perimeterFg, perimeterBg } from '@renderer/utils/agentColor'
+import { agentFg, agentBg, agentAccent, perimeterFg, perimeterBg } from '@renderer/utils/agentColor'
 import { isStale } from '@renderer/utils/staleTask'
 import { parseUtcDate } from '@renderer/utils/parseDate'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
+import { useTabsStore } from '@renderer/stores/tabs'
 import { useToast } from '@renderer/composables/useToast'
 import { useArchivedPagination } from '@renderer/composables/useArchivedPagination'
 import AgentBadge from './AgentBadge.vue'
@@ -13,7 +14,8 @@ import StatusColumn from './StatusColumn.vue'
 
 const { t, locale } = useI18n()
 const store = useTasksStore()
-const { launchAgentTerminal, canLaunchSession } = useLaunchSession()
+const { launchAgentTerminal, launchReviewSession, canLaunchSession } = useLaunchSession()
+const tabsStore = useTabsStore()
 const toast = useToast()
 const pagination = useArchivedPagination()
 
@@ -27,6 +29,25 @@ const tasks = computed(() => store.tasksByStatus ?? emptyTasks)
 const staleTasks = computed(() =>
   (tasks.value.in_progress ?? []).filter(t => isStale(t.started_at, store.staleThresholdMinutes))
 )
+
+/** Review agent resolved from the store (hidden if absent). */
+const reviewAgent = computed(() => store.agents.find(a => a.type === 'review') ?? null)
+
+/** Whether the Review button should be enabled. */
+const canReview = computed(() => {
+  if (!reviewAgent.value) return false
+  if ((tasks.value.done?.length ?? 0) === 0) return false
+  if (tabsStore.hasAgentTerminal(reviewAgent.value.name)) return false
+  return canLaunchSession(reviewAgent.value)
+})
+
+async function onReviewClick(): Promise<void> {
+  if (!reviewAgent.value) return
+  const doneTasks = tasks.value.done ?? []
+  if (!doneTasks.length) return
+  const ok = await launchReviewSession(reviewAgent.value, doneTasks)
+  if (!ok) toast.push(t('board.reviewLaunchFailed'), 'error')
+}
 
 // Auto-switch to Archive tab when backlog is empty but archives exist
 // Uses stats.archived (from GROUP BY query) since archived tasks are excluded from refresh()
@@ -152,6 +173,18 @@ const archivedGroupsSorted = computed(() => {
             {{ t('board.archive', { count: store.stats.archived }) }}
           </v-btn>
         </v-btn-toggle>
+
+        <v-btn
+          v-if="reviewAgent"
+          size="small"
+          variant="tonal"
+          :color="agentAccent('review')"
+          :disabled="!canReview"
+          @click="onReviewClick"
+        >
+          <v-icon start size="16">mdi-check-decagram</v-icon>
+          {{ t('board.review') }}
+        </v-btn>
       </div>
 
       <!-- Right: active filters -->
@@ -319,6 +352,8 @@ const archivedGroupsSorted = computed(() => {
 .header-center {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 .header-right {
   display: flex;

@@ -29,7 +29,9 @@
     "prevPage": "Précédent",
     "nextPage": "Suivant",
     "pageOf": "Page {page} / {total} ({count} tâches)",
-    "staleTasks": "{count} tâche bloquée depuis trop longtemps | {count} tâches bloquées depuis trop longtemps"
+    "staleTasks": "{count} tâche bloquée depuis trop longtemps | {count} tâches bloquées depuis trop longtemps",
+    "review": "Review",
+    "reviewLaunchFailed": "Échec du lancement de la review"
   },
   "taskCard": {
     "relaunchAgent": "Relancer l'agent",
