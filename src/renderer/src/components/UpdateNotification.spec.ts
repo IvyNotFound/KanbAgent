@@ -45,7 +45,7 @@ describe('UpdateNotification', () => {
 
   it('is not visible when status is idle', () => {
     const wrapper = mountComponent()
-    expect(wrapper.find('v-banner').exists()).toBe(false)
+    expect(wrapper.find('.update-bar').exists()).toBe(false)
     wrapper.unmount()
   })
 
@@ -86,7 +86,7 @@ describe('UpdateNotification', () => {
   it('is not visible when status is up-to-date', () => {
     mockStatus.value = 'up-to-date'
     const wrapper = mountComponent()
-    expect(wrapper.find('v-banner').exists()).toBe(false)
+    expect(wrapper.find('.update-bar').exists()).toBe(false)
     wrapper.unmount()
   })
 
