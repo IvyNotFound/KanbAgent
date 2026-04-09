@@ -68,6 +68,14 @@ const availableModels = computed(() => {
   return models.map(m => ({ title: m.label, value: m.modelId }))
 })
 
+/** Human-readable label for the default model configured in settings (T1826) */
+const defaultModelLabel = computed(() => {
+  const modelId = settingsStore.getDefaultModel(effectiveCli.value)
+  if (!modelId) return null
+  const models: CliModelDef[] = settingsStore.cliModels[effectiveCli.value] ?? []
+  return models.find(m => m.modelId === modelId)?.label ?? modelId
+})
+
 // Reset model when CLI changes — models are CLI-specific
 watch(preferredCli, () => {
   if (!loading.value) preferredModel.value = null
@@ -310,7 +318,7 @@ async function save() {
                 v-model="preferredModel"
                 :items="availableModels"
                 clearable
-                :placeholder="t('agent.settingsDefault')"
+                :placeholder="defaultModelLabel ? t('agent.settingsDefaultNamed', { model: defaultModelLabel }) : t('agent.settingsDefault')"
                 variant="outlined"
                 density="compact"
                 hide-details

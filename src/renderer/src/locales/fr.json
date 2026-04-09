@@ -321,6 +321,7 @@
     "refreshDetection": "Actualiser",
     "model": "Modèle",
     "modelDefault": "Défaut (depuis les paramètres)",
+    "modelDefaultNamed": "Défaut : {model}",
     "modelNote": "Remplacer le modèle utilisé pour cette session. Laisser vide pour le défaut."
   },
   "titleBar": {
@@ -381,6 +382,7 @@
     "preferredModelNote": "Surcharge le modèle global défini dans les paramètres",
     "globalDefault": "Défaut global",
     "settingsDefault": "Défaut paramètres",
+    "settingsDefaultNamed": "Défaut : {model}",
     "worktreeEnabled": "Isolation worktree",
     "worktreeInherit": "Hériter",
     "worktreeOn": "Activé",

@@ -48,6 +48,14 @@ const availableModels = computed(() => {
   return models.map(m => ({ title: m.label, value: m.modelId }))
 })
 
+/** Human-readable label for the default model configured in settings (T1826) */
+const defaultModelLabel = computed(() => {
+  const modelId = settingsStore.getDefaultModel(selectedCli.value)
+  if (!modelId) return null
+  const models: CliModelDef[] = settingsStore.cliModels[selectedCli.value] ?? []
+  return models.find(m => m.modelId === modelId)?.label ?? modelId
+})
+
 const fullSystemPrompt = computed(() => {
   const parts: string[] = []
   if (systemPrompt.value) parts.push(systemPrompt.value)
@@ -319,7 +327,7 @@ async function launch() {
                 v-model="selectedModel"
                 :items="availableModels"
                 clearable
-                :placeholder="t('launch.modelDefault')"
+                :placeholder="defaultModelLabel ? t('launch.modelDefaultNamed', { model: defaultModelLabel }) : t('launch.modelDefault')"
                 variant="outlined"
                 density="compact"
                 hide-details

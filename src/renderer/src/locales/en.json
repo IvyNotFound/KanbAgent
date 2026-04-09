@@ -321,6 +321,7 @@
     "refreshDetection": "Refresh",
     "model": "Model",
     "modelDefault": "Default (from settings)",
+    "modelDefaultNamed": "Default: {model}",
     "modelNote": "Override the model used for this session. Leave empty to use the default."
   },
   "cli": {
@@ -389,6 +390,7 @@
     "preferredModelNote": "Overrides the global model defined in settings",
     "globalDefault": "Global default",
     "settingsDefault": "Settings default",
+    "settingsDefaultNamed": "Default: {model}",
     "worktreeEnabled": "Worktree isolation",
     "worktreeInherit": "Inherit",
     "worktreeOn": "Enabled",
