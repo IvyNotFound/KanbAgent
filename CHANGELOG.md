@@ -4,6 +4,59 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.40.0] - 2026-04-09
+
+### Features
+- feat(front-vuejs): add dedicated ToolSearch rendering in ToolInputView (T1883) (5e22de2)
+- feat(front-vuejs): add CLI instance + model selectors to SetupWizard (T1876) (6d490c9)
+
+### Bug Fixes
+- fix(front-vuejs): update stale snapshot + restore deferred _html rendering on tab activation (12f388e)
+- fix(front-vuejs): reduce useAutoLaunch fallback from 60s to 15s for task-linked tabs (T1885) (52e01be)
+- fix(back-electron): unblock session-closer — remove NOT EXISTS guards + add stale cleanup (T1884) (2dd3e6b)
+- fix(front-vuejs): suppress Vite HTML nesting warnings for Vuetify v-* parents (T1882) (26568ad)
+- fix(back-electron): remove nested vi.mock calls causing Vitest hoisting warnings (T1881) (bc6f808)
+- fix(front-vuejs): resolve 134 ESLint warnings across 26 Vue components (T1880) (528c035)
+- fix(back-electron): resolve 10 ESLint errors in e2e tests + config files (T1879) (ce0e792)
+- fix(front-vuejs): improve close button spacing in notifications (T1878) (da1614e)
+- fix(front-vuejs): rename agent.autoLaunch i18n labels from "Auto-launch" to "Auto-close" (T1875) (6c02997)
+- fix(back-electron): validate cwd with assertProjectPathAllowed before path construction in hookServer (T1874) (3ed610e)
+- fix(back-electron): validate transcript_path in hookServer before file read (T1871) (a48e221)
+- fix(back-electron): npm audit fix — resolve 9 dependency vulnerabilities (T1873) (151ee5a)
+- fix(back-electron): escape modelId in PowerShell script generation (T1872) (1a3f400)
+- fix(back-electron): clear stream batch interval in killAgent to prevent leak (T1851) (d88592b)
+- fix(front-vuejs): remove dead watchForDb in tasks.ts + fix timer leak (T1870) (cdb1c12)
+- fix(front-vuejs): ensure CreateAgentModal scrolls properly when system prompt is expanded (T1849) (a1c9ea2)
+- fix(front-vuejs): make update notification buttons visible + add dismiss for available state (T1848) (3ec48e5)
+
+### Performance
+- perf(front-vuejs): stop clearing _html on tab deactivation — eliminate 600-800 sync re-renders (T1865) (6e696b2)
+- perf(front-vuejs): defer renderMarkdown for hidden StreamView tabs (T1855) (1f43f53)
+- perf(front-vuejs): cache renderMarkdown, incremental pendingQuestion, consolidate color computeds (T1864) (b8b77b0)
+- perf(front-vuejs): replace @mdi/font with @mdi/js for tree-shakeable icons (T1859) (51e6713)
+- perf(back-electron): fix N+1 queries in pruneOrphanedWorktrees (T1869) (4b1fe60)
+- perf(back-electron): move telemetry:scan to worker thread (T1854) (9304042)
+- perf(back-electron): add missing DB indexes for claude_conv_id, tasks agent+status, sessions status (T1852) (0479a0c)
+- perf(back-electron): replace writeFileSync with async writeFile in agent:create (T1863) (9ff3a84)
+- perf(front-vuejs): remove duplicate agent polling in useTaskRefresh (T1860) (3bc3ee0)
+- perf(front-vuejs): lazy-load i18n locale files — only active locale at startup (T1867) (2fde5d3)
+- perf(front-vuejs): lazy-load dashboard sub-tabs and TaskDetailModal (T1866) (8849288)
+- perf(back-electron): optimize session-closer polling and deduplicate queries (T1862) (870439c)
+- perf(front-vuejs): add visibility checks to polling components (T1861) (6ad2cf4)
+- perf(front-vuejs): switch highlight.js to core + selective languages (~900KB savings) (T1858) (2a9821d)
+- perf(front-vuejs): remove Vuetify star-imports to enable tree-shaking (T1857) (83c9eba)
+- perf(front-vuejs): add onUnmounted cleanup to useAutoLaunch (T1856) (aa46b69)
+- perf(back-electron): cap pending permission timers in hookServer (T1853) (a87ce0f)
+- perf(front-vuejs): add Vite manual chunk splitting for vendor libs (T1868) (464f140)
+
+### Refactoring
+- refactor(front-vuejs): align OrgChartView with MD3 design tokens and exclude setup agent (T1877) (4124bbd)
+- refactor(front-vuejs): reorder Dashboard sub-tabs (T1850) (dc031be)
+
+### Chores
+- chore(deps): update package-lock.json after native rebuild (516981e)
+- chore(front-vuejs): add missing setup i18n keys to 16 locales (aa0a370)
+
 ## [0.39.0] - 2026-04-09
 
 ### Features
