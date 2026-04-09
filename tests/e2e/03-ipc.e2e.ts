@@ -7,6 +7,7 @@
  * Prerequisites: npm run build:vite  (generates out/)
  * Run: npx playwright test --config playwright.config.ts
  */
+/* eslint-disable @typescript-eslint/no-explicit-any -- page.evaluate runs in browser context, TS types don't apply */
 import { test, expect } from '@playwright/test'
 import { launchApp, closeApp, type AppHandle } from './helpers/electron-app'
 

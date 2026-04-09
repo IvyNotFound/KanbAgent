@@ -1,5 +1,4 @@
 import { defineConfig } from '@playwright/test'
-import { join } from 'path'
 
 /**
  * Playwright E2E configuration for KanbAgent (Electron).

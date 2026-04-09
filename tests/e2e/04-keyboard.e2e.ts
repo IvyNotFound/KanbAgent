@@ -39,10 +39,6 @@ test('app loads without JavaScript errors', async () => {
 test('window maximize/restore via IPC', async () => {
   const { app } = handle
 
-  const initialMaximized = await app.evaluate(({ BrowserWindow }) => {
-    return BrowserWindow.getAllWindows()[0].isMaximized()
-  })
-
   // Toggle maximize
   await app.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows()[0]
@@ -64,6 +60,7 @@ test('app handles window state queries gracefully', async () => {
 
   // windowIsMaximized is used by TitleBar to show correct icon
   const isMaximizedResult = await page.evaluate(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- page.evaluate runs in browser context
     const api = (window as any).electronAPI
     if (typeof api?.windowIsMaximized !== 'function') return 'no-api'
     try {
