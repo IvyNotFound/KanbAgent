@@ -119,7 +119,7 @@ async function fetchActivity(): Promise<void> {
  * @returns Promise that resolves when all fetches complete.
  */
 async function load(): Promise<void> {
-  if (!store.dbPath) return
+  if (!store.dbPath || document.visibilityState === 'hidden') return
   await Promise.all([fetchSessionsToday(), fetchActivity(), fetchTokenStats()])
 }
 

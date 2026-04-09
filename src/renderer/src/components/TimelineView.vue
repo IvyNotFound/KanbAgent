@@ -80,8 +80,8 @@ function onMouseUp(): void {
 }
 
 onMounted(() => {
-  nowTimer = setInterval(() => { now.value = Date.now() }, 60_000)
-  refreshTimer = setInterval(fetchTasks, 60_000)
+  nowTimer = setInterval(() => { if (document.visibilityState !== 'hidden') now.value = Date.now() }, 60_000)
+  refreshTimer = setInterval(() => { if (document.visibilityState !== 'hidden') fetchTasks() }, 60_000)
   fetchTasks()
   window.addEventListener('blur', onMouseUp)
 })

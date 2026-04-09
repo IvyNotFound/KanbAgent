@@ -30,7 +30,7 @@ const agents = ref<AgentRow[]>([])
 const loading = ref(false)
 
 async function fetchData(): Promise<void> {
-  if (!store.dbPath) return
+  if (!store.dbPath || document.visibilityState === 'hidden') return
   loading.value = true
   try {
     const [result] = await Promise.all([
@@ -180,7 +180,7 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null
 onMounted(async () => {
   await fetchData()
   fitView()
-  refreshTimer = setInterval(fetchData, 5000)
+  refreshTimer = setInterval(fetchData, 30000)
   window.addEventListener('mouseup', onMouseUp)
   window.addEventListener('mousemove', onMouseMove)
 })
