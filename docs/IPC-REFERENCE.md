@@ -1,4 +1,4 @@
-# KanbAgent — Référence IPC (v0.35.0)
+# KanbAgent — Référence IPC (v0.37.0)
 
 > Document généré manuellement à partir de `src/preload/index.ts` et des handlers `src/main/ipc-*.ts`.
 > **À vérifier après chaque release mineure** — les canaux peuvent évoluer.
@@ -12,8 +12,8 @@
 | Domaine | Fichier handler | Canaux |
 |---------|----------------|--------|
 | [DB](#db) | `ipc-db.ts` | `query-db`, `watch-db`, `unwatch-db`, `migrate-db` |
-| [Project](#project) | `ipc-project.ts` | `select-project-dir`, `select-new-project-dir`, `init-new-project`, `create-project-db`, `find-project-db`, `project:exportZip` |
-| [File System](#file-system) | `ipc-fs.ts` | `fs:listDir`, `fs:readFile`, `fs:writeFile` |
+| [Project](#project) | `ipc-project.ts` | `select-project-dir`, `select-new-project-dir`, `init-new-project`, `create-project-db`, `find-project-db`, `project:regenerateRulesFiles`, `project:exportZip` |
+| [File System](#file-system) | `ipc-fs.ts` | `fs:listDir`, `fs:readFile`, `fs:writeFile`, `fs:saveImage` |
 | [Window](#window) | `ipc-window.ts` | `window-minimize`, `window-maximize`, `window-close`, `window-is-maximized`, `show-confirm-dialog`, `shell:openExternal` |
 | [Agents — CRUD](#agents--crud) | `ipc-agent-crud.ts` | `rename-agent`, `update-agent-system-prompt`, `get-agent-system-prompt`, `update-agent-thinking-mode`, `update-agent`, `delete-agent`, `create-agent`, `agent:duplicate` |
 | [Agents — Perimetres](#agents--perimetres) | `ipc-agent-tasks.ts` | `close-agent-sessions`, `update-perimetre`, `build-agent-prompt`, `add-perimetre`, `task:setAssignees` |
@@ -22,12 +22,13 @@
 | [Session Stats](#session-stats) | `ipc-session-stats.ts` | `session:updateResult`, `sessions:statsCost`, `tasks:getArchived`, `tasks:qualityStats`, `tasks:updateStatus` |
 | [Tasks — Queries](#tasks--queries) | `ipc-agent-tasks-query.ts` | `task:getAssignees`, `search-tasks`, `task:getLinks` |
 | [Config / Settings](#config--settings) | `ipc-settings.ts` | `get-config-value`, `set-config-value`, `check-for-updates` |
-| [Agent Stream](#agent-stream) | `agent-stream.ts` | `agent:create`, `agent:send`, `agent:kill` |
+| [Agent Stream](#agent-stream) | `agent-stream.ts` | `agent:create`, `agent:send`, `agent:kill`, `agent:permission-respond` |
 | [Git](#git) | `ipc-git.ts` | `git:log`, `git:worktree-create`, `git:worktree-remove` |
 | [WSL / CLI](#wsl--cli) | `ipc-wsl.ts`, `ipc-cli-detect.ts` | `wsl:openTerminal`, `wsl:get-cli-instances` |
+| [CLI Models](#cli-models) | `ipc-cli-models.ts` | `cli:get-models` |
 | [Telemetry](#telemetry) | `ipc-telemetry.ts` | `telemetry:scan` |
 | [Auto-Updater](#auto-updater) | `updater.ts` | `updater:check`, `updater:download`, `updater:install` |
-| [Push Events](#push-events) | divers | `db-changed`, `session:agents-completed`, `window-state-changed`, `hook:event`, `agent:stream:{id}`, `agent:convId:{id}`, `agent:exit:{id}`, `update:*` |
+| [Push Events](#push-events) | divers | `db-changed`, `session:agents-completed`, `window-state-changed`, `hook:event`, `agent:permission-request`, `agent:stream:{id}`, `agent:convId:{id}`, `agent:exit:{id}`, `update:*` |
 
 ---
 
@@ -54,8 +55,9 @@
 | `select-new-project-dir` | invoke | — | `string \| null` | ~246 | Sélectionne un nouveau répertoire projet (sans lookup de DB existante). |
 | `init-new-project` | invoke | `projectPath: string` | `{ success: boolean; error?: string }` | ~263 | Initialise un nouveau projet KanbAgent dans le dossier sélectionné. |
 | `create-project-db` | invoke | `projectPath: string, lang?: string` | `{ success: boolean; dbPath: string; error?: string }` | ~113 | Crée et migre une nouvelle `project.db` dans le répertoire projet. |
-| `find-project-db` | invoke | `projectPath: string` | `string \| null` | ~289 | Cherche récursivement une `project.db` dans le dossier projet. |
-| `project:exportZip` | invoke | `dbPath: string` | `{ success: boolean; path?: string; error?: string }` | ~319 | Exporte la DB en archive ZIP vers le dossier Téléchargements. |
+| `find-project-db` | invoke | `projectPath: string` | `string \| null` | ~327 | Cherche récursivement une `project.db` dans le dossier projet. |
+| `project:regenerateRulesFiles` | invoke | `projectPath: string, detectedClis: string[], lang?: string` | `{ success: boolean; filesCreated?: string[]; error?: string }` | ~358 | Régénère les fichiers de règles CLI-agnostiques pour chaque CLI détecté (ADR-012). Crée `CLAUDE.md`, et optionnellement `GEMINI.md`, `.codex/instructions.md`. |
+| `project:exportZip` | invoke | `dbPath: string` | `{ success: boolean; path?: string; error?: string }` | ~406 | Exporte la DB en archive ZIP vers le dossier Téléchargements. |
 
 ---
 
@@ -67,9 +69,10 @@
 
 | Canal | Type | Args | Retour | Ligne | Description |
 |-------|------|------|--------|-------|-------------|
-| `fs:listDir` | invoke | `dirPath: string, allowedDir: string` | `FileNode[]` | ~74 | Liste le contenu d'un répertoire. |
-| `fs:readFile` | invoke | `filePath: string, allowedDir: string` | `{ success: boolean; content?: string; error?: string }` | ~100 | Lit un fichier texte. |
-| `fs:writeFile` | invoke | `filePath: string, content: string, allowedDir: string` | `{ success: boolean; error?: string }` | ~132 | Écrit un fichier texte. |
+| `fs:listDir` | invoke | `dirPath: string, allowedDir: string` | `FileNode[]` | ~89 | Liste le contenu d'un répertoire. |
+| `fs:readFile` | invoke | `filePath: string, allowedDir: string` | `{ success: boolean; content?: string; error?: string }` | ~115 | Lit un fichier texte. |
+| `fs:writeFile` | invoke | `filePath: string, content: string, allowedDir: string` | `{ success: boolean; error?: string }` | ~147 | Écrit un fichier texte. |
+| `fs:saveImage` | invoke | `base64Data: string, mediaType: string` | `{ success: true; path: string }` | ~74 | Sauvegarde une image (base64) dans un fichier temporaire. Déduit l'extension depuis le MIME type. |
 
 ---
 
@@ -96,11 +99,11 @@
 |-------|------|------|--------|-------|-------------|
 | `rename-agent` | invoke | `dbPath: string, agentId: number, newName: string` | `{ success: boolean; error?: string }` | ~40 | Renomme un agent (met aussi à jour `CLAUDE.md`). |
 | `update-agent-system-prompt` | invoke | `dbPath: string, agentId: number, systemPrompt: string` | `{ success: boolean; error?: string }` | ~60 | Met à jour le `system_prompt` d'un agent. |
-| `get-agent-system-prompt` | invoke | `dbPath: string, agentId: number` | `{ success: boolean; systemPrompt: string \| null; systemPromptSuffix: string \| null; thinkingMode: string \| null; permissionMode: string \| null; worktreeEnabled: number \| null; error?: string }` | ~79 | Retourne la configuration système d'un agent. |
+| `get-agent-system-prompt` | invoke | `dbPath: string, agentId: number` | `{ success: boolean; systemPrompt: string \| null; systemPromptSuffix: string \| null; thinkingMode: string \| null; permissionMode: string \| null; worktreeEnabled: number \| null; preferredModel: string \| null; preferredCli: string \| null; error?: string }` | ~98 | Retourne la configuration système d'un agent. |
 | `update-agent-thinking-mode` | invoke | `dbPath: string, agentId: number, thinkingMode: string \| null` | `{ success: boolean; error?: string }` | ~112 | Met à jour le `thinking_mode` (`auto` \| `disabled` \| `null`). |
-| `update-agent` | invoke | `dbPath: string, agentId: number, updates: { name?: string; type?: string; scope?: string \| null; thinkingMode?: string \| null; allowedTools?: string \| null; systemPrompt?: string \| null; systemPromptSuffix?: string \| null; autoLaunch?: boolean; permissionMode?: 'default' \| 'auto' \| null; worktreeEnabled?: boolean \| null }` | `{ success: boolean; error?: string }` | ~136 | Met à jour les champs d'un agent (patch partiel). |
+| `update-agent` | invoke | `dbPath: string, agentId: number, updates: { name?: string; type?: string; scope?: string \| null; perimetre?: string \| null; thinkingMode?: string \| null; allowedTools?: string \| null; systemPrompt?: string \| null; systemPromptSuffix?: string \| null; autoLaunch?: boolean; permissionMode?: 'default' \| 'auto' \| null; maxSessions?: number; worktreeEnabled?: boolean \| null; preferredModel?: string \| null; preferredCli?: string \| null }` | `{ success: boolean; error?: string }` | ~157 | Met à jour les champs d'un agent (patch partiel). `maxSessions` : entier ≥ 1, ou -1 pour illimité (T534). |
 | `delete-agent` | invoke | `dbPath: string, agentId: number` | `{ success: boolean; hasHistory?: boolean; error?: string }` | ~189 | Supprime un agent. `hasHistory: true` si des sessions existaient. |
-| `create-agent` | invoke | `dbPath: string, projectPath: string, data: { name: string; type: string; scope: string \| null; thinkingMode: string \| null; systemPrompt: string \| null; description: string }` | `{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }` | ~231 | Crée un agent et l'inscrit dans `CLAUDE.md` si applicable. |
+| `create-agent` | invoke | `dbPath: string, projectPath: string, data: { name: string; type: string; scope: string \| null; perimetre?: string \| null; thinkingMode: string \| null; systemPrompt: string \| null; description: string; preferredModel?: string \| null }` | `{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }` | ~262 | Crée un agent et l'inscrit dans `CLAUDE.md` si applicable. `perimetre` est un alias pour `scope`. |
 | `agent:duplicate` | invoke | `dbPath: string, agentId: number` | `{ success: boolean; agentId?: number; name?: string; error?: string }` | ~281 | Duplique un agent (copie tous les champs, génère un nom `<name>-copy`). |
 
 ---
@@ -194,9 +197,10 @@
 
 | Canal | Type | Args | Retour | Ligne | Description |
 |-------|------|------|--------|-------|-------------|
-| `agent:create` | invoke | `opts?: { cols?: number; rows?: number; projectPath?: string; workDir?: string; wslDistro?: string; systemPrompt?: string; thinkingMode?: string; claudeCommand?: string; convId?: string; permissionMode?: string; dbPath?: string; sessionId?: number; cli?: string; initialMessage?: string }` | `string` (id) | ~80 | Spawne un processus agent Claude. Retourne l'`id` à utiliser pour `agent:send`/`agent:kill`/`onAgentStream`. |
-| `agent:send` | invoke | `id: string, text: string` | `void` | ~368 | Envoie un message multi-tour à l'agent via stdin JSONL. |
-| `agent:kill` | invoke | `id: string` | `void` | ~382 | Tue le processus agent. |
+| `agent:create` | invoke | `opts?: { cli?: string; cols?: number; rows?: number; projectPath?: string; workDir?: string; wslDistro?: string; systemPrompt?: string; thinkingMode?: string; claudeCommand?: string; convId?: string; permissionMode?: string; dbPath?: string; sessionId?: number; claudeBinaryPath?: string; worktree?: boolean; initialMessage?: string; modelId?: string }` | `string` (id) | ~74 | Spawne un processus agent CLI. Retourne l'`id` à utiliser pour `agent:send`/`agent:kill`/`onAgentStream`. Le champ `cli` sélectionne l'adaptateur (`claude`, `codex`, `gemini`, `opencode`, `aider`, `goose`). `modelId` passe `--model` au CLI (T1805). |
+| `agent:send` | invoke | `id: string, text: string` | `void` | ~207 | Envoie un message multi-tour à l'agent via stdin JSONL. |
+| `agent:kill` | invoke | `id: string` | `void` | ~221 | Tue le processus agent. |
+| `agent:permission-respond` | invoke | `permissionId: string, behavior: 'allow' \| 'deny'` | `boolean` | ~228 | Résout une permission CLI en attente (T1816). Retourne `true` si la requête a été trouvée, `false` si expirée/inconnue. |
 
 ---
 
@@ -223,13 +227,25 @@
 
 ---
 
+## CLI Models
+
+**Handler :** `src/main/ipc-cli-models.ts`
+
+> Registre de modèles par CLI (T1802, T1806). OpenCode et Aider détectés dynamiquement ; Claude/Gemini utilisent des listes statiques.
+
+| Canal | Type | Args | Retour | Ligne | Description |
+|-------|------|------|--------|-------|-------------|
+| `cli:get-models` | invoke | `{ cli?: CliType; forceRefresh?: boolean }` | `CliModelDef[]` (si `cli` fourni) ou `Partial<Record<CliType, CliModelDef[]>>` (tous) | ~30 | Retourne les modèles disponibles pour un CLI donné (ou tous les CLIs). CLIs supportés : `claude`, `codex`, `gemini`, `opencode`, `aider`, `goose`. |
+
+---
+
 ## Telemetry
 
 **Handler :** `src/main/ipc-telemetry.ts`
 
 | Canal | Type | Args | Retour | Ligne | Description |
 |-------|------|------|--------|-------|-------------|
-| `telemetry:scan` | invoke | `projectPath: string` | `{ languages: Array<{ name: string; color: string; files: number; lines: number; percent: number }>; totalFiles: number; totalLines: number; scannedAt: string }` | ~208 | Scanne les sources du projet et retourne les stats LOC par langage. |
+| `telemetry:scan` | invoke | `projectPath: string` | `{ languages: Array<{ name: string; files: number; lines: number; percent: number; sourceFiles: number; testFiles: number; sourceLines: number; testLines: number; blankLines: number; commentLines: number; codeLines: number }>; totalFiles: number; totalLines: number; scannedAt: string; totalSourceLines: number; totalTestLines: number; testRatio: number; totalBlankLines: number; totalCommentLines: number; totalCodeLines: number; totalSourceFiles: number; totalTestFiles: number }` | ~207 | Scanne les sources du projet et retourne les stats LOC par langage (source vs test, lignes de code/commentaires/blancs). |
 
 ---
 
@@ -257,6 +273,7 @@
 | `session:agents-completed` | `agentIds: number[]` | `ipc-db.ts:~99` | Des sessions agents ont été auto-clôturées par le session-closer. |
 | `window-state-changed` | `maximized: boolean` | `ipc-window.ts` | La fenêtre a changé d'état (maximisé/restauré). |
 | `hook:event` | `{ event: string; payload: unknown; ts: number }` | `hookServer.ts:~83` | Événement lifecycle Claude Code reçu via le hook server HTTP (T741). |
+| `agent:permission-request` | `{ permission_id: string; tool_name: string; tool_input: Record<string, unknown>; session_id: string }` | `hookServer.ts:~281` | Requête de permission CLI en attente — le renderer affiche un dialog et répond via `agent:permission-respond` (T1816). |
 | `agent:stream:{id}` | `Record<string, unknown>[]` | `agent-stream.ts` | Événements JSONL streamés depuis le processus agent. |
 | `agent:convId:{id}` | `string` | `agent-stream.ts` | `convId` extrait de l'événement `system:init`. |
 | `agent:exit:{id}` | `number \| null` | `agent-stream.ts` | Code de sortie du processus agent. |

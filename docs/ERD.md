@@ -1,6 +1,6 @@
-# KanbAgent — Schéma de base de données (v6)
+# KanbAgent — Schéma de base de données (v7)
 
-> Généré depuis le schéma SQLite v6. À mettre à jour après chaque migration majeure.
+> Généré depuis le schéma SQLite v7. À mettre à jour après chaque migration majeure.
 
 ```mermaid
 erDiagram
@@ -17,6 +17,7 @@ erDiagram
         INTEGER auto_launch
         INTEGER max_sessions
         INTEGER worktree_enabled
+        TEXT preferred_model
         DATETIME created_at
     }
 
@@ -40,6 +41,10 @@ erDiagram
         INTEGER tokens_out
         INTEGER tokens_cache_read
         INTEGER tokens_cache_write
+        TEXT cli_type
+        REAL cost_usd
+        INTEGER duration_ms
+        INTEGER num_turns
         DATETIME started_at
         DATETIME ended_at
         DATETIME updated_at
@@ -121,6 +126,12 @@ erDiagram
         DATETIME updated_at
     }
 
+    tasks_fts {
+        TEXT title
+        TEXT description
+    }
+
+    tasks ||--|| tasks_fts : "FTS index"
     agents ||--o{ sessions : "runs"
     agents ||--o{ tasks : "creates (agent_creator_id)"
     agents ||--o{ tasks : "assigned (agent_assigned_id)"
@@ -194,3 +205,9 @@ erDiagram
 | `task_agents` | `role` | `primary`, `support`, `reviewer` |
 | `task_links` | `type` | `blocks`, `depends_on`, `related_to`, `duplicates` |
 | `agent_logs` | `level` | `info`, `warn`, `error`, `debug` |
+
+## Tables virtuelles
+
+| Table | Type | Description |
+|---|---|---|
+| `tasks_fts` | FTS4 | Full-text search sur `tasks.title` et `tasks.description`. Tables internes associées : `tasks_fts_content`, `tasks_fts_docsize`, `tasks_fts_segdir`, `tasks_fts_segments`, `tasks_fts_stat`. |

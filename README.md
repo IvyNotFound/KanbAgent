@@ -27,19 +27,19 @@ Built for developers who run AI coding agents at scale and need more than a term
 
 ## The Numbers Don't Lie
 
-> **14 calendar days. Solo. While watching anime.**
-> A team of 5 developers would have needed ~3.5 months. One person did it in two weeks.
+> **Started solo. Still going. While watching anime.**
+> A team of 5 developers would have needed ~5.5 months. One person has been shipping it since day one.
 
 ### Estimated scope (from ticket data)
 
-The project manages **1,520 tasks** in its own SQLite database, each tagged with an effort estimate:
+The project manages **1,819 tasks** in its own SQLite database, each tagged with an effort estimate:
 
 | Effort | Definition | Avg. hours | Tickets | Total |
 |--------|-----------|-----------|---------|-------|
-| 1 — Small | < 2h | 1.5h | 678 | 1,017h |
-| 2 — Medium | Half-day (~4h) | 4h | 464 | 1,856h |
-| 3 — Large | > 1 day (~10h) | 10h | 89 | 890h |
-| **Total** | | | **1,231** | **~3,763h** |
+| 1 — Small | < 2h | 1.5h | 865 | 1,297.5h |
+| 2 — Medium | Half-day (~4h) | 4h | 568 | 2,272h |
+| 3 — Large | > 1 day (~10h) | 10h | 97 | 970h |
+| **Total** | | | **1,530** | **~4,539.5h** |
 
 *289 tasks had no effort estimate and are excluded from the calculation.*
 
@@ -47,17 +47,17 @@ The project manages **1,520 tasks** in its own SQLite database, each tagged with
 
 ```
 Team weekly capacity : 5 devs × 5 days × 8h = 200h/week
-Estimated work scope : ~3,763h
-Best-case delivery   : 3,763 ÷ 200 = ~19 weeks ≈ 4.5 months
+Estimated work scope : ~4,540h
+Best-case delivery   : 4,540 ÷ 200 = ~23 weeks ≈ 5.5 months
 ```
 
-That's the best-case scenario: full parallel utilization, zero overhead, no standups, no onboarding, no context switching, no code review lag. Add realistic team overhead (×1.3) and you're looking at **5–6 months**.
+That's the best-case scenario: full parallel utilization, zero overhead, no standups, no onboarding, no context switching, no code review lag. Add realistic team overhead (×1.3) and you're looking at **7+ months**.
 
 ### What actually happened
 
-**First commit: February 24, 2026. Last commit: March 10, 2026. That's 14 days.**
+**First commit: February 24, 2026. The project is still under active development — and picking up speed.**
 
-1,070 commits. 1,520 tickets created, assigned, implemented, reviewed, and closed. One person. Built entirely solo while watching streams or anime on a second monitor.
+1,386 commits. 1,819 tickets created, assigned, implemented, reviewed, and closed. One person. Built entirely solo while watching streams or anime on a second monitor.
 
 The model mix across all sessions: **90% Claude Sonnet 4.6** for the bulk of implementation work, **5% Claude Opus 4.6** for architecture decisions and complex reviews, and **5% MiniMax M2.5** for lightweight tasks — proving the workflow is model-agnostic.
 
@@ -161,7 +161,7 @@ Yes, this is 100% vibe code — and no, the quality didn't suffer. The trick is 
 
 ## Internationalization
 
-KanbAgent is fully translated into 18 languages. All locales ship at **100% coverage** (531 strings).
+KanbAgent is fully translated into 18 languages. All locales ship at **100% coverage** (571 strings).
 
 | Language | Code | Coverage |
 |----------|------|----------|
@@ -351,7 +351,7 @@ KanbAgent/
 │           │   ├── tabs.ts          # Tab management (multi-type)
 │           │   ├── hookEvents.ts    # Hook events feed (live + persisted)
 │           │   └── settings.ts      # Theme, language, GitHub, CLAUDE.md
-│           ├── components/          # Vue components (~46 components)
+│           ├── components/          # Vue components (~53 components)
 │           │   ├── BoardView.vue          # Kanban board
 │           │   ├── TimelineView.vue       # Inter-agent Gantt chart
 │           │   ├── TopologyView.vue       # Force-directed agent graph
@@ -485,7 +485,7 @@ SQL
 
 | Category | Technology |
 |----------|------------|
-| Desktop framework | Electron 40 |
+| Desktop framework | Electron 41 |
 | Build tool | electron-vite 5 |
 | Frontend | Vue 3 + TypeScript 5 |
 | State management | Pinia 3 |
