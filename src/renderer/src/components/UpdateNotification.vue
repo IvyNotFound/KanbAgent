@@ -51,13 +51,23 @@ const versionLabel = computed(() => (info.value?.version ? `v${info.value.versio
       <v-spacer />
 
       <div class="update-actions">
-        <v-btn v-if="status === 'available'" variant="outlined" size="small" @click="download">
+        <v-btn v-if="status === 'available'" variant="outlined" size="small" color="on-primary" @click="download">
           {{ t('update.download') }}
         </v-btn>
-        <v-btn v-if="status === 'downloaded'" variant="outlined" size="small" @click="install">
+        <v-btn
+          v-if="status === 'available'"
+          variant="text"
+          size="small"
+          icon="mdi-close"
+          density="compact"
+          color="on-primary"
+          aria-label="dismiss"
+          @click="dismiss"
+        />
+        <v-btn v-if="status === 'downloaded'" variant="outlined" size="small" color="on-primary" @click="install">
           {{ t('update.restart') }}
         </v-btn>
-        <v-btn v-if="status === 'downloaded'" variant="text" size="small" @click="dismiss">
+        <v-btn v-if="status === 'downloaded'" variant="text" size="small" color="on-primary" @click="dismiss">
           {{ t('update.later') }}
         </v-btn>
         <v-btn
@@ -66,6 +76,7 @@ const versionLabel = computed(() => (info.value?.version ? `v${info.value.versio
           size="small"
           icon="mdi-close"
           density="compact"
+          color="on-primary"
           @click="dismiss"
         />
       </div>

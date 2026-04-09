@@ -99,6 +99,17 @@ describe('UpdateNotification', () => {
     wrapper.unmount()
   })
 
+  it('calls dismiss when close button clicked (available)', async () => {
+    mockStatus.value = 'available'
+    mockInfo.value = { version: '1.0.0' }
+    const wrapper = mountComponent()
+    const buttons = wrapper.findAll('v-btn')
+    // Second button is the dismiss icon
+    await buttons[1].trigger('click')
+    expect(mockDismiss).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it('calls install when restart button clicked (downloaded)', async () => {
     mockStatus.value = 'downloaded'
     mockInfo.value = { version: '1.0.0' }
