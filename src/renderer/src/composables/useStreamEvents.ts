@@ -129,44 +129,17 @@ export function useStreamEvents(terminalId: string) {
     nextTick(() => { if (scrollContainer.value) scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight })
   }
 
-  // ── Hidden-tab eviction (T962) + deferred rendering (T1135/T1855) ────────────
+  // ── Hidden-tab eviction (T962) ──────────────────────────────────────────────
+  // T1865: _html is no longer cleared on deactivation — the ~400KB memory cost
+  // of keeping rendered HTML for ≤200 events is negligible for Electron, and it
+  // eliminates 600-800 synchronous renderMarkdown calls on tab re-activation.
   watch(() => tabsStore.activeTabId === terminalId, (isActive) => {
     if (!isActive) {
-      // T1135: clear rendered _html to free memory — events arriving while hidden
-      // won't have _html (skipped in flushEvents, T1855), so only prior events need clearing.
-      for (const ev of events.value) {
-        if (ev.message?.content) {
-          for (const block of ev.message.content) {
-            if (block._html) block._html = undefined
-          }
-        }
-        if (ev.type === 'text' && ev._html) ev._html = undefined
-      }
       if (events.value.length > MAX_EVENTS_HIDDEN) {
         const evicted = events.value.splice(0, events.value.length - MAX_EVENTS_HIDDEN)
         const evictedIds = new Set(evicted.map(e => e._id))
         for (const key of Object.keys(collapsed.value)) {
           if (evictedIds.has(parseInt(key.split('-')[0], 10))) delete collapsed.value[key]
-        }
-      }
-    } else {
-      // T1135/T1855: render _html for events that were deferred while hidden or cleared on deactivation
-      for (const ev of events.value) {
-        if (ev.message?.content) {
-          // User text blocks use parsePromptContext before rendering (T1864)
-          const isUser = ev.type === 'user'
-          for (const block of ev.message.content) {
-            if (block.type === 'text' && block.text != null && !block._html) {
-              block._html = isUser ? renderMarkdown(parsePromptContext(block.text).base) : renderMarkdown(block.text)
-            } else if (block.type === 'tool_result' && !block._html) {
-              const raw = !block.content ? '' : typeof block.content === 'string' ? block.content : Array.isArray(block.content) ? block.content.map(c => c.text ?? '').join('\n') : String(block.content)
-              const stripped = raw.replace(/\x1B\[[0-9;]*[mGKHF]/g, '')
-              block._html = renderMarkdown(stripped)
-            }
-          }
-        }
-        if (ev.type === 'text' && ev.text != null && !ev._html) {
-          ev._html = renderMarkdown(ev.text)
         }
       }
     }

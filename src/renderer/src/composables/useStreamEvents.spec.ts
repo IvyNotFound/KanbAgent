@@ -485,7 +485,7 @@ describe('useStreamEvents — scrollToBottom / isNearBottom (L78-L87)', () => {
   })
 })
 
-describe('useStreamEvents — hidden-tab eviction + _html clearing (L90-L127)', () => {
+describe('useStreamEvents — hidden-tab eviction + _html persistence (T1865)', () => {
   beforeEach(() => {
     vi.resetModules()
     setActivePinia(createPinia())
@@ -493,7 +493,7 @@ describe('useStreamEvents — hidden-tab eviction + _html clearing (L90-L127)', 
     localStorage.setItem('dbPath', '/test/project.db')
   })
 
-  it('clears _html on text events when tab becomes inactive', async () => {
+  it('preserves _html on text events when tab becomes inactive (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -504,14 +504,14 @@ describe('useStreamEvents — hidden-tab eviction + _html clearing (L90-L127)', 
 
     expect(events.value[0]._html).toBe('<p>hello</p>')
 
-    // Deactivate tab to trigger hidden-tab watcher
+    // Deactivate tab — _html is preserved (T1865: no longer cleared)
     tabsStore.setActive('other-tab')
     await nextTick()
 
-    expect(events.value[0]._html).toBeUndefined()
+    expect(events.value[0]._html).toBe('<p>hello</p>')
   })
 
-  it('clears _html on message content blocks when tab becomes inactive', async () => {
+  it('preserves _html on message content blocks when tab becomes inactive (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -530,7 +530,7 @@ describe('useStreamEvents — hidden-tab eviction + _html clearing (L90-L127)', 
     tabsStore.setActive('other-tab')
     await nextTick()
 
-    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+    expect(events.value[0].message?.content[0]._html).toBe('<p>block text</p>')
   })
 
   it('evicts to MAX_EVENTS_HIDDEN when tab becomes inactive with >200 events', async () => {
@@ -588,7 +588,7 @@ describe('useStreamEvents — hidden-tab eviction + _html clearing (L90-L127)', 
     expect(collapsed.value[`${earlyId}-tool`]).toBeUndefined()
   })
 
-  it('re-renders _html when tab becomes active again (text event)', async () => {
+  it('_html persists through deactivation/reactivation cycle (text event, T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -596,18 +596,18 @@ describe('useStreamEvents — hidden-tab eviction + _html clearing (L90-L127)', 
     enqueueEvent({ type: 'text', text: 'reactivate me' })
     await nextTick()
 
-    // Deactivate (clears _html)
+    // Deactivate — _html preserved (T1865)
     tabsStore.setActive('other-tab')
     await nextTick()
-    expect(events.value[0]._html).toBeUndefined()
+    expect(events.value[0]._html).toBe('<p>reactivate me</p>')
 
-    // Re-activate (re-renders _html)
+    // Re-activate — no re-render needed
     tabsStore.setActive('tab-1')
     await nextTick()
     expect(events.value[0]._html).toBe('<p>reactivate me</p>')
   })
 
-  it('re-renders _html for message text blocks when tab becomes active', async () => {
+  it('_html persists through deactivation/reactivation cycle (message text block, T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -620,7 +620,7 @@ describe('useStreamEvents — hidden-tab eviction + _html clearing (L90-L127)', 
 
     tabsStore.setActive('other-tab')
     await nextTick()
-    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+    expect(events.value[0].message?.content[0]._html).toBe('<p>block</p>')
 
     tabsStore.setActive('tab-1')
     await nextTick()
@@ -897,7 +897,7 @@ describe('useStreamEvents — ANSI sanitisation on re-render (L115-L117)', () =>
     localStorage.setItem('dbPath', '/test/project.db')
   })
 
-  it('strips ANSI color codes from tool_result on tab re-activation', async () => {
+  it('strips ANSI color codes from tool_result on initial render (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -908,17 +908,17 @@ describe('useStreamEvents — ANSI sanitisation on re-render (L115-L117)', () =>
     })
     await nextTick()
 
-    // Deactivate (clears _html)
+    // ANSI stripped during initial flush — renderMarkdown called without escape sequences
+    expect(renderMarkdown).toHaveBeenLastCalledWith(expect.not.stringContaining('\x1B'))
+    expect(events.value[0].message?.content[0]._html).toBeDefined()
+
+    // _html persists through deactivation/reactivation (T1865)
     tabsStore.setActive('other-tab')
     await nextTick()
-    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+    expect(events.value[0].message?.content[0]._html).toBeDefined()
 
-    // Re-activate — should strip ANSI before re-rendering
     tabsStore.setActive('tab-1')
     await nextTick()
-
-    // renderMarkdown mock returns <p>text</p>, ANSI should have been stripped before calling it
-    expect(renderMarkdown).toHaveBeenLastCalledWith(expect.not.stringContaining('\x1B'))
     expect(events.value[0].message?.content[0]._html).toBeDefined()
   })
 
@@ -963,7 +963,7 @@ describe('useStreamEvents — ANSI sanitisation on re-render (L115-L117)', () =>
     expect(events.value[0].message?.content[0]._html).toBe('<p>plain text no ansi</p>')
   })
 
-  it('re-renders tool_result with array content on tab re-activation', async () => {
+  it('tool_result with array content preserves _html through tab cycle (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -977,14 +977,17 @@ describe('useStreamEvents — ANSI sanitisation on re-render (L115-L117)', () =>
     })
     await nextTick()
 
+    // ANSI stripped during initial flush
+    expect(renderMarkdown).toHaveBeenLastCalledWith('green')
+    expect(events.value[0].message?.content[0]._html).toBeDefined()
+
+    // _html persists through deactivation/reactivation (T1865)
     tabsStore.setActive('other-tab')
     await nextTick()
-    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+    expect(events.value[0].message?.content[0]._html).toBeDefined()
 
     tabsStore.setActive('tab-1')
     await nextTick()
-
-    expect(renderMarkdown).toHaveBeenLastCalledWith('green')
     expect(events.value[0].message?.content[0]._html).toBeDefined()
   })
 })
@@ -1217,7 +1220,7 @@ describe('useStreamEvents — HTML rendering at re-activation: _html null vs dé
     expect(events.value[0].message?.content[0]._html).toBeDefined()
   })
 
-  it('re-renders tool_result block when _html is undefined on re-activation (L115)', async () => {
+  it('tool_result _html set during initial flush persists through tab cycle (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -1228,15 +1231,16 @@ describe('useStreamEvents — HTML rendering at re-activation: _html null vs dé
     })
     await nextTick()
 
-    // Manually clear _html to simulate what deactivation does
-    events.value[0].message!.content[0]._html = undefined
+    expect(events.value[0].message?.content[0]._html).toBe('<p>output</p>')
 
+    // T1865: _html persists — no clearing on deactivation, no re-render on activation
     tabsStore.setActive('other-tab')
     await nextTick()
+    expect(events.value[0].message?.content[0]._html).toBe('<p>output</p>')
+
     tabsStore.setActive('tab-1')
     await nextTick()
-
-    expect(events.value[0].message?.content[0]._html).toBeDefined()
+    expect(events.value[0].message?.content[0]._html).toBe('<p>output</p>')
   })
 })
 
@@ -1695,8 +1699,8 @@ describe('useStreamEvents — re-activation conditions (L113/L115/L122)', () => 
     expect(events.value[0].message?.content[0]._html).toBeUndefined()
   })
 
-  // Kill 838 ConditionalExpression L113:17 → true — text block always re-renders
-  it('re-activation: text block with _html already set is NOT re-rendered (skip if _html defined)', async () => {
+  // T1865: _html no longer cleared on deactivation — no re-render needed on activation
+  it('text block _html persists through deactivation — no re-render on activation (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -1707,21 +1711,19 @@ describe('useStreamEvents — re-activation conditions (L113/L115/L122)', () => 
     })
     await nextTick()
 
-    // Deactivate clears _html
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+
+    // Deactivate — _html preserved (T1865)
     tabsStore.setActive('other-tab')
     await nextTick()
-    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+    expect(events.value[0].message?.content[0]._html).toBe('<p>hello</p>')
 
-    // Manually pre-set _html so the guard !block._html is false
-    events.value[0].message!.content[0]._html = '<p>cached</p>'
-
-    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+    // Reactivate — no renderMarkdown call
     tabsStore.setActive('tab-1')
     await nextTick()
 
-    // Since _html is already defined, renderMarkdown should NOT be called again
     expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
-    expect(events.value[0].message?.content[0]._html).toBe('<p>cached</p>')
+    expect(events.value[0].message?.content[0]._html).toBe('<p>hello</p>')
   })
 
   // Kill 841 ConditionalExpression L113:42 → true — block.text != null always true
@@ -1745,10 +1747,8 @@ describe('useStreamEvents — re-activation conditions (L113/L115/L122)', () => 
     expect(events.value[0].message?.content[0]._html).toBeUndefined()
   })
 
-  // Kill 845 ConditionalExpression L115:24 → true — tool_result re-render check
-  // Kill 847 LogicalOperator L115:24 → tool_result || !_html
-  // Kill 848 ConditionalExpression L115:24 → true (block.type === 'tool_result')
-  it('re-activation: tool_result block with _html already defined is NOT re-rendered', async () => {
+  // T1865: _html no longer cleared on deactivation — tool_result _html persists
+  it('tool_result block _html persists through deactivation — no re-render on activation (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -1759,19 +1759,17 @@ describe('useStreamEvents — re-activation conditions (L113/L115/L122)', () => 
     })
     await nextTick()
 
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+
     tabsStore.setActive('other-tab')
     await nextTick()
-    expect(events.value[0].message?.content[0]._html).toBeUndefined()
+    expect(events.value[0].message?.content[0]._html).toBe('<p>output</p>')
 
-    // Pre-set _html — re-activation should skip rendering
-    events.value[0].message!.content[0]._html = '<p>cached tool</p>'
-
-    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
     tabsStore.setActive('tab-1')
     await nextTick()
 
     expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
-    expect(events.value[0].message?.content[0]._html).toBe('<p>cached tool</p>')
+    expect(events.value[0].message?.content[0]._html).toBe('<p>output</p>')
   })
 
   // Kill 856 ConditionalExpression L116:49 → false — re-activation tool_result null content
@@ -1842,8 +1840,8 @@ describe('useStreamEvents — re-activation conditions (L113/L115/L122)', () => 
     expect(renderMarkdown).toHaveBeenLastCalledWith('99')
   })
 
-  // Kill 872 ConditionalExpression L122:13 → true — ev.type=text && ev.text!=null && !ev._html check
-  it('re-activation: top-level text event with _html already defined is NOT re-rendered', async () => {
+  // T1865: top-level text _html persists through deactivation — no re-render on activation
+  it('top-level text event _html persists through deactivation — no re-render on activation (T1865)', async () => {
     const tabsStore = await makeTabsStore('tab-1')
     const { useStreamEvents } = await import('@renderer/composables/useStreamEvents')
     const { events, enqueueEvent } = useStreamEvents('tab-1')
@@ -1851,19 +1849,17 @@ describe('useStreamEvents — re-activation conditions (L113/L115/L122)', () => 
     enqueueEvent({ type: 'text', text: 'already cached' })
     await nextTick()
 
+    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
+
     tabsStore.setActive('other-tab')
     await nextTick()
-    expect(events.value[0]._html).toBeUndefined()
+    expect(events.value[0]._html).toBe('<p>already cached</p>')
 
-    // Pre-set _html before re-activation
-    events.value[0]._html = '<p>my cached</p>'
-
-    const callsBefore = (renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length
     tabsStore.setActive('tab-1')
     await nextTick()
 
     expect((renderMarkdown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore)
-    expect(events.value[0]._html).toBe('<p>my cached</p>')
+    expect(events.value[0]._html).toBe('<p>already cached</p>')
   })
 
   it('re-activation: type=result top-level event is NOT re-rendered (type guard)', async () => {
