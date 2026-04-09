@@ -203,6 +203,9 @@ async function handleLifecycleEvent(
 /** Default timeout for pending permission requests (ms). */
 const PERMISSION_TIMEOUT_MS = 120_000
 
+/** Maximum number of concurrent pending permission requests. Beyond this, new requests are denied immediately. */
+export const MAX_PENDING_PERMISSIONS = 50
+
 interface PendingPermission {
   resolve: (decision: PermissionDecision) => void
   timer: ReturnType<typeof setTimeout>
@@ -239,6 +242,20 @@ function handlePermissionRequest(
   payload: Record<string, unknown>,
   res: http.ServerResponse
 ): void {
+  // Cap concurrent pending permissions to prevent unbounded timer/closure accumulation
+  if (pendingPermissions.size >= MAX_PENDING_PERMISSIONS) {
+    console.warn(`[hookServer] PermissionRequest denied: ${pendingPermissions.size} pending (max ${MAX_PENDING_PERMISSIONS})`)
+    const body = JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PermissionRequest',
+        decision: { behavior: 'deny', reason: 'Too many pending permission requests' },
+      },
+    })
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(body)
+    return
+  }
+
   const permissionId = `perm_${Date.now()}_${++permissionCounter}`
   const toolName = (payload.tool_name as string) ?? 'unknown'
   const toolInput = (payload.tool_input as Record<string, unknown>) ?? {}

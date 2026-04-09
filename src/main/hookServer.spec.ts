@@ -2,7 +2,7 @@
  * Tests for hookServer — JSONL transcript parsing (T737) + exports (T741) + WSL fix (T858)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls, resolvePermission, pendingPermissions } from './hookServer'
+import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls, resolvePermission, pendingPermissions, MAX_PENDING_PERMISSIONS } from './hookServer'
 
 // ── Hoisted mocks (must be declared before vi.mock, which are hoisted) ────────
 const { mockNetworkInterfaces, mockReadFile, mockWriteFile, mockMkdir, mockExecSync } = vi.hoisted(() => ({
@@ -426,5 +426,29 @@ describe('resolvePermission', () => {
 
     expect(clearSpy).toHaveBeenCalledWith(timer)
     clearSpy.mockRestore()
+  })
+})
+
+// ── MAX_PENDING_PERMISSIONS (T1853) ──────────────────────────────────────────
+
+describe('MAX_PENDING_PERMISSIONS', () => {
+  afterEach(() => {
+    for (const [id, p] of pendingPermissions) {
+      clearTimeout(p.timer)
+      pendingPermissions.delete(id)
+    }
+  })
+
+  it('exports MAX_PENDING_PERMISSIONS as 50', () => {
+    expect(MAX_PENDING_PERMISSIONS).toBe(50)
+  })
+
+  it('pendingPermissions map enforces no hard limit itself (guard is in handlePermissionRequest)', () => {
+    // Fill the map to capacity to verify the constant is usable as a threshold
+    for (let i = 0; i < MAX_PENDING_PERMISSIONS; i++) {
+      const timer = setTimeout(() => {}, 60_000)
+      pendingPermissions.set(`cap-test-${i}`, { resolve: () => {}, timer })
+    }
+    expect(pendingPermissions.size).toBe(MAX_PENDING_PERMISSIONS)
   })
 })

@@ -38,7 +38,7 @@ vi.mock('./hookServer-inject', async (importOriginal) => {
 
 // ── Import module ─────────────────────────────────────────────────────────────
 
-const { startHookServer, setHookWindow } = await import('./hookServer')
+const { startHookServer, setHookWindow, pendingPermissions, MAX_PENDING_PERMISSIONS } = await import('./hookServer')
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -349,6 +349,58 @@ describe('handleStop via HTTP', () => {
     await new Promise((r) => setTimeout(r, 100))
     expect(mockAssertDbPathAllowed).toHaveBeenCalled()
     expect(mockWriteDb).not.toHaveBeenCalled()
+  })
+})
+
+// ── Permission request cap (T1853) ───────────────────────────────────────────
+
+describe('handlePermissionRequest — cap at MAX_PENDING_PERMISSIONS', () => {
+  let server: http.Server
+  let port: number
+
+  beforeEach(async () => {
+    vi.resetAllMocks()
+    mockGetHookSecret.mockReturnValue('test-secret-abc123')
+    ;[server, port] = await createTestServer()
+
+    // Set up a fake window so the handler doesn't short-circuit on "no renderer"
+    const fakeWin = {
+      isDestroyed: vi.fn().mockReturnValue(false),
+      webContents: { send: mockWebContentsSend },
+    } as unknown as import('electron').BrowserWindow
+    setHookWindow(fakeWin)
+  })
+
+  afterEach(async () => {
+    // Clean up pending permissions
+    for (const [id, p] of pendingPermissions) {
+      clearTimeout(p.timer)
+      pendingPermissions.delete(id)
+    }
+    setHookWindow(null as unknown as import('electron').BrowserWindow)
+    await new Promise<void>((r) => server.close(() => r()))
+  })
+
+  it('denies immediately when pendingPermissions is at capacity', async () => {
+    // Fill the map to capacity with dummy entries
+    for (let i = 0; i < MAX_PENDING_PERMISSIONS; i++) {
+      const timer = setTimeout(() => {}, 120_000)
+      pendingPermissions.set(`fill-${i}`, { resolve: () => {}, timer })
+    }
+    expect(pendingPermissions.size).toBe(MAX_PENDING_PERMISSIONS)
+
+    // This request should be denied immediately (not block)
+    const { status, body } = await makeRequest(port, {
+      path: '/hooks/permission-request',
+      body: { tool_name: 'Write', tool_input: { path: '/foo' } },
+    })
+
+    expect(status).toBe(200)
+    const parsed = JSON.parse(body)
+    expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny')
+    expect(parsed.hookSpecificOutput.decision.reason).toContain('Too many pending')
+    // Map should not have grown
+    expect(pendingPermissions.size).toBe(MAX_PENDING_PERMISSIONS)
   })
 })
 
