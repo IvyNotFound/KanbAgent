@@ -15,10 +15,10 @@ const emit = defineEmits<{
 }>()
 
 const STATUS_STYLE: Record<string, { color: string; background: string; border: string }> = {
-  todo:        { color: 'rgb(var(--v-theme-warning))',   background: 'rgba(var(--v-theme-warning),0.12)',   border: 'rgba(var(--v-theme-warning),0.3)' },
-  in_progress: { color: 'rgb(var(--v-theme-secondary))', background: 'rgba(var(--v-theme-secondary),0.12)', border: 'rgba(var(--v-theme-secondary),0.3)' },
-  done:        { color: 'rgb(var(--v-theme-content-muted))', background: 'rgba(var(--v-theme-content-subtle),0.12)', border: 'rgba(var(--v-theme-content-subtle),0.3)' },
-  archived:    { color: 'rgb(var(--v-theme-content-subtle))', background: 'rgba(var(--v-theme-content-faint),0.12)', border: 'rgba(var(--v-theme-content-faint),0.3)' },
+  todo:        { color: 'rgb(var(--v-theme-chip-todo))',        background: 'rgba(var(--v-theme-chip-todo),0.12)',        border: 'rgba(var(--v-theme-chip-todo),0.3)' },
+  in_progress: { color: 'rgb(var(--v-theme-chip-in-progress))', background: 'rgba(var(--v-theme-chip-in-progress),0.12)', border: 'rgba(var(--v-theme-chip-in-progress),0.3)' },
+  done:        { color: 'rgb(var(--v-theme-chip-done))',        background: 'rgba(var(--v-theme-chip-done),0.12)',        border: 'rgba(var(--v-theme-chip-done),0.3)' },
+  archived:    { color: 'rgb(var(--v-theme-chip-archived))',    background: 'rgba(var(--v-theme-chip-archived),0.12)',    border: 'rgba(var(--v-theme-chip-archived),0.3)' },
 }
 
 const fallbackStatus = STATUS_STYLE.todo
