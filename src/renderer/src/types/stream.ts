@@ -23,7 +23,7 @@ export interface StreamContentBlock {
 }
 
 export interface StreamEvent {
-  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error' | 'error:spawn' | 'error:stderr' | 'error:exit' | 'ask_user'
+  type: 'system' | 'user' | 'assistant' | 'result' | 'text' | 'error' | 'error:spawn' | 'error:stderr' | 'error:exit' | 'ask_user' | 'permission_request'
   subtype?: string
   session_id?: string
   message?: {
@@ -43,4 +43,12 @@ export interface StreamEvent {
   _id?: number
   /** Pre-rendered HTML for type: 'text' events — computed once in flushEvents() (T1197) */
   _html?: string
+
+  // ── Permission request fields (T1817) ───────────────────────────────────────
+  /** Unique ID for correlating a permission request with its response. */
+  permission_id?: string
+  /** Tool name that requires permission (e.g. "Bash", "Write", "Edit"). */
+  tool_name?: string
+  /** Tool input arguments for the permission request. */
+  tool_input?: Record<string, unknown>
 }

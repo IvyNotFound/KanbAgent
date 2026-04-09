@@ -607,7 +607,15 @@
     "ctx": "ctx",
     "inputPlaceholder": "Send a message…",
     "askQuestion": "Agent question",
-    "replyPlaceholder": "Reply to agent…"
+    "replyPlaceholder": "Reply to agent…",
+    "permissionRequired": "Permission Required",
+    "permissionTool": "Tool: {tool}",
+    "permissionAllow": "Allow",
+    "permissionDeny": "Deny",
+    "permissionAllowed": "✓ Allowed: {tool}",
+    "permissionDenied": "✗ Denied: {tool}",
+    "permissionShowArgs": "Show arguments",
+    "permissionHideArgs": "Hide arguments"
   },
   "task": {
     "running": "Task in progress",

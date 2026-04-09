@@ -24,6 +24,8 @@ import { useCopyCode } from '@renderer/composables/useCopyCode'
 import HookEventBar from './HookEventBar.vue'
 import StreamToolBlock from './StreamToolBlock.vue'
 import StreamInputBar from './StreamInputBar.vue'
+import PermissionRequestBanner from './PermissionRequestBanner.vue'
+import type { PendingPermission } from './PermissionRequestBanner.vue'
 import githubDarkUrl from 'highlight.js/styles/github-dark.css?url'
 import githubUrl from 'highlight.js/styles/github.css?url'
 
@@ -80,6 +82,8 @@ const ptyId = ref<string | null>(null)
 const agentStopped = ref(false)
 /** T1772: prefill answer from AskUserQuestion option chip click */
 const prefillAnswer = ref<string | undefined>(undefined)
+/** T1817: pending permission requests awaiting user decision */
+const pendingPermissions = ref<PendingPermission[]>([])
 
 function handleSelectOption(label: string): void {
   prefillAnswer.value = label
@@ -271,11 +275,35 @@ function handleStop(): void {
   window.electronAPI.agentKill(ptyId.value)
 }
 
+/** T1817: handle user Allow/Deny decision on a permission request */
+async function handlePermissionRespond(permissionId: string, behavior: 'allow' | 'deny'): Promise<void> {
+  const perm = pendingPermissions.value.find(p => p.permission_id === permissionId)
+  if (!perm) return
+
+  await window.electronAPI.permissionRespond(permissionId, behavior)
+
+  // Remove from pending list
+  pendingPermissions.value = pendingPermissions.value.filter(p => p.permission_id !== permissionId)
+
+  // Push a synthetic user event showing the decision in the stream
+  const label = behavior === 'allow'
+    ? t('stream.permissionAllowed', { tool: perm.tool_name })
+    : t('stream.permissionDenied', { tool: perm.tool_name })
+  const userEvent: StreamEvent = {
+    type: 'user',
+    message: { role: 'user', content: [{ type: 'text', text: label }] },
+  }
+  assignEventId(userEvent)
+  events.value.push(userEvent)
+  scrollToBottom(true)
+}
+
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 let unsubStreamMessage: (() => void) | null = null
 let unsubConvId: (() => void) | null = null
 let unsubExit: (() => void) | null = null
+let unsubPermission: (() => void) | null = null
 
 onMounted(async () => {
   const tab = tabsStore.tabs.find(t => t.id === props.terminalId)
@@ -305,6 +333,18 @@ onMounted(async () => {
       enqueueEvent(raw)
     })
     unsubConvId = window.electronAPI.onAgentConvId(id, (convId: string) => { sessionId.value = convId })
+
+    // T1817: subscribe to permission requests — filter by session_id match
+    unsubPermission = window.electronAPI.onPermissionRequest((data) => {
+      if (sessionId.value && data.session_id !== sessionId.value) return
+      pendingPermissions.value.push({
+        permission_id: data.permission_id,
+        tool_name: data.tool_name,
+        tool_input: data.tool_input,
+      })
+      scrollToBottom(true)
+    })
+
     unsubExit = window.electronAPI.onAgentExit(id, (_exitCode: number | null) => {
       if (isStreaming.value) { const e: StreamEvent = { type: 'result' }; assignEventId(e); events.value.push(e) }
       // Auto-close all agent tabs on process exit (T1820)
@@ -350,7 +390,7 @@ function handleLinkClick(e: MouseEvent): void {
 }
 
 onUnmounted(() => {
-  unsubStreamMessage?.(); unsubConvId?.(); unsubExit?.()
+  unsubStreamMessage?.(); unsubConvId?.(); unsubExit?.(); unsubPermission?.()
   scrollContainer.value?.removeEventListener('click', handleLinkClick, true)
   tabsStore.setStreamId(props.terminalId, null)
   if (ptyId.value && !agentStopped.value) window.electronAPI.agentKill(ptyId.value)
@@ -530,6 +570,16 @@ onUnmounted(() => {
 
     <!-- Hook events bar (T742) -->
     <HookEventBar :session-id="sessionId" />
+
+    <!-- T1817: Permission request banner — shown when CLI awaits user approval -->
+    <PermissionRequestBanner
+      v-for="perm in pendingPermissions"
+      :key="perm.permission_id"
+      :permission="perm"
+      :accent-fg="accentFg"
+      :accent-text="accentText"
+      @respond="handlePermissionRespond"
+    />
 
     <!-- Input bar — delegated to StreamInputBar (T816) -->
     <StreamInputBar

@@ -81,6 +81,9 @@ const mockElectronAPI = {
   onAgentConvId: vi.fn(() => () => {}),
   onAgentExit: vi.fn(() => () => {}),
   onHookEvent: vi.fn(() => () => {}),
+  // Permission request IPC (T1816/T1817)
+  permissionRespond: vi.fn().mockResolvedValue(true),
+  onPermissionRequest: vi.fn(() => () => {}),
   // Agent groups IPC (T556/T557)
   agentGroupsList: vi.fn().mockResolvedValue({ success: true, groups: [] }),
   agentGroupsCreate: vi.fn().mockResolvedValue({ success: true, group: { id: 1, name: 'New Group', sort_order: 0, created_at: '' } }),

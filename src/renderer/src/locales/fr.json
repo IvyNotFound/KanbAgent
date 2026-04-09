@@ -599,7 +599,15 @@
     "ctx": "ctx",
     "inputPlaceholder": "Envoyer un message…",
     "askQuestion": "Question de l'agent",
-    "replyPlaceholder": "Répondre à l'agent…"
+    "replyPlaceholder": "Répondre à l'agent…",
+    "permissionRequired": "Autorisation requise",
+    "permissionTool": "Outil : {tool}",
+    "permissionAllow": "Autoriser",
+    "permissionDeny": "Refuser",
+    "permissionAllowed": "✓ Autorisé : {tool}",
+    "permissionDenied": "✗ Refusé : {tool}",
+    "permissionShowArgs": "Voir les arguments",
+    "permissionHideArgs": "Masquer les arguments"
   },
   "task": {
     "running": "Tâche en cours d'exécution",
