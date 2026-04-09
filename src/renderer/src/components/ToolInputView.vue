@@ -196,6 +196,25 @@ function applyCharHighlights(lines: DiffLine[]): void {
   }
 }
 
+const TODO_MAX_ITEMS = 30
+
+function todoStatusIcon(status: string): string {
+  switch (status) {
+    case 'completed': return 'mdi-check-circle'
+    case 'in_progress': return 'mdi-progress-clock'
+    default: return 'mdi-circle-outline'
+  }
+}
+
+function todoStatusColor(status: string): string {
+  const isLight = settings.theme === 'light'
+  switch (status) {
+    case 'completed': return isLight ? 'rgb(21, 128, 61)' : 'rgb(74, 222, 128)'
+    case 'in_progress': return '#fb923c'
+    default: return isLight ? 'rgb(120, 113, 108)' : 'rgb(161, 161, 170)'
+  }
+}
+
 const MAX_DIFF_LINES = 80
 
 function diffLines(input: Record<string, unknown>): DiffLine[] {
@@ -336,6 +355,32 @@ function writeLines(input: Record<string, unknown>): DiffLine[] {
     <div v-if="toolInput.description" class="tool-meta">{{ toolInput.description }}</div>
   </template>
 
+  <!-- TodoWrite: visual checklist (T1823) -->
+  <template v-else-if="toolName === 'TodoWrite'">
+    <div v-if="Array.isArray(toolInput.todos)" class="todo-list">
+      <div
+        v-for="(todo, idx) in (toolInput.todos as Array<Record<string, unknown>>).slice(0, TODO_MAX_ITEMS)"
+        :key="idx"
+        class="todo-item"
+      >
+        <v-icon
+          size="16"
+          :color="todoStatusColor(String(todo.status ?? 'pending'))"
+          class="todo-icon"
+        >
+          {{ todoStatusIcon(String(todo.status ?? 'pending')) }}
+        </v-icon>
+        <span
+          class="todo-content"
+          :class="{ 'todo-done': todo.status === 'completed' }"
+        >{{ todo.content }}</span>
+      </div>
+      <div v-if="(toolInput.todos as unknown[]).length > TODO_MAX_ITEMS" class="tool-meta">
+        ({{ (toolInput.todos as unknown[]).length - TODO_MAX_ITEMS }} more items)
+      </div>
+    </div>
+  </template>
+
   <!-- Fallback: raw JSON for unknown/MCP tools -->
   <template v-else>
     <pre>{{ toolInputPreview(toolInput) }}</pre>
@@ -433,6 +478,37 @@ pre {
   opacity: 0.7;
   margin-right: 4px;
   font-weight: bold;
+}
+
+/* TodoWrite checklist (T1823) */
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 2px 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.todo-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.todo-content {
+  color: var(--content-primary);
+}
+
+.todo-done {
+  text-decoration: line-through;
+  opacity: 0.55;
 }
 
 /* Intra-line char highlight for substitution pairs */
