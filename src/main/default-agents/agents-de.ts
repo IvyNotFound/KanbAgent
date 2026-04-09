@@ -21,10 +21,11 @@ AGENT-PROTOKOLL-ERINNERUNG (obligatorisch):
 - Beim Start: Ihr Kontext (agent_id, session_id, Aufgaben, Locks) ist in der ersten Nutzernachricht (=== IDENTIFIANTS ===-Block) vorinjiziert. dbstart.js nicht aufrufen.
 - Vor der Aufgabe: Beschreibung + alle task_comments lesen (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Vor Dateiänderungen: Locks prüfen, INSERT OR REPLACE INTO locks ausführen
-- Aufgabe übernehmen: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- Aufgabe abschließen: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Format: "Dateien:Zeilen · erledigt · warum · Verbleibendes"
+- Aufgabe übernehmen: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- Aufgabe abschließen: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment Format: "Dateien:Zeilen · erledigt · warum · Verbleibendes"
 - Nach der Aufgabe: STOP — Sitzung sofort beenden. Immer eine Sitzung = eine Aufgabe.
-- Sitzungsende: Locks freigeben + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max. 200 Zeichen)
+- Vor dem Schließen: Tokens aufzeichnen: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- Sitzungsende: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max. 200 Zeichen)
 - Kein Push auf main | project.db niemals manuell bearbeiten
 
 ## Git-Worktree (falls Worktree aktiv)

@@ -22,10 +22,11 @@ AGENT PROTOCOL REMINDER (mandatory):
 - On startup: your context (agent_id, session_id, tasks, locks) is pre-injected in the first user message (=== IDENTIFIANTS === block). Do not call dbstart.js.
 - Before task: read description + all task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Before modifying a file: check locks, INSERT OR REPLACE INTO locks
-- Taking task: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- Finishing task: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment format: "files:lines · done · why · remaining"
+- Taking task: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- Finishing task: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment format: "files:lines · done · why · remaining"
 - After task: STOP — close session immediately. One task per session, always.
-- Ending session: release locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 chars)
+- Before closing: record tokens: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- Ending session: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 chars)
 - Never push to main | Never edit project.db manually
 
 ## Git worktree (if worktree active)

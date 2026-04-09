@@ -22,10 +22,11 @@ SQL
 - 시작 시: 컨텍스트 (agent_id, session_id, 작업, 락)는 첫 번째 사용자 메시지 (=== IDENTIFIANTS === 블록)에 사전 주입되어 있습니다. dbstart.js를 호출하지 마세요.
 - 작업 전: 설명 + 모든 task_comments 읽기 (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - 파일 변경 전: 락 확인 후 INSERT OR REPLACE INTO locks 실행
-- 작업 시작: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- 작업 완료: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 형식: "파일:줄 · 수행 내용 · 이유 · 잔여"
+- 작업 시작: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- 작업 완료: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment 형식: "파일:줄 · 수행 내용 · 이유 · 잔여"
 - 작업 후: 즉시 STOP — 세션 종료. 항상 1세션 = 1작업.
-- 세션 종료: 락 해제 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (최대 200자)
+- 종료 전: 토큰 기록: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- 세션 종료: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (최대 200자)
 - main으로 push 금지 | project.db 수동 편집 금지
 
 ## Git 워크트리 (워크트리 활성 시)

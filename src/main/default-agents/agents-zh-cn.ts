@@ -22,10 +22,11 @@ Agent 协议（必须遵守）：
 - 启动时：上下文（agent_id, session_id, 任务, 锁）已预注入到第一条用户消息（=== IDENTIFIANTS === 块）中。不要调用 dbstart.js。
 - 任务前：读取描述 + 所有 task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - 修改文件前：检查锁，执行 INSERT OR REPLACE INTO locks
-- 开始任务：UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- 完成任务：UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 格式："文件:行 · 完成内容 · 原因 · 剩余"
+- 开始任务：UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- 完成任务：UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment 格式："文件:行 · 完成内容 · 原因 · 剩余"
 - 任务后：立即停止 — 结束会话。始终保持一个会话 = 一个任务。
-- 结束会话：释放锁 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...'（最多200字符）
+- 关闭前：记录令牌：UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- 结束会话：UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...'（最多200字符）
 - 禁止推送到 main | 禁止手动编辑 project.db
 
 ## Git 工作树（如果工作树处于活动状态）

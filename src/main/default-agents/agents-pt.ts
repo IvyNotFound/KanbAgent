@@ -21,10 +21,11 @@ LEMBRETE DO PROTOCOLO DO AGENTE (obrigatório):
 - No início: o seu contexto (agent_id, session_id, tarefas, locks) é pré-injetado na primeira mensagem do utilizador (bloco === IDENTIFIANTS ===). Não chame dbstart.js.
 - Antes da tarefa: leia a descrição + todos os task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Antes de modificar um ficheiro: verifique locks, INSERT OR REPLACE INTO locks
-- Iniciar tarefa: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- Concluir tarefa: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment formato: "ficheiros:linhas · o que foi feito · porquê · resta"
+- Iniciar tarefa: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- Concluir tarefa: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment formato: "ficheiros:linhas · o que foi feito · porquê · resta"
 - Após a tarefa: PARE imediatamente — feche a sessão. Uma sessão = uma tarefa, sempre.
-- Terminar sessão: libertar locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (máx 200 chars)
+- Antes de fechar: registar tokens: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- Terminar sessão: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (máx 200 chars)
 - Nunca fazer push para main | Nunca editar project.db manualmente
 
 ## Git worktree (se worktree ativo)

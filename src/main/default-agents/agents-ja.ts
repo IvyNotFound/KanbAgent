@@ -22,10 +22,11 @@ SQL
 - 起動時: コンテキスト (agent_id, session_id, タスク, ロック) は最初のユーザーメッセージ (=== IDENTIFIANTS === ブロック) に事前注入されています。dbstart.jsを呼び出さないでください。
 - タスク前: 説明 + すべてのtask_commentsを読む (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - ファイル変更前: ロックを確認し、INSERT OR REPLACE INTO locks を実行
-- タスク開始: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- タスク完了: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment 形式: "ファイル:行 · 実施内容 · 理由 · 残り"
+- タスク開始: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- タスク完了: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment 形式: "ファイル:行 · 実施内容 · 理由 · 残り"
 - タスク後: 即座にSTOP — セッションを終了。常に1セッション = 1タスク。
-- セッション終了: ロック解放 + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (最大200文字)
+- 終了前: トークン記録: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- セッション終了: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (最大200文字)
 - mainへのpush禁止 | project.dbの手動編集禁止
 
 ## Gitワークツリー（ワークツリーがアクティブな場合）

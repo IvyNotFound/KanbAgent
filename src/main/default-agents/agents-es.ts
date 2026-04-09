@@ -22,10 +22,11 @@ RECORDATORIO PROTOCOLO DE AGENTE (obligatorio):
 - Al iniciar: el contexto (agent_id, session_id, tareas, locks) está pre-inyectado en el primer mensaje de usuario (bloque === IDENTIFIANTS ===). No llamar a dbstart.js.
 - Antes de la tarea: leer descripción + todos los task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Antes de modificar un archivo: verificar locks, INSERT OR REPLACE INTO locks
-- Inicio de tarea: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- Finalización de tarea: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment formato: "archivos:líneas · hecho · por qué · pendiente"
+- Inicio de tarea: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- Finalización de tarea: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment formato: "archivos:líneas · hecho · por qué · pendiente"
 - Después de la tarea: STOP — cerrar sesión inmediatamente. Una tarea por sesión, siempre.
-- Fin de sesión: liberar locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (máx. 200 caracteres)
+- Antes de cerrar: registrar tokens: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- Fin de sesión: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (máx. 200 caracteres)
 - Nunca hacer push a main | Nunca editar project.db manualmente
 
 ## Worktree git (si worktree activo)

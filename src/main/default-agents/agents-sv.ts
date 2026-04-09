@@ -21,10 +21,11 @@ AGENTPROTOKOLLPÅMINNELSE (obligatorisk):
 - Vid start: Din kontext (agent_id, session_id, uppgifter, lås) är förinjicerad i det första användarmeddelandet (=== IDENTIFIANTS ===-blocket). Anropa inte dbstart.js.
 - Innan uppgiften: Läs beskrivning + alla task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Innan filändringar: Kontrollera lås, kör INSERT OR REPLACE INTO locks
-- Ta uppgiften: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- Avsluta uppgiften: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Format: "filer:rader · klart · varför · återstår"
+- Ta uppgiften: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- Avsluta uppgiften: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment Format: "filer:rader · klart · varför · återstår"
 - Efter uppgiften: STOPP — stäng sessionen omedelbart. Alltid en session = en uppgift.
-- Sessionsavslut: Frigör lås + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 tecken)
+- Före stängning: registrera tokens: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- Sessionsavslut: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (max 200 tecken)
 - Pusha aldrig till main | Redigera aldrig project.db manuellt
 
 ## Git-worktree (om worktree aktiv)

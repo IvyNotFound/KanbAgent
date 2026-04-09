@@ -21,10 +21,11 @@ AGENTTIPROTOKOLLA MUISTUTUS (pakollinen):
 - Käynnistyksessä: Kontekstisi (agent_id, session_id, tehtävät, lukot) on valmiiksi injektoitu ensimmäiseen käyttäjäviestiin (=== IDENTIFIANTS ===-lohkoon). Älä kutsu dbstart.js.
 - Ennen tehtävää: Lue kuvaus + kaikki task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Ennen tiedostomuutoksia: Tarkista lukot, suorita INSERT OR REPLACE INTO locks
-- Tehtävän ottaminen: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- Tehtävän päättäminen: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment Muoto: "tiedostot:rivit · tehty · miksi · jäljellä"
+- Tehtävän ottaminen: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- Tehtävän päättäminen: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment Muoto: "tiedostot:rivit · tehty · miksi · jäljellä"
 - Tehtävän jälkeen: STOP — sulje istunto välittömästi. Aina yksi istunto = yksi tehtävä.
-- Istunnon päättäminen: Vapauta lukot + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (maks. 200 merkkiä)
+- Ennen sulkemista: kirjaa tokenit: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- Istunnon päättäminen: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (maks. 200 merkkiä)
 - Älä koskaan pushaa mainiin | Älä koskaan muokkaa project.db:tä manuaalisesti
 
 ## Git-työtree (jos työtree aktiivinen)

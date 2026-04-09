@@ -22,10 +22,11 @@ PRZYPOMNIENIE PROTOKOŁU AGENTA (obowiązkowe):
 - Przy uruchomieniu: kontekst (agent_id, session_id, zadania, locks) jest już wstrzyknięty w pierwszej wiadomości użytkownika (blok === IDENTIFIANTS ===). Nie wywoływać dbstart.js.
 - Przed zadaniem: przeczytać opis + wszystkie task_comments (SELECT id, task_id, agent_id, content, created_at FROM task_comments WHERE task_id=?)
 - Przed zmianą pliku: sprawdzić locks, INSERT OR REPLACE INTO locks
-- Podjęcie zadania: UPDATE tasks SET status='in_progress', started_at=datetime('now')
-- Zakończenie zadania: UPDATE tasks SET status='done', completed_at=datetime('now') + INSERT task_comment format: "pliki:linie · co zrobiono · dlaczego · zostało"
+- Podjęcie zadania: UPDATE tasks SET status='in_progress', started_at=datetime('now'), updated_at=datetime('now')
+- Zakończenie zadania: UPDATE tasks SET status='done', completed_at=datetime('now'), updated_at=datetime('now') + INSERT task_comment format: "pliki:linie · co zrobiono · dlaczego · zostało"
 - Po zadaniu: STOP — natychmiast zakończyć sesję. Jedna sesja = jedno zadanie, zawsze.
-- Koniec sesji: zwolnić locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (maks. 200 znaków)
+- Przed zamknięciem: zapisać tokeny: UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id
+- Koniec sesji: UPDATE locks SET released_at=CURRENT_TIMESTAMP WHERE agent_id=:agent_id AND session_id=:session_id AND released_at IS NULL + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (maks. 200 znaków)
 - Nigdy nie pushować do main | Nigdy nie edytować project.db ręcznie
 
 ## Git worktree (jeśli worktree aktywny)
