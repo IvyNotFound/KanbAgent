@@ -292,14 +292,14 @@ describe('useAutoLaunch T1313: dbPath watcher — clears non-empty pendingCloses
 
     tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
     await nextTick()
-    await vi.advanceTimersByTimeAsync(90) // debounce + scheduleClose (fallbackId set = 60s)
+    await vi.advanceTimersByTimeAsync(90) // debounce + scheduleClose (fallbackId set = 15s — T1885)
 
     // Project changes at 90ms — both interval AND fallback timer must be cleared
     dbPath.value = '/another/db'
     await nextTick()
 
-    // Advance past the 60s fallback — if fallback was not cleared, agentKill would fire
-    await vi.advanceTimersByTimeAsync(65 * 1000)
+    // Advance past the 15s fallback — if fallback was not cleared, agentKill would fire (T1885)
+    await vi.advanceTimersByTimeAsync(20 * 1000)
 
     expect(api.agentKill).not.toHaveBeenCalled()
   })
