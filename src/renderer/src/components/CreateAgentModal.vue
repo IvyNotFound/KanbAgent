@@ -407,9 +407,9 @@ function handleKeydown(e: KeyboardEvent) {
           <!-- Mode permissions -->
           <div>
             <div class="field-label text-label-medium mb-2">{{ t('agent.permissionMode') }}</div>
-            <v-btn-toggle v-model="permissionMode" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" variant="outlined" density="compact">
-              <v-btn value="default">{{ t('agent.permissionModeDefault') }}</v-btn>
-              <v-btn value="auto">{{ t('agent.permissionModeAuto') }}</v-btn>
+            <v-btn-toggle v-model="permissionMode" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" :style="isEditMode && agent ? { '--toggle-accent': agentAccent(agent.name) } : undefined" variant="outlined" density="compact" rounded="lg" class="w-100 agent-toggle">
+              <v-btn value="default" size="small" class="flex-1">{{ t('agent.permissionModeDefault') }}</v-btn>
+              <v-btn value="auto" size="small" class="flex-1">{{ t('agent.permissionModeAuto') }}</v-btn>
             </v-btn-toggle>
             <p v-if="permissionMode === 'auto'" class="text-caption text-error mt-1">
               <v-icon size="small" color="error">mdi-alert</v-icon> {{ t('agent.permissionModeWarning') }}
@@ -421,12 +421,14 @@ function handleKeydown(e: KeyboardEvent) {
             <v-switch
               v-model="allToolsEnabled"
               :label="t('agent.allTools')"
-              :hint="t('agent.allToolsHint')"
-              persistent-hint
+              hide-details
               density="compact"
               :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+              :style="isEditMode && agent ? { '--switch-accent': agentAccent(agent.name) } : undefined"
+              class="agent-switch"
               inset
             />
+            <p class="field-hint mt-1 text-caption">{{ t('agent.allToolsHint') }}</p>
             <v-combobox
               v-model="allowedToolsList"
               :items="COMMON_TOOLS"
@@ -452,12 +454,14 @@ function handleKeydown(e: KeyboardEvent) {
           <v-switch
             v-model="autoLaunch"
             :label="t('agent.autoLaunch')"
-            :hint="t('agent.autoLaunchDesc')"
-            persistent-hint
+            hide-details
             :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'"
+            :style="isEditMode && agent ? { '--switch-accent': agentAccent(agent.name) } : undefined"
+            class="agent-switch"
             density="compact"
             inset
           />
+          <p class="field-hint mt-1 text-caption">{{ t('agent.autoLaunchDesc') }}</p>
 
           <!-- Sessions parallèles max (edit mode uniquement) -->
           <v-text-field
@@ -477,10 +481,10 @@ function handleKeydown(e: KeyboardEvent) {
           <!-- Worktree isolation (edit mode uniquement) -->
           <div v-if="isEditMode">
             <div class="field-label text-label-medium mb-2">{{ t('agent.worktreeEnabled') }}</div>
-            <v-btn-toggle v-model="worktreeToggleValue" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" variant="outlined" density="compact">
-              <v-btn value="inherit">{{ t('agent.worktreeInherit') }}</v-btn>
-              <v-btn value="on">{{ t('agent.worktreeOn') }}</v-btn>
-              <v-btn value="off">{{ t('agent.worktreeOff') }}</v-btn>
+            <v-btn-toggle v-model="worktreeToggleValue" mandatory :color="isEditMode && agent ? agentAccent(agent.name) : 'primary'" :style="isEditMode && agent ? { '--toggle-accent': agentAccent(agent.name) } : undefined" variant="outlined" density="compact" rounded="lg" class="w-100 agent-toggle">
+              <v-btn value="inherit" size="small" class="flex-1">{{ t('agent.worktreeInherit') }}</v-btn>
+              <v-btn value="on" size="small" class="flex-1">{{ t('agent.worktreeOn') }}</v-btn>
+              <v-btn value="off" size="small" class="flex-1">{{ t('agent.worktreeOff') }}</v-btn>
             </v-btn-toggle>
             <p v-if="worktreeEnabled === null" class="text-caption text-medium-emphasis mt-1">
               {{ t('agent.worktreeCurrentGlobal', { status: settingsStore.worktreeDefault ? t('agent.worktreeOn') : t('agent.worktreeOff') }) }}
@@ -681,6 +685,28 @@ function handleKeydown(e: KeyboardEvent) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Switch label — match LaunchSessionModal MD3 pattern */
+.agent-switch :deep(.v-label) {
+  font-size: 14px;
+  color: var(--content-secondary);
+}
+
+/* Switch track color — force agent hex in teleported dialog */
+.agent-switch :deep(.v-selection-control--dirty .v-switch__track) {
+  background-color: var(--switch-accent) !important;
+}
+
+/* Btn-toggle active state — force agent color in teleported dialog */
+.agent-toggle :deep(.v-btn--active) {
+  color: var(--toggle-accent) !important;
+}
+
+/* Hint text below switches and toggles — same as LaunchSessionModal */
+.field-hint {
+  color: var(--content-muted);
+  margin-top: 4px;
 }
 
 /* Header avatar (edit mode) */
