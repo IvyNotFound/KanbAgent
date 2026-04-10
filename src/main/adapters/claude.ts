@@ -32,7 +32,7 @@ export const CLAUDE_CMD_REGEX = /^claude(-[a-z0-9-]+)?$/
  * System prompt is passed via `"$(cat 'WSL_PATH')"` — content is read from a temp
  * file inside bash, bypassing Node.js Windows command-line serialization (T705).
  *
- * @param opts.claudeCommand   - Claude binary name (validated; defaults to `'claude'`).
+ * @param opts.customBinaryName - Claude binary name (validated; defaults to `'claude'`).
  * @param opts.convId          - Existing conversation UUID to resume via `--resume`.
  * @param opts.systemPromptFile - WSL path to temp file with raw system prompt.
  * @param opts.thinkingMode    - `'disabled'` to inject alwaysThinkingEnabled:false.
@@ -40,15 +40,15 @@ export const CLAUDE_CMD_REGEX = /^claude(-[a-z0-9-]+)?$/
  * @returns Full bash command string for embedding in a launch script (T706).
  */
 export function buildClaudeCmd(opts: {
-  claudeCommand?: string
+  customBinaryName?: string
   convId?: string
   systemPromptFile?: string
   thinkingMode?: string
   permissionMode?: string
   modelId?: string
 }): string {
-  const cmd = (opts.claudeCommand && CLAUDE_CMD_REGEX.test(opts.claudeCommand))
-    ? opts.claudeCommand
+  const cmd = (opts.customBinaryName && CLAUDE_CMD_REGEX.test(opts.customBinaryName))
+    ? opts.customBinaryName
     : 'claude'
 
   const parts: string[] = [
@@ -92,17 +92,17 @@ export function buildClaudeCmd(opts: {
  * via `[System.IO.File]::ReadAllText()` and added as a separate list element —
  * PowerShell passes it verbatim to Claude regardless of special characters.
  *
- * @param opts.claudeCommand    - Claude binary name (validated against CLAUDE_CMD_REGEX)
- * @param opts.convId           - Existing conversation UUID for `--resume`
- * @param opts.spTempFile       - Windows path to system prompt temp file (no WSL conversion)
- * @param opts.thinkingMode     - `'disabled'` to inject alwaysThinkingEnabled:false
- * @param opts.permissionMode   - `'auto'` to add `--dangerously-skip-permissions`
- * @param opts.claudeBinaryPath - Absolute Windows path to claude.exe (bypasses Get-Command)
- * @param opts.settingsTempFile - Windows path to temp file containing JSON for `--settings` (T1107)
+ * @param opts.customBinaryName  - Claude binary name (validated against CLAUDE_CMD_REGEX)
+ * @param opts.convId            - Existing conversation UUID for `--resume`
+ * @param opts.spTempFile        - Windows path to system prompt temp file (no WSL conversion)
+ * @param opts.thinkingMode      - `'disabled'` to inject alwaysThinkingEnabled:false
+ * @param opts.permissionMode    - `'auto'` to add `--dangerously-skip-permissions`
+ * @param opts.claudeBinaryPath  - Absolute Windows path to claude.exe (bypasses Get-Command)
+ * @param opts.settingsTempFile  - Windows path to temp file containing JSON for `--settings` (T1107)
  * @returns PowerShell script content (.ps1)
  */
 export function buildWindowsPS1Script(opts: {
-  claudeCommand?: string
+  customBinaryName?: string
   convId?: string
   spTempFile?: string
   thinkingMode?: string
@@ -111,8 +111,8 @@ export function buildWindowsPS1Script(opts: {
   settingsTempFile?: string
   modelId?: string
 }): string {
-  const cmd = (opts.claudeCommand && CLAUDE_CMD_REGEX.test(opts.claudeCommand))
-    ? opts.claudeCommand
+  const cmd = (opts.customBinaryName && CLAUDE_CMD_REGEX.test(opts.customBinaryName))
+    ? opts.customBinaryName
     : 'claude'
 
   const lines: string[] = [
@@ -222,13 +222,14 @@ export function buildWindowsPS1Script(opts: {
 export const claudeAdapter: CliAdapter = {
   cli: 'claude',
   binaries: ['claude'],
+  binaryRegex: CLAUDE_CMD_REGEX,
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
     // Claude requires platform-specific script approaches (bash .sh for WSL, .ps1 for Windows).
     // agent-stream.ts handles the script writing + wsl.exe wrapping directly for Claude.
     // This method returns the inner bash command spec (used for testing only).
     const cmd = buildClaudeCmd({
-      claudeCommand: opts.binaryName,
+      customBinaryName: opts.customBinaryName,
       convId: opts.convId,
       systemPromptFile: opts.systemPromptFile,
       thinkingMode: opts.thinkingMode,

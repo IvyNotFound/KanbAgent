@@ -120,12 +120,12 @@ describe('buildClaudeCmd', () => {
     expect(buildClaudeCmd({}).startsWith('claude ')).toBe(true)
   })
 
-  it('uses custom claudeCommand when valid', () => {
-    expect(buildClaudeCmd({ claudeCommand: 'claude-dev' }).startsWith('claude-dev ')).toBe(true)
+  it('uses custom customBinaryName when valid', () => {
+    expect(buildClaudeCmd({ customBinaryName: 'claude-dev' }).startsWith('claude-dev ')).toBe(true)
   })
 
-  it('falls back to "claude" for invalid claudeCommand', () => {
-    expect(buildClaudeCmd({ claudeCommand: 'rm -rf /' }).startsWith('claude ')).toBe(true)
+  it('falls back to "claude" for invalid customBinaryName', () => {
+    expect(buildClaudeCmd({ customBinaryName: 'rm -rf /' }).startsWith('claude ')).toBe(true)
   })
 
   it('includes --resume when convId provided', () => {
@@ -349,8 +349,8 @@ describe('fallbackAdapter', () => {
     expect(fallbackAdapter.parseLine(JSON.stringify(event))).toEqual(event)
   })
 
-  it('buildCommand spawns binaryName as command', () => {
-    const spec = fallbackAdapter.buildCommand({ binaryName: 'my-cli' })
+  it('buildCommand spawns customBinaryName as command', () => {
+    const spec = fallbackAdapter.buildCommand({ customBinaryName: 'my-cli' })
     expect(spec.command).toBe('my-cli')
   })
 

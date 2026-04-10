@@ -250,7 +250,7 @@ onMounted(async () => {
       wslDistro: tab.wslDistro ?? undefined,
       systemPrompt: tab.systemPrompt ?? undefined,
       thinkingMode: tab.thinkingMode ?? undefined,
-      claudeCommand: tab.claudeCommand ?? undefined,
+      customBinaryName: tab.customBinaryName ?? undefined,
       convId: tab.convId ?? undefined,
       cli: tab.cli ?? undefined,
       modelId: tab.modelId ?? undefined,

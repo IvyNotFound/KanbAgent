@@ -30,8 +30,8 @@ export const gooseAdapter: CliAdapter = {
   binaries: ['goose'],
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
-    const cmd = (opts.binaryName && GOOSE_CMD_REGEX.test(opts.binaryName))
-      ? opts.binaryName
+    const cmd = (opts.customBinaryName && GOOSE_CMD_REGEX.test(opts.customBinaryName))
+      ? opts.customBinaryName
       : 'goose'
 
     const args: string[] = [

@@ -3,7 +3,7 @@
  *
  * Targets:
  * - CODEX_CMD_REGEX: anchors, suffix pattern, invalid chars
- * - buildCommand: binaryName guard, approval-mode, systemPromptFile
+ * - buildCommand: customBinaryName guard, approval-mode, systemPromptFile
  * - parseLine: response.output_item.added function_call → tool_use block
  * - parseLine: other response.* events filtered (return null)
  * - parseLine: non-response JSON and plain text fallback
@@ -60,23 +60,23 @@ describe('CODEX_CMD_REGEX', () => {
 // ── codexAdapter.buildCommand ─────────────────────────────────────────────────
 
 describe('codexAdapter.buildCommand', () => {
-  it('defaults to "codex" when binaryName is undefined', () => {
+  it('defaults to "codex" when customBinaryName is undefined', () => {
     const spec = codexAdapter.buildCommand({})
     expect(spec.command).toBe('codex')
   })
 
-  it('defaults to "codex" when binaryName is empty string (falsy)', () => {
-    const spec = codexAdapter.buildCommand({ binaryName: '' })
+  it('defaults to "codex" when customBinaryName is empty string (falsy)', () => {
+    const spec = codexAdapter.buildCommand({ customBinaryName: '' })
     expect(spec.command).toBe('codex')
   })
 
-  it('defaults to "codex" when binaryName fails regex (invalid)', () => {
-    const spec = codexAdapter.buildCommand({ binaryName: 'rm -rf /' })
+  it('defaults to "codex" when customBinaryName fails regex (invalid)', () => {
+    const spec = codexAdapter.buildCommand({ customBinaryName: 'rm -rf /' })
     expect(spec.command).toBe('codex')
   })
 
-  it('uses binaryName when it matches CODEX_CMD_REGEX', () => {
-    const spec = codexAdapter.buildCommand({ binaryName: 'codex-dev' })
+  it('uses customBinaryName when it matches CODEX_CMD_REGEX', () => {
+    const spec = codexAdapter.buildCommand({ customBinaryName: 'codex-dev' })
     expect(spec.command).toBe('codex-dev')
   })
 

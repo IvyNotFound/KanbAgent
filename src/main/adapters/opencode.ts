@@ -67,8 +67,8 @@ export const opencodeAdapter: CliAdapter = {
   },
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
-    const cmd = (opts.binaryName && OPENCODE_CMD_REGEX.test(opts.binaryName))
-      ? opts.binaryName
+    const cmd = (opts.customBinaryName && OPENCODE_CMD_REGEX.test(opts.customBinaryName))
+      ? opts.customBinaryName
       : 'opencode'
 
     const args: string[] = [

@@ -28,7 +28,7 @@ export function spawnWindows({
 
   if (adapter.cli === 'claude') {
     const ps1Content = buildWindowsPS1Script({
-      claudeCommand: opts.claudeCommand,
+      customBinaryName: opts.customBinaryName,
       convId: validConvId,
       spTempFile,
       thinkingMode: opts.thinkingMode,
@@ -56,7 +56,7 @@ export function spawnWindows({
       thinkingMode: opts.thinkingMode,
       permissionMode: opts.permissionMode,
       systemPromptFile: spTempFile,
-      binaryName: opts.claudeCommand,
+      customBinaryName: opts.customBinaryName,
       initialMessage: opts.initialMessage,
       modelId: opts.modelId,
     })

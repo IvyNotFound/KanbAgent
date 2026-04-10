@@ -24,7 +24,7 @@ export const fallbackAdapter: CliAdapter = {
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
     // Spawn the binary as-is with no extra flags
-    const cmd = opts.binaryName ?? 'unknown-cli'
+    const cmd = opts.customBinaryName ?? 'unknown-cli'
     return { command: cmd, args: [] }
   },
 

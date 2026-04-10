@@ -37,7 +37,7 @@ export function spawnWsl({
 
   if (adapter.cli === 'claude') {
     const claudeCmd = buildClaudeCmd({
-      claudeCommand: opts.claudeCommand,
+      customBinaryName: opts.customBinaryName,
       convId: validConvId,
       systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
       thinkingMode: opts.thinkingMode,
@@ -60,7 +60,7 @@ export function spawnWsl({
       thinkingMode: opts.thinkingMode,
       permissionMode: opts.permissionMode,
       systemPromptFile: spTempFile ? toWslPath(spTempFile) : undefined,
-      binaryName: opts.claudeCommand,
+      customBinaryName: opts.customBinaryName,
       initialMessage: opts.initialMessage,
       modelId: opts.modelId,
     })

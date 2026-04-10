@@ -71,7 +71,7 @@ declare global {
       // Host platform identifier, e.g. 'win32', 'darwin', 'linux'
       platform: string
       // Agent stream (ADR-009: child_process.spawn + stdio:pipe — T647/T648)
-      agentCreate(opts?: { projectPath?: string; workDir?: string; wslDistro?: string; systemPrompt?: string; thinkingMode?: string; claudeCommand?: string; convId?: string; permissionMode?: string; cli?: string; modelId?: string; initialMessage?: string }): Promise<string>
+      agentCreate(opts?: { projectPath?: string; workDir?: string; wslDistro?: string; systemPrompt?: string; thinkingMode?: string; customBinaryName?: string; convId?: string; permissionMode?: string; cli?: string; modelId?: string; initialMessage?: string }): Promise<string>
       agentSend(id: string, text: string): Promise<void>
       agentKill(id: string): Promise<void>
       onAgentStream(id: string, cb: (event: Record<string, unknown>) => void): () => void

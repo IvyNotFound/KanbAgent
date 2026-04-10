@@ -3,7 +3,7 @@
  *
  * Targets:
  * - AIDER_CMD_REGEX: anchors, suffix pattern, non-hex/non-lowercase chars
- * - buildCommand: binaryName guard (falsy, valid, invalid)
+ * - buildCommand: customBinaryName guard (falsy, valid, invalid)
  * - buildCommand: args array non-empty with correct flags
  * - buildCommand: worktreeDir branch (true/false)
  */
@@ -63,23 +63,23 @@ describe('AIDER_CMD_REGEX', () => {
 // ── aiderAdapter.buildCommand ─────────────────────────────────────────────────
 
 describe('aiderAdapter.buildCommand', () => {
-  it('defaults to "aider" when binaryName is undefined', () => {
+  it('defaults to "aider" when customBinaryName is undefined', () => {
     const spec = aiderAdapter.buildCommand({})
     expect(spec.command).toBe('aider')
   })
 
-  it('defaults to "aider" when binaryName is empty string (falsy)', () => {
-    const spec = aiderAdapter.buildCommand({ binaryName: '' })
+  it('defaults to "aider" when customBinaryName is empty string (falsy)', () => {
+    const spec = aiderAdapter.buildCommand({ customBinaryName: '' })
     expect(spec.command).toBe('aider')
   })
 
-  it('defaults to "aider" when binaryName fails regex (invalid)', () => {
-    const spec = aiderAdapter.buildCommand({ binaryName: 'rm -rf /' })
+  it('defaults to "aider" when customBinaryName fails regex (invalid)', () => {
+    const spec = aiderAdapter.buildCommand({ customBinaryName: 'rm -rf /' })
     expect(spec.command).toBe('aider')
   })
 
-  it('uses binaryName when it matches AIDER_CMD_REGEX', () => {
-    const spec = aiderAdapter.buildCommand({ binaryName: 'aider-dev' })
+  it('uses customBinaryName when it matches AIDER_CMD_REGEX', () => {
+    const spec = aiderAdapter.buildCommand({ customBinaryName: 'aider-dev' })
     expect(spec.command).toBe('aider-dev')
   })
 
@@ -106,8 +106,8 @@ describe('aiderAdapter.buildCommand', () => {
     expect(spec.args).not.toContain('--read')
   })
 
-  it('binaryName exact name is in returned command field', () => {
-    const spec = aiderAdapter.buildCommand({ binaryName: 'aider' })
+  it('customBinaryName exact name is in returned command field', () => {
+    const spec = aiderAdapter.buildCommand({ customBinaryName: 'aider' })
     expect(spec.command).toBe('aider')
   })
 })

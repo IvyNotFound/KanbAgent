@@ -24,7 +24,6 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { queryLive, assertDbPathAllowed } from './db'
 import {
-  CLAUDE_CMD_REGEX,
   UUID_REGEX,
   logDebug,
   getActiveTasksLine,
@@ -79,14 +78,12 @@ export function registerAgentStreamHandlers(): void {
     }
     const adapter = getAdapter(opts.cli ?? 'claude')
 
-    // Validate custom binary name against adapter's binary pattern
-    if (opts.claudeCommand) {
-      const baseCmd = adapter.binaries[0] ?? 'claude'
-      const cmdRegex = adapter.cli === 'claude'
-        ? CLAUDE_CMD_REGEX
-        : new RegExp(`^${baseCmd}(-[a-z0-9-]+)?$`)
-      if (!cmdRegex.test(opts.claudeCommand)) {
-        throw new Error('Invalid claudeCommand: ' + opts.claudeCommand)
+    // Validate custom binary name against adapter's binaryRegex (or generic fallback)
+    if (opts.customBinaryName) {
+      const baseCmd = adapter.binaries[0] ?? adapter.cli
+      const cmdRegex = adapter.binaryRegex ?? new RegExp(`^${baseCmd}(-[a-z0-9-]+)?$`)
+      if (!cmdRegex.test(opts.customBinaryName)) {
+        throw new Error(`Invalid binary name for ${adapter.cli}: ${opts.customBinaryName}`)
       }
     }
     const validConvId = opts.convId && UUID_REGEX.test(opts.convId) ? opts.convId : undefined

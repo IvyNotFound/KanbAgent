@@ -85,8 +85,8 @@ export interface LaunchOpts {
   permissionMode?: string
   /** Absolute path to temp file containing the raw system prompt text. */
   systemPromptFile?: string
-  /** Custom binary name (e.g. `"claude-pro2"`). Validated by caller. */
-  binaryName?: string
+  /** Custom binary name (e.g. `"claude-pro2"`, `"gemini-beta"`). Validated by adapter.binaryRegex. */
+  customBinaryName?: string
   /** Initial user message to pass at spawn time (used by adapters that take prompts as positional args, e.g. opencode). */
   initialMessage?: string
   /** Model identifier to pass via CLI flag (e.g. `-m gemini-2.5-flash` for Gemini). */
@@ -197,6 +197,12 @@ export interface CliAdapter {
    * First entry is the canonical binary name.
    */
   binaries: string[]
+
+  /**
+   * Regex to validate customBinaryName for this CLI.
+   * If undefined, agent-stream falls back to `^<canonical-binary>(-[a-z0-9-]+)?$`.
+   */
+  binaryRegex?: RegExp
 
   /**
    * Build the spawn spec for launching this CLI in headless/agent mode.

@@ -29,8 +29,8 @@ export const aiderAdapter: CliAdapter = {
   binaries: ['aider'],
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
-    const cmd = (opts.binaryName && AIDER_CMD_REGEX.test(opts.binaryName))
-      ? opts.binaryName
+    const cmd = (opts.customBinaryName && AIDER_CMD_REGEX.test(opts.customBinaryName))
+      ? opts.customBinaryName
       : 'aider'
 
     const args: string[] = [

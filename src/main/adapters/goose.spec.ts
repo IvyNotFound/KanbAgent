@@ -3,7 +3,7 @@
  *
  * Targets:
  * - GOOSE_CMD_REGEX: anchors, suffix pattern, invalid chars
- * - buildCommand: binaryName guard (falsy, valid, invalid)
+ * - buildCommand: customBinaryName guard (falsy, valid, invalid)
  * - buildCommand: args array contains "run" and "--with-builtin developer"
  * - buildCommand: systemPromptFile flag wiring
  */
@@ -58,23 +58,23 @@ describe('GOOSE_CMD_REGEX', () => {
 // ── gooseAdapter.buildCommand ─────────────────────────────────────────────────
 
 describe('gooseAdapter.buildCommand', () => {
-  it('defaults to "goose" when binaryName is undefined', () => {
+  it('defaults to "goose" when customBinaryName is undefined', () => {
     const spec = gooseAdapter.buildCommand({})
     expect(spec.command).toBe('goose')
   })
 
-  it('defaults to "goose" when binaryName is empty string (falsy)', () => {
-    const spec = gooseAdapter.buildCommand({ binaryName: '' })
+  it('defaults to "goose" when customBinaryName is empty string (falsy)', () => {
+    const spec = gooseAdapter.buildCommand({ customBinaryName: '' })
     expect(spec.command).toBe('goose')
   })
 
-  it('defaults to "goose" when binaryName fails regex (invalid)', () => {
-    const spec = gooseAdapter.buildCommand({ binaryName: 'rm -rf /' })
+  it('defaults to "goose" when customBinaryName fails regex (invalid)', () => {
+    const spec = gooseAdapter.buildCommand({ customBinaryName: 'rm -rf /' })
     expect(spec.command).toBe('goose')
   })
 
-  it('uses binaryName when it matches GOOSE_CMD_REGEX', () => {
-    const spec = gooseAdapter.buildCommand({ binaryName: 'goose-dev' })
+  it('uses customBinaryName when it matches GOOSE_CMD_REGEX', () => {
+    const spec = gooseAdapter.buildCommand({ customBinaryName: 'goose-dev' })
     expect(spec.command).toBe('goose-dev')
   })
 
@@ -113,8 +113,8 @@ describe('gooseAdapter.buildCommand', () => {
     expect(spec.args).not.toContain('--system-prompt')
   })
 
-  it('binaryName exact name is in returned command field', () => {
-    const spec = gooseAdapter.buildCommand({ binaryName: 'goose' })
+  it('customBinaryName exact name is in returned command field', () => {
+    const spec = gooseAdapter.buildCommand({ customBinaryName: 'goose' })
     expect(spec.command).toBe('goose')
   })
 

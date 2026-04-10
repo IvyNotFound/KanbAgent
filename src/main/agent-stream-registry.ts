@@ -10,7 +10,6 @@ import { execFile } from 'child_process'
 import { webContents } from 'electron'
 import { toWslPath } from './utils/wsl'
 import {
-  CLAUDE_CMD_REGEX,
   UUID_REGEX,
   MAX_STDERR_BUFFER_SIZE,
   buildClaudeCmd,
@@ -132,7 +131,7 @@ export interface AgentCreateOpts {
   wslDistro?: string
   systemPrompt?: string
   thinkingMode?: string
-  claudeCommand?: string
+  customBinaryName?: string
   convId?: string
   permissionMode?: string
   dbPath?: string
@@ -159,7 +158,6 @@ export const _testing = {
   getActiveTasksLine,
   streamBatches,
   streamTimers,
-  CLAUDE_CMD_REGEX,
   UUID_REGEX,
   MAX_STDERR_BUFFER_SIZE,
 }

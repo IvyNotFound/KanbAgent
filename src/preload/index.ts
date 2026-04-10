@@ -266,7 +266,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     wslDistro?: string
     systemPrompt?: string
     thinkingMode?: string
-    claudeCommand?: string
+    customBinaryName?: string
     convId?: string
     permissionMode?: string
     dbPath?: string

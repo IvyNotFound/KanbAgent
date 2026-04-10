@@ -2,8 +2,9 @@
  * Build helpers for agent-stream — env, active tasks injection.
  * Extracted from agent-stream.ts (T916) to keep file size under 400 lines.
  *
- * buildClaudeCmd, buildWindowsPS1Script, CLAUDE_CMD_REGEX moved to adapters/claude.ts (T1012).
+ * buildClaudeCmd, buildWindowsPS1Script moved to adapters/claude.ts (T1012).
  * Re-exported here for backward compatibility with existing imports and spec files.
+ * CLAUDE_CMD_REGEX is internal to adapters/claude.ts (T1919) — import directly if needed.
  *
  * @module agent-stream-helpers
  */
@@ -13,7 +14,7 @@ import { app } from 'electron'
 import { queryLive } from './db'
 
 // Re-exports from adapters/claude — backward compat (T1012)
-export { CLAUDE_CMD_REGEX, buildClaudeCmd, buildWindowsPS1Script } from './adapters/claude'
+export { buildClaudeCmd, buildWindowsPS1Script } from './adapters/claude'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

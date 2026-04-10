@@ -279,14 +279,14 @@ describe('agent-stream', () => {
     expect(cmd).not.toContain('--append-system-prompt')
   })
 
-  it('buildClaudeCmd uses custom claudeCommand', () => {
-    const cmd = agentStream._testing.buildClaudeCmd({ claudeCommand: 'claude-dev' })
+  it('buildClaudeCmd uses custom customBinaryName', () => {
+    const cmd = agentStream._testing.buildClaudeCmd({ customBinaryName: 'claude-dev' })
     expect(cmd.startsWith('claude-dev')).toBe(true)
   })
 
-  it('buildClaudeCmd rejects invalid claudeCommand', () => {
+  it('buildClaudeCmd rejects invalid customBinaryName', () => {
     // Invalid command should fall back to 'claude'
-    const cmd = agentStream._testing.buildClaudeCmd({ claudeCommand: 'rm -rf /' })
+    const cmd = agentStream._testing.buildClaudeCmd({ customBinaryName: 'rm -rf /' })
     expect(cmd.startsWith('claude ')).toBe(true)
   })
 

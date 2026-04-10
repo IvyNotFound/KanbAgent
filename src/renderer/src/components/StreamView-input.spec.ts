@@ -68,7 +68,7 @@ describe('StreamView input and send', () => {
       wslDistro: undefined,
       systemPrompt: undefined,
       thinkingMode: undefined,
-      claudeCommand: undefined,
+      customBinaryName: undefined,
       convId: undefined,
     })
   })

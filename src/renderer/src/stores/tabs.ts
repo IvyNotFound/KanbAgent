@@ -27,7 +27,7 @@ export interface Tab {
   autoSend: string | null
   systemPrompt: string | null
   thinkingMode: string | null
-  claudeCommand?: string | null
+  customBinaryName?: string | null
   /** Claude Code conversation UUID for --resume (task #218). null = no previous session. */
   convId?: string | null
   /** Task ID displayed in tab title (task #400). null = no associated task. */
@@ -141,7 +141,7 @@ export const useTabsStore = defineStore('tabs', () => {
     activeTabId.value = 'dashboard'
   }
 
-  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, claudeCommand?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'stream', cli?: CliType, workDir?: string, modelId?: string): void {
+  function addTerminal(agentName?: string, wslDistro?: string, autoSend?: string, systemPrompt?: string, thinkingMode?: string, customBinaryName?: string, convId?: string, activate = true, taskId?: number, viewMode?: 'stream', cli?: CliType, workDir?: string, modelId?: string): void {
     const id = `term-${Date.now()}-${++_tabCounter}`
     let title: string
     if (agentName) {
@@ -169,7 +169,7 @@ export const useTabsStore = defineStore('tabs', () => {
       autoSend: autoSend ?? null,
       systemPrompt: systemPrompt ?? null,
       thinkingMode: thinkingMode ?? null,
-      claudeCommand: claudeCommand ?? null,
+      customBinaryName: customBinaryName ?? null,
       convId: convId ?? null,
       taskId: taskId ?? null,
       viewMode: viewMode ?? 'stream',

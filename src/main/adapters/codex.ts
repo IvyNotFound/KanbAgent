@@ -26,8 +26,8 @@ export const codexAdapter: CliAdapter = {
   binaries: ['codex'],
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
-    const cmd = (opts.binaryName && CODEX_CMD_REGEX.test(opts.binaryName))
-      ? opts.binaryName
+    const cmd = (opts.customBinaryName && CODEX_CMD_REGEX.test(opts.customBinaryName))
+      ? opts.customBinaryName
       : 'codex'
 
     const args: string[] = ['--approval-mode', 'full-auto']

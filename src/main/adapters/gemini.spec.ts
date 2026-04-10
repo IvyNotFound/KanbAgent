@@ -3,7 +3,7 @@
  *
  * Targets:
  * - GEMINI_CMD_REGEX: anchors, suffix pattern, invalid chars
- * - buildCommand: binaryName guard (falsy, valid, invalid)
+ * - buildCommand: customBinaryName guard (falsy, valid, invalid)
  * - buildCommand: headless mode via -p + --output-format stream-json
  * - parseLine: stream-json format (init, message, result)
  * - singleShotStdin flag
@@ -59,23 +59,23 @@ describe('GEMINI_CMD_REGEX', () => {
 // ── geminiAdapter.buildCommand ────────────────────────────────────────────────
 
 describe('geminiAdapter.buildCommand', () => {
-  it('defaults to "gemini" when binaryName is undefined', () => {
+  it('defaults to "gemini" when customBinaryName is undefined', () => {
     const spec = geminiAdapter.buildCommand({})
     expect(spec.command).toBe('gemini')
   })
 
-  it('defaults to "gemini" when binaryName is empty string (falsy)', () => {
-    const spec = geminiAdapter.buildCommand({ binaryName: '' })
+  it('defaults to "gemini" when customBinaryName is empty string (falsy)', () => {
+    const spec = geminiAdapter.buildCommand({ customBinaryName: '' })
     expect(spec.command).toBe('gemini')
   })
 
-  it('defaults to "gemini" when binaryName fails regex (invalid)', () => {
-    const spec = geminiAdapter.buildCommand({ binaryName: 'rm -rf /' })
+  it('defaults to "gemini" when customBinaryName fails regex (invalid)', () => {
+    const spec = geminiAdapter.buildCommand({ customBinaryName: 'rm -rf /' })
     expect(spec.command).toBe('gemini')
   })
 
-  it('uses binaryName when it matches GEMINI_CMD_REGEX', () => {
-    const spec = geminiAdapter.buildCommand({ binaryName: 'gemini-dev' })
+  it('uses customBinaryName when it matches GEMINI_CMD_REGEX', () => {
+    const spec = geminiAdapter.buildCommand({ customBinaryName: 'gemini-dev' })
     expect(spec.command).toBe('gemini-dev')
   })
 
@@ -117,8 +117,8 @@ describe('geminiAdapter.buildCommand', () => {
     expect(spec.args).not.toContain('--system-prompt')
   })
 
-  it('binaryName exact name is in returned command field', () => {
-    const spec = geminiAdapter.buildCommand({ binaryName: 'gemini' })
+  it('customBinaryName exact name is in returned command field', () => {
+    const spec = geminiAdapter.buildCommand({ customBinaryName: 'gemini' })
     expect(spec.command).toBe('gemini')
   })
 

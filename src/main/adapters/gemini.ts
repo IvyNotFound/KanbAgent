@@ -29,8 +29,8 @@ export const geminiAdapter: CliAdapter = {
   singleShotStdin: true,
 
   buildCommand(opts: LaunchOpts): SpawnSpec {
-    const cmd = (opts.binaryName && GEMINI_CMD_REGEX.test(opts.binaryName))
-      ? opts.binaryName
+    const cmd = (opts.customBinaryName && GEMINI_CMD_REGEX.test(opts.customBinaryName))
+      ? opts.customBinaryName
       : 'gemini'
 
     const args: string[] = []

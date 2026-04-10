@@ -3,7 +3,7 @@
  *
  * Targets:
  * - OPENCODE_CMD_REGEX: anchors, suffix pattern, invalid chars
- * - buildCommand: binaryName guard (falsy, valid, invalid)
+ * - buildCommand: customBinaryName guard (falsy, valid, invalid)
  * - buildCommand: args array contains "run" subcommand and "--format json"
  * - buildCommand: no --message flag (opencode does not support it)
  * - parseLine: text, reasoning, error, lifecycle events, plain text fallback
@@ -59,23 +59,23 @@ describe('OPENCODE_CMD_REGEX', () => {
 // ── opencodeAdapter.buildCommand ──────────────────────────────────────────────
 
 describe('opencodeAdapter.buildCommand', () => {
-  it('defaults to "opencode" when binaryName is undefined', () => {
+  it('defaults to "opencode" when customBinaryName is undefined', () => {
     const spec = opencodeAdapter.buildCommand({})
     expect(spec.command).toBe('opencode')
   })
 
-  it('defaults to "opencode" when binaryName is empty string (falsy)', () => {
-    const spec = opencodeAdapter.buildCommand({ binaryName: '' })
+  it('defaults to "opencode" when customBinaryName is empty string (falsy)', () => {
+    const spec = opencodeAdapter.buildCommand({ customBinaryName: '' })
     expect(spec.command).toBe('opencode')
   })
 
-  it('defaults to "opencode" when binaryName fails regex (invalid)', () => {
-    const spec = opencodeAdapter.buildCommand({ binaryName: 'rm -rf /' })
+  it('defaults to "opencode" when customBinaryName fails regex (invalid)', () => {
+    const spec = opencodeAdapter.buildCommand({ customBinaryName: 'rm -rf /' })
     expect(spec.command).toBe('opencode')
   })
 
-  it('uses binaryName when it matches OPENCODE_CMD_REGEX', () => {
-    const spec = opencodeAdapter.buildCommand({ binaryName: 'opencode-dev' })
+  it('uses customBinaryName when it matches OPENCODE_CMD_REGEX', () => {
+    const spec = opencodeAdapter.buildCommand({ customBinaryName: 'opencode-dev' })
     expect(spec.command).toBe('opencode-dev')
   })
 
@@ -116,8 +116,8 @@ describe('opencodeAdapter.buildCommand', () => {
     expect(spec.args).not.toContain('--message')
   })
 
-  it('binaryName exact name is in returned command field', () => {
-    const spec = opencodeAdapter.buildCommand({ binaryName: 'opencode' })
+  it('customBinaryName exact name is in returned command field', () => {
+    const spec = opencodeAdapter.buildCommand({ customBinaryName: 'opencode' })
     expect(spec.command).toBe('opencode')
   })
 

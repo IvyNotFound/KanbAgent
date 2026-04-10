@@ -35,14 +35,14 @@ describe('buildWindowsPS1Script', () => {
     expect(script.trimEnd()).toMatch(/^\& \$claudeExe @a$/m)
   })
 
-  it('uses custom claudeCommand in Get-Command when valid (T939)', () => {
-    const script = buildWindowsPS1Script({ claudeCommand: 'claude-dev' })
+  it('uses custom customBinaryName in Get-Command when valid (T939)', () => {
+    const script = buildWindowsPS1Script({ customBinaryName: 'claude-dev' })
     expect(script).toContain('Get-Command claude-dev')
     expect(script.trimEnd()).toMatch(/^\& \$claudeExe @a$/m)
   })
 
-  it('falls back to claude in Get-Command for invalid claudeCommand (T939)', () => {
-    const script = buildWindowsPS1Script({ claudeCommand: 'rm -rf /' })
+  it('falls back to claude in Get-Command for invalid customBinaryName (T939)', () => {
+    const script = buildWindowsPS1Script({ customBinaryName: 'rm -rf /' })
     expect(script).toContain('Get-Command claude')
     expect(script.trimEnd()).toMatch(/^\& \$claudeExe @a$/m)
   })
