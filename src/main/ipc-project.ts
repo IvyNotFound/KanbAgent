@@ -24,6 +24,7 @@ import {
 } from './db'
 import { buildSingleFileZip } from './ipc-project-zip'
 import { startDbDaemon } from './db-daemon'
+import { CURRENT_SCHEMA_VERSION } from './migration'
 
 // ── Trusted project paths persistence ────────────────────────────────────────
 // Paths registered via native dialog are persisted to userData so they can be
@@ -135,6 +136,12 @@ export function registerProjectHandlers(): void {
           system_prompt_suffix TEXT,
           thinking_mode TEXT CHECK(thinking_mode IN ('auto', 'disabled')),
           allowed_tools TEXT,
+          auto_launch INTEGER NOT NULL DEFAULT 1,
+          permission_mode TEXT CHECK(permission_mode IN ('default', 'auto')) DEFAULT 'default',
+          max_sessions INTEGER NOT NULL DEFAULT 3,
+          worktree_enabled INTEGER,
+          preferred_model TEXT,
+          preferred_cli TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS sessions (
@@ -148,7 +155,11 @@ export function registerProjectHandlers(): void {
           tokens_in INTEGER DEFAULT 0,
           tokens_out INTEGER DEFAULT 0,
           tokens_cache_read INTEGER DEFAULT 0,
-          tokens_cache_write INTEGER DEFAULT 0
+          tokens_cache_write INTEGER DEFAULT 0,
+          cost_usd REAL,
+          duration_ms INTEGER,
+          num_turns INTEGER,
+          cli_type TEXT
         );
         CREATE TABLE IF NOT EXISTS agent_logs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,6 +199,28 @@ export function registerProjectHandlers(): void {
           agent_id INTEGER REFERENCES agents(id),
           content TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS task_agents (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          task_id     INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          agent_id    INTEGER NOT NULL REFERENCES agents(id),
+          role        TEXT CHECK(role IN ('primary', 'support', 'reviewer')),
+          assigned_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(task_id, agent_id)
+        );
+        CREATE TABLE IF NOT EXISTS agent_groups (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          name       TEXT NOT NULL,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          parent_id  INTEGER,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS agent_group_members (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_id   INTEGER NOT NULL REFERENCES agent_groups(id),
+          agent_id   INTEGER NOT NULL REFERENCES agents(id),
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(agent_id)
+        );
         CREATE TABLE IF NOT EXISTS config (
           key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -198,9 +231,23 @@ export function registerProjectHandlers(): void {
           active INTEGER NOT NULL DEFAULT 1,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
-        INSERT OR IGNORE INTO config (key, value) VALUES ('claude_md_commit',''),('schema_version','3');
+        INSERT OR IGNORE INTO config (key, value) VALUES
+          ('claude_md_commit',''),
+          ('schema_version','${CURRENT_SCHEMA_VERSION}'),
+          ('worktree_default','1');
         INSERT OR IGNORE INTO scopes (name, folder, techno, description) VALUES
           ('global','','—','Transversal — aucun périmètre spécifique');
+        CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts4(title, description);
+        CREATE TRIGGER IF NOT EXISTS tasks_fts_ai AFTER INSERT ON tasks BEGIN
+          INSERT INTO tasks_fts(rowid, title, description) VALUES (new.id, new.title, new.description);
+        END;
+        CREATE TRIGGER IF NOT EXISTS tasks_fts_au AFTER UPDATE ON tasks BEGIN
+          DELETE FROM tasks_fts WHERE rowid = old.id;
+          INSERT INTO tasks_fts(rowid, title, description) VALUES (new.id, new.title, new.description);
+        END;
+        CREATE TRIGGER IF NOT EXISTS tasks_fts_ad AFTER DELETE ON tasks BEGIN
+          DELETE FROM tasks_fts WHERE rowid = old.id;
+        END;
         CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions(agent_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at DESC);
         CREATE INDEX IF NOT EXISTS idx_agent_logs_agent_id ON agent_logs(agent_id);
@@ -214,6 +261,12 @@ export function registerProjectHandlers(): void {
         CREATE INDEX IF NOT EXISTS idx_sessions_conv_id ON sessions(claude_conv_id);
         CREATE INDEX IF NOT EXISTS idx_tasks_agent_status ON tasks(agent_assigned_id, status);
         CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status);
+        CREATE INDEX IF NOT EXISTS idx_task_agents_task_id ON task_agents(task_id);
+        CREATE INDEX IF NOT EXISTS idx_task_agents_agent_id ON task_agents(agent_id);
+        CREATE INDEX IF NOT EXISTS idx_agm_group ON agent_group_members(group_id);
+        CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+        CREATE INDEX IF NOT EXISTS idx_sessions_agent_status ON sessions(agent_id, status, started_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_task_comments_agent_id ON task_comments(agent_id);
       `)
       const insertAgent = db.prepare(
         `INSERT OR IGNORE INTO agents (name, type, scope, system_prompt, system_prompt_suffix)
@@ -222,6 +275,7 @@ export function registerProjectHandlers(): void {
       for (const agent of GENERIC_AGENTS_BY_LANG[agentLang]) {
         insertAgent.run(agent.name, agent.type, agent.scope ?? null, agent.system_prompt ?? null, agent.system_prompt_suffix ?? null)
       }
+      db.pragma(`user_version = ${CURRENT_SCHEMA_VERSION}`)
       db.close()
       registerDbPath(dbPath)
       void startDbDaemon(dbPath).catch(() => {})
