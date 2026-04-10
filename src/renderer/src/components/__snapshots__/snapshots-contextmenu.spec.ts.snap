@@ -1,0 +1,21 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ContextMenu — snapshots > matches snapshot: items with separator 1`] = `
+"<v-menu model-value="true" target="50,80" close-on-content-click="false">
+  <v-list density="compact" min-width="188">
+    <v-list-item title="Edit"></v-list-item>
+    <v-list-item title="Add subgroup"></v-list-item>
+    <v-divider></v-divider>
+    <v-list-item title="Delete"></v-list-item>
+  </v-list>
+</v-menu>"
+`;
+
+exports[`ContextMenu — snapshots > matches snapshot: simple items (no separator) 1`] = `
+"<v-menu model-value="true" target="100,200" close-on-content-click="false">
+  <v-list density="compact" min-width="188">
+    <v-list-item title="Rename"></v-list-item>
+    <v-list-item title="Delete"></v-list-item>
+  </v-list>
+</v-menu>"
+`;

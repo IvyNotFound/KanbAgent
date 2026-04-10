@@ -1,0 +1,58 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TabBar — snapshots > matches snapshot: empty tab bar (no tabs) 1`] = `
+"<div data-v-3c3dc65a="" class="tabbar">
+  <!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
+  <v-tabs data-v-3c3dc65a="" density="compact" height="48" color="primary" class="tabbar-fixed-tabs">
+    <v-tab data-v-3c3dc65a="" value="backlog">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-view-list</v-icon> Backlog
+    </v-tab>
+    <v-tab data-v-3c3dc65a="" value="dashboard">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-chart-line</v-icon> Dashboard
+    </v-tab>
+  </v-tabs><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
+    <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-left</v-icon>
+  </button><!-- Onglets (scrollable) -->
+  <div data-v-3c3dc65a="" class="scroll-container">
+    <!-- Onglets fichiers -->
+    <!-- Groupe agent — envelope pill wrapping pill-header + sub-chips -->
+  </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
+    <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
+  </button>
+</div>
+<!-- Menu contextuel groupe d'onglets -->
+<!--v-if-->"
+`;
+
+exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 1`] = `
+"<div data-v-3c3dc65a="" class="tabbar">
+  <!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
+  <v-tabs data-v-3c3dc65a="" density="compact" height="48" color="primary" class="tabbar-fixed-tabs">
+    <v-tab data-v-3c3dc65a="" value="backlog">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-view-list</v-icon> Backlog
+    </v-tab>
+    <v-tab data-v-3c3dc65a="" value="dashboard">
+      <v-icon data-v-3c3dc65a="" size="14" class="mr-2">mdi-chart-line</v-icon> Dashboard
+    </v-tab>
+  </v-tabs><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
+    <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-left</v-icon>
+  </button><!-- Onglets (scrollable) -->
+  <div data-v-3c3dc65a="" class="scroll-container">
+    <!-- Onglets fichiers -->
+    <!-- Groupe agent — envelope pill wrapping pill-header + sub-chips -->
+    <div data-v-3c3dc65a="" class="tab-group" style="border: 1.5px solid rgba(255, 236, 179, 0.45); background: rgba(255, 236, 179, 0.12);">
+      <!-- Pill header (identité de l'agent) --><button data-v-3c3dc65a="" class="tab-agent" style="color: rgb(0, 0, 0); background-color: rgb(255, 236, 179);">
+        <v-icon data-v-3c3dc65a="" size="11" style="flex-shrink: 0;">mdi-console</v-icon><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span>
+        <v-icon data-v-3c3dc65a="" class="tab-chevron" style="transform: rotate(-90deg);" size="10"> mdi-chevron-down </v-icon>
+        <!--v-if-->
+      </button><!-- Sub-chips session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub tab-sub--active" style="background-color: rgb(255, 236, 179); color: rgb(0, 0, 0);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
+        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-label-medium" title="Fermer">✕</span>
+      </button>
+    </div>
+  </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
+    <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
+  </button>
+</div>
+<!-- Menu contextuel groupe d'onglets -->
+<!--v-if-->"
+`;

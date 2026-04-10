@@ -1,0 +1,112 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DbSelector — snapshots > matches snapshot: home screen (no project selected) 1`] = `
+"<!-- Accueil -->
+<div data-v-2585d2c8="" class="screen-center">
+  <div data-v-2585d2c8="" class="home-content ga-6 px-6">
+    <!-- Logo -->
+    <v-avatar data-v-2585d2c8="" size="56" color="primary-container" class="logo-avatar">
+      <v-icon data-v-2585d2c8="" size="28" color="on-primary-container">mdi-shield-check</v-icon>
+    </v-avatar>
+    <div data-v-2585d2c8="" class="home-titles ga-1">
+      <h2 data-v-2585d2c8="" class="app-name text-h6">KanbAgent</h2>
+      <p data-v-2585d2c8="" class="app-tagline text-body-2">Visualisez les tâches de vos agents en temps réel.</p>
+    </div><!-- 2 options -->
+    <div data-v-2585d2c8="" class="action-grid ga-3">
+      <!-- Ouvrir existant -->
+      <v-card data-v-2585d2c8="" variant="outlined" class="action-card pa-4">
+        <div data-v-2585d2c8="" class="action-card-inner ga-2">
+          <div data-v-2585d2c8="" class="action-icon-wrap">
+            <v-icon data-v-2585d2c8="" class="action-icon" size="20">mdi-folder-outline</v-icon>
+          </div>
+          <div data-v-2585d2c8="">
+            <p data-v-2585d2c8="" class="action-label text-body-2">Ouvrir</p>
+            <p data-v-2585d2c8="" class="action-sublabel text-caption">Projet existant</p>
+          </div>
+        </div>
+      </v-card><!-- Créer nouveau -->
+      <v-card data-v-2585d2c8="" variant="outlined" class="action-card action-card--primary pa-4">
+        <div data-v-2585d2c8="" class="action-card-inner ga-2">
+          <div data-v-2585d2c8="" class="action-icon-wrap action-icon-wrap--primary">
+            <v-icon data-v-2585d2c8="" class="action-icon action-icon--primary" size="20">mdi-plus</v-icon>
+          </div>
+          <div data-v-2585d2c8="">
+            <p data-v-2585d2c8="" class="action-label action-label--primary text-body-2">Créer</p>
+            <p data-v-2585d2c8="" class="action-sublabel text-caption">Nouveau projet</p>
+          </div>
+        </div>
+      </v-card>
+    </div>
+    <!--v-if-->
+    <!-- Language selector -->
+    <div data-v-2585d2c8="" class="lang-row">
+      <v-select data-v-2585d2c8="" model-value="fr" items="[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]" item-title="label" item-value="code" density="compact" variant="outlined" hide-details="" aria-label="Language" style="max-width: 220px;"></v-select>
+    </div>
+  </div>
+</div>"
+`;
+
+exports[`DbSelector — snapshots > matches snapshot: home screen with error 1`] = `
+"<!-- Accueil -->
+<div data-v-2585d2c8="" class="screen-center">
+  <div data-v-2585d2c8="" class="home-content ga-6 px-6">
+    <!-- Logo -->
+    <v-avatar data-v-2585d2c8="" size="56" color="primary-container" class="logo-avatar">
+      <v-icon data-v-2585d2c8="" size="28" color="on-primary-container">mdi-shield-check</v-icon>
+    </v-avatar>
+    <div data-v-2585d2c8="" class="home-titles ga-1">
+      <h2 data-v-2585d2c8="" class="app-name text-h6">KanbAgent</h2>
+      <p data-v-2585d2c8="" class="app-tagline text-body-2">Visualisez les tâches de vos agents en temps réel.</p>
+    </div><!-- 2 options -->
+    <div data-v-2585d2c8="" class="action-grid ga-3">
+      <!-- Ouvrir existant -->
+      <v-card data-v-2585d2c8="" variant="outlined" class="action-card pa-4">
+        <div data-v-2585d2c8="" class="action-card-inner ga-2">
+          <div data-v-2585d2c8="" class="action-icon-wrap">
+            <v-icon data-v-2585d2c8="" class="action-icon" size="20">mdi-folder-outline</v-icon>
+          </div>
+          <div data-v-2585d2c8="">
+            <p data-v-2585d2c8="" class="action-label text-body-2">Ouvrir</p>
+            <p data-v-2585d2c8="" class="action-sublabel text-caption">Projet existant</p>
+          </div>
+        </div>
+      </v-card><!-- Créer nouveau -->
+      <v-card data-v-2585d2c8="" variant="outlined" class="action-card action-card--primary pa-4">
+        <div data-v-2585d2c8="" class="action-card-inner ga-2">
+          <div data-v-2585d2c8="" class="action-icon-wrap action-icon-wrap--primary">
+            <v-icon data-v-2585d2c8="" class="action-icon action-icon--primary" size="20">mdi-plus</v-icon>
+          </div>
+          <div data-v-2585d2c8="">
+            <p data-v-2585d2c8="" class="action-label action-label--primary text-body-2">Créer</p>
+            <p data-v-2585d2c8="" class="action-sublabel text-caption">Nouveau projet</p>
+          </div>
+        </div>
+      </v-card>
+    </div>
+    <p data-v-2585d2c8="" class="error-msg py-2 px-3 text-caption">DB not found</p><!-- Language selector -->
+    <div data-v-2585d2c8="" class="lang-row">
+      <v-select data-v-2585d2c8="" model-value="fr" items="[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]" item-title="label" item-value="code" density="compact" variant="outlined" hide-details="" aria-label="Language" style="max-width: 220px;"></v-select>
+    </div>
+  </div>
+</div>"
+`;
+
+exports[`ToastContainer — snapshots > matches snapshot: empty (no toasts) 1`] = `""`;
+
+exports[`ToastContainer — snapshots > matches snapshot: three toast types (error, warn, info) 1`] = `
+"<v-snackbar model-value="true" color="error" timeout="-1" location="bottom end"><span style="white-space: pre-line;">Connection failed</span>
+  <v-btn icon="" variant="plain" density="compact" class="ml-3">
+    <v-icon>mdi-close</v-icon>
+  </v-btn>
+</v-snackbar>
+<v-snackbar model-value="true" color="warning" timeout="-1" location="bottom end"><span style="white-space: pre-line;">Slow response detected</span>
+  <v-btn icon="" variant="plain" density="compact" class="ml-3">
+    <v-icon>mdi-close</v-icon>
+  </v-btn>
+</v-snackbar>
+<v-snackbar model-value="true" color="surface-variant" timeout="-1" location="bottom end"><span style="white-space: pre-line;">Changes saved</span>
+  <v-btn icon="" variant="plain" density="compact" class="ml-3">
+    <v-icon>mdi-close</v-icon>
+  </v-btn>
+</v-snackbar>"
+`;

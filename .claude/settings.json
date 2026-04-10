@@ -84,30 +84,3 @@
     ]
   }
 }
-,
-            "url": "http://127.0.0.1:27182/hooks/post-tool-use",
-            "timeout": 5,
-            "headers": {
-              "Authorization": "Bearer 8ac929a33ae8fe0ab6be0e3c09855f5ccc0b1e866c7f5845e9b7b70ee825f325"
-            }
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "http",
-            "url": "http://127.0.0.1:27182/hooks/stop",
-            "timeout": 15,
-            "headers": {
-              "Authorization": "Bearer 8ac929a33ae8fe0ab6be0e3c09855f5ccc0b1e866c7f5845e9b7b70ee825f325"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}

@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ConfirmDialog — snapshots > matches snapshot: danger dialog 1`] = `
+"<v-dialog data-v-ba1b5c38="" model-value="true" max-width="420" persistent="">
+  <v-card data-v-ba1b5c38="" elevation="3" role="alertdialog" aria-modal="true" aria-label="Delete agent?">
+    <!-- Header with icon -->
+    <v-card-text data-v-ba1b5c38="" class="pa-5 pb-3">
+      <div data-v-ba1b5c38="" class="d-flex align-start ga-3">
+        <!-- Icon wrapper -->
+        <div data-v-ba1b5c38="" class="icon-wrapper d-flex align-center justify-center icon-danger">
+          <!-- Danger icon -->
+          <v-icon data-v-ba1b5c38="" class="icon-svg icon-svg--danger" size="20">mdi-alert-circle-outline</v-icon>
+        </div>
+        <div data-v-ba1b5c38="" class="flex-grow-1 content-text">
+          <h3 data-v-ba1b5c38="" class="text-subtitle-2 font-weight-medium">Delete agent?</h3>
+          <p data-v-ba1b5c38="" class="text-body-2 text-medium-emphasis mt-2">This action is irreversible.</p>
+          <!--v-if-->
+        </div>
+      </div>
+    </v-card-text><!-- Actions -->
+    <v-card-actions data-v-ba1b5c38="" class="px-5 py-4 actions-border">
+      <v-spacer data-v-ba1b5c38=""></v-spacer>
+      <v-btn data-v-ba1b5c38="" variant="text">Cancel</v-btn>
+      <v-btn data-v-ba1b5c38="" color="error" variant="flat">Delete</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>"
+`;
+
+exports[`ConfirmDialog — snapshots > matches snapshot: info dialog 1`] = `
+"<v-dialog data-v-ba1b5c38="" model-value="true" max-width="420" persistent="">
+  <v-card data-v-ba1b5c38="" elevation="3" role="alertdialog" aria-modal="true" aria-label="Confirm action?">
+    <!-- Header with icon -->
+    <v-card-text data-v-ba1b5c38="" class="pa-5 pb-3">
+      <div data-v-ba1b5c38="" class="d-flex align-start ga-3">
+        <!-- Icon wrapper -->
+        <div data-v-ba1b5c38="" class="icon-wrapper d-flex align-center justify-center icon-info">
+          <!-- Danger icon -->
+          <!-- Info icon -->
+          <v-icon data-v-ba1b5c38="" class="icon-svg icon-svg--info" size="20">mdi-information-outline</v-icon>
+        </div>
+        <div data-v-ba1b5c38="" class="flex-grow-1 content-text">
+          <h3 data-v-ba1b5c38="" class="text-subtitle-2 font-weight-medium">Confirm action?</h3>
+          <p data-v-ba1b5c38="" class="text-body-2 text-medium-emphasis mt-2">Do you want to proceed?</p>
+          <!--v-if-->
+        </div>
+      </div>
+    </v-card-text><!-- Actions -->
+    <v-card-actions data-v-ba1b5c38="" class="px-5 py-4 actions-border">
+      <v-spacer data-v-ba1b5c38=""></v-spacer>
+      <v-btn data-v-ba1b5c38="" variant="text">Cancel</v-btn>
+      <v-btn data-v-ba1b5c38="" color="primary" variant="flat">OK</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>"
+`;

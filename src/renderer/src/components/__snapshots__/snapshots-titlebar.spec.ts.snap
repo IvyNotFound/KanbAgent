@@ -1,0 +1,64 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TitleBar — snapshots > matches snapshot: maximized 1`] = `
+"<!-- elevation="0" flat desktop look; height="48" = MD3 compact app bar.
+       All controls in default slot (not named slots) so shallowMount renders them correctly.
+       -webkit-app-region: drag is applied to the inner div (not v-app-bar) to avoid
+       the Electron 41 Windows issue where a position:fixed element with right:0 and
+       drag causes the OS to treat the full right window border as a drag zone, blocking
+       native resize. The static inner div correctly scopes the drag region to the
+       visible 48px title bar area only. -->
+<v-app-bar data-v-f5fc7a66="" elevation="0" height="48" color="surface" class="titlebar">
+  <div data-v-f5fc7a66="" class="titlebar-content">
+    <!-- Left: App identity -->
+    <div data-v-f5fc7a66="" class="titlebar-left">
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-label-medium">KanbAgent</span>
+    </div><!-- Center: Search bar (always visible, VS Code style) -->
+    <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)">
+        <v-icon data-v-f5fc7a66="" size="18">mdi-magnify</v-icon><span data-v-f5fc7a66="" class="search-text text-caption">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd>
+      </button></div><!-- Right: Window controls — Windows 11 style -->
+    <div data-v-f5fc7a66="" class="titlebar-controls">
+      <!-- Minimize --><button data-v-f5fc7a66="" class="win-btn" title="Minimiser"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          <rect data-v-f5fc7a66="" x="0" y="4.5" width="10" height="1"></rect>
+        </svg></button><!-- Maximize / Restore --><button data-v-f5fc7a66="" class="win-btn" title="Restaurer"><svg data-v-f5fc7a66="" width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1">
+          <rect data-v-f5fc7a66="" x="3.5" y="0.5" width="7" height="7" rx="0.5"></rect>
+          <path data-v-f5fc7a66="" d="M0.5 3.5v7h7v-3"></path>
+        </svg></button><!-- Close --><button data-v-f5fc7a66="" class="win-btn win-btn--close" title="Fermer"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+          <line data-v-f5fc7a66="" x1="0.5" y1="0.5" x2="9.5" y2="9.5"></line>
+          <line data-v-f5fc7a66="" x1="9.5" y1="0.5" x2="0.5" y2="9.5"></line>
+        </svg></button>
+    </div>
+  </div>
+</v-app-bar>"
+`;
+
+exports[`TitleBar — snapshots > matches snapshot: not maximized 1`] = `
+"<!-- elevation="0" flat desktop look; height="48" = MD3 compact app bar.
+       All controls in default slot (not named slots) so shallowMount renders them correctly.
+       -webkit-app-region: drag is applied to the inner div (not v-app-bar) to avoid
+       the Electron 41 Windows issue where a position:fixed element with right:0 and
+       drag causes the OS to treat the full right window border as a drag zone, blocking
+       native resize. The static inner div correctly scopes the drag region to the
+       visible 48px title bar area only. -->
+<v-app-bar data-v-f5fc7a66="" elevation="0" height="48" color="surface" class="titlebar">
+  <div data-v-f5fc7a66="" class="titlebar-content">
+    <!-- Left: App identity -->
+    <div data-v-f5fc7a66="" class="titlebar-left">
+      <div data-v-f5fc7a66="" class="titlebar-dot"></div><span data-v-f5fc7a66="" class="titlebar-name text-label-medium">KanbAgent</span>
+    </div><!-- Center: Search bar (always visible, VS Code style) -->
+    <div data-v-f5fc7a66="" class="titlebar-center"><button data-v-f5fc7a66="" class="search-btn" title="Rechercher une tâche (Ctrl+K)">
+        <v-icon data-v-f5fc7a66="" size="18">mdi-magnify</v-icon><span data-v-f5fc7a66="" class="search-text text-caption">Rechercher…</span><kbd data-v-f5fc7a66="" class="search-kbd">Ctrl+K</kbd>
+      </button></div><!-- Right: Window controls — Windows 11 style -->
+    <div data-v-f5fc7a66="" class="titlebar-controls">
+      <!-- Minimize --><button data-v-f5fc7a66="" class="win-btn" title="Minimiser"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          <rect data-v-f5fc7a66="" x="0" y="4.5" width="10" height="1"></rect>
+        </svg></button><!-- Maximize / Restore --><button data-v-f5fc7a66="" class="win-btn" title="Agrandir"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
+          <rect data-v-f5fc7a66="" x="0.5" y="0.5" width="9" height="9" rx="0.5"></rect>
+        </svg></button><!-- Close --><button data-v-f5fc7a66="" class="win-btn win-btn--close" title="Fermer"><svg data-v-f5fc7a66="" width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+          <line data-v-f5fc7a66="" x1="0.5" y1="0.5" x2="9.5" y2="9.5"></line>
+          <line data-v-f5fc7a66="" x1="9.5" y1="0.5" x2="0.5" y2="9.5"></line>
+        </svg></button>
+    </div>
+  </div>
+</v-app-bar>"
+`;

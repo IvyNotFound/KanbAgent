@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AgentBadge — snapshots > matches snapshot: active badge with dot 1`] = `"<v-chip data-v-0937c3c8="" size="x-small" variant="outlined" style="color: rgb(78, 52, 46); border-color: rgb(188, 170, 164); background-color: rgb(215, 204, 200);" title="review-master" class="agent-chip"><span data-v-0937c3c8="" class="activity-dot"></span><span data-v-0937c3c8="" class="badge-name">review-master</span></v-chip>"`;
+
+exports[`AgentBadge — snapshots > matches snapshot: inactive badge 1`] = `
+"<v-chip data-v-0937c3c8="" size="x-small" variant="outlined" style="color: rgb(78, 52, 46); border-color: rgb(188, 170, 164); background-color: rgb(215, 204, 200);" title="dev-front-vuejs" class="agent-chip">
+  <!--v-if--><span data-v-0937c3c8="" class="badge-name">dev-front-vuejs</span>
+</v-chip>"
+`;
