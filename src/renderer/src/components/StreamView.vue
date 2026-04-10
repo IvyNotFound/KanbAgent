@@ -27,6 +27,7 @@ import StreamToolBlock from './StreamToolBlock.vue'
 import StreamInputBar from './StreamInputBar.vue'
 import PermissionRequestBanner from './PermissionRequestBanner.vue'
 import type { PendingPermission } from './PermissionRequestBanner.vue'
+import ImagePreviewDialog from './ImagePreviewDialog.vue'
 import githubDarkUrl from 'highlight.js/styles/github-dark.css?url'
 import githubUrl from 'highlight.js/styles/github.css?url'
 
@@ -85,6 +86,8 @@ const agentStopped = ref(false)
 const prefillAnswer = ref<string | undefined>(undefined)
 /** T1817: pending permission requests awaiting user decision */
 const pendingPermissions = ref<PendingPermission[]>([])
+/** T1894: image lightbox — src of the image currently previewed */
+const previewImageSrc = ref<string | null>(null)
 
 function handleSelectOption(label: string): void {
   prefillAnswer.value = label
@@ -408,6 +411,7 @@ onUnmounted(() => {
                 class="user-bubble-img"
                 data-testid="user-thumbnail"
                 alt=""
+                @click="previewImageSrc = block.objectUrl"
               />
             </template>
           </div>
@@ -533,6 +537,13 @@ onUnmounted(() => {
       @send="handleSend"
       @stop="handleStop"
     />
+
+    <!-- T1894: image lightbox -->
+    <ImagePreviewDialog
+      :model-value="!!previewImageSrc"
+      :src="previewImageSrc"
+      @update:model-value="previewImageSrc = null"
+    />
   </div>
 </template>
 
@@ -647,6 +658,7 @@ onUnmounted(() => {
   border-radius: 8px;
   display: block;
   margin-top: 4px;
+  cursor: pointer;
 }
 
 /* assistant wrapper — left-aligned flex column */
