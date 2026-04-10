@@ -266,12 +266,16 @@
     "noFilesDesc": "لا يحتوي هذا المجلد على {claudeMd} أو قاعدة بيانات. قم بتهيئته كمشروع KanbAgent جديد.",
     "createProjectDb": "إنشاء {projectDb}",
     "createProjectDbDesc": "المخطط الكامل مع النطاقات الافتراضية",
-    "generateClaudeMd": "إنشاء {claudeMd} أساسي",
-    "generateClaudeMdDesc": "قالب بسيط — يجب إكماله لمشروعك",
     "defaultCli": "CLI الافتراضي",
     "defaultCliNote": "نسخة CLI الافتراضية لهذا المشروع",
     "defaultModel": "النموذج الافتراضي",
-    "defaultModelNote": "النموذج الافتراضي المستخدم عند تشغيل الجلسات"
+    "defaultModelNote": "النموذج الافتراضي المستخدم عند تشغيل الجلسات",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "الملفات",

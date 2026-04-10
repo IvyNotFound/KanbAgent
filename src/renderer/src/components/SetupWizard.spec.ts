@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { mount, shallowMount, flushPromises } from '@vue/test-utils'
+import { shallowMount, flushPromises } from '@vue/test-utils'
 import SetupWizard from '@renderer/components/SetupWizard.vue'
 import { useSettingsStore } from '@renderer/stores/settings'
 import i18n from '@renderer/plugins/i18n'
@@ -11,7 +11,7 @@ describe('SetupWizard', () => {
     vi.clearAllMocks()
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
     api.createProjectDb.mockResolvedValue({ success: true, dbPath: '/p/.claude/project.db' })
-    api.fsWriteFile.mockResolvedValue({ success: true })
+    api.initNewProject.mockResolvedValue({ success: true, filesCreated: [] })
     api.setConfigValue.mockResolvedValue({ success: true })
   })
 
@@ -35,7 +35,7 @@ describe('SetupWizard', () => {
     expect(wrapper.emitted('skip')).toBeTruthy()
   })
 
-  it('calls createProjectDb when init button is clicked', async () => {
+  it('calls createProjectDb with language when init button is clicked', async () => {
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
     const wrapper = shallowMount(SetupWizard, {
       props: { projectPath: '/p', hasCLAUDEmd: true },
@@ -46,7 +46,8 @@ describe('SetupWizard', () => {
     expect(actionBtn.exists()).toBe(true)
     await actionBtn.trigger('click')
     await flushPromises()
-    expect(api.createProjectDb).toHaveBeenCalledWith('/p')
+    // Should pass language (default 'en')
+    expect(api.createProjectDb).toHaveBeenCalledWith('/p', 'en')
   })
 
   it('emits done with projectPath and dbPath on success', async () => {
@@ -91,13 +92,12 @@ describe('SetupWizard', () => {
       props: { projectPath: '/p', hasCLAUDEmd: false },
       global: { plugins: [i18n] },
     })
-    // Different hasCLAUDEmd should produce different content
     const textWith = wrapperWithClaude.text()
     const textWithout = wrapperWithout.text()
     expect(textWith).not.toBe(textWithout)
   })
 
-  it('does not call setConfigValue when no CLI/model selected', async () => {
+  it('persists project_clis and primary_cli config on setup', async () => {
     const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
 
     const wrapper = shallowMount(SetupWizard, {
@@ -108,7 +108,63 @@ describe('SetupWizard', () => {
     const actionBtn = wrapper.find('[data-testid="btn-action"]')
     await actionBtn.trigger('click')
     await flushPromises()
-    expect(api.setConfigValue).not.toHaveBeenCalled()
+
+    // Should persist project_clis and primary_cli
+    expect(api.setConfigValue).toHaveBeenCalledWith(
+      '/p/.claude/project.db', 'project_clis', expect.any(String)
+    )
+    expect(api.setConfigValue).toHaveBeenCalledWith(
+      '/p/.claude/project.db', 'primary_cli', expect.any(String)
+    )
+  })
+
+  it('does not call initNewProject when hasCLAUDEmd and generateInstructions unchecked', async () => {
+    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
+
+    const wrapper = shallowMount(SetupWizard, {
+      props: { projectPath: '/p', hasCLAUDEmd: true },
+      global: { plugins: [i18n] },
+    })
+
+    // hasCLAUDEmd=true defaults generateInstructions to false
+    const actionBtn = wrapper.find('[data-testid="btn-action"]')
+    await actionBtn.trigger('click')
+    await flushPromises()
+    expect(api.initNewProject).not.toHaveBeenCalled()
+  })
+
+  it('calls initNewProject when generateInstructions is enabled (Case A)', async () => {
+    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
+
+    const wrapper = shallowMount(SetupWizard, {
+      props: { projectPath: '/p', hasCLAUDEmd: false },
+      global: { plugins: [i18n] },
+    })
+
+    // hasCLAUDEmd=false defaults generateInstructions to true
+    const actionBtn = wrapper.find('[data-testid="btn-action"]')
+    await actionBtn.trigger('click')
+    await flushPromises()
+    expect(api.initNewProject).toHaveBeenCalledWith(
+      '/p', 'en', expect.any(Array), expect.any(String)
+    )
+  })
+
+  it('does not call setConfigValue for CLI/model when none selected', async () => {
+    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
+
+    const wrapper = shallowMount(SetupWizard, {
+      props: { projectPath: '/p', hasCLAUDEmd: true },
+      global: { plugins: [i18n] },
+    })
+
+    const actionBtn = wrapper.find('[data-testid="btn-action"]')
+    await actionBtn.trigger('click')
+    await flushPromises()
+    // Should NOT have called setConfigValue for defaultCliInstance or default_model_*
+    expect(api.setConfigValue).not.toHaveBeenCalledWith(
+      expect.anything(), 'defaultCliInstance', expect.anything()
+    )
   })
 
   it('calls setConfigValue when CLI and model are selected', async () => {
@@ -127,9 +183,9 @@ describe('SetupWizard', () => {
     await flushPromises()
 
     // Simulate user selecting CLI and model
-    const vm = wrapper.vm as unknown as { selectedCli: string | null; selectedModel: string }
-    vm.selectedCli = 'claude'
-    vm.selectedModel = 'opus-4'
+    const vm = wrapper.vm as unknown as { primaryCli: string | null; primaryModel: string }
+    vm.primaryCli = 'claude'
+    vm.primaryModel = 'opus-4'
 
     const actionBtn = wrapper.find('[data-testid="btn-action"]')
     await actionBtn.trigger('click')
@@ -137,5 +193,19 @@ describe('SetupWizard', () => {
 
     expect(api.setConfigValue).toHaveBeenCalledWith('/p/.claude/project.db', 'defaultCliInstance', 'claude')
     expect(api.setConfigValue).toHaveBeenCalledWith('/p/.claude/project.db', 'default_model_claude', 'opus-4')
+  })
+
+  it('does not call fsWriteFile (template removed)', async () => {
+    const api = window.electronAPI as Record<string, ReturnType<typeof vi.fn>>
+
+    const wrapper = shallowMount(SetupWizard, {
+      props: { projectPath: '/p', hasCLAUDEmd: false },
+      global: { plugins: [i18n] },
+    })
+
+    const actionBtn = wrapper.find('[data-testid="btn-action"]')
+    await actionBtn.trigger('click')
+    await flushPromises()
+    expect(api.fsWriteFile).not.toHaveBeenCalled()
   })
 })

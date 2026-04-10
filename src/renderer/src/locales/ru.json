@@ -266,12 +266,16 @@
     "noFilesDesc": "Эта папка не содержит ни {claudeMd}, ни базы данных. Инициализируйте её как новый проект KanbAgent.",
     "createProjectDb": "Создать {projectDb}",
     "createProjectDbDesc": "Полная схема с scopes по умолчанию",
-    "generateClaudeMd": "Сгенерировать базовый {claudeMd}",
-    "generateClaudeMdDesc": "Минимальный шаблон — для дальнейшей настройки",
     "defaultCli": "CLI по умолчанию",
     "defaultCliNote": "Экземпляр CLI по умолчанию для этого проекта",
     "defaultModel": "Модель по умолчанию",
-    "defaultModelNote": "Модель по умолчанию, используемая при запуске сессий"
+    "defaultModelNote": "Модель по умолчанию, используемая при запуске сессий",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "Файлы",

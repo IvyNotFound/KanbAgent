@@ -266,12 +266,16 @@
     "noFilesDesc": "此文件夹既没有 {claudeMd} 也没有数据库。请将其初始化为新的 KanbAgent 项目。",
     "createProjectDb": "创建 {projectDb}",
     "createProjectDbDesc": "带默认Scope的完整架构",
-    "generateClaudeMd": "生成基础 {claudeMd}",
-    "generateClaudeMdDesc": "最小模板 — 请根据您的项目完善",
     "defaultCli": "默认 CLI",
     "defaultCliNote": "此项目的默认 CLI 实例",
     "defaultModel": "默认模型",
-    "defaultModelNote": "启动会话时使用的默认模型"
+    "defaultModelNote": "启动会话时使用的默认模型",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "文件",

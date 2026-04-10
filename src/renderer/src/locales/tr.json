@@ -266,12 +266,16 @@
     "noFilesDesc": "Bu klasörde ne {claudeMd} ne de veritabanı var. Yeni bir KanbAgent projesi olarak başlatın.",
     "createProjectDb": "{projectDb} oluştur",
     "createProjectDbDesc": "Varsayılan scopeli tam şema",
-    "generateClaudeMd": "{claudeMd} tabanı oluştur",
-    "generateClaudeMdDesc": "Minimum şablon — projenize göre tamamlayın",
     "defaultCli": "Varsayılan CLI",
     "defaultCliNote": "Bu proje için varsayılan CLI örneği",
     "defaultModel": "Varsayılan model",
-    "defaultModelNote": "Oturumlar başlatılırken kullanılan varsayılan model"
+    "defaultModelNote": "Oturumlar başlatılırken kullanılan varsayılan model",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "Dosyalar",

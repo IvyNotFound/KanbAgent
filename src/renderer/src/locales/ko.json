@@ -266,12 +266,16 @@
     "noFilesDesc": "이 폴더에는 {claudeMd}도 데이터베이스도 없습니다. 새 KanbAgent 프로젝트로 초기화하세요.",
     "createProjectDb": "{projectDb} 생성",
     "createProjectDbDesc": "기본 스코프 포함 전체 스키마",
-    "generateClaudeMd": "{claudeMd} 기본 파일 생성",
-    "generateClaudeMdDesc": "최소 템플릿 — 프로젝트에 맞게 보완하세요",
     "defaultCli": "기본 CLI",
     "defaultCliNote": "이 프로젝트의 기본 CLI 인스턴스",
     "defaultModel": "기본 모델",
-    "defaultModelNote": "세션 실행 시 사용되는 기본 모델"
+    "defaultModelNote": "세션 실행 시 사용되는 기본 모델",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "파일",

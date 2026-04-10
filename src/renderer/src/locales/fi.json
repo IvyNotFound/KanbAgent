@@ -266,12 +266,16 @@
     "noFilesDesc": "Tässä kansiossa ei ole {claudeMd}:tä eikä tietokantaa. Alusta se uutena KanbAgent-projektina.",
     "createProjectDb": "Luo {projectDb}",
     "createProjectDbDesc": "Täydellinen skeema oletusscopes",
-    "generateClaudeMd": "Luo pohja {claudeMd}:lle",
-    "generateClaudeMdDesc": "Minimipohja — täydennettävä omaa projektia varten",
     "defaultCli": "Oletus-CLI",
     "defaultCliNote": "Oletusarvoinen CLI-instanssi tälle projektille",
     "defaultModel": "Oletusmalli",
-    "defaultModelNote": "Oletusmalli, jota käytetään istuntojen käynnistyksessä"
+    "defaultModelNote": "Oletusmalli, jota käytetään istuntojen käynnistyksessä",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "Tiedostot",

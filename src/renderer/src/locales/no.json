@@ -266,12 +266,16 @@
     "noFilesDesc": "Denne mappen inneholder verken {claudeMd} eller en database. Initialiser den som et nytt KanbAgent-prosjekt.",
     "createProjectDb": "Opprett {projectDb}",
     "createProjectDbDesc": "Fullt skjema med standard scopes",
-    "generateClaudeMd": "Generer en basis {claudeMd}",
-    "generateClaudeMdDesc": "Minimal mal — skal fylles ut for ditt prosjekt",
     "defaultCli": "Standard CLI",
     "defaultCliNote": "Standard CLI-instans for dette prosjektet",
     "defaultModel": "Standardmodell",
-    "defaultModelNote": "Standardmodell brukt ved oppstart av økter"
+    "defaultModelNote": "Standardmodell brukt ved oppstart av økter",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "Filer",

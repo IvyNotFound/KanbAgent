@@ -267,12 +267,16 @@
     "noFilesDesc": "Ce dossier ne contient ni {claudeMd} ni base de données. Initialisez-le en tant que nouveau projet KanbAgent.",
     "createProjectDb": "Créer {projectDb}",
     "createProjectDbDesc": "Schéma complet avec périmètres par défaut",
-    "generateClaudeMd": "Générer un {claudeMd} de base",
-    "generateClaudeMdDesc": "Template minimal — à compléter selon votre projet",
-    "defaultCli": "CLI par défaut",
-    "defaultCliNote": "Instance CLI par défaut pour ce projet",
+    "generateInstructions": "Générer les fichiers d'instructions",
+    "generateInstructionsDesc": "Crée CLAUDE.md, WORKFLOW.md et les fichiers de règles par CLI",
+    "instructionLang": "Langue des instructions",
+    "instructionLangNote": "Langue des prompts agents et des fichiers d'instructions générés",
+    "defaultCli": "CLI principal",
+    "defaultCliNote": "CLI principal utilisé pour ce projet",
+    "additionalClis": "CLIs additionnels",
     "defaultModel": "Modèle par défaut",
-    "defaultModelNote": "Modèle utilisé par défaut lors du lancement des sessions"
+    "defaultModelNote": "Modèle utilisé par défaut lors du lancement des sessions",
+    "createDbError": "Erreur lors de la création de la base de données"
   },
   "explorer": {
     "files": "Fichiers",

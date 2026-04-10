@@ -266,12 +266,16 @@
     "noFilesDesc": "Ten folder nie zawiera ani {claudeMd} ani bazy danych. Zainicjalizuj go jako nowy projekt KanbAgent.",
     "createProjectDb": "Utwórz {projectDb}",
     "createProjectDbDesc": "Pełny schemat z domyślnymi obwodami",
-    "generateClaudeMd": "Wygeneruj bazowy {claudeMd}",
-    "generateClaudeMdDesc": "Minimalny szablon — do uzupełnienia dla projektu",
     "defaultCli": "Domyślne CLI",
     "defaultCliNote": "Domyślna instancja CLI dla tego projektu",
     "defaultModel": "Domyślny model",
-    "defaultModelNote": "Domyślny model używany przy uruchamianiu sesji"
+    "defaultModelNote": "Domyślny model używany przy uruchamianiu sesji",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "Pliki",

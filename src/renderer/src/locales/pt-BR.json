@@ -266,12 +266,16 @@
     "noFilesDesc": "Esta pasta não contém nem {claudeMd} nem um banco de dados. Inicialize-a como um novo projeto KanbAgent.",
     "createProjectDb": "Criar {projectDb}",
     "createProjectDbDesc": "Esquema completo com scopes padrão",
-    "generateClaudeMd": "Gerar um {claudeMd} base",
-    "generateClaudeMdDesc": "Modelo mínimo — a ser completado para seu projeto",
     "defaultCli": "CLI padrão",
     "defaultCliNote": "Instância CLI padrão para este projeto",
     "defaultModel": "Modelo padrão",
-    "defaultModelNote": "Modelo padrão usado ao iniciar sessões"
+    "defaultModelNote": "Modelo padrão usado ao iniciar sessões",
+    "generateInstructions": "Generate instruction files",
+    "generateInstructionsDesc": "Creates CLAUDE.md, WORKFLOW.md and CLI-specific rule files",
+    "instructionLang": "Instruction language",
+    "instructionLangNote": "Language for generated agent prompts and instructions",
+    "additionalClis": "Additional CLIs",
+    "createDbError": "Error creating the database"
   },
   "explorer": {
     "files": "Arquivos",
