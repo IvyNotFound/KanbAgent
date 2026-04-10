@@ -56,7 +56,7 @@ const { startHookServer, setHookWindow } = await import('./hookServer')
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+  const server = startHookServer().primaryServer
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }
     const cleanup = () => {
@@ -590,7 +590,7 @@ describe('startHookServer — listen callback logs the actual port (not HOOK_POR
     // This is hard to distinguish if HOOK_PORT is used. Let's just verify the log
     // contains a non-zero port number (not "0" or empty).
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
     await new Promise<void>((resolve) => {
       if (server.listening) { resolve(); return }
       const cleanup = () => {

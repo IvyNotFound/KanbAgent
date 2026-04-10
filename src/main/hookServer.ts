@@ -356,20 +356,26 @@ const LIFECYCLE_ROUTES: Record<string, boolean> = {
 }
 
 /**
- * Start the embedded HTTP hook server.
- *
- * Tries port HOOK_PORT (27182). If the port is already in use, logs a warning
- * and continues — Claude Code hooks will fail silently (non-blocking per spec).
- *
- * @param userDataPath - Electron userData path for persisting the auth secret.
- *   If omitted, a fresh random secret is generated per process (not persisted).
- * @returns The http.Server instance (call server.close() on app quit)
+ * Handle returned by startHookServer. Wraps one or two http.Server instances
+ * (primary on 127.0.0.1, optional WSL gateway) and pending retry timers.
  */
-export function startHookServer(userDataPath?: string): http.Server {
-  initHookSecret(userDataPath)
-  const hookSecret = getHookSecret()
+export interface HookServerHandle {
+  /** Primary server (127.0.0.1) — exposed for tests */
+  primaryServer: http.Server
+  /** WSL gateway server, if bound (null until WSL adapter detected) */
+  wslServer: http.Server | null
+  /** Close all servers and cancel pending WSL retries */
+  close(callback?: () => void): void
+}
 
-  const server = http.createServer((req, res) => {
+/** Backoff delays for WSL gateway detection retries (ms) */
+const WSL_RETRY_DELAYS = [5_000, 15_000, 30_000]
+
+/**
+ * Create the shared HTTP request handler used by both primary and WSL servers.
+ */
+function createRequestHandler(secret: string): http.RequestListener {
+  return (req, res) => {
     // Only accept POST /hooks/*
     if (req.method !== 'POST' || !req.url?.startsWith('/hooks/')) {
       res.writeHead(404)
@@ -379,7 +385,7 @@ export function startHookServer(userDataPath?: string): http.Server {
 
     // Auth check — always respond 2xx to not block Claude Code, but skip if unauthorized
     const authHeader = req.headers['authorization']
-    if (authHeader !== `Bearer ${hookSecret}`) {
+    if (authHeader !== `Bearer ${secret}`) {
       console.warn('[hookServer] Unauthorized request rejected (bad or missing Authorization header)')
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end('{}')
@@ -455,27 +461,92 @@ export function startHookServer(userDataPath?: string): http.Server {
         res.end('{}')
       }
     })
-  })
+  }
+}
 
-  server.on('error', (err: NodeJS.ErrnoException) => {
+/**
+ * Start the embedded HTTP hook server with dual-listen support (T1905).
+ *
+ * Always binds a primary server on 127.0.0.1:HOOK_PORT for local traffic.
+ * On Windows, attempts to also bind on the WSL gateway IP so that Claude Code
+ * running inside WSL can reach the server. If WSL is not ready at startup,
+ * retries with exponential backoff (5s, 15s, 30s — max 3 attempts).
+ *
+ * NOTE: 0.0.0.0 is intentionally avoided — Bearer secret is the only auth layer
+ * and binding to all interfaces unnecessarily enlarges the attack surface.
+ *
+ * @param userDataPath - Electron userData path for persisting the auth secret.
+ *   If omitted, a fresh random secret is generated per process (not persisted).
+ * @returns A HookServerHandle (call handle.close() on app quit)
+ */
+export function startHookServer(userDataPath?: string): HookServerHandle {
+  initHookSecret(userDataPath)
+  const hookSecret = getHookSecret()
+  const handler = createRequestHandler(hookSecret)
+
+  // ── Primary server: always on 127.0.0.1 ──────────────────────────────────
+  const primaryServer = http.createServer(handler)
+
+  primaryServer.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
-      console.warn(`[hookServer] Port ${HOOK_PORT} already in use — hook server disabled. Tokens will not be captured via HTTP hook.`)
+      console.warn(`[hookServer] Port ${HOOK_PORT} already in use on 127.0.0.1 — primary hook server disabled.`)
     } else {
       console.error('[hookServer] Server error:', err)
     }
   })
 
-  // Bind to loopback by default to avoid exposing the hook server to the LAN.
-  // On Windows with WSL, bind to the WSL gateway IP so WSL processes can reach the server
-  // via the Windows vEthernet WSL interface (127.0.0.1 is not reachable from inside WSL).
-  // NOTE: 0.0.0.0 is intentionally avoided — Bearer secret is the only auth layer
-  // and binding to all interfaces unnecessarily enlarges the attack surface.
-  const listenHost = detectWslGatewayIp() ?? '127.0.0.1'
-  server.listen(HOOK_PORT, listenHost, () => {
-    const addr = server.address()
-    const port = typeof addr === 'object' && addr !== null ? addr.port : HOOK_PORT
-    console.log(`[hookServer] Listening on ${listenHost}:${port}`)
+  primaryServer.listen(HOOK_PORT, '127.0.0.1', () => {
+    console.log(`[hookServer] Listening on 127.0.0.1:${HOOK_PORT}`)
   })
 
-  return server
+  // ── Handle (declared early so tryBindWsl can update wslServer) ──────────
+  const handle: HookServerHandle = {
+    primaryServer,
+    wslServer: null,
+    close(callback?: () => void) {
+      if (wslRetryTimer) {
+        clearTimeout(wslRetryTimer)
+        wslRetryTimer = null
+      }
+      let pending = handle.wslServer ? 2 : 1
+      const done = (): void => { if (--pending === 0 && callback) callback() }
+      primaryServer.close(done)
+      if (handle.wslServer) handle.wslServer.close(done)
+    },
+  }
+
+  // ── WSL gateway server: bind with retry if adapter not yet available ──────
+  let wslRetryTimer: ReturnType<typeof setTimeout> | null = null
+
+  function tryBindWsl(attempt: number): void {
+    const wslIp = detectWslGatewayIp()
+    if (!wslIp) {
+      if (attempt < WSL_RETRY_DELAYS.length) {
+        const delay = WSL_RETRY_DELAYS[attempt]
+        console.log(`[hookServer] WSL gateway not found, retry ${attempt + 1}/${WSL_RETRY_DELAYS.length} in ${delay / 1000}s`)
+        wslRetryTimer = setTimeout(() => tryBindWsl(attempt + 1), delay)
+      } else {
+        console.warn('[hookServer] WSL gateway not found after 3 retries — WSL listener disabled')
+      }
+      return
+    }
+
+    const server = http.createServer(handler)
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`[hookServer] Port ${HOOK_PORT} already in use on ${wslIp} — WSL listener disabled`)
+      } else {
+        console.error(`[hookServer] WSL server error on ${wslIp}:`, err)
+      }
+      handle.wslServer = null
+    })
+    server.listen(HOOK_PORT, wslIp, () => {
+      console.log(`[hookServer] Listening on ${wslIp}:${HOOK_PORT} (WSL gateway)`)
+    })
+    handle.wslServer = server
+  }
+
+  tryBindWsl(0)
+
+  return handle
 }

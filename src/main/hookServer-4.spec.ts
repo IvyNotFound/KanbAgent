@@ -66,7 +66,7 @@ const { startHookServer, setHookWindow } = await import('./hookServer')
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+  const server = startHookServer().primaryServer
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }
     const cleanup = () => {
@@ -812,7 +812,7 @@ describe('startHookServer — server error event handling', () => {
     const boundPort = (s1.address() as { port: number }).port
 
     // Create a hook server then manually emit EADDRINUSE on its server
-    const hookServer = startHookServer()
+    const hookServer = startHookServer().primaryServer
     // Wait for it to settle
     await new Promise<void>((resolve) => {
       if (hookServer.listening) { resolve(); return }
@@ -834,7 +834,7 @@ describe('startHookServer — server error event handling', () => {
 
   it('non-EADDRINUSE server error is handled without crashing', async () => {
     mockGetHookSecret.mockReturnValue('secret-t1336')
-    const hookServer = startHookServer()
+    const hookServer = startHookServer().primaryServer
     await new Promise<void>((resolve) => {
       if (hookServer.listening) { resolve(); return }
       hookServer.once('listening', resolve)
@@ -874,7 +874,8 @@ describe('startHookServer — listen address fallback uses ??', () => {
   it('binds to 127.0.0.1 (listen succeeds) when WSL returns undefined (via ?? fallback)', async () => {
     mockDetectWslGatewayIp.mockReturnValue(undefined)
     mockGetHookSecret.mockReturnValue('secret-t1336')
-    const server = startHookServer()
+    const handle = startHookServer()
+    const server = handle.primaryServer
     await new Promise<void>((resolve) => {
       if (server.listening) { resolve(); return }
       server.once('listening', resolve)
@@ -884,7 +885,7 @@ describe('startHookServer — listen address fallback uses ??', () => {
     const addr = server.address()
     if (addr) {
       // Successfully bound
-      await new Promise<void>((r) => server.close(() => r()))
+      await new Promise<void>((r) => handle.close(() => r()))
     }
     // If undefined is treated as falsy, ?? would still give '127.0.0.1'
     mockDetectWslGatewayIp.mockReturnValue(null)

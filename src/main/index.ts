@@ -11,12 +11,11 @@
 
 import { app, BrowserWindow, session, Menu, MenuItem, globalShortcut } from 'electron'
 import { join } from 'path'
-import type { Server } from 'http'
 import { registerIpcHandlers } from './ipc'
 import { warmupModelDetection } from './cli-model-detect'
 import { restoreTrustedPaths } from './ipc-project'
 import { registerAgentStreamHandlers } from './agent-stream'
-import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks, getHookSecret } from './hookServer'
+import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks, getHookSecret, type HookServerHandle } from './hookServer'
 import { setupAutoUpdater, registerUpdaterIpc } from './updater'
 import { cleanupOrphanWorktreesAtStartup } from './worktree-cleanup'
 import { stopAllDbDaemons } from './db-daemon'
@@ -171,7 +170,7 @@ function createWindow(): BrowserWindow {
   return win
 }
 
-let hookServer: Server | null = null
+let hookServer: HookServerHandle | null = null
 
 app.whenReady().then(async () => {
   setupCSP()

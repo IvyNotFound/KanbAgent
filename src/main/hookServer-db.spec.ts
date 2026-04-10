@@ -47,7 +47,7 @@ const { startHookServer, setHookWindow } = await import('./hookServer')
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+  const server = startHookServer().primaryServer
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }
     const onListening = () => { cleanup(); resolve() }

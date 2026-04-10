@@ -59,7 +59,7 @@ const { startHookServer, setHookWindow } = await import('./hookServer')
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+  const server = startHookServer().primaryServer
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }
     const cleanup = () => {
@@ -431,7 +431,8 @@ describe('handleLifecycleEvent — row null guard in DB callback', () => {
 describe('startHookServer — server error handling', () => {
   it('handles EADDRINUSE without throwing (port in use)', async () => {
     // Start two servers on the same port to force EADDRINUSE on the second
-    const s1 = startHookServer()
+    const h1 = startHookServer()
+    const s1 = h1.primaryServer
     await new Promise<void>((resolve) => {
       if (s1.listening) { resolve(); return }
       s1.once('listening', resolve)
@@ -440,8 +441,8 @@ describe('startHookServer — server error handling', () => {
 
     // If s1 successfully bound a port, try to bind s2 on the same port
     if (s1.listening) {
-      const addr = s1.address() as { port: number }
-      const s2 = startHookServer()
+      const h2 = startHookServer()
+      const s2 = h2.primaryServer
       // Wait for s2 to hit EADDRINUSE or settle
       await new Promise<void>((resolve) => {
         if (s2.listening) { resolve(); return }
@@ -451,8 +452,8 @@ describe('startHookServer — server error handling', () => {
       // s1 should still be listening (not crashed)
       expect(s1.listening).toBe(true)
       // Close both
-      await new Promise<void>((r) => s1.close(() => r()))
-      if (s2.listening) await new Promise<void>((r) => s2.close(() => r()))
+      await new Promise<void>((r) => h1.close(() => r()))
+      if (s2.listening) await new Promise<void>((r) => h2.close(() => r()))
     } else {
       // s1 hit EADDRINUSE itself — hook port was in use, server didn't crash
       expect(s1.listening).toBe(false)
@@ -478,22 +479,26 @@ describe('startHookServer — listen address', () => {
     await new Promise<void>((r) => server.close(() => r()))
   })
 
-  it('binds to WSL gateway IP when detectWslGatewayIp returns an IP', async () => {
+  it('creates WSL server when detectWslGatewayIp returns an IP (T1905 dual-listen)', async () => {
     mockDetectWslGatewayIp.mockReturnValue('172.17.240.1')
     mockGetHookSecret.mockReturnValue('secret-t1267')
-    const server = startHookServer()
+    const handle = startHookServer()
+    // Primary is always 127.0.0.1
     await new Promise<void>((resolve) => {
-      if (server.listening) { resolve(); return }
-      server.once('listening', resolve)
-      server.once('error', resolve)
+      if (handle.primaryServer.listening) { resolve(); return }
+      handle.primaryServer.once('listening', resolve)
+      handle.primaryServer.once('error', resolve)
     })
-    if (server.listening) {
-      const addr = server.address() as { address: string } | null
-      expect(addr).not.toBeNull()
-      // Either WSL IP or 127.0.0.1 (if WSL IP not bindable on this machine)
-      expect(addr!.address).toMatch(/^(172\.17\.240\.1|127\.0\.0\.1)$/)
-      await new Promise<void>((r) => server.close(() => r()))
+    // WSL server should exist
+    expect(handle.wslServer).not.toBeNull()
+    if (handle.wslServer) {
+      await new Promise<void>((resolve) => {
+        if (handle.wslServer!.listening) { resolve(); return }
+        handle.wslServer!.once('listening', resolve)
+        handle.wslServer!.once('error', resolve)
+      })
     }
+    await new Promise<void>((r) => handle.close(() => r()))
     // Reset mock
     mockDetectWslGatewayIp.mockReturnValue(null)
   })

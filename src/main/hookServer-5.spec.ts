@@ -55,7 +55,7 @@ const { startHookServer, setHookWindow } = await import('./hookServer')
 
 /** Create a test server on a random port (re-listens after initial settle) */
 async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+  const server = startHookServer().primaryServer
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }
     const cleanup = () => {
@@ -537,7 +537,7 @@ describe('startHookServer — EADDRINUSE vs other error logging', () => {
   })
 
   it('EADDRINUSE error emits console.warn (not console.error)', async () => {
-    const hookServer = startHookServer()
+    const hookServer = startHookServer().primaryServer
     await new Promise<void>((resolve) => {
       if (hookServer.listening) { resolve(); return }
       hookServer.once('listening', resolve)
@@ -560,7 +560,7 @@ describe('startHookServer — EADDRINUSE vs other error logging', () => {
   })
 
   it('non-EADDRINUSE server error emits console.error (not console.warn)', async () => {
-    const hookServer = startHookServer()
+    const hookServer = startHookServer().primaryServer
     await new Promise<void>((resolve) => {
       if (hookServer.listening) { resolve(); return }
       hookServer.once('listening', resolve)
@@ -604,7 +604,7 @@ describe('startHookServer — initial listen binds to 127.0.0.1 when WSL is null
   it('initial listen address is 127.0.0.1 when detectWslGatewayIp returns null', async () => {
     mockDetectWslGatewayIp.mockReturnValue(null)
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
     // Wait for initial listen to settle
     await new Promise<void>((resolve) => {
       if (server.listening) { resolve(); return }
@@ -635,7 +635,7 @@ describe('startHookServer — initial listen binds to 127.0.0.1 when WSL is null
   it('console.log is called with 127.0.0.1 host when WSL returns null', async () => {
     mockDetectWslGatewayIp.mockReturnValue(null)
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
     await new Promise<void>((resolve) => {
       if (server.listening) { resolve(); return }
       const cleanup = () => {
@@ -679,7 +679,7 @@ describe('startHookServer — console.log on listen', () => {
   })
 
   it('logs non-empty "Listening on" message when server starts', async () => {
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
     await new Promise<void>((resolve) => {
       if (server.listening) { resolve(); return }
       const cleanup = () => {

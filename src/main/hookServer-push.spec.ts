@@ -9,7 +9,7 @@ import http from 'http'
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
-const { mockWriteDb, mockAssertProjectPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockWebContentsSend } = vi.hoisted(
+const { mockWriteDb, mockAssertProjectPathAllowed, mockAssertTranscriptPathAllowed, mockInitHookSecret, mockGetHookSecret, mockWebContentsSend, mockDetectWslGatewayIp } = vi.hoisted(
   () => ({
     mockWriteDb: vi.fn(),
     mockAssertProjectPathAllowed: vi.fn(), // no-op by default — allows all paths
@@ -17,6 +17,7 @@ const { mockWriteDb, mockAssertProjectPathAllowed, mockAssertTranscriptPathAllow
     mockInitHookSecret: vi.fn(),
     mockGetHookSecret: vi.fn().mockReturnValue('test-secret-abc123'),
     mockWebContentsSend: vi.fn(),
+    mockDetectWslGatewayIp: vi.fn().mockReturnValue(null),
   })
 )
 
@@ -33,6 +34,7 @@ vi.mock('./hookServer-inject', async (importOriginal) => {
     HOOK_PORT: actual.HOOK_PORT,
     initHookSecret: mockInitHookSecret,
     getHookSecret: mockGetHookSecret,
+    detectWslGatewayIp: mockDetectWslGatewayIp,
   }
 })
 
@@ -43,7 +45,8 @@ const { startHookServer, setHookWindow } = await import('./hookServer')
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+  const handle = startHookServer()
+  const server = handle.primaryServer
   // Wait for the initial listen(HOOK_PORT) to settle: either 'listening' or 'error'
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }

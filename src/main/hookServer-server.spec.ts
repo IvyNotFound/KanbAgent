@@ -41,18 +41,20 @@ vi.mock('./hookServer-inject', async (importOriginal) => {
 // ── Import module ─────────────────────────────────────────────────────────────
 
 const { startHookServer, setHookWindow, pendingPermissions, MAX_PENDING_PERMISSIONS } = await import('./hookServer')
+import type { HookServerHandle } from './hookServer'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
  * Start a server on a random port.
- * startHookServer() internally calls server.listen(HOOK_PORT).
+ * startHookServer() returns a HookServerHandle; we use primaryServer for tests.
  * We wait for the first listen() to settle (listening or EADDRINUSE) before
  * re-listening on port 0 to avoid the race where the EADDRINUSE error from
  * the initial listen gets caught by the second listen's error handler.
  */
-async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+async function createTestServer(): Promise<[http.Server, number, HookServerHandle]> {
+  const handle = startHookServer()
+  const server = handle.primaryServer
   // Wait for the initial listen(HOOK_PORT) to settle: either 'listening' or 'error'
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }
@@ -77,7 +79,7 @@ async function createTestServer(): Promise<[http.Server, number]> {
     server.listen(0, '127.0.0.1')
   })
   const addr = server.address() as { port: number }
-  return [server, addr.port]
+  return [server, addr.port, handle]
 }
 
 function makeRequest(

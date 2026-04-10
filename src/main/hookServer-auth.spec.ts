@@ -53,7 +53,7 @@ const { startHookServer, setHookWindow, HOOK_PORT } = await import('./hookServer
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function createTestServer(): Promise<[http.Server, number]> {
-  const server = startHookServer()
+  const server = startHookServer().primaryServer
   await new Promise<void>((resolve) => {
     if (server.listening) { resolve(); return }
     const cleanup = () => {
@@ -267,7 +267,7 @@ describe('server error handler L294 — EADDRINUSE vs other error codes', () => 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
 
     // Emit EADDRINUSE error directly on the server
     const eaddrinuse = Object.assign(new Error('listen EADDRINUSE'), { code: 'EADDRINUSE' }) as NodeJS.ErrnoException
@@ -293,7 +293,7 @@ describe('server error handler L294 — EADDRINUSE vs other error codes', () => 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
 
     // Emit a non-EADDRINUSE error
     const otherErr = Object.assign(new Error('EACCES'), { code: 'EACCES' }) as NodeJS.ErrnoException
@@ -319,7 +319,7 @@ describe('server error handler L294 — EADDRINUSE vs other error codes', () => 
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
     const eaddrinuse = Object.assign(new Error('listen EADDRINUSE'), { code: 'EADDRINUSE' }) as NodeJS.ErrnoException
     server.emit('error', eaddrinuse)
 
@@ -339,7 +339,7 @@ describe('server error handler L294 — EADDRINUSE vs other error codes', () => 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
     // Code that starts with EADDRINUSE but is not exactly it → should go to the else (error) branch
     const notEaddrinuse = Object.assign(new Error('other'), { code: 'EADDRINUSEEXTRA' }) as NodeJS.ErrnoException
     server.emit('error', notEaddrinuse)
@@ -389,7 +389,7 @@ describe('listen callback addr port computation L309', () => {
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
-    const server = startHookServer()
+    const server = startHookServer().primaryServer
 
     return new Promise<void>((resolve, reject) => {
       if (server.listening) {
