@@ -282,6 +282,9 @@ export function useLaunchSession() {
 
       const thinkingMode = (promptResult.thinkingMode as 'auto' | 'disabled') ?? 'auto'
 
+      // Model resolution: agent preferred_model > backend default (T1929)
+      const resolvedModelId = agent.preferred_model ?? undefined
+
       if (tabsStore.hasAgentTerminal(agent.name)) return false
 
       tabsStore.addTerminal(
@@ -295,7 +298,9 @@ export function useLaunchSession() {
         false,
         undefined,
         'stream',
-        defaultCli
+        defaultCli,
+        undefined,       // workDir — review sessions don't use worktrees
+        resolvedModelId
       )
 
       return true

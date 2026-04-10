@@ -9,6 +9,7 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { useTabsStore } from '@renderer/stores/tabs'
 import { agentAccent } from '@renderer/utils/agentColor'
 import type { Perimetre } from '@renderer/types'
+import type { CliType } from '@shared/cli-types'
 
 const { t } = useI18n()
 const store = useTasksStore()
@@ -77,10 +78,22 @@ async function addPerimetre() {
     detail: t('sidebar.addPerimeterDetail'),
   })
   if (!confirmed) return
+  // Resolve arch agent from store to inject preferred_cli + preferred_model (T1929)
+  const archAgent = store.agents.find(a => a.name === 'arch')
   tabsStore.addTerminal(
     'arch',
     undefined,
-    'Tu es l\'agent arch. Crée un nouveau périmètre dans ce projet : mets à jour la table perimetres dans .claude/project.db et le CLAUDE.md si nécessaire. Demande d\'abord le nom et la description du périmètre.'
+    'Tu es l\'agent arch. Crée un nouveau périmètre dans ce projet : mets à jour la table perimetres dans .claude/project.db et le CLAUDE.md si nécessaire. Demande d\'abord le nom et la description du périmètre.',
+    undefined,  // systemPrompt
+    undefined,  // thinkingMode
+    undefined,  // claudeCommand
+    undefined,  // convId
+    true,       // activate
+    undefined,  // taskId
+    'stream',   // viewMode
+    (archAgent?.preferred_cli as CliType) ?? undefined,
+    undefined,  // workDir
+    archAgent?.preferred_model ?? undefined
   )
 }
 </script>
