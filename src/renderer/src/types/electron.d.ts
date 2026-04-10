@@ -40,6 +40,8 @@ declare global {
       // Config DB
       getConfigValue(dbPath: string, key: string): Promise<{ success: boolean; value: string | null; error?: string }>
       setConfigValue(dbPath: string, key: string, value: string): Promise<{ success: boolean; error?: string }>
+      /** Push maxFileLines config to hookServer file-size check (T1898). */
+      updateMaxFileLines(enabled: boolean, maxLines: number): Promise<{ success: boolean }>
       // Agents
       updateAgent(dbPath: string, agentId: number, updates: UpdateAgentData): Promise<{ success: boolean; error?: string }>
       createAgent(dbPath: string, projectPath: string, data: CreateAgentData): Promise<{ success: boolean; agentId?: number; claudeMdUpdated?: boolean; error?: string }>

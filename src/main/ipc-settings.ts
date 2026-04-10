@@ -8,6 +8,7 @@
 
 import { ipcMain } from 'electron'
 import { assertDbPathAllowed, queryLive, writeDb } from './db'
+import { updateFileSizeConfig } from './hookServer-filesize'
 
 // ── Handler registration ─────────────────────────────────────────────────────
 
@@ -53,6 +54,17 @@ export function registerSettingsHandlers(): void {
       console.error('[IPC set-config-value]', err)
       return { success: false, error: String(err) }
     }
+  })
+
+  /**
+   * Push maxFileLines config from renderer to the hookServer file-size check (T1898).
+   * Fire-and-forget — no DB access needed.
+   * @param enabled - Whether the file-size check is active
+   * @param maxLines - Maximum allowed lines per file (clamped 50–10000)
+   */
+  ipcMain.handle('settings:updateMaxFileLines', (_event, enabled: boolean, maxLines: number) => {
+    updateFileSizeConfig(enabled, maxLines)
+    return { success: true }
   })
 
   /**

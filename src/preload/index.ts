@@ -155,6 +155,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setConfigValue: (dbPath: string, key: string, value: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('set-config-value', dbPath, key, value),
 
+  /** Push maxFileLines config to the hookServer file-size check (T1898). */
+  updateMaxFileLines: (enabled: boolean, maxLines: number): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('settings:updateMaxFileLines', enabled, maxLines),
+
   // Agents
   deleteAgent: (dbPath: string, agentId: number): Promise<{ success: boolean; hasHistory?: boolean; error?: string }> =>
     ipcRenderer.invoke('delete-agent', dbPath, agentId),

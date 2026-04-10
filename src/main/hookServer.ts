@@ -23,6 +23,7 @@ import type { BrowserWindow } from 'electron'
 import { writeDbNative, assertProjectPathAllowed, assertTranscriptPathAllowed } from './db'
 import { HOOK_PORT, getHookSecret, initHookSecret, detectWslGatewayIp } from './hookServer-inject'
 import { parseTokensFromJSONLStream, type TokenCounts } from './hookServer-tokens'
+import { checkPostToolUseFileSize } from './hookServer-filesize'
 
 // Re-exports for backward compatibility
 export { HOOK_PORT } from './hookServer-inject'
@@ -30,6 +31,7 @@ export { injectHookSecret, detectWslGatewayIp, injectHookUrls, injectIntoWslDist
 export { getHookSecret } from './hookServer-inject'
 export { parseTokensFromJSONL, parseTokensFromJSONLStream } from './hookServer-tokens'
 export type { TokenCounts } from './hookServer-tokens'
+export { updateFileSizeConfig } from './hookServer-filesize'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -407,6 +409,17 @@ export function startHookServer(userDataPath?: string): http.Server {
         // PermissionRequest is BLOCKING — holds HTTP response until user decides (T1816)
         if (url === '/hooks/permission-request') {
           handlePermissionRequest(payload, res)
+          return
+        }
+
+        // PostToolUse: synchronous file-size check before responding (T1898)
+        if (url === '/hooks/post-tool-use') {
+          const body = checkPostToolUseFileSize(payload)
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(body))
+          handleLifecycleEvent('PostToolUse', payload, false).catch(err =>
+            console.error('[hookServer] handleLifecycleEvent(PostToolUse) error:', err)
+          )
           return
         }
 

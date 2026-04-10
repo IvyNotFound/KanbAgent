@@ -197,9 +197,9 @@ describe('stores/settings — maxFileLinesEnabled (T899)', () => {
     document.documentElement.className = ''
   })
 
-  it('should default to false', () => {
+  it('should default to true (T1898: enabled by default for new installs)', () => {
     const store = useSettingsStore()
-    expect(store.maxFileLinesEnabled).toBe(false)
+    expect(store.maxFileLinesEnabled).toBe(true)
   })
 
   it('should persist enabled state to localStorage', () => {

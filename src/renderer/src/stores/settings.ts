@@ -169,20 +169,30 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.removeItem('defaultClaudeInstance') // cleanup legacy key (T1044)
   }
 
-  // Max file lines instruction (T899)
-  const maxFileLinesEnabled = ref<boolean>(localStorage.getItem('maxFileLinesEnabled') === 'true')
+  // Max file lines instruction (T899) — default true for new installs (T1898)
+  const maxFileLinesEnabled = ref<boolean>(localStorage.getItem('maxFileLinesEnabled') !== 'false')
   const maxFileLinesCount = ref<number>(parseInt(localStorage.getItem('maxFileLinesCount') ?? '400', 10) || 400)
+
+  /** Push current maxFileLines config to the main process hookServer (T1898). */
+  function syncMaxFileLinesToMain() {
+    window.electronAPI?.updateMaxFileLines?.(maxFileLinesEnabled.value, maxFileLinesCount.value)
+  }
 
   function setMaxFileLinesEnabled(enabled: boolean) {
     maxFileLinesEnabled.value = enabled
     localStorage.setItem('maxFileLinesEnabled', String(enabled))
+    syncMaxFileLinesToMain()
   }
 
   function setMaxFileLinesCount(n: number) {
     const clamped = Math.max(50, Math.min(10000, n))
     maxFileLinesCount.value = clamped
     localStorage.setItem('maxFileLinesCount', String(clamped))
+    syncMaxFileLinesToMain()
   }
+
+  // Push initial config to main on store creation (T1898)
+  syncMaxFileLinesToMain()
 
   // AI Coding Assistants — enabled CLIs + detection cache (T1013)
   const enabledClis = ref<CliType[]>(
