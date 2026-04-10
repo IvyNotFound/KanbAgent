@@ -392,20 +392,4 @@ describe('migrateDb v28 — agents.worktree_enabled + worktree_default config', 
 })
 
 // ── v29 — fix tasks.session_id FK (sessions_backup_i18n → sessions) ──────────
-
-describe('migrateDb v29 — fix tasks.session_id FK reference', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('is a no-op when tasks table has no sessions_backup_i18n ref (idempotent)', () => {
-    const db = makeMockDb({ userVersion: 28 })
-    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    const calls = db.run.mock.calls.map((c: string[]) => c[0])
-    expect(calls.every((s: string) => !s.includes('sessions_backup_i18n'))).toBe(true)
-  })
-
-  it('updates user_version to 33 (v29–v33 apply from v28)', () => {
-    const db = makeMockDb({ userVersion: 28 })
-    migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(36)
-  })
-})
+

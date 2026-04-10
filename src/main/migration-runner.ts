@@ -361,6 +361,18 @@ const migrations: Migration[] = [
 
   // v36: purge all locks table references from stored agent prompts (T1916)
   { version: 36, up: (db) => { runPurgeLocksPromptsMigration(db) } },
+
+  // v37: rename sessions.claude_conv_id → conv_id (T1917)
+  { version: 37, up: (db) => {
+    const cols = db.exec('PRAGMA table_info(sessions)')
+    const hasOld = cols.length > 0 && cols[0].values.some((r: unknown[]) => r[1] === 'claude_conv_id')
+    if (hasOld) {
+      db.run('ALTER TABLE sessions RENAME COLUMN claude_conv_id TO conv_id')
+    }
+    // Rebuild index with new column name
+    db.run('DROP INDEX IF EXISTS idx_sessions_conv_id')
+    db.run('CREATE INDEX IF NOT EXISTS idx_sessions_conv_id ON sessions(conv_id)')
+  } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */

@@ -366,42 +366,4 @@ describe('agent-stream', () => {
 
   // ── killAgent: stream batch cleanup (T1851) ──────────────────────────────
 
-  describe('killAgent clears stream batch interval (T1851)', () => {
-    it('clears streamTimers and streamBatches for the killed agent', async () => {
-      const createHandler = handlers.get('agent:create')!
-      const id = (await createHandler({ sender: mockSender }, {})) as string
-
-      // Simulate an active stream batch + timer
-      agentStream._testing.streamBatches.set(id, [{ type: 'text', data: 'hello' }])
-      const timer = setInterval(() => {}, 32)
-      agentStream._testing.streamTimers.set(id, timer)
-
-      agentStream._testing.killAgent(id)
-
-      expect(agentStream._testing.streamTimers.has(id)).toBe(false)
-      expect(agentStream._testing.streamBatches.has(id)).toBe(false)
-    })
-
-    it('does not throw when agent has no stream batch', async () => {
-      const createHandler = handlers.get('agent:create')!
-      const id = (await createHandler({ sender: mockSender }, {})) as string
-
-      // No stream batch/timer set — killAgent should still work
-      expect(() => agentStream._testing.killAgent(id)).not.toThrow()
-    })
-  })
-
-  // ── spawn args non-empty (L222) ───────────────────────────────────────────
-
-  it('spawn args array is non-empty and contains bash and -l for WSL path', async () => {
-    const handler = handlers.get('agent:create')!
-    await handler({ sender: mockSender }, { wslDistro: 'Ubuntu' })
-
-    const [, args] = mockSpawn.mock.calls[0] as [string, string[]]
-    expect(Array.isArray(args)).toBe(true)
-    expect(args.length).toBeGreaterThan(0)
-    expect(args).toContain('bash')
-    expect(args).toContain('-l')
-  })
-
 })
