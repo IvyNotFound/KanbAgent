@@ -1,7 +1,7 @@
 {
   "name": "kanbagent",
   "version": "0.40.1",
-  "description": "Interface desktop Trello/Jira pour visualiser les agents Claude",
+  "description": "Desktop task orchestrator for multi-CLI AI agents (Claude, Gemini, Codex, Aider, and more)",
   "author": "IvyNotFound",
   "main": "out/main/index.js",
   "scripts": {
