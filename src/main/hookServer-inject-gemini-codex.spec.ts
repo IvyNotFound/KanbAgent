@@ -59,7 +59,7 @@ const {
   injectGeminiHooks,
   injectCodexHooks,
   HOOK_PORT,
-} = await import('./hookServer-inject')
+} = await import('./hookServer-inject-adapters')
 
 // ── generateHookStub ──────────────────────────────────────────────────────────
 
