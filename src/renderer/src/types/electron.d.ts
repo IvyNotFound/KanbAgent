@@ -15,7 +15,7 @@ declare global {
       onSessionsCompleted(callback: (agentIds: number[]) => void): () => void
       showConfirmDialog(opts: { title: string; message: string; detail?: string }): Promise<boolean>
       selectNewProjectDir(): Promise<string | null>
-      initNewProject(projectPath: string): Promise<{ success: boolean; error?: string }>
+      initNewProject(projectPath: string, lang?: string, projectClis?: string[], primaryCli?: string): Promise<{ success: boolean; filesCreated?: string[]; error?: string }>
       findProjectDb(projectPath: string): Promise<string | null>
       migrateDb(dbPath: string): Promise<{ success: boolean; error?: string }>
       // File system

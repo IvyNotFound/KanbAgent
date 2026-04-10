@@ -176,6 +176,21 @@ ${s.autonomyDesc}
  */
 export const CLAUDE_MD_TEMPLATE = getProjectRules('en')
 
+// ── CLI → rules file path mapping ─────────────────────────────────────────────
+
+/**
+ * Maps a CLI identifier to its project-relative rules file path.
+ * Used by init-new-project and project:regenerateRulesFiles to generate
+ * the correct file for each selected CLI.
+ */
+export const CLI_RULES_FILE_MAP: Record<string, string> = {
+  claude: 'CLAUDE.md',
+  gemini: 'GEMINI.md',
+  codex: '.codex/instructions.md',
+  aider: '.aider/instructions.md',
+  cursor: '.cursor/rules/instructions.md',
+}
+
 // ── WORKFLOW.md template ────────────────────────────────────────────────────────
 
 /** Template content for \`.claude/WORKFLOW.md\` written on initialization. */
@@ -191,15 +206,18 @@ export const WORKFLOW_MD_TEMPLATE = `# Ticket Workflow — Full SQL Reference
 > **Consult before writing SQL.** Never guess column names.
 
 \`\`\`
-agents          (id PK, name, type, scope, system_prompt, system_prompt_suffix, thinking_mode, allowed_tools, created_at)
-sessions        (id PK, agent_id→agents, started_at, ended_at, updated_at, status CHECK(status IN ('started','completed','blocked')), summary, claude_conv_id, tokens_in, tokens_out, tokens_cache_read, tokens_cache_write)
+agents          (id PK, name, type, scope, system_prompt, system_prompt_suffix, thinking_mode, allowed_tools, auto_launch, permission_mode, max_sessions, worktree_enabled, preferred_model, preferred_cli, created_at)
+sessions        (id PK, agent_id→agents, started_at, ended_at, updated_at, status CHECK(status IN ('started','completed','blocked')), summary, claude_conv_id, tokens_in, tokens_out, tokens_cache_read, tokens_cache_write, cost_usd, duration_ms, num_turns, cli_type)
 tasks           (id PK, title, description, status, agent_creator_id→agents, agent_assigned_id→agents, agent_validator_id→agents, parent_task_id→tasks, session_id→sessions, scope, effort, priority, created_at, updated_at, started_at, completed_at, validated_at)
 task_comments   (id PK, task_id→tasks, agent_id→agents, content, created_at)
 task_links      (id PK, from_task→tasks, to_task→tasks, type CHECK(type IN ('blocks','depends_on','related_to','duplicates')), created_at)
-locks           (id PK, file, agent_id→agents, session_id→sessions, created_at, released_at)
+task_agents     (id PK, task_id→tasks, agent_id→agents, role, assigned_at, UNIQUE(task_id, agent_id))
 agent_logs      (id PK, session_id→sessions, agent_id→agents, level, action, detail, files, created_at)
 scopes          (id PK, name, folder, techno, description, active, created_at)
 config          (key PK, value, updated_at)
+agent_groups    (id PK, name, sort_order, parent_id→agent_groups, created_at)
+agent_group_members (id PK, group_id→agent_groups, agent_id→agents, sort_order, UNIQUE(group_id, agent_id))
+tasks_fts       (FTS4 virtual table on title, description)
 \`\`\`
 
 > **Pitfalls:** \`tasks\` does **not** have \`agent_id\` → use \`agent_assigned_id\`. \`task_comments.agent_id\` (not \`auteur_agent_id\`).
@@ -233,12 +251,6 @@ node scripts/dbw.js "<SQL>"   # write
 -- Add a comment to a ticket
 INSERT INTO task_comments (task_id, agent_id, content) VALUES (:task_id, :agent_id, '<content>');
 
--- Lock a file (BEFORE modification)
-INSERT OR REPLACE INTO locks (file, agent_id, session_id) VALUES ('<file>', :agent_id, :session_id);
-
--- Release all locks
-UPDATE locks SET released_at = CURRENT_TIMESTAMP WHERE agent_id = :agent_id AND session_id = :session_id AND released_at IS NULL;
-
 -- Log (optional)
 INSERT INTO agent_logs (session_id, agent_id, level, action, detail) VALUES (:session_id, :agent_id, 'info', '<action>', '<detail>');
 \`\`\`
@@ -263,7 +275,7 @@ VALUES ('<title>', '<full description>', 'todo',
 node scripts/dbstart.js <agent> [type] [scope]
 \`\`\`
 
-> Does everything in one call: registers the agent, creates the session, displays \`agent_id\` + \`session_id\`, previous session, assigned tasks, active locks.
+> Does everything in one call: registers the agent, creates the session, displays \`agent_id\` + \`session_id\`, previous session, assigned tasks.
 
 ### 3. Agent takes the ticket
 
@@ -272,7 +284,6 @@ SELECT title, description FROM tasks WHERE id = :task_id;
 SELECT tc.content, a.name, tc.created_at FROM task_comments tc
   JOIN agents a ON a.id = tc.agent_id WHERE tc.task_id = :task_id ORDER BY tc.created_at DESC LIMIT 5;
 UPDATE tasks SET status = 'in_progress', started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = :task_id;
--- + lock files via primitive
 \`\`\`
 
 ### 4. Agent completes the ticket
@@ -294,10 +305,7 @@ SQL
 -- 1. Record consumed tokens (REQUIRED before closing)
 UPDATE sessions SET tokens_in=X, tokens_out=Y, tokens_cache_read=Z, tokens_cache_write=W WHERE id=:session_id;
 
--- 2. Release locks via primitive
-UPDATE locks SET released_at = CURRENT_TIMESTAMP WHERE agent_id = :agent_id AND session_id = :session_id AND released_at IS NULL;
-
--- 3. Close the session
+-- 2. Close the session
 UPDATE sessions SET status = 'completed', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP,
   summary = 'Done:<accomplished>. Pending:<tickets>. Next:<action>.' WHERE id = :session_id;
 \`\`\`

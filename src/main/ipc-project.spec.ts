@@ -232,12 +232,23 @@ describe('IPC project handlers', () => {
   // ── init-new-project ──────────────────────────────────────────────────────
 
   describe('init-new-project handler', () => {
-    it('should return { success: true, filesCreated } on nominal path', async () => {
+    it('should return { success: true, filesCreated } on nominal path (default: claude only)', async () => {
       const result = await callHandler('init-new-project', '/fake/project') as {
         success: boolean; filesCreated?: string[]
       }
       expect(result.success).toBe(true)
       expect(result.filesCreated).toEqual(['CLAUDE.md', '.claude/WORKFLOW.md'])
+    })
+
+    it('should generate rules for multiple CLIs when projectClis provided', async () => {
+      const result = await callHandler('init-new-project', '/fake/project', 'en', ['claude', 'gemini', 'codex'], 'claude') as {
+        success: boolean; filesCreated?: string[]
+      }
+      expect(result.success).toBe(true)
+      expect(result.filesCreated).toContain('CLAUDE.md')
+      expect(result.filesCreated).toContain('GEMINI.md')
+      expect(result.filesCreated).toContain('.codex/instructions.md')
+      expect(result.filesCreated).toContain('.claude/WORKFLOW.md')
     })
 
     it('should return { success: false, error } when writeFile fails', async () => {

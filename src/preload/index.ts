@@ -69,8 +69,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectNewProjectDir: (): Promise<string | null> =>
     ipcRenderer.invoke('select-new-project-dir'),
 
-  initNewProject: (projectPath: string): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('init-new-project', projectPath),
+  initNewProject: (projectPath: string, lang?: string, projectClis?: string[], primaryCli?: string): Promise<{ success: boolean; filesCreated?: string[]; error?: string }> =>
+    ipcRenderer.invoke('init-new-project', projectPath, lang, projectClis, primaryCli),
 
   createProjectDb: (projectPath: string, lang?: string): Promise<{ success: boolean; dbPath: string; error?: string }> =>
     ipcRenderer.invoke('create-project-db', projectPath, lang),

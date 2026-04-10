@@ -11,7 +11,7 @@
 import { ipcMain, dialog, app, shell } from 'electron'
 import { access, copyFile, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { join, basename, resolve } from 'path'
-import { getProjectRules, WORKFLOW_MD_TEMPLATE } from './project-templates'
+import { getProjectRules, WORKFLOW_MD_TEMPLATE, CLI_RULES_FILE_MAP } from './project-templates'
 import { GENERIC_AGENTS_BY_LANG } from './default-agents'
 import type { AgentLanguage } from './default-agents'
 import Database from 'better-sqlite3'
@@ -321,18 +321,21 @@ export function registerProjectHandlers(): void {
   })
 
   /**
-   * Initialize a new project: create .claude/ dir and deploy bundled templates locally.
-   * Generates CLI-agnostic project rules for each detected CLI (ADR-012).
+   * Initialize a new project: create .claude/ dir, deploy bundled templates,
+   * generate CLI-agnostic rules for each selected CLI, and persist multi-CLI config.
+   *
    * @param projectPath - Registered project path
    * @param lang - Agent prompt language (defaults to 'en')
-   * @param detectedClis - CLI names detected on the system (e.g. ['claude', 'gemini', 'codex'])
+   * @param projectClis - CLIs chosen for the project (e.g. ['claude', 'gemini', 'codex'])
+   * @param primaryCli - Primary CLI identifier (e.g. 'claude')
    * @returns {{ success: boolean, filesCreated?: string[], error?: string }}
    */
   ipcMain.handle('init-new-project', async (
     _event,
     projectPath: string,
     lang?: string,
-    detectedClis?: string[],
+    projectClis?: string[],
+    primaryCli?: string,
   ) => {
     try {
       assertProjectPathAllowed(projectPath)
@@ -346,25 +349,40 @@ export function registerProjectHandlers(): void {
       const rules = getProjectRules(rulesLang)
       const filesCreated: string[] = []
 
-      // Always generate CLAUDE.md (safe default)
-      await writeFile(join(projectPath, 'CLAUDE.md'), rules, 'utf-8')
-      filesCreated.push('CLAUDE.md')
+      // Determine CLI list — always include 'claude' as fallback
+      const clis = Array.isArray(projectClis) && projectClis.length > 0
+        ? projectClis
+        : ['claude']
+      const primary = primaryCli ?? clis[0]
 
-      // Per-CLI rule files (ADR-012 Part A)
-      const clis = detectedClis ?? []
-      if (clis.includes('gemini')) {
-        await writeFile(join(projectPath, 'GEMINI.md'), rules, 'utf-8')
-        filesCreated.push('GEMINI.md')
-      }
-      if (clis.includes('codex')) {
-        const codexDir = join(projectPath, '.codex')
-        await mkdir(codexDir, { recursive: true })
-        await writeFile(join(codexDir, 'instructions.md'), rules, 'utf-8')
-        filesCreated.push('.codex/instructions.md')
+      // Generate rules file for each selected CLI
+      for (const cli of clis) {
+        const relPath = CLI_RULES_FILE_MAP[cli]
+        if (!relPath) continue
+        const absPath = join(projectPath, relPath)
+        await mkdir(join(absPath, '..'), { recursive: true })
+        await writeFile(absPath, rules, 'utf-8')
+        filesCreated.push(relPath)
       }
 
+      // Always generate WORKFLOW.md
       await writeFile(join(claudeDir, 'WORKFLOW.md'), WORKFLOW_MD_TEMPLATE, 'utf-8')
       filesCreated.push('.claude/WORKFLOW.md')
+
+      // Persist multi-CLI config in project.db (if DB exists)
+      const dbPath = await findProjectDb(projectPath)
+      if (dbPath) {
+        try {
+          const db = new Database(dbPath)
+          db.pragma('busy_timeout = 5000')
+          const upsert = db.prepare(
+            'INSERT OR REPLACE INTO config (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)'
+          )
+          upsert.run('project_clis', JSON.stringify(clis))
+          upsert.run('primary_cli', primary)
+          db.close()
+        } catch { /* config write is best-effort — DB may not exist yet */ }
+      }
 
       return { success: true, filesCreated }
     } catch (err) {
@@ -403,19 +421,19 @@ export function registerProjectHandlers(): void {
   })
 
   /**
-   * Regenerate CLI-agnostic project rules for each detected CLI (ADR-012 Part A § Regeneration).
+   * Regenerate CLI-agnostic project rules for each selected CLI (ADR-012 Part A § Regeneration).
    * Called on-demand from SettingsModal when the user wants to refresh rule files
    * (e.g. after installing a new CLI post-init).
    *
    * @param projectPath - Registered project path
-   * @param detectedClis - CLI names detected on the system (e.g. ['claude', 'gemini', 'codex'])
+   * @param projectClis - CLIs chosen for the project (e.g. ['claude', 'gemini', 'codex'])
    * @param lang - Agent prompt language (defaults to 'en')
    * @returns {{ success: boolean, filesCreated?: string[], error?: string }}
    */
   ipcMain.handle('project:regenerateRulesFiles', async (
     _event,
     projectPath: string,
-    detectedClis: string[],
+    projectClis: string[],
     lang?: string,
   ) => {
     try {
@@ -426,22 +444,20 @@ export function registerProjectHandlers(): void {
         : 'en'
       const rules = getProjectRules(rulesLang)
       const filesCreated: string[] = []
-      const clis = detectedClis ?? []
 
-      // Always regenerate CLAUDE.md (safe default)
-      await writeFile(join(projectPath, 'CLAUDE.md'), rules, 'utf-8')
-      filesCreated.push('CLAUDE.md')
+      // Determine CLI list — always include 'claude' as fallback
+      const clis = Array.isArray(projectClis) && projectClis.length > 0
+        ? projectClis
+        : ['claude']
 
-      // Per-CLI rule files (ADR-012)
-      if (clis.includes('gemini')) {
-        await writeFile(join(projectPath, 'GEMINI.md'), rules, 'utf-8')
-        filesCreated.push('GEMINI.md')
-      }
-      if (clis.includes('codex')) {
-        const codexDir = join(projectPath, '.codex')
-        await mkdir(codexDir, { recursive: true })
-        await writeFile(join(codexDir, 'instructions.md'), rules, 'utf-8')
-        filesCreated.push('.codex/instructions.md')
+      // Generate rules file for each selected CLI
+      for (const cli of clis) {
+        const relPath = CLI_RULES_FILE_MAP[cli]
+        if (!relPath) continue
+        const absPath = join(projectPath, relPath)
+        await mkdir(join(absPath, '..'), { recursive: true })
+        await writeFile(absPath, rules, 'utf-8')
+        filesCreated.push(relPath)
       }
 
       return { success: true, filesCreated }
