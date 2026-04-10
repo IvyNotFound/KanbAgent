@@ -45,8 +45,10 @@ const migrations: Migration[] = [
     db.run(`INSERT INTO config (key, value) VALUES ('claude_md_commit', ''), ('schema_version', '2')`)
   } },
 
-  // v4: create perimetres table
+  // v4: create perimetres table (French legacy — skip if English 'scopes' already exists)
   { version: 4, up: (db) => {
+    const hasScopes = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='scopes'")
+    if (hasScopes.length > 0 && hasScopes[0].values.length > 0) return
     const r = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='perimetres'")
     if (r.length > 0 && r[0].values.length > 0) return
     db.run(`CREATE TABLE perimetres (
@@ -64,15 +66,26 @@ const migrations: Migration[] = [
       ('global',        '',          '—',                                  'Transversal, aucun périmètre spécifique')`)
   } },
 
-  // v5: create base indexes
+  // v5: create base indexes (guard French-only columns/tables for English-schema DBs)
   { version: 5, up: (db) => {
+    const tableExists = (name: string): boolean => {
+      const r = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='${name}'`)
+      return r.length > 0 && r[0].values.length > 0
+    }
+    const colExists = (table: string, col: string): boolean => {
+      const r = db.exec(`PRAGMA table_info(${table})`)
+      return r.length > 0 && r[0].values.some((row: unknown[]) => row[1] === col)
+    }
+
     db.run('CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions(agent_id)')
     db.run('CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at DESC)')
     db.run('CREATE INDEX IF NOT EXISTS idx_agent_logs_agent_id ON agent_logs(agent_id)')
     db.run('CREATE INDEX IF NOT EXISTS idx_agent_logs_created_at ON agent_logs(created_at DESC)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_locks_released_at ON locks(released_at)')
+    if (tableExists('locks')) db.run('CREATE INDEX IF NOT EXISTS idx_locks_released_at ON locks(released_at)')
     db.run('CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON tasks(updated_at DESC)')
-    db.run('CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigne ON tasks(agent_assigne_id)')
+    if (colExists('tasks', 'agent_assigne_id')) {
+      db.run('CREATE INDEX IF NOT EXISTS idx_tasks_agent_assigne ON tasks(agent_assigne_id)')
+    }
     db.run('CREATE INDEX IF NOT EXISTS idx_sessions_agent_started ON sessions(agent_id, started_at DESC)')
     db.run('CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id)')
   } },
@@ -164,19 +177,24 @@ const migrations: Migration[] = [
   } },
 
   // v22: FTS4 virtual table + triggers for full-text search on tasks (T790)
+  // Use dynamic column name: 'titre' (French) or 'title' (English)
   { version: 22, up: (db) => {
-    db.run('CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts4(titre, description)')
+    const r = db.exec('PRAGMA table_info(tasks)')
+    const cols = r.length > 0 ? r[0].values.map((row: unknown[]) => row[1] as string) : []
+    const col = cols.includes('titre') ? 'titre' : 'title'
+
+    db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts4(${col}, description)`)
     db.run(`CREATE TRIGGER IF NOT EXISTS tasks_fts_ai AFTER INSERT ON tasks BEGIN
-      INSERT INTO tasks_fts(rowid, titre, description) VALUES (new.id, new.titre, new.description);
+      INSERT INTO tasks_fts(rowid, ${col}, description) VALUES (new.id, new.${col}, new.description);
     END`)
     db.run(`CREATE TRIGGER IF NOT EXISTS tasks_fts_au AFTER UPDATE ON tasks BEGIN
       DELETE FROM tasks_fts WHERE rowid = old.id;
-      INSERT INTO tasks_fts(rowid, titre, description) VALUES (new.id, new.titre, new.description);
+      INSERT INTO tasks_fts(rowid, ${col}, description) VALUES (new.id, new.${col}, new.description);
     END`)
     db.run(`CREATE TRIGGER IF NOT EXISTS tasks_fts_ad AFTER DELETE ON tasks BEGIN
       DELETE FROM tasks_fts WHERE rowid = old.id;
     END`)
-    db.run('INSERT INTO tasks_fts(rowid, titre, description) SELECT id, titre, description FROM tasks')
+    db.run(`INSERT INTO tasks_fts(rowid, ${col}, description) SELECT id, ${col}, description FROM tasks`)
   } },
 
   // v23: replace "On startup: node scripts/dbstart.js" in all agents' system_prompt_suffix.

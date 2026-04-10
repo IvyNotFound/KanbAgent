@@ -46,6 +46,10 @@ const ENGLISH_TASKS_SCHEMA = "CREATE TABLE tasks (status TEXT CHECK(status IN ('
 const FRENCH_SESSIONS_SCHEMA = "CREATE TABLE sessions (statut TEXT CHECK(statut IN ('en_cours','terminé','bloqué')))"
 const ENGLISH_SESSIONS_SCHEMA = "CREATE TABLE sessions (statut TEXT CHECK(statut IN ('started','completed','blocked')))"
 
+// PRAGMA table_info mock response indicating a French 'statut' column exists
+const PRAGMA_TASKS_WITH_STATUT = [{ columns: ['cid','name','type','notnull','dflt_value','pk'], values: [[0,'id','INTEGER',0,null,1],[1,'statut','TEXT',0,null,0]] }]
+const PRAGMA_SESSIONS_WITH_STATUT = [{ columns: ['cid','name','type','notnull','dflt_value','pk'], values: [[0,'id','INTEGER',0,null,1],[1,'statut','TEXT',0,null,0]] }]
+
 // ── runTaskStatutI18nMigration ────────────────────────────────────────────────
 
 describe('runTaskStatutI18nMigration', () => {
@@ -69,6 +73,7 @@ describe('runTaskStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_TASKS_SCHEMA]] }])
+        .mockReturnValueOnce(PRAGMA_TASKS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[3]] }])
         .mockReturnValue([{ columns: ['cid','name'], values: [[0,'id'],[1,'titre'],[2,'statut']] }]),
       getRowsModified: vi.fn().mockReturnValue(3),
@@ -86,6 +91,7 @@ describe('runTaskStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[ENGLISH_TASKS_SCHEMA]] }])
+        .mockReturnValueOnce(PRAGMA_TASKS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[2]] }])
         .mockReturnValue([{ columns: ['cid','name'], values: [[0,'id'],[1,'titre'],[2,'statut']] }]),
       getRowsModified: vi.fn().mockReturnValue(2),
@@ -98,6 +104,7 @@ describe('runTaskStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_TASKS_SCHEMA]] }])
+        .mockReturnValueOnce(PRAGMA_TASKS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[5]] }])
         .mockReturnValue([{ columns: ['cid','name'], values: [[0,'id'],[1,'statut']] }]),
     })
@@ -118,6 +125,7 @@ describe('runTaskStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_TASKS_SCHEMA]] }])
+        .mockReturnValueOnce(PRAGMA_TASKS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[1]] }])
         .mockReturnValue([{ columns: ['cid','name'], values: [[0,'id'],[1,'statut']] }]),
     })
@@ -150,6 +158,7 @@ describe('runTaskStatusMigration', () => {
   it('migrates terminé rows and returns count', () => {
     const db = makeDb({
       exec: vi.fn()
+        .mockReturnValueOnce(PRAGMA_TASKS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_TASKS_SCHEMA]] }]) // isArchiveAllowedInCheck — archivé present → true
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[2]] }]) // count terminé
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[0]] }]), // count validé
@@ -164,6 +173,7 @@ describe('runTaskStatusMigration', () => {
   it('migrates validé rows and returns count', () => {
     const db = makeDb({
       exec: vi.fn()
+        .mockReturnValueOnce(PRAGMA_TASKS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_TASKS_SCHEMA]] }]) // archivé present → isArchiveAllowed=true
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[0]] }]) // count terminé
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[3]] }]), // count validé
@@ -180,6 +190,7 @@ describe('runTaskStatusMigration', () => {
     const OLD_SCHEMA = "CREATE TABLE tasks (statut TEXT CHECK(statut IN ('a_faire','en_cours','terminé','validé')))"
     const db = makeDb({
       exec: vi.fn()
+        .mockReturnValueOnce(PRAGMA_TASKS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['sql'], values: [[OLD_SCHEMA]] }]) // isArchiveAllowedInCheck sqlite_master
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[0]] }]) // count terminé
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[0]] }]) // count validé
@@ -218,6 +229,7 @@ describe('runSessionStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_SESSIONS_SCHEMA]] }]) // sqlite_master
+        .mockReturnValueOnce(PRAGMA_SESSIONS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[2]] }]) // count French
         .mockReturnValue([{ columns: ['cid','name'], values: [[0,'id'],[1,'agent_id'],[2,'statut']] }]), // PRAGMA
     })
@@ -233,6 +245,7 @@ describe('runSessionStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_SESSIONS_SCHEMA]] }])
+        .mockReturnValueOnce(PRAGMA_SESSIONS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[3]] }])
         .mockReturnValue([{ columns: ['cid','name'], values: [[0,'id'],[1,'agent_id'],[2,'statut']] }]),
     })
@@ -251,6 +264,7 @@ describe('runSessionStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[ENGLISH_SESSIONS_SCHEMA]] }]) // sqlite_master
+        .mockReturnValueOnce(PRAGMA_SESSIONS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[1]] }]), // count French
       getRowsModified: vi.fn().mockReturnValue(1),
     })
@@ -265,6 +279,7 @@ describe('runSessionStatutI18nMigration', () => {
     const db = makeDb({
       exec: vi.fn()
         .mockReturnValueOnce([{ columns: ['sql'], values: [[FRENCH_SESSIONS_SCHEMA]] }])
+        .mockReturnValueOnce(PRAGMA_SESSIONS_WITH_STATUT) // PRAGMA table_info guard
         .mockReturnValueOnce([{ columns: ['COUNT(*)'], values: [[1]] }])
         .mockReturnValue([{ columns: ['cid','name'], values: [[0,'id'],[1,'agent_id'],[2,'statut']] }]),
     })

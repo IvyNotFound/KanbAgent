@@ -14,6 +14,10 @@ function createMockDb(execResults: Array<{ columns: string[]; values: unknown[][
       // db.exec() in MigrationDb adapter always returns an array of QueryExecResult:
       //   - rows found    → [{ columns: [...], values: [[row1], [row2], ...] }]
       //   - no rows found → [] (empty array, not an array with an empty-values object)
+      // PRAGMA table_info(tasks) — return French columns with 'statut' so guard passes
+      if (query.includes('PRAGMA table_info(tasks)')) {
+        return [{ columns: ['cid','name','type','notnull','dflt_value','pk'], values: [[0,'id','INTEGER',0,null,1],[1,'statut','TEXT',0,null,0]] }]
+      }
       if (query.includes("COUNT(*) as count FROM tasks WHERE statut = 'terminé'")) {
         const r = execResults[0]
         return r ? [r] : [{ columns: ['count'], values: [[0]] }]

@@ -128,8 +128,8 @@ describe('migrateDb v21 — task_links indexes', () => {
 describe('migrateDb v22 — FTS4 tasks_fts', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('creates tasks_fts USING fts4(titre, description)', () => {
-    const db = makeMockDb({ userVersion: 21 })
+  it('creates tasks_fts USING fts4(titre, description) on French schema', () => {
+    const db = makeMockDb({ userVersion: 21, colMap: { tasks: ['id', 'titre', 'description', 'statut'] } })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     const calls = db.run.mock.calls.map((c: string[]) => c[0])
     expect(calls.some((s: string) => s.includes('tasks_fts USING fts4'))).toBe(true)

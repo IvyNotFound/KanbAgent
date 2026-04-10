@@ -30,6 +30,11 @@ export function runTaskStatutI18nMigration(db: Database): number {
   const tableSchema = schemaResult[0].values[0][0] as string
   const isAlreadyEnglish = tableSchema.includes("'todo'")
 
+  // English-schema DBs use 'status' not 'statut' — no French values possible
+  const colResult = db.exec('PRAGMA table_info(tasks)')
+  const colNames = colResult.length > 0 ? colResult[0].values.map((r: unknown[]) => r[1] as string) : []
+  if (!colNames.includes('statut')) return 0
+
   // Count remaining French values
   const countResult = db.exec(
     "SELECT COUNT(*) FROM tasks WHERE statut IN ('a_faire','en_cours','terminé','archivé','validé')"
@@ -136,6 +141,11 @@ export function runTaskStatutI18nMigration(db: Database): number {
  * @returns number of tasks migrated (0 if none found).
  */
 export function runTaskStatusMigration(db: Database): number {
+  // English-schema DBs use 'status' not 'statut' — no French values possible
+  const colResult = db.exec('PRAGMA table_info(tasks)')
+  const colNames = colResult.length > 0 ? colResult[0].values.map((r: unknown[]) => r[1] as string) : []
+  if (!colNames.includes('statut')) return 0
+
   // First, ensure the CHECK constraint allows 'archivé' or modern English values
   if (!isArchiveAllowedInCheck(db)) {
     console.warn('[migration] Old CHECK constraint detected. Recreating tasks table...')
@@ -188,6 +198,11 @@ export function runSessionStatutI18nMigration(db: Database): number {
 
   const tableSchema = schemaResult[0].values[0][0] as string
   const isAlreadyEnglish = tableSchema.includes("'started'")
+
+  // English-schema DBs use 'status' not 'statut' — no French values possible
+  const sesColResult = db.exec('PRAGMA table_info(sessions)')
+  const sesColNames = sesColResult.length > 0 ? sesColResult[0].values.map((r: unknown[]) => r[1] as string) : []
+  if (!sesColNames.includes('statut')) return 0
 
   // Count remaining French values
   const countResult = db.exec(
