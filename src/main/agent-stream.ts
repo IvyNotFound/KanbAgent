@@ -31,7 +31,7 @@ import {
 } from './agent-stream-helpers'
 import type { CliAdapter } from '../shared/cli-types'
 import { getAdapter } from './adapters/index'
-import { createWorktree, type WorktreeInfo } from './worktree-manager'
+import { createWorktree, copyWorktreeConfigs, type WorktreeInfo } from './worktree-manager'
 import {
   agents,
   webContentsAgents,
@@ -110,6 +110,8 @@ export function registerAgentStreamHandlers(): void {
       try {
         worktreeInfo = await createWorktree(opts.projectPath, opts.sessionId!)
         logDebug(`worktree created: ${worktreeInfo.path} (branch ${worktreeInfo.branch})`)
+        // T1920: Copy non-git-tracked CLI config files into the worktree
+        await copyWorktreeConfigs(opts.projectPath, worktreeInfo.path, opts.cli ? [opts.cli] : undefined)
       } catch (err) {
         // Non-fatal: log and fall back to projectPath
         console.warn('[agent-stream] worktree creation failed, falling back to projectPath:', err)

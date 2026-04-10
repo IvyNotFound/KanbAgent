@@ -11,9 +11,11 @@
  * @module worktree-manager
  */
 import { execFile } from 'child_process'
+import { copyFile, mkdir } from 'fs/promises'
 import { promisify } from 'util'
 import path from 'path'
 import { queryLive } from './db'
+import type { CliType } from '../shared/cli-types'
 
 const execFileAsync = promisify(execFile)
 
@@ -52,6 +54,55 @@ export async function createWorktree(repoRoot: string, sessionId: number): Promi
   }
 
   return { path: wtPath, branch }
+}
+
+// ── Worktree config file copy ────────────────────────────────────────────────
+
+/**
+ * Non-git-tracked config files that must be copied into worktrees per CLI.
+ * Git-tracked files (GEMINI.md, .codex/, .aider.conf.yml) are already present.
+ */
+export const WORKTREE_CONFIG_FILES: Record<CliType, string[]> = {
+  claude: ['.claude/settings.json', '.claude/settings.local.json'],
+  gemini: [],
+  codex: [],
+  aider: [],
+  goose: [],
+  opencode: [],
+}
+
+/**
+ * Copy non-git-tracked CLI config files from the main repo into a worktree.
+ *
+ * Called after worktree creation and before session spawn (refresh).
+ * Missing source files are silently skipped. Target directories are created
+ * as needed. Errors are non-fatal — logged but never thrown.
+ *
+ * @param repoRoot     - Absolute path to the main git repository root.
+ * @param worktreePath - Absolute path to the worktree directory.
+ * @param cliTypes     - CLI types whose config files should be copied.
+ *                        Defaults to `['claude']` (the only CLI with non-tracked config).
+ */
+export async function copyWorktreeConfigs(
+  repoRoot: string,
+  worktreePath: string,
+  cliTypes: CliType[] = ['claude'],
+): Promise<void> {
+  const files = new Set<string>()
+  for (const cli of cliTypes) {
+    for (const f of WORKTREE_CONFIG_FILES[cli] ?? []) files.add(f)
+  }
+
+  for (const relPath of files) {
+    const src = path.join(repoRoot, relPath)
+    const dst = path.join(worktreePath, relPath)
+    try {
+      await mkdir(path.dirname(dst), { recursive: true })
+      await copyFile(src, dst)
+    } catch {
+      // Source file absent or copy failed — non-fatal, skip silently
+    }
+  }
 }
 
 /**
