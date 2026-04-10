@@ -47,6 +47,7 @@ export const useTasksStore = defineStore('tasks', () => {
   const taskAssignees = ref<TaskAssignee[]>([])
   const boardAssignees = ref<Map<number, TaskAssignee[]>>(new Map())
   const doneTasksLimited = ref(false)
+  const migrationError = ref<string | null>(null)
 
   async function query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]> {
     if (!dbPath.value) return []
@@ -112,7 +113,13 @@ export const useTasksStore = defineStore('tasks', () => {
     localStorage.setItem('dbPath', dPath)
     selectedAgentId.value = null
     selectedPerimetre.value = null
-    await window.electronAPI.migrateDb(dPath)
+    const migResult = await window.electronAPI.migrateDb(dPath)
+    if (!migResult.success) {
+      console.error('[initProject] migration failed:', migResult.error)
+      migrationError.value = migResult.error ?? 'Migration failed'
+    } else {
+      migrationError.value = null
+    }
     // Load worktree default from config (T1143)
     await settingsStore.loadWorktreeDefault(dPath)
     await refresh()
@@ -281,7 +288,15 @@ export const useTasksStore = defineStore('tasks', () => {
       : Promise.resolve(dbPath.value)
     ensureRegistered
       .then(() => window.electronAPI.migrateDb(dbPath.value!))
-      .then(() => refresh())
+      .then((migResult) => {
+        if (!migResult.success) {
+          console.error('[cold-start] migration failed:', migResult.error)
+          migrationError.value = migResult.error ?? 'Migration failed'
+        } else {
+          migrationError.value = null
+        }
+        return refresh()
+      })
       .then(() => {
         startPolling()
         startWatching(dbPath.value!)
@@ -293,7 +308,7 @@ export const useTasksStore = defineStore('tasks', () => {
     projectPath, dbPath, setupWizardTarget,
     // Agent store re-exports (backward compat — prefer useAgentsStore for new code)
     agents, agentGroups,
-    tasks, stats, lastRefresh, loading, error, doneTasksLimited,
+    tasks, stats, lastRefresh, loading, error, doneTasksLimited, migrationError,
     selectedAgentId, toggleAgentFilter,
     selectedPerimetre, togglePerimetreFilter, perimetres, perimetresData,
     filteredTasks, tasksByStatus,

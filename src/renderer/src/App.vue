@@ -153,6 +153,25 @@ defineExpose({
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <!-- Migration failure banner — persistent until dismissed or project closed -->
+    <v-snackbar
+      :model-value="!!store.migrationError"
+      color="error"
+      location="top"
+      timeout="-1"
+      multi-line
+    >
+      <div class="d-flex align-center ga-2">
+        <v-icon>mdi-database-alert-outline</v-icon>
+        <div>
+          <strong>Database migration failed</strong>
+          <div class="text-body-2">{{ store.migrationError }}</div>
+        </div>
+      </div>
+      <template #actions>
+        <v-btn variant="text" @click="store.migrationError = null">Dismiss</v-btn>
+      </template>
+    </v-snackbar>
     <CommandPalette v-model="isCommandPaletteOpen" @select-task="openTaskFromPalette" />
     <SetupWizard
       v-if="store.setupWizardTarget"
