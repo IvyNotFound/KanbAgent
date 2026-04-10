@@ -68,7 +68,7 @@ const fullSystemPrompt = computed(() => {
 
 /** CLI derived from selected instance, falling back to first enabled CLI */
 const selectedCli = computed<CliType>(() =>
-  selectedInstance.value?.cli ?? (settingsStore.enabledClis[0] as CliType) ?? 'claude'
+  selectedInstance.value?.cli ?? settingsStore.primaryCli
 )
 
 /** Capabilities of the currently selected CLI — drives conditional sections (T1036) */

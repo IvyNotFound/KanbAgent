@@ -72,7 +72,11 @@ export function registerAgentStreamHandlers(): void {
   app.on('before-quit', killAllAgents)
 
   ipcMain.handle('agent:create', async (event, opts: AgentCreateOpts = {}) => {
-    // Resolve adapter — defaults to Claude for backward compat
+    // Resolve adapter — opts.cli should always be provided by the renderer (T1918).
+    // The 'claude' fallback is defensive only; log a warning if it triggers.
+    if (!opts.cli) {
+      console.warn('[agent-stream] opts.cli is undefined — falling back to "claude". The renderer should always provide opts.cli via primaryCli resolution (T1918).')
+    }
     const adapter = getAdapter(opts.cli ?? 'claude')
 
     // Validate custom binary name against adapter's binary pattern
@@ -130,7 +134,7 @@ export function registerAgentStreamHandlers(): void {
         ) as Array<{ preferred_model: string | null }>
         const agentModel = agentRows[0]?.preferred_model ?? null
 
-        const cliName = opts.cli ?? 'claude'
+        const cliName = opts.cli ?? 'claude' // defensive fallback — see T1918 warning above
         const configKey = `default_model_${cliName}`
         // Read both the new generic key and the legacy opencode key in one query
         const configRows = await queryLive(

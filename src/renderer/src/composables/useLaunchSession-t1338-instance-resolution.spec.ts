@@ -2,7 +2,7 @@
  * T1338: Mutation coverage for useLaunchSession.ts — Instance resolution
  *
  * Targets:
- * - Nullish coalescing chain (line 95): opts.cli ?? resolvedInstance?.cli ?? enabledClis[0] ?? 'claude'
+ * - Nullish coalescing chain (line 95): opts.cli ?? resolvedInstance?.cli ?? settingsStore.primaryCli (T1918)
  * - opts?.instance !== undefined branch (line 92): null vs undefined instance
  * - Instance resolution branches (lines 111-120): stored distro null vs undefined vs found
  */
@@ -35,7 +35,7 @@ describe('useLaunchSession T1338: opts.instance resolution (line 92-95)', () => 
 
   it('opts.instance = null: caller explicitly passes null instance (undefined branch skipped)', async () => {
     // null !== undefined → enters the opts.instance branch (line 92)
-    // resolvedInstance = null → resolvedCli falls through to enabledClis[0] ?? 'claude'
+    // resolvedInstance = null → resolvedCli falls through to settingsStore.primaryCli (T1918)
     const { launchAgentTerminal } = useLaunchSession()
     const result = await launchAgentTerminal(makeAgent(), makeTask(), { instance: null })
 

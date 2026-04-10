@@ -122,6 +122,8 @@ export const useTasksStore = defineStore('tasks', () => {
     }
     // Load worktree default from config (T1143)
     await settingsStore.loadWorktreeDefault(dPath)
+    // Load project primary CLI from config (T1918)
+    await settingsStore.loadPrimaryCli(dPath)
     await refresh()
     startPolling()
     startWatching(dPath)

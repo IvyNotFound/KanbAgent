@@ -62,7 +62,7 @@ const cliItems = computed(() => {
 })
 
 const effectivePrimaryCli = computed<CliType>(() =>
-  (primaryCli.value as CliType) ?? (settingsStore.enabledClis[0] as CliType) ?? 'claude'
+  (primaryCli.value as CliType) ?? settingsStore.primaryCli
 )
 
 const availablePrimaryModels = computed(() => {

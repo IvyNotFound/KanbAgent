@@ -94,13 +94,13 @@ export function useLaunchSession() {
       if (opts?.instance !== undefined) {
         // Caller provided an explicit instance (modal)
         resolvedInstance = opts.instance
-        resolvedCli = opts.cli ?? resolvedInstance?.cli as CliType ?? settingsStore.enabledClis[0] ?? 'claude'
+        resolvedCli = opts.cli ?? resolvedInstance?.cli as CliType ?? settingsStore.primaryCli
       } else {
         // Auto-detect (drag-drop / relaunch path)
         const allInstances = await getCachedCliInstances()
 
         // Agent preferred CLI > first enabled CLI (T1804)
-        let defaultCli = (agent.preferred_cli as CliType) ?? settingsStore.enabledClis[0] ?? 'claude'
+        let defaultCli = (agent.preferred_cli as CliType) ?? settingsStore.primaryCli
         let cliInstances = allInstances.filter(i => i.cli === defaultCli)
         if (cliInstances.length === 0) {
           // Preferred CLI not installed — fallback to enabled CLIs
@@ -240,7 +240,7 @@ export function useLaunchSession() {
       const parsedDefault = parseDefaultCliInstance(storedDistro)
 
       // Find first enabled CLI that has detected instances, fall back to enabledClis[0]
-      let defaultCli = settingsStore.enabledClis[0] ?? 'claude'
+      let defaultCli = settingsStore.primaryCli
       let cliInstances = allInstances.filter(i => i.cli === defaultCli)
       if (cliInstances.length === 0) {
         for (const cli of settingsStore.enabledClis.slice(1)) {

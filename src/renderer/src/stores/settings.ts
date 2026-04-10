@@ -10,7 +10,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import i18n, { loadLocaleMessages } from '../plugins/i18n'
 import type { AppLocale } from '../plugins/i18n'
 import { setDarkMode } from '../utils/agentColor'
@@ -196,10 +196,35 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // AI Coding Assistants — enabled CLIs + detection cache (T1013)
   const enabledClis = ref<CliType[]>(
-    JSON.parse(localStorage.getItem('enabledClis') || '["claude"]') as CliType[]
+    JSON.parse(localStorage.getItem('enabledClis') || '[]') as CliType[]
   )
   const allCliInstances = ref<CliInstance[]>([])
   const detectingClis = ref(false)
+
+  // T1918: Project primary CLI from DB config (set by T1912 init-new-project)
+  const projectPrimaryCli = ref<CliType | null>(null)
+
+  /** Load primary_cli from DB config. Must be called after project is set. */
+  async function loadPrimaryCli(dbPath: string): Promise<void> {
+    try {
+      const result = await window.electronAPI.getConfigValue(dbPath, 'primary_cli')
+      if (result.success && result.value) {
+        projectPrimaryCli.value = result.value as CliType
+      } else {
+        projectPrimaryCli.value = null
+      }
+    } catch { projectPrimaryCli.value = null }
+  }
+
+  /**
+   * Resolved primary CLI for the current project (T1918).
+   * Cascade: project config primary_cli → first enabled CLI → 'claude' (ultimate fallback).
+   */
+  const primaryCli = computed<CliType>(() => {
+    if (projectPrimaryCli.value) return projectPrimaryCli.value
+    if (enabledClis.value.length > 0) return enabledClis.value[0]
+    return 'claude'
+  })
 
   function toggleCli(cli: CliType) {
     const current = enabledClis.value
@@ -340,6 +365,10 @@ export const useSettingsStore = defineStore('settings', () => {
     detectingClis,
     toggleCli,
     refreshCliDetection,
+    // Project primary CLI (T1918)
+    projectPrimaryCli,
+    primaryCli,
+    loadPrimaryCli,
     // Desktop notifications (T755)
     notificationsEnabled,
     setNotificationsEnabled,

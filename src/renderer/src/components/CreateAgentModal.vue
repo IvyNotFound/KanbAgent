@@ -70,7 +70,7 @@ const cliItems = computed(() => {
 
 /** Effective CLI for model lookup: preferredCli or first enabled CLI */
 const effectiveCli = computed<CliType>(() =>
-  (preferredCli.value as CliType) ?? (settingsStore.enabledClis[0] as CliType) ?? 'claude'
+  (preferredCli.value as CliType) ?? settingsStore.primaryCli
 )
 
 /** Available models for the effective CLI */
