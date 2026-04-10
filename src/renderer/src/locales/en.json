@@ -29,7 +29,6 @@
     "prevPage": "Previous",
     "nextPage": "Next",
     "pageOf": "Page {page} / {total} ({count} tasks)",
-    "staleTasks": "{count} stale task | {count} stale tasks",
     "review": "Review",
     "reviewLaunchFailed": "Review launch failed",
     "sortByAgent": "By agent",
@@ -625,9 +624,7 @@
   },
   "task": {
     "running": "Task in progress",
-    "subtasks": "{n} subtask | {n} subtasks",
-    "staleFor": "In progress for {duration}",
-    "staleLong": "In progress for a long time"
+    "subtasks": "{n} subtask | {n} subtasks"
   },
   "telemetry": {
     "title": "Telemetry",

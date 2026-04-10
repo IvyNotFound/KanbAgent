@@ -29,7 +29,6 @@
     "prevPage": "Назад",
     "nextPage": "Вперёд",
     "pageOf": "Страница {page} / {total} ({count} задач)",
-    "staleTasks": "{count} зависшая задача | {count} зависших задач",
     "review": "Проверка",
     "reviewLaunchFailed": "Ошибка запуска проверки",
     "sortByAgent": "По агенту",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Задача выполняется",
-    "subtasks": "{n} подзадача | {n} подзадач",
-    "staleFor": "В работе {duration}",
-    "staleLong": "В работе уже долго"
+    "subtasks": "{n} подзадача | {n} подзадач"
   },
   "telemetry": {
     "title": "Телеметрия",

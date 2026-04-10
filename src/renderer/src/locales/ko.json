@@ -29,7 +29,6 @@
     "prevPage": "이전",
     "nextPage": "다음",
     "pageOf": "{page} / {total} 페이지 （{count}개 작업）",
-    "staleTasks": "{count}개의 지연 작업 | {count}개의 지연 작업",
     "review": "리뷰",
     "reviewLaunchFailed": "리뷰 실행 실패",
     "sortByAgent": "에이전트별",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "작업 진행 중",
-    "subtasks": "{n}개의 하위 작업 | {n}개의 하위 작업",
-    "staleFor": "{duration} 동안 진행 중",
-    "staleLong": "장시간 진행 중"
+    "subtasks": "{n}개의 하위 작업 | {n}개의 하위 작업"
   },
   "telemetry": {
     "title": "텔레메트리",

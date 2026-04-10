@@ -29,7 +29,6 @@
     "prevPage": "上一页",
     "nextPage": "下一页",
     "pageOf": "第 {page} / {total} 页（{count} 个任务）",
-    "staleTasks": "{count} 个停滞任务 | {count} 个停滞任务",
     "review": "审查",
     "reviewLaunchFailed": "审查启动失败",
     "sortByAgent": "按代理",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "任务进行中",
-    "subtasks": "{n} 个子任务 | {n} 个子任务",
-    "staleFor": "已进行 {duration}",
-    "staleLong": "进行了很长时间"
+    "subtasks": "{n} 个子任务 | {n} 个子任务"
   },
   "telemetry": {
     "title": "遥测",

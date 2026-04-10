@@ -29,7 +29,6 @@
     "prevPage": "Poprzednia",
     "nextPage": "Następna",
     "pageOf": "Strona {page} / {total} ({count} zadań)",
-    "staleTasks": "{count} przestarzałe zadanie | {count} przestarzałe zadania",
     "review": "Przegląd",
     "reviewLaunchFailed": "Nie udało się uruchomić przeglądu",
     "sortByAgent": "Wg agenta",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Zadanie w toku",
-    "subtasks": "{n} podzadanie | {n} podzadania",
-    "staleFor": "W toku od {duration}",
-    "staleLong": "W toku od długiego czasu"
+    "subtasks": "{n} podzadanie | {n} podzadania"
   },
   "telemetry": {
     "title": "Telemetria",

@@ -29,7 +29,6 @@
     "prevPage": "Föregående",
     "nextPage": "Nästa",
     "pageOf": "Sida {page} / {total} ({count} uppgifter)",
-    "staleTasks": "{count} inaktiv uppgift | {count} inaktiva uppgifter",
     "review": "Granskning",
     "reviewLaunchFailed": "Granskning kunde inte startas",
     "sortByAgent": "Per agent",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Uppgift pågår",
-    "subtasks": "{n} underuppgift | {n} underuppgifter",
-    "staleFor": "Pågår sedan {duration}",
-    "staleLong": "Pågår sedan länge"
+    "subtasks": "{n} underuppgift | {n} underuppgifter"
   },
   "telemetry": {
     "title": "Telemetri",

@@ -1,7 +1,7 @@
 /**
  * tasks-gaps.spec.ts
  * Coverage gaps for tasks.ts — closeTask clears taskLinks/taskAssignees,
- * auto-start block path derivation, setProject negative staleThreshold,
+ * auto-start block path derivation,
  * watchForDb clears previous interval.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
@@ -104,44 +104,6 @@ describe('tasks — closeTask clears taskLinks and taskAssignees', () => {
   })
 })
 
-
-// ─── setProject: negative staleThreshold (NaN=false, parsed<0=false) ─────────
-
-describe('tasks — setProject staleThresholdMinutes negative value', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-    localStorage.clear()
-    mockElectronAPI.queryDb.mockResolvedValue([])
-    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
-    mockElectronAPI.watchDb.mockResolvedValue(undefined)
-    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
-  })
-
-  it('ignores negative value from getConfigValue (parsed > 0 is false)', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: '-1' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-
-  it('accepts valid positive value from getConfigValue', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: '30' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-
-    expect(store.staleThresholdMinutes).toBe(30)
-  })
-
-  it('ignores 0 from getConfigValue (not > 0)', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: '0' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-})
 
 
 // ─── watchForDb: clears previous interval when called twice ──────────────────

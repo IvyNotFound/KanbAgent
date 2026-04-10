@@ -29,7 +29,6 @@
     "prevPage": "Anterior",
     "nextPage": "Seguinte",
     "pageOf": "Página {page} / {total} ({count} tarefas)",
-    "staleTasks": "{count} tarefa parada | {count} tarefas paradas",
     "review": "Revisão",
     "reviewLaunchFailed": "Falha ao iniciar a revisão",
     "sortByAgent": "Por agente",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Tarefa em progresso",
-    "subtasks": "{n} subtarefa | {n} subtarefas",
-    "staleFor": "Em progresso há {duration}",
-    "staleLong": "Em progresso há muito tempo"
+    "subtasks": "{n} subtarefa | {n} subtarefas"
   },
   "telemetry": {
     "title": "Telemetria",

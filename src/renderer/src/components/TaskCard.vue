@@ -11,7 +11,6 @@ import { useTabsStore } from '@renderer/stores/tabs'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useToast } from '@renderer/composables/useToast'
 import { agentFg, agentBg, perimeterFg, perimeterBg } from '@renderer/utils/agentColor'
-import { isStale, staleDuration } from '@renderer/utils/staleTask'
 
 const { t, locale } = useI18n()
 const props = defineProps<{ task: Task }>()
@@ -87,14 +86,6 @@ function formatDate(iso: string): string {
 const formattedCreatedAt = computed(() => formatDate(props.task.created_at))
 const formattedUpdatedAt = computed(() => formatDate(props.task.updated_at))
 
-const isStaleTask = computed(() =>
-  props.task.status === 'in_progress' && isStale(props.task.started_at, store.staleThresholdMinutes)
-)
-const staleTooltip = computed(() => {
-  const d = staleDuration(props.task.started_at)
-  return d ? t('task.staleFor', { duration: d }) : t('task.staleLong')
-})
-
 const EFFORT_LABEL: Record<number, string> = { 1: 'S', 2: 'M', 3: 'L' }
 const EFFORT_COLOR: Record<number, string> = { 1: 'chip-effort-s', 2: 'chip-effort-m', 3: 'chip-effort-l' }
 
@@ -139,7 +130,6 @@ const plainDescription = computed(() => {
           <p class="card-title text-body-2">{{ task.title }}</p>
         </div>
         <div class="card-badge-row ga-1">
-          <v-chip v-if="isStaleTask" size="x-small" variant="tonal" color="warning" :title="staleTooltip">⚠</v-chip>
           <v-chip v-if="task.priority === 'critical'" size="x-small" variant="tonal" color="chip-priority-critical">!!</v-chip>
           <v-chip v-if="task.priority === 'high'" size="x-small" variant="tonal" color="chip-priority-high">!</v-chip>
           <v-chip v-if="task.priority === 'normal'" size="x-small" variant="tonal" color="default">—</v-chip>

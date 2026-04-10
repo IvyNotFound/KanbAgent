@@ -1,7 +1,7 @@
 /**
  * tasks-mutations.spec.ts
  * Mutation tests for tasks.ts store (part 1/2) — NoCoverage gaps.
- * setGroupParent, staleThresholdMinutes, boardAssignees, openTask links/assignees.
+ * setGroupParent, boardAssignees, openTask links/assignees.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
@@ -99,59 +99,6 @@ describe('tasks — setGroupParent (NoCoverage)', () => {
   })
 })
 
-// ─── staleThresholdMinutes via getConfigValue (NoCoverage) ───────────────────
-
-describe('tasks — staleThresholdMinutes via getConfigValue (NoCoverage)', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-    localStorage.clear()
-    mockElectronAPI.queryDb.mockResolvedValue([])
-    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
-    mockElectronAPI.watchDb.mockResolvedValue(undefined)
-    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
-  })
-
-  it('uses default 120 when getConfigValue fails', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: false, value: null })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-
-  it('updates staleThresholdMinutes when getConfigValue returns valid number', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: '60' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-
-    expect(store.staleThresholdMinutes).toBe(60)
-    expect(mockElectronAPI.getConfigValue).toHaveBeenCalledWith('/p/.claude/db', 'stale_threshold_minutes')
-  })
-
-  it('ignores result when parsed value is 0', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: '0' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-
-  it('ignores result when parsed value is NaN', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: 'bad' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-
-  it('does not throw when getConfigValue throws', async () => {
-    mockElectronAPI.getConfigValue.mockRejectedValue(new Error('IPC error'))
-    const store = useTasksStore()
-    await expect(store.setProject('/p', '/p/.claude/db')).resolves.not.toThrow()
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-})
 
 // ─── boardAssignees rebuild in refresh (NoCoverage) ──────────────────────────
 

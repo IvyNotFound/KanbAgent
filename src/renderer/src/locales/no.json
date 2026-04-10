@@ -29,7 +29,6 @@
     "prevPage": "Forrige",
     "nextPage": "Neste",
     "pageOf": "Side {page} / {total} ({count} oppgaver)",
-    "staleTasks": "{count} foreldet oppgave | {count} foreldede oppgaver",
     "review": "Gjennomgang",
     "reviewLaunchFailed": "Kunne ikke starte gjennomgangen",
     "sortByAgent": "Etter agent",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Oppgave pågår",
-    "subtasks": "{n} deloppgave | {n} deloppgaver",
-    "staleFor": "Pågår i {duration}",
-    "staleLong": "Pågår i lang tid"
+    "subtasks": "{n} deloppgave | {n} deloppgaver"
   },
   "telemetry": {
     "title": "Telemetri",

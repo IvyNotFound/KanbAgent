@@ -29,7 +29,6 @@
     "prevPage": "Forrige",
     "nextPage": "Næste",
     "pageOf": "Side {page} / {total} ({count} opgaver)",
-    "staleTasks": "{count} forældet opgave | {count} forældede opgaver",
     "review": "Gennemgang",
     "reviewLaunchFailed": "Gennemgang kunne ikke startes",
     "sortByAgent": "Efter agent",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Opgave i gang",
-    "subtasks": "{n} underopgave | {n} underopgaver",
-    "staleFor": "I gang i {duration}",
-    "staleLong": "I gang i lang tid"
+    "subtasks": "{n} underopgave | {n} underopgaver"
   },
   "telemetry": {
     "title": "Telemetri",

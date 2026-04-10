@@ -29,7 +29,6 @@
     "prevPage": "Edellinen",
     "nextPage": "Seuraava",
     "pageOf": "Sivu {page} / {total} ({count} tehtävää)",
-    "staleTasks": "{count} vanhentunut tehtävä | {count} vanhentunutta tehtävää",
     "review": "Katselmointi",
     "reviewLaunchFailed": "Katselmointia ei voitu käynnistää",
     "sortByAgent": "Agentin mukaan",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Tehtävä käynnissä",
-    "subtasks": "{n} alitehtävä | {n} alitehtävää",
-    "staleFor": "Käynnissä {duration} ajan",
-    "staleLong": "Käynnissä pitkään"
+    "subtasks": "{n} alitehtävä | {n} alitehtävää"
   },
   "telemetry": {
     "title": "Telemetria",

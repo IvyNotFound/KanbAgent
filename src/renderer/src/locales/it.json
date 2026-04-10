@@ -29,7 +29,6 @@
     "prevPage": "Precedente",
     "nextPage": "Successivo",
     "pageOf": "Pagina {page} / {total} ({count} attività)",
-    "staleTasks": "{count} attività in stallo | {count} attività in stallo",
     "review": "Revisione",
     "reviewLaunchFailed": "Avvio della revisione fallito",
     "sortByAgent": "Per agente",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Attività in corso",
-    "subtasks": "{n} sottoattività | {n} sottoattività",
-    "staleFor": "In corso da {duration}",
-    "staleLong": "In corso da molto tempo"
+    "subtasks": "{n} sottoattività | {n} sottoattività"
   },
   "telemetry": {
     "title": "Telemetria",

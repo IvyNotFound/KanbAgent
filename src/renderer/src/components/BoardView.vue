@@ -3,7 +3,6 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
 import { agentFg, agentBg, agentAccent, perimeterFg, perimeterBg } from '@renderer/utils/agentColor'
-import { isStale } from '@renderer/utils/staleTask'
 import { parseUtcDate } from '@renderer/utils/parseDate'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
 import { useTabsStore } from '@renderer/stores/tabs'
@@ -27,11 +26,6 @@ const archiveSortMode = ref<ArchiveSortMode>('agent')
 
 const emptyTasks = { todo: [], in_progress: [], done: [], archived: [] }
 const tasks = computed(() => store.tasksByStatus ?? emptyTasks)
-
-/** Stale tasks: in_progress tasks exceeding the configured threshold (T749). */
-const staleTasks = computed(() =>
-  (tasks.value.in_progress ?? []).filter(t => isStale(t.started_at, store.staleThresholdMinutes))
-)
 
 /** Review agent resolved from the store (hidden if absent). */
 const reviewAgent = computed(() => store.agents.find(a => a.type === 'review') ?? null)
@@ -221,20 +215,6 @@ const archivedFlat = computed(() => pagination.archivedTasks.value)
 
     <!-- Board view: 3 colonnes -->
     <div v-if="activeTab === 'backlog'" class="board-area">
-      <!-- Stale tasks alert (T749) -->
-      <div v-if="staleTasks.length > 0" class="stale-alert ma-4 mb-0 py-2 px-3 ga-2">
-        <span class="stale-icon">⚠</span>
-        <div class="stale-content">
-          <span class="stale-title">{{ t('board.staleTasks', { count: staleTasks.length }) }}</span>
-          <span
-            v-for="task in staleTasks"
-            :key="task.id"
-            class="stale-task ml-2"
-            @click="store.openTask(task)"
-          >#{{ task.id }} {{ task.title }}</span>
-        </div>
-      </div>
-
       <div class="columns-area pa-4 ga-3">
         <StatusColumn
           v-for="col in columns"
@@ -435,37 +415,6 @@ const archivedFlat = computed(() => pagination.archivedTasks.value)
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-.stale-alert {
-  flex-shrink: 0;
-  background-color: rgba(var(--v-theme-warning), 0.1);
-  border: 1px solid rgba(var(--v-theme-warning), 0.3);
-  border-radius: var(--shape-sm);
-  display: flex;
-  align-items: flex-start;
-}
-.stale-icon {
-  color: rgb(var(--v-theme-warning));
-  flex-shrink: 0;
-  font-size: 0.875rem;
-}
-.stale-content {
-  flex: 1;
-  min-width: 0;
-}
-.stale-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-warning));
-}
-.stale-task {
-  font-size: 0.75rem;
-  color: rgba(var(--v-theme-warning), 0.8);
-  cursor: pointer;
-  transition: color var(--md-duration-short3) var(--md-easing-standard);
-}
-.stale-task:hover {
-  color: rgb(var(--v-theme-warning));
 }
 .columns-area {
   display: flex;

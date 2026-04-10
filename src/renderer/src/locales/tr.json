@@ -29,7 +29,6 @@
     "prevPage": "Önceki",
     "nextPage": "Sonraki",
     "pageOf": "Sayfa {page} / {total} ({count} görev)",
-    "staleTasks": "{count} durağan görev | {count} durağan görev",
     "review": "İnceleme",
     "reviewLaunchFailed": "İnceleme başlatılamadı",
     "sortByAgent": "Ajana göre",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Görev devam ediyor",
-    "subtasks": "{n} alt görev | {n} alt görev",
-    "staleFor": "{duration} süredir devam ediyor",
-    "staleLong": "Uzun süredir devam ediyor"
+    "subtasks": "{n} alt görev | {n} alt görev"
   },
   "telemetry": {
     "title": "Telemetri",

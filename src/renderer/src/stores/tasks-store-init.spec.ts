@@ -160,43 +160,6 @@ describe('tasks — query function string literal (L56)', () => {
 })
 
 
-// ─── setProject: cfgRes LogicalOperator (L113) ────────────────────────────────
-
-describe('tasks — setProject cfgRes.success && cfgRes.value !== null (L113 LogicalOperator)', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    vi.clearAllMocks()
-    localStorage.clear()
-    mockElectronAPI.queryDb.mockResolvedValue([])
-    mockElectronAPI.migrateDb.mockResolvedValue({ success: true })
-    mockElectronAPI.watchDb.mockResolvedValue(undefined)
-    mockElectronAPI.onDbChanged.mockReturnValue(() => {})
-  })
-
-  it('uses default 120 when success=true but value=null (cfgRes.value !== null is false)', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: null })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-    // value is null → condition fails → stays 120
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-
-  it('uses default 120 when success=false even with non-null value (cfgRes.success is false)', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: false, value: '60' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-    // success=false → condition fails → stays 120
-    expect(store.staleThresholdMinutes).toBe(120)
-  })
-
-  it('updates threshold when both success=true AND value is non-null string', async () => {
-    mockElectronAPI.getConfigValue.mockResolvedValue({ success: true, value: '45' })
-    const store = useTasksStore()
-    await store.setProject('/p', '/p/.claude/db')
-    expect(store.staleThresholdMinutes).toBe(45)
-  })
-})
-
 
 // ─── tasksByStatus: t.status in groups (ConditionalExpression L98) ────────────
 

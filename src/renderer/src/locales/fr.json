@@ -29,7 +29,6 @@
     "prevPage": "Précédent",
     "nextPage": "Suivant",
     "pageOf": "Page {page} / {total} ({count} tâches)",
-    "staleTasks": "{count} tâche bloquée depuis trop longtemps | {count} tâches bloquées depuis trop longtemps",
     "review": "Review",
     "reviewLaunchFailed": "Échec du lancement de la review",
     "sortByAgent": "Par agent",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Tâche en cours d'exécution",
-    "subtasks": "{n} sous-tâche | {n} sous-tâches",
-    "staleFor": "En cours depuis {duration}",
-    "staleLong": "En cours depuis longtemps"
+    "subtasks": "{n} sous-tâche | {n} sous-tâches"
   },
   "telemetry": {
     "title": "Télémétrie",

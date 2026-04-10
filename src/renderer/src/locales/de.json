@@ -29,7 +29,6 @@
     "prevPage": "Zurück",
     "nextPage": "Weiter",
     "pageOf": "Seite {page} / {total} ({count} Aufgaben)",
-    "staleTasks": "{count} veraltete Aufgabe | {count} veraltete Aufgaben",
     "review": "Überprüfung",
     "reviewLaunchFailed": "Überprüfung konnte nicht gestartet werden",
     "sortByAgent": "Nach Agent",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "Aufgabe in Bearbeitung",
-    "subtasks": "{n} Unteraufgabe | {n} Unteraufgaben",
-    "staleFor": "Seit {duration} in Bearbeitung",
-    "staleLong": "Seit längerer Zeit in Bearbeitung"
+    "subtasks": "{n} Unteraufgabe | {n} Unteraufgaben"
   },
   "telemetry": {
     "title": "Telemetrie",

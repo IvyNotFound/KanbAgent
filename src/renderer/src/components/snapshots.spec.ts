@@ -145,7 +145,7 @@ describe('TaskCard — snapshots', () => {
   })
 
   it('matches snapshot: critical in_progress task with all badges', () => {
-    // started_at: null → isStale returns false → no dynamic stale tooltip
+    // started_at: null → no dynamic tooltip
     const wrapper = shallowMount(TaskCard, {
       props: {
         task: makeTask({

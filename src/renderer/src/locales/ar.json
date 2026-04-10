@@ -29,7 +29,6 @@
     "prevPage": "السابق",
     "nextPage": "التالي",
     "pageOf": "الصفحة {page} / {total} ({count} مهام)",
-    "staleTasks": "مهمة قديمة {count} | مهام قديمة {count}",
     "review": "مراجعة",
     "reviewLaunchFailed": "فشل تشغيل المراجعة",
     "sortByAgent": "حسب الوكيل",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "المهمة قيد التنفيذ",
-    "subtasks": "مهمة فرعية {n} | مهام فرعية {n}",
-    "staleFor": "قيد التنفيذ منذ {duration}",
-    "staleLong": "قيد التنفيذ منذ وقت طويل"
+    "subtasks": "مهمة فرعية {n} | مهام فرعية {n}"
   },
   "telemetry": {
     "title": "القياسات",

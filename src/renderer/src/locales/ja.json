@@ -29,7 +29,6 @@
     "prevPage": "前へ",
     "nextPage": "次へ",
     "pageOf": "ページ {page} / {total} （{count} タスク）",
-    "staleTasks": "{count} 件の停滞タスク | {count} 件の停滞タスク",
     "review": "レビュー",
     "reviewLaunchFailed": "レビューの起動に失敗しました",
     "sortByAgent": "エージェント別",
@@ -617,9 +616,7 @@
   },
   "task": {
     "running": "タスク進行中",
-    "subtasks": "{n} 件のサブタスク | {n} 件のサブタスク",
-    "staleFor": "{duration} 間進行中",
-    "staleLong": "長時間進行中"
+    "subtasks": "{n} 件のサブタスク | {n} 件のサブタスク"
   },
   "telemetry": {
     "title": "テレメトリ",
