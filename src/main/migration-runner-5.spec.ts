@@ -255,7 +255,7 @@ describe('migrateDb v26 — drop locks table', () => {
   it('updates user_version to 35 (v26–v35 apply from v25)', () => {
     const db = makeMockDb({ userVersion: 25 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(36)
+    expect(db._getVersion()).toBe(37)
   })
 })
 
@@ -331,7 +331,7 @@ describe('migrateDb v27 — missing indexes on critical columns', () => {
   it('updates user_version to 35 (v27–v35 apply from v26)', () => {
     const db = makeMockDb({ userVersion: 26 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(36)
+    expect(db._getVersion()).toBe(37)
   })
 
   it('uses CREATE INDEX IF NOT EXISTS for all indexes', () => {
