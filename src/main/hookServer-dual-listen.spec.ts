@@ -136,7 +136,7 @@ describe('startHookServer — dual listen (T1905)', () => {
     // First call returns null, second returns an IP
     mockDetectWslGatewayIp
       .mockReturnValueOnce(null)
-      .mockReturnValueOnce('172.17.240.1')
+      .mockReturnValueOnce('127.0.0.2')
 
     handle = startHookServer()
     expect(handle.wslServer).toBeNull()
@@ -163,7 +163,7 @@ describe('startHookServer — dual listen (T1905)', () => {
   })
 
   it('close() closes both primary and WSL servers', async () => {
-    mockDetectWslGatewayIp.mockReturnValue('172.17.240.1')
+    mockDetectWslGatewayIp.mockReturnValue('127.0.0.2')
     handle = startHookServer()
 
     await waitForListen(handle.primaryServer)

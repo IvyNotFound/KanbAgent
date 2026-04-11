@@ -294,7 +294,7 @@ describe('startHookServer — listen address', () => {
   })
 
   it('creates WSL server when detectWslGatewayIp returns an IP (T1905 dual-listen)', async () => {
-    mockDetectWslGatewayIp.mockReturnValue('172.17.240.1')
+    mockDetectWslGatewayIp.mockReturnValue('127.0.0.2')
     mockGetHookSecret.mockReturnValue('secret-t1267')
     const handle = startHookServer()
     // Primary is always 127.0.0.1
