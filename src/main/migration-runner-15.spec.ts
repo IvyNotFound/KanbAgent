@@ -75,6 +75,6 @@ describe('migrateDb v29 — fix tasks.session_id FK reference', () => {
   it('updates user_version to 33 (v29–v33 apply from v28)', () => {
     const db = makeMockDb({ userVersion: 28 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(35)
+    expect(db._getVersion()).toBe(37)
   })
 })

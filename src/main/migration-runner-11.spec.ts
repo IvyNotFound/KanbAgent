@@ -146,7 +146,7 @@ describe('migrateDb — strict > (not >=) in pending filter', () => {
   })
 
   it('returns CURRENT_SCHEMA_VERSION - N migrations when starting at version N', () => {
-    for (const [start, expected] of [[27, 8], [28, 7], [24, 11]]) {
+    for (const [start, expected] of [[27, 10], [28, 9], [24, 13]]) {
       const db = makeMockDb({ userVersion: start, colMap: { agents: ['id', 'name'], sessions: ['id', 'status'] } })
       const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
       expect(result).toBe(expected)
@@ -318,25 +318,25 @@ describe('migrateDb — ArithmeticOperator: return value is pending.length', () 
   beforeEach(() => vi.clearAllMocks())
 
   it('return value matches exactly the number of SAVEPOINT calls made', () => {
-    // At version 27: v28, v29, v30, v31, v32, v33, v34 run → 7 SAVEPOINTs → return 7
+    // At version 27: v28, v29, v30, v31, v32, v33, v34, v35, v36, v37 run → 10 SAVEPOINTs → return 10
     const db = makeMockDb({ userVersion: 27, colMap: { agents: ['id', 'name'], sessions: ['id', 'status'] } })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     const calls = db.run.mock.calls.map((c: string[]) => c[0])
     const savepointCount = calls.filter((s: string) => /^SAVEPOINT m\d+$/.test(s)).length
     // Return value must equal the number of savepoints (one per migration)
     expect(result).toBe(savepointCount)
-    expect(result).toBe(8)
+    expect(result).toBe(10)
     expect(result).not.toBe(0)
-    expect(result).not.toBe(7)
     expect(result).not.toBe(9)
+    expect(result).not.toBe(11)
   })
 
-  it('return value is 2 (not 1 or 3) when two migrations run (v34, v35)', () => {
+  it('return value is 4 (not 3 or 5) when four migrations run (v34, v35, v36, v37)', () => {
     const db = makeMockDb({ userVersion: 33 })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(2)
-    expect(result).not.toBe(1)
+    expect(result).toBe(4)
     expect(result).not.toBe(3)
+    expect(result).not.toBe(5)
   })
 
   it('return value decreases by 1 per additional starting version', () => {

@@ -128,6 +128,8 @@ describe('composables/useLaunchSession', () => {
 
   describe('prompt construction', () => {
     it('should include systemPromptSuffix in fullSystemPrompt when present', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.setMaxFileLinesEnabled(false)
       api.getAgentSystemPrompt.mockResolvedValueOnce({
         success: true,
         systemPrompt: 'Base prompt',
@@ -164,6 +166,8 @@ describe('composables/useLaunchSession', () => {
     })
 
     it('should produce null systemPrompt when no parts (empty parts → undefined → null in tab)', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.setMaxFileLinesEnabled(false)
       api.getAgentSystemPrompt.mockResolvedValueOnce({
         success: true,
         systemPrompt: null,
@@ -181,6 +185,8 @@ describe('composables/useLaunchSession', () => {
     })
 
     it('should join parts with double newline separator', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.setMaxFileLinesEnabled(false)
       api.getAgentSystemPrompt.mockResolvedValueOnce({
         success: true,
         systemPrompt: 'Part one',

@@ -148,6 +148,8 @@ describe('T1346: systemPrompt resolution', () => {
   })
 
   it('no opts → auto-build from IPC (null systemPrompt branch)', async () => {
+    const settingsStore = useSettingsStore()
+    settingsStore.setMaxFileLinesEnabled(false)
     api.getAgentSystemPrompt.mockResolvedValueOnce({
       success: true, systemPrompt: null, systemPromptSuffix: null, thinkingMode: 'auto'
     })
@@ -162,6 +164,8 @@ describe('T1346: systemPrompt resolution', () => {
   })
 
   it('promptResult.systemPrompt truthy → added to parts (kills ConditionalExpression → true)', async () => {
+    const settingsStore = useSettingsStore()
+    settingsStore.setMaxFileLinesEnabled(false)
     api.getAgentSystemPrompt.mockResolvedValueOnce({
       success: true, systemPrompt: 'NonNull', systemPromptSuffix: null, thinkingMode: 'auto'
     })

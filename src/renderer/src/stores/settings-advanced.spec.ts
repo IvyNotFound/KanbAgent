@@ -170,9 +170,9 @@ describe('stores/settings — enabledClis (T1013)', () => {
     document.documentElement.className = ''
   })
 
-  it('should default to ["claude"] when localStorage is empty', () => {
+  it('should default to [] when localStorage is empty', () => {
     const store = useSettingsStore()
-    expect(store.enabledClis).toEqual(['claude'])
+    expect(store.enabledClis).toEqual([])
   })
 
   it('toggleCli adds a cli if not present', () => {
@@ -183,6 +183,8 @@ describe('stores/settings — enabledClis (T1013)', () => {
 
   it('toggleCli removes a cli if already present', () => {
     const store = useSettingsStore()
+    store.toggleCli('claude')
+    // First toggle on empty adds it, second toggle removes it
     store.toggleCli('claude')
     expect(store.enabledClis).not.toContain('claude')
   })

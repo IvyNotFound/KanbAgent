@@ -182,6 +182,8 @@ describe('T1346: review session systemPrompt assembly', () => {
   afterEach(() => vi.useRealTimers())
 
   it('review: systemPromptSuffix included when present (kills ConditionalExpression→false)', async () => {
+    const settingsStore = useSettingsStore()
+    settingsStore.setMaxFileLinesEnabled(false)
     api.getAgentSystemPrompt.mockResolvedValueOnce({
       success: true, systemPrompt: 'Base', systemPromptSuffix: 'Suffix', thinkingMode: 'auto'
     })
@@ -228,6 +230,8 @@ describe('T1346: review session systemPrompt assembly', () => {
   })
 
   it('review: systemPromptSuffix false (absent) → not added (kills ConditionalExpression→true L267)', async () => {
+    const settingsStore = useSettingsStore()
+    settingsStore.setMaxFileLinesEnabled(false)
     api.getAgentSystemPrompt.mockResolvedValueOnce({
       success: true, systemPrompt: 'Base', systemPromptSuffix: null, thinkingMode: 'auto'
     })
@@ -242,6 +246,8 @@ describe('T1346: review session systemPrompt assembly', () => {
   })
 
   it('review: \n\n separator used (kills StringLiteral → "")', async () => {
+    const settingsStore = useSettingsStore()
+    settingsStore.setMaxFileLinesEnabled(false)
     api.getAgentSystemPrompt.mockResolvedValueOnce({
       success: true, systemPrompt: 'Part1', systemPromptSuffix: 'Part2', thinkingMode: 'auto'
     })
