@@ -5,6 +5,7 @@ import StreamView from '@renderer/components/StreamView.vue'
 import { mockElectronAPI } from '../../../test/setup'
 import i18n from '@renderer/plugins/i18n'
 import { useTabsStore } from '@renderer/stores/tabs'
+import { useSettingsStore } from '@renderer/stores/settings'
 
 describe('StreamView auto-close on process exit (T1373)', () => {
   async function mountWithCli(cli: string | null, options: { agentName?: string; agentType?: string } = {}) {
@@ -84,6 +85,20 @@ describe('StreamView auto-close on process exit (T1373)', () => {
 
   it('does NOT close tab on exit when agentName=task-creator (T1373)', async () => {
     const { tabsStore } = await mountWithCli('aider', { agentName: 'task-creator' })
+    const closeTabSpy = vi.spyOn(tabsStore, 'closeTab')
+    vi.useFakeTimers()
+
+    const [, exitCallback] = vi.mocked(mockElectronAPI.onAgentExit).mock.calls[0] ?? []
+    ;(exitCallback as (code: number | null) => void)(0)
+
+    vi.advanceTimersByTime(5000)
+    expect(closeTabSpy).not.toHaveBeenCalled()
+  })
+
+  it('does NOT close tab on exit when autoLaunchAgentSessions is disabled (T1930)', async () => {
+    const { pinia, tabsStore } = await mountWithCli('claude')
+    const settingsStore = useSettingsStore(pinia)
+    settingsStore.autoLaunchAgentSessions = false
     const closeTabSpy = vi.spyOn(tabsStore, 'closeTab')
     vi.useFakeTimers()
 

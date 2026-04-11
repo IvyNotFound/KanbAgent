@@ -29,8 +29,8 @@ import type { Task, Agent } from '@renderer/types'
 /** How often (ms) to poll the DB for agent session status after task goes done */
 const POLL_INTERVAL_MS = 5_000
 
-/** Fallback delay (ms): force-close terminal if session never reaches 'completed' (T1885: 15s) */
-const FALLBACK_CLOSE_MS = 15 * 1000
+/** Fallback delay (ms): force-close terminal if session never reaches 'completed' (T1930: 60s, was 15s) */
+const FALLBACK_CLOSE_MS = 60 * 1000
 
 /** Delay (ms) between agentKill signal and closeTab (allows the process to flush) */
 const KILL_DELAY_MS = 2_000

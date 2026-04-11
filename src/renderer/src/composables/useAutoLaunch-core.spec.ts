@@ -220,7 +220,7 @@ describe('composables/useAutoLaunch', () => {
     tasks.value = [makeTask({ id: 1, status: 'in_progress', agent_assigned_id: 10 })]
     await nextTick()
 
-    // Terminal linked to task 1 — Chemin 1 applies with 15s fallback (T1249, T1885)
+    // Terminal linked to task 1 — Chemin 1 applies with 60s fallback (T1249, T1930)
     const tabsStore = useTabsStore()
     tabsStore.addTerminal('dev-front-vuejs', 'Ubuntu-24.04')
     const termTab = tabsStore.tabs.find(t => t.type === 'terminal')!
@@ -231,8 +231,8 @@ describe('composables/useAutoLaunch', () => {
     tasks.value = [makeTask({ id: 1, status: 'done', agent_assigned_id: 10 })]
     await nextTick()
 
-    // Advance 15s + 80ms debounce (fallback timeout starts after debounce fires — T1885)
-    await vi.advanceTimersByTimeAsync(15 * 1000 + 80)
+    // Advance 60s + 80ms debounce (fallback timeout starts after debounce fires — T1930)
+    await vi.advanceTimersByTimeAsync(60 * 1000 + 80)
 
     // Force-close should have happened via agentKill
     expect(api.agentKill).toHaveBeenCalledWith('stream-fallback')
