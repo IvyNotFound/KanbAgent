@@ -225,6 +225,7 @@ export async function migrateDb(dbPath: string): Promise<{ migrated: number }> {
     const db = new Database(dbPath)
     db.pragma('journal_mode = WAL')
     db.pragma('busy_timeout = 5000')
+    db.pragma('foreign_keys = OFF')
 
     try {
       const adapter = createMigrationAdapter(db)

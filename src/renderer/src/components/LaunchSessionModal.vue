@@ -92,85 +92,89 @@ function systemLabel(inst: CliInstance): string {
 }
 
 onMounted(async () => {
-  // Use warmup cache if available — only detect if empty (T1118)
-  if (settingsStore.allCliInstances.length === 0) {
-    await settingsStore.refreshCliDetection()
-  }
+  try {
+    // Use warmup cache if available — only detect if empty (T1118)
+    if (settingsStore.allCliInstances.length === 0) {
+      await settingsStore.refreshCliDetection()
+    }
 
-  // Auto-select: agent preferred CLI > stored preference > default > first (T1804/T1090)
-  const instances = allAvailableInstances.value
-  if (instances.length > 0) {
-    let picked: CliInstance | null = null
+    // Auto-select: agent preferred CLI > stored preference > default > first (T1804/T1090)
+    const instances = allAvailableInstances.value
+    if (instances.length > 0) {
+      let picked: CliInstance | null = null
 
-    // 1. Agent preferred CLI — filter instances to that CLI first
-    if (props.agent.preferred_cli) {
-      const cliInstances = instances.filter(i => i.cli === props.agent.preferred_cli)
-      if (cliInstances.length > 0) {
-        picked = cliInstances.find(i => i.isDefault) ?? cliInstances[0]
+      // 1. Agent preferred CLI — filter instances to that CLI first
+      if (props.agent.preferred_cli) {
+        const cliInstances = instances.filter(i => i.cli === props.agent.preferred_cli)
+        if (cliInstances.length > 0) {
+          picked = cliInstances.find(i => i.isDefault) ?? cliInstances[0]
+        }
+        // If preferred CLI has no instances, fall through to global default
       }
-      // If preferred CLI has no instances, fall through to global default
+
+      // 2. Global stored preference
+      if (!picked) {
+        const stored = settingsStore.defaultCliInstance
+        const parsed = parseDefaultCliInstance(stored)
+        picked =
+          (stored
+            ? instances.find(i =>
+                i.distro === parsed.distro &&
+                (parsed.cli === null || i.cli === parsed.cli)
+              )
+            : undefined)
+          ?? instances.find(i => i.isDefault)
+          ?? instances[0]
+          ?? null
+      }
+
+      selectedInstance.value = picked
     }
 
-    // 2. Global stored preference
-    if (!picked) {
-      const stored = settingsStore.defaultCliInstance
-      const parsed = parseDefaultCliInstance(stored)
-      picked =
-        (stored
-          ? instances.find(i =>
-              i.distro === parsed.distro &&
-              (parsed.cli === null || i.cli === parsed.cli)
-            )
-          : undefined)
-        ?? instances.find(i => i.isDefault)
-        ?? instances[0]
-        ?? null
+    if (tasksStore.dbPath) {
+      const [promptResult, sessionRows] = await Promise.all([
+        window.electronAPI.getAgentSystemPrompt(tasksStore.dbPath, props.agent.id),
+        window.electronAPI.queryDb(
+          tasksStore.dbPath,
+          `SELECT conv_id FROM sessions
+           WHERE agent_id = ? AND conv_id IS NOT NULL
+           ORDER BY id DESC LIMIT 1`,
+          [props.agent.id]
+        ) as Promise<Array<{ conv_id: string }>>
+      ])
+      if (promptResult.success) {
+        systemPrompt.value = promptResult.systemPrompt
+        systemPromptSuffix.value = promptResult.systemPromptSuffix
+        thinkingMode.value = (promptResult.thinkingMode as 'auto' | 'disabled') ?? 'auto'
+      }
+      if (sessionRows.length > 0 && sessionRows[0].conv_id) {
+        lastConvId.value = sessionRows[0].conv_id
+        useResume.value = false
+      }
     }
 
-    selectedInstance.value = picked
-  }
-
-  if (tasksStore.dbPath) {
-    const [promptResult, sessionRows] = await Promise.all([
-      window.electronAPI.getAgentSystemPrompt(tasksStore.dbPath, props.agent.id),
-      window.electronAPI.queryDb(
-        tasksStore.dbPath,
-        `SELECT conv_id FROM sessions
-         WHERE agent_id = ? AND conv_id IS NOT NULL
-         ORDER BY id DESC LIMIT 1`,
-        [props.agent.id]
-      ) as Promise<Array<{ conv_id: string }>>
-    ])
-    if (promptResult.success) {
-      systemPrompt.value = promptResult.systemPrompt
-      systemPromptSuffix.value = promptResult.systemPromptSuffix
-      thinkingMode.value = (promptResult.thinkingMode as 'auto' | 'disabled') ?? 'auto'
+    // Load CLI models if not already cached (T1805)
+    if (Object.keys(settingsStore.cliModels).length === 0) {
+      await settingsStore.loadCliModels()
     }
-    if (sessionRows.length > 0 && sessionRows[0].conv_id) {
-      lastConvId.value = sessionRows[0].conv_id
-      useResume.value = false
+
+    // Model pre-fill: agent preference > null (T1805)
+    selectedModel.value = props.agent.preferred_model ?? null
+
+    // Cascade resolution: agent override > global default (T1143)
+    const agentWorktree = props.agent.worktree_enabled
+    if (agentWorktree !== null && agentWorktree !== undefined) {
+      multiInstance.value = agentWorktree === 1
+      worktreeSource.value = 'agent'
+    } else {
+      multiInstance.value = settingsStore.worktreeDefault
+      worktreeSource.value = 'global'
     }
+  } catch (err) {
+    console.error('[LaunchSessionModal] init failed:', err)
+  } finally {
+    loading.value = false
   }
-
-  // Load CLI models if not already cached (T1805)
-  if (Object.keys(settingsStore.cliModels).length === 0) {
-    await settingsStore.loadCliModels()
-  }
-
-  // Model pre-fill: agent preference > null (T1805)
-  selectedModel.value = props.agent.preferred_model ?? null
-
-  // Cascade resolution: agent override > global default (T1143)
-  const agentWorktree = props.agent.worktree_enabled
-  if (agentWorktree !== null && agentWorktree !== undefined) {
-    multiInstance.value = agentWorktree === 1
-    worktreeSource.value = 'agent'
-  } else {
-    multiInstance.value = settingsStore.worktreeDefault
-    worktreeSource.value = 'global'
-  }
-
-  loading.value = false
 })
 
 // Track manual override of worktree toggle (T1143)
