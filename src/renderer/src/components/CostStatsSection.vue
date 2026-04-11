@@ -10,6 +10,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { agentAccent } from '@renderer/utils/agentColor'
 import AgentBadge from './AgentBadge.vue'
+import CostSparkline from './CostSparkline.vue'
 
 /**
  * @property dbPath  - Path to the active SQLite database (null = no project open).
@@ -22,8 +23,6 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-
-// ── Types ──────────────────────────────────────────────────────────────────
 
 interface CostRow {
   agent_name: string | null
@@ -49,8 +48,6 @@ interface AgentCostAgg {
   total_turns: number
 }
 
-// ── Period selector ────────────────────────────────────────────────────────
-
 const PERIODS = [
   { key: 'day'   as const, labelKey: 'costStats.period.day'   },
   { key: 'week'  as const, labelKey: 'costStats.period.week'  },
@@ -59,17 +56,10 @@ const PERIODS = [
 
 const selectedPeriod = ref<'day' | 'week' | 'month'>('day')
 
-// ── Data fetching ──────────────────────────────────────────────────────────
-
 const rows = ref<CostRow[]>([])
 const loading = ref(false)
-const hasData = ref<boolean | null>(null) // null = unknown (loading), false = no data, true = has data
+const hasData = ref<boolean | null>(null)
 
-/**
- * Fetches aggregated cost statistics from the backend.
- * Uses `props.period` when set, otherwise falls back to the internal `selectedPeriod`.
- * @returns Promise that resolves when rows are populated.
- */
 async function fetchCostStats(): Promise<void> {
   if (!props.dbPath) return
   loading.value = true
@@ -93,8 +83,6 @@ onMounted(fetchCostStats)
 watch(selectedPeriod, fetchCostStats)
 watch(() => props.period, fetchCostStats)
 watch(() => props.dbPath, fetchCostStats)
-
-// ── Aggregations ───────────────────────────────────────────────────────────
 
 const byAgent = computed<AgentCostAgg[]>(() => {
   const map = new Map<string, AgentCostAgg>()
@@ -123,7 +111,6 @@ const byAgent = computed<AgentCostAgg[]>(() => {
   return [...map.values()].sort((a, b) => b.total_cost - a.total_cost)
 })
 
-// Sparkline: cost per period bucket (last 7 buckets)
 const sparkPeriods = computed<Array<{ label: string; cost: number }>>(() => {
   const periodMap = new Map<string, number>()
   for (const row of rows.value) {
@@ -135,30 +122,16 @@ const sparkPeriods = computed<Array<{ label: string; cost: number }>>(() => {
 
 const sparkMax = computed(() => Math.max(...sparkPeriods.value.map(b => b.cost), 0.0001))
 
-// Global totals
 const globalCost     = computed(() => byAgent.value.reduce((s, r) => s + r.total_cost, 0))
 const globalSessions = computed(() => byAgent.value.reduce((s, r) => s + r.session_count, 0))
 const globalTurns    = computed(() => byAgent.value.reduce((s, r) => s + r.total_turns, 0))
 
-// Bar widths
 const maxAgentCost = computed(() => Math.max(...byAgent.value.map(r => r.total_cost), 0.0001))
 
-/**
- * Returns a percentage width string for the cost bar relative to the highest agent cost.
- * Minimum bar width is 2% so zero-cost bars remain visible.
- * @param cost - Agent total cost in USD.
- * @returns CSS width string, e.g. "42%".
- */
 function barWidth(cost: number): string {
   return Math.max((cost / maxAgentCost.value) * 100, 2) + '%'
 }
 
-/**
- * Computes the cache hit rate for an agent as an integer percentage (0–100).
- * Returns 0 when no cache tokens were recorded.
- * @param row - Aggregated cost row for the agent.
- * @returns Cache efficiency percentage.
- */
 function cacheEfficiency(row: AgentCostAgg): number {
   const total = row.cache_read + row.cache_write
   if (total === 0) return 0
@@ -172,33 +145,17 @@ function cacheEffClass(row: AgentCostAgg): string {
   return ''
 }
 
-// ── Formatting ─────────────────────────────────────────────────────────────
-
-/**
- * Formats a USD cost value as a human-readable string.
- * - Zero → "$0.00"
- * - Sub-millicent → "< $0.001"
- * - Sub-cent → 3 decimal places
- * - Otherwise → 2 decimal places
- * @param usd - Cost amount in US dollars.
- * @returns Formatted cost string.
- */
 function formatCost(usd: number): string {
   if (usd === 0) return '$0.00'
   if (usd < 0.001) return '< $0.001'
   if (usd < 0.01) return '$' + usd.toFixed(3)
   return '$' + usd.toFixed(2)
 }
-
-
-// ── Sparkline hover ────────────────────────────────────────────────────────
-
-const hoveredBar = ref<number | null>(null)
 </script>
 
 <template>
   <section class="cost-section ga-3">
-<!-- Header + period selector -->
+    <!-- Header + period selector -->
     <div v-if="!props.period" class="cost-header">
       <h3 class="cost-title text-label-medium">
         {{ t('costStats.title') }}
@@ -230,7 +187,7 @@ const hoveredBar = ref<number | null>(null)
     </div>
 
     <template v-else-if="byAgent.length > 0">
-<!-- Global summary row -->
+      <!-- Global summary row -->
       <div class="cost-summary-grid ga-2">
         <div class="cost-summary-card">
           <span class="cost-summary-label text-label-medium">{{ t('costStats.totalCost') }}</span>
@@ -246,32 +203,12 @@ const hoveredBar = ref<number | null>(null)
         </div>
       </div>
 
-      <!-- Cost sparkline (last 7 periods) -->
-      <div v-if="sparkPeriods.length > 1" class="cost-sparkline-section ga-1">
-        <span class="cost-section-label text-label-medium">{{ t('costStats.trend') }}</span>
-        <div class="cost-sparkline ga-1">
-          <div
-            v-for="(bar, i) in sparkPeriods"
-            :key="bar.label"
-            class="cost-spark-bar-wrap"
-            @mouseenter="hoveredBar = i"
-            @mouseleave="hoveredBar = null"
-          >
-            <div
-              class="cost-spark-bar"
-              :class="{ 'cost-spark-bar--hover': hoveredBar === i }"
-              :style="{ height: Math.max(Math.round((bar.cost / sparkMax) * 36), bar.cost > 0 ? 2 : 0) + 'px' }"
-            />
-            <div v-if="bar.cost === 0" class="cost-spark-zero" />
-            <div
-              v-if="hoveredBar === i"
-              class="cost-spark-tooltip elevation-2 py-1 px-2 text-label-medium"
-            >
-              {{ bar.label }} : {{ formatCost(bar.cost) }}
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Cost sparkline (extracted) -->
+      <CostSparkline
+        :spark-periods="sparkPeriods"
+        :spark-max="sparkMax"
+        :format-cost="formatCost"
+      />
 
       <!-- Per-agent cost table -->
       <div class="cost-agent-table">
@@ -282,10 +219,8 @@ const hoveredBar = ref<number | null>(null)
           :key="row.agent_id"
           class="cost-agent-row ga-3"
         >
-          <!-- Agent badge -->
           <AgentBadge :name="row.agent_name" />
 
-          <!-- Cost bar -->
           <div class="cost-bar-track">
             <div
               class="cost-bar-fill"
@@ -296,7 +231,6 @@ const hoveredBar = ref<number | null>(null)
             </span>
           </div>
 
-          <!-- Cache efficiency -->
           <div class="cost-cache-info ga-3">
             <span
               class="cost-cache-eff"
@@ -307,7 +241,7 @@ const hoveredBar = ref<number | null>(null)
           </div>
         </div>
       </div>
-</template>
+    </template>
   </section>
 </template>
 
@@ -327,9 +261,7 @@ const hoveredBar = ref<number | null>(null)
   margin: 0;
   font-weight: 400;
 }
-.cost-period-btns {
-  display: flex;
-}
+.cost-period-btns { display: flex; }
 .cost-period-btn {
   border: 1px solid var(--edge-default) !important;
   border-radius: var(--shape-full) !important;
@@ -344,7 +276,6 @@ const hoveredBar = ref<number | null>(null)
   color: var(--content-faint);
   text-align: center;
 }
-/* Summary grid */
 .cost-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -367,57 +298,11 @@ const hoveredBar = ref<number | null>(null)
   color: var(--content-primary);
   font-variant-numeric: tabular-nums;
 }
-/* Section label */
 .cost-section-label {
   letter-spacing: 0.02em;
   color: var(--content-faint);
   display: block;
 }
-/* Sparkline */
-.cost-sparkline-section {
-  display: flex;
-  flex-direction: column;
-}
-.cost-sparkline {
-  display: flex;
-  align-items: flex-end;
-  height: 40px;
-}
-.cost-spark-bar-wrap {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  cursor: default;
-}
-.cost-spark-bar {
-  width: 100%;
-  border-radius: 2px 2px 0 0;
-  background: rgba(var(--v-theme-secondary), 0.5);
-  transition: background-color var(--md-duration-short3) var(--md-easing-standard);
-}
-.cost-spark-bar--hover { background: rgb(var(--v-theme-secondary)); }
-.cost-spark-zero {
-  width: 100%;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--edge-subtle);
-}
-.cost-spark-tooltip {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  border-radius: var(--shape-xs);
-  white-space: nowrap;
-  background: var(--surface-secondary);
-  color: var(--content-primary);
-  border: 1px solid var(--edge-default);
-  pointer-events: none;
-}
-/* Per-agent table */
 .cost-agent-table {
   display: flex;
   flex-direction: column;
@@ -427,7 +312,6 @@ const hoveredBar = ref<number | null>(null)
   display: flex;
   align-items: center;
 }
-
 .cost-bar-track {
   flex: 1;
   height: 20px;

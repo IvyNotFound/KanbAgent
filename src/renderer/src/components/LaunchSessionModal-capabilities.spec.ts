@@ -5,6 +5,20 @@ import { createTestingPinia } from '@pinia/testing'
 import LaunchSessionModal from '@renderer/components/LaunchSessionModal.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for LaunchInstanceSelector — renders radio buttons + labels
+const launchInstanceSelectorStub = {
+  props: ['modelValue', 'instances', 'loading', 'agentName', 'noInstanceText'],
+  template: `<div><label v-for="inst in instances" :key="inst.cli + inst.distro"><input type="radio" :value="inst" /><span>{{ inst.type === 'wsl' ? inst.distro : 'Linux' }}</span><span>{{ { claude: 'Claude', codex: 'Codex', gemini: 'Gemini' }[inst.cli] || inst.cli }}</span></label></div>`,
+}
+
+// Stub for LaunchSessionOptions — renders thinking mode buttons, resume switch, worktree switch
+const launchSessionOptionsStub = {
+  props: ['caps', 'availableModels', 'defaultModelLabel', 'lastConvId', 'worktreeSource',
+    'worktreeError', 'accentColor', 'selectedModel', 'useResume', 'thinkingMode',
+    'customPrompt', 'multiInstance'],
+  template: `<div><template v-if="caps.thinkingMode"><v-btn value="auto">Auto</v-btn><v-btn value="disabled">Désactivé</v-btn></template><v-switch v-if="caps.convResume && lastConvId" data-testid="switch-resume" /><v-switch data-testid="switch-worktree" /></div>`,
+}
+
 // ── Capability-driven sections (T1036) ───────────────────────────────────────
 
 describe('LaunchSessionModal — capabilities (T1036)', () => {
@@ -47,7 +61,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
             },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchInstanceSelector: launchInstanceSelectorStub },
       },
     })
     await flushPromises()
@@ -69,7 +83,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
             },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchInstanceSelector: launchInstanceSelectorStub },
       },
     })
     await flushPromises()
@@ -94,7 +108,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
             },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchInstanceSelector: launchInstanceSelectorStub },
       },
     })
     await flushPromises()
@@ -163,7 +177,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
             settings: { enabledClis: ['claude'], allCliInstances: [] },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchSessionOptions: launchSessionOptionsStub },
       },
     })
     await flushPromises()
@@ -185,7 +199,7 @@ describe('LaunchSessionModal — capabilities (T1036)', () => {
             settings: { enabledClis: ['codex'], allCliInstances: [] },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchSessionOptions: launchSessionOptionsStub },
       },
     })
     await flushPromises()

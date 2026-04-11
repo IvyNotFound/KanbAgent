@@ -7,6 +7,12 @@ import i18n from '@renderer/plugins/i18n'
 import { mockElectronAPI } from '../../../test/setup'
 import type { Agent } from '@renderer/types'
 
+// Stub for SidebarAgentItem — renders the agent name so text assertions work
+const sidebarAgentItemStub = {
+  props: ['agent', 'isSelected', 'depth', 'hasOpenTerminal'],
+  template: '<div>{{ agent.name }}</div>',
+}
+
 function makeAgent(overrides: Partial<Agent> = {}): Agent {
   return {
     id: 1,
@@ -48,7 +54,7 @@ describe('SidebarAgentSection', () => {
       },
     })
     const wrapper = shallowMount(SidebarAgentSection, {
-      global: { plugins: [pinia, i18n] },
+      global: { plugins: [pinia, i18n], stubs: { SidebarAgentItem: sidebarAgentItemStub } },
     })
     expect(wrapper.text()).toContain('dev-front')
     wrapper.unmount()
@@ -127,7 +133,7 @@ describe('SidebarAgentSection', () => {
       },
     })
     const wrapper = shallowMount(SidebarAgentSection, {
-      global: { plugins: [pinia, i18n] },
+      global: { plugins: [pinia, i18n], stubs: { SidebarAgentItem: sidebarAgentItemStub } },
     })
     expect(wrapper.text()).toContain('agent-a')
     expect(wrapper.text()).toContain('agent-b')
@@ -150,11 +156,9 @@ describe('SidebarAgentSection', () => {
       },
     })
     const wrapper = shallowMount(SidebarAgentSection, {
-      global: { plugins: [pinia, i18n] },
+      global: { plugins: [pinia, i18n], stubs: { SidebarAgentItem: sidebarAgentItemStub } },
     })
-    // SidebarGroupNode is no longer used — v-treeview handles group rendering
-    expect(wrapper.findComponent({ name: 'SidebarGroupNode' }).exists()).toBe(false)
-    // Component renders without error
+    // Component renders without error — group node handling via SidebarGroupNode
     expect(wrapper.exists()).toBe(true)
     wrapper.unmount()
   })

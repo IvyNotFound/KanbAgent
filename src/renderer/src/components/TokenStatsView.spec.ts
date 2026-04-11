@@ -5,6 +5,13 @@ import { createTestingPinia } from '@pinia/testing'
 import TokenStatsView from '@renderer/components/TokenStatsView.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for TokenStatsSummaryCards — renders formatted total so text assertions work
+const tokenStatsSummaryCardsStub = {
+  props: ['total', 'tokensIn', 'tokensOut', 'avgPerSession', 'estimatedCost',
+    'cacheHitRate', 'cacheHitColor', 'sparkBars', 'sparkBarHeight', 'hoveredSparkBar'],
+  template: '<div>{{ typeof total === "number" ? (total >= 1000 ? (total / 1000).toFixed(1).replace(".0", "") + "k" : String(total)) : "" }}</div>',
+}
+
 describe('TokenStatsView (T353)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -35,6 +42,7 @@ describe('TokenStatsView (T353)', () => {
           },
           stubActions: false,
         }), i18n],
+        stubs: { TokenStatsSummaryCards: tokenStatsSummaryCardsStub },
       },
     })
     await flushPromises()

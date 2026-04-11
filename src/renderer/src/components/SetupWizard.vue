@@ -5,6 +5,7 @@ import { useSettingsStore } from '@renderer/stores/settings'
 import { CLI_LABELS } from '@renderer/utils/cliCapabilities'
 import type { CliType } from '@shared/cli-types'
 import type { CliModelDef } from '@shared/cli-models'
+import SetupCliModelSelector from './SetupCliModelSelector.vue'
 
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
@@ -25,23 +26,23 @@ const errorMsg = ref<string | null>(null)
 // ── Language selector ──────────────────────────────────────────────────────────
 const LANG_OPTIONS: { value: string; title: string }[] = [
   { value: 'en', title: 'English' },
-  { value: 'fr', title: 'Fran\u00e7ais' },
-  { value: 'es', title: 'Espa\u00f1ol' },
-  { value: 'pt', title: 'Portugu\u00eas' },
-  { value: 'pt-BR', title: 'Portugu\u00eas (Brasil)' },
+  { value: 'fr', title: 'Français' },
+  { value: 'es', title: 'Español' },
+  { value: 'pt', title: 'Português' },
+  { value: 'pt-BR', title: 'Português (Brasil)' },
   { value: 'de', title: 'Deutsch' },
   { value: 'it', title: 'Italiano' },
-  { value: 'ja', title: '\u65e5\u672c\u8a9e' },
-  { value: 'ko', title: '\ud55c\uad6d\uc5b4' },
-  { value: 'zh-CN', title: '\u4e2d\u6587' },
-  { value: 'ru', title: '\u0420\u0443\u0441\u0441\u043a\u0438\u0439' },
+  { value: 'ja', title: '日本語' },
+  { value: 'ko', title: '한국어' },
+  { value: 'zh-CN', title: '中文' },
+  { value: 'ru', title: 'Русский' },
   { value: 'pl', title: 'Polski' },
   { value: 'sv', title: 'Svenska' },
   { value: 'fi', title: 'Suomi' },
   { value: 'da', title: 'Dansk' },
   { value: 'no', title: 'Norsk' },
-  { value: 'tr', title: 'T\u00fcrk\u00e7e' },
-  { value: 'ar', title: '\u0627\u0644\u0639\u0631\u0628\u064a\u0629' },
+  { value: 'tr', title: 'Türkçe' },
+  { value: 'ar', title: 'العربية' },
 ]
 
 const selectedLang = ref('en')
@@ -86,20 +87,10 @@ function modelsForCli(cli: string): { title: string; value: string }[] {
   return models.map(m => ({ title: m.label, value: m.modelId }))
 }
 
-function toggleAdditionalCli(cli: string, checked: boolean) {
-  if (checked) {
-    if (!additionalClis.value.includes(cli)) additionalClis.value.push(cli)
-  } else {
-    additionalClis.value = additionalClis.value.filter(c => c !== cli)
-  }
-}
-
-// Reset primary model when primary CLI changes
 const mounted = ref(false)
 watch(effectivePrimaryCli, (newCli) => {
   if (mounted.value) {
     primaryModel.value = ''
-    // Remove from additional if it was checked
     additionalClis.value = additionalClis.value.filter(c => c !== newCli)
   }
 })
@@ -122,14 +113,12 @@ async function handleSetup() {
   creating.value = true
   errorMsg.value = null
   try {
-    // 1. Create DB with language
     const result = await window.electronAPI.createProjectDb(props.projectPath, selectedLang.value)
     if (!result.success) {
       errorMsg.value = result.error ?? t('setup.createDbError')
       return
     }
 
-    // 2. Generate instruction files for all selected CLIs
     if (generateInstructions.value) {
       const allClis = [effectivePrimaryCli.value, ...additionalClis.value]
       await window.electronAPI.initNewProject(
@@ -140,7 +129,6 @@ async function handleSetup() {
       )
     }
 
-    // 3. Persist CLI + model defaults
     if (primaryCli.value) {
       await window.electronAPI.setConfigValue(result.dbPath, 'defaultCliInstance', primaryCli.value)
     }
@@ -156,7 +144,6 @@ async function handleSetup() {
       }
     }
 
-    // 4. Persist project_clis and primary_cli config
     const allClis = [effectivePrimaryCli.value, ...additionalClis.value]
     await window.electronAPI.setConfigValue(result.dbPath, 'project_clis', JSON.stringify(allClis))
     await window.electronAPI.setConfigValue(result.dbPath, 'primary_cli', effectivePrimaryCli.value)
@@ -172,7 +159,7 @@ async function handleSetup() {
   <!-- Overlay -->
   <div class="wizard-overlay">
     <v-card class="wizard-card" elevation="3" rounded="xl">
-<!-- Header -->
+      <!-- Header -->
       <div class="wizard-header d-flex align-center ga-3 px-6 pt-6 pb-4">
         <div
           class="wizard-icon d-flex align-center justify-center shrink-0"
@@ -215,7 +202,6 @@ async function handleSetup() {
             </p>
 
             <div class="d-flex flex-column ga-2">
-              <!-- Always: create DB -->
               <div class="option-box d-flex align-start ga-3">
                 <v-icon class="option-icon mt-1 shrink-0" size="16" style="color: rgb(var(--v-theme-primary))">mdi-check</v-icon>
                 <div>
@@ -224,7 +210,6 @@ async function handleSetup() {
                 </div>
               </div>
 
-              <!-- Optional: generate instruction files -->
               <label
                 class="option-box option-box--clickable d-flex align-start ga-3"
                 :class="{ 'option-box--selected': generateInstructions }"
@@ -255,72 +240,22 @@ async function handleSetup() {
             color="primary"
           />
 
-          <!-- Primary CLI + model (shared between Case A and B) -->
-          <div v-if="cliItems.length > 0" class="d-flex flex-column ga-3">
-            <v-select
-              v-model="primaryCli"
-              :items="cliItems"
-              :label="t('setup.defaultCli')"
-              :placeholder="t('agent.globalDefault')"
-              :hint="t('setup.defaultCliNote')"
-              persistent-hint
-              clearable
-              variant="outlined"
-              density="compact"
-              color="primary"
-            />
-            <v-select
-              v-if="availablePrimaryModels.length > 0"
-              v-model="primaryModel"
-              :items="availablePrimaryModels"
-              :label="t('setup.defaultModel')"
-              clearable
-              :placeholder="defaultPrimaryModelLabel ? t('agent.settingsDefaultNamed', { model: defaultPrimaryModelLabel }) : t('agent.settingsDefault')"
-              :hint="t('setup.defaultModelNote')"
-              persistent-hint
-              variant="outlined"
-              density="compact"
-              color="primary"
-            />
-            <v-text-field
-              v-else
-              v-model="primaryModel"
-              :label="t('setup.defaultModel')"
-              placeholder="anthropic/claude-opus-4-5"
-              :hint="t('setup.defaultModelNote')"
-              persistent-hint
-              variant="outlined"
-              density="compact"
-            />
-
-            <!-- Additional CLIs -->
-            <div v-if="otherAvailableClis.length > 0" class="d-flex flex-column ga-2">
-              <p class="text-label-medium text-medium-emphasis">{{ t('setup.additionalClis') }}</p>
-              <div v-for="cli in otherAvailableClis" :key="cli.value" class="additional-cli-row d-flex align-center ga-3">
-                <v-checkbox
-                  :model-value="additionalClis.includes(cli.value)"
-                  :label="cli.title"
-                  @update:model-value="toggleAdditionalCli(cli.value, !!$event)"
-                  density="compact"
-                  hide-details
-                  color="primary"
-                  class="shrink-0"
-                />
-                <v-select
-                  v-if="additionalClis.includes(cli.value) && modelsForCli(cli.value).length > 0"
-                  v-model="modelPerCli[cli.value]"
-                  :items="modelsForCli(cli.value)"
-                  :label="t('setup.defaultModel')"
-                  clearable
-                  variant="outlined"
-                  density="compact"
-                  color="primary"
-                  hide-details
-                  class="flex-grow-1"
-                />
-              </div>
-            </div>
-          </div>
+          <!-- CLI + model selector (extracted) -->
+          <SetupCliModelSelector
+            :primary-cli="primaryCli"
+            :primary-model="primaryModel"
+            :additional-clis="additionalClis"
+            :model-per-cli="modelPerCli"
+            :cli-items="cliItems"
+            :available-primary-models="availablePrimaryModels"
+            :other-available-clis="otherAvailableClis"
+            :default-primary-model-label="defaultPrimaryModelLabel"
+            :models-for-cli="modelsForCli"
+            @update:primary-cli="primaryCli = $event"
+            @update:primary-model="primaryModel = $event"
+            @update:additional-clis="additionalClis = $event"
+            @update:model-per-cli="modelPerCli = $event"
+          />
 
           <!-- Generate instructions checkbox for Case B -->
           <label
@@ -348,9 +283,9 @@ async function handleSetup() {
             density="compact"
             class="text-caption"
           >
-{{ errorMsg }}
-</v-alert>
-</div>
+            {{ errorMsg }}
+          </v-alert>
+        </div>
       </v-card-text>
 
       <!-- Footer -->
@@ -362,8 +297,8 @@ async function handleSetup() {
           :disabled="creating"
           @click="emit('skip')"
         >
-{{ t('setup.skip') }}
-</v-btn>
+          {{ t('setup.skip') }}
+        </v-btn>
         <v-spacer />
         <v-btn
           data-testid="btn-action"
@@ -376,7 +311,7 @@ async function handleSetup() {
           {{ creating ? t('setup.creating') : hasCLAUDEmd ? t('setup.createDb') : t('setup.initProject') }}
         </v-btn>
       </v-card-actions>
-</v-card>
+    </v-card>
   </div>
 </template>
 
@@ -405,64 +340,41 @@ async function handleSetup() {
   height: 40px;
   border-radius: var(--shape-md);
 }
-
 .wizard-icon--amber {
   background-color: rgba(var(--v-theme-warning), 0.15);
   border: 1px solid rgba(var(--v-theme-warning), 0.3);
 }
-
 .wizard-icon--violet {
   background-color: rgba(var(--v-theme-primary), 0.15);
   border: 1px solid rgba(var(--v-theme-primary), 0.3);
 }
-
-.wizard-svg {
-  width: 20px;
-  height: 20px;
-}
-
-.header-text {
-  min-width: 0;
-  flex: 1;
-}
-
+.wizard-svg { width: 20px; height: 20px; }
+.header-text { min-width: 0; flex: 1; }
 .path-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-top: 2px;
 }
-
 .info-box {
   padding: 12px 16px;
   border-radius: var(--shape-sm);
   background: var(--surface-secondary);
   border: 1px solid var(--edge-default);
 }
-
 .option-box {
   padding: 12px 16px;
   border-radius: var(--shape-sm);
   background: var(--surface-secondary);
   border: 1px solid var(--edge-default);
 }
-
 .option-box--clickable {
   cursor: pointer;
   transition: border-color var(--md-duration-short3) var(--md-easing-standard), background-color var(--md-duration-short3) var(--md-easing-standard);
 }
-
 .option-box--selected {
   background-color: rgba(var(--v-theme-primary), 0.08);
   border-color: rgba(var(--v-theme-primary), 0.4);
 }
-
-.option-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.additional-cli-row {
-  min-height: 40px;
-}
+.option-icon { width: 16px; height: 16px; }
 </style>

@@ -5,6 +5,13 @@ import { createTestingPinia } from '@pinia/testing'
 import TabBar from '@renderer/components/TabBar.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for TabBarScrollArea — renders agent group names so text assertions work
+const tabBarScrollAreaStub = {
+  props: ['fileTabs', 'groupedTerminalTabs', 'activeTabId', 'agentTabStyleMap',
+    'groupEnvelopeStyleMap', 'subTabBgMap', 'subTabLabel', 'isGroupCollapsed'],
+  template: '<div><span v-for="g in groupedTerminalTabs" :key="g.agentName ?? \'misc\'">{{ g.agentName }}</span></div>',
+}
+
 describe('TabBar', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -51,6 +58,7 @@ describe('TabBar', () => {
             activeTabId: 'term-1',
           } },
         }), i18n],
+        stubs: { TabBarScrollArea: tabBarScrollAreaStub },
       },
     })
     expect(wrapper.text()).toContain('review-master')

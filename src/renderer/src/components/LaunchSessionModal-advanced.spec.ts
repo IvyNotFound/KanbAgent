@@ -6,6 +6,14 @@ import { nextTick } from 'vue'
 import LaunchSessionModal from '@renderer/components/LaunchSessionModal.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for LaunchSessionOptions — renders resume switch, worktree switch, thinking mode buttons
+const launchSessionOptionsStub = {
+  props: ['caps', 'availableModels', 'defaultModelLabel', 'lastConvId', 'worktreeSource',
+    'worktreeError', 'accentColor', 'selectedModel', 'useResume', 'thinkingMode',
+    'customPrompt', 'multiInstance'],
+  template: `<div><template v-if="caps.thinkingMode"><v-btn value="auto">Auto</v-btn><v-btn value="disabled">Désactivé</v-btn></template><v-switch v-if="caps.convResume && lastConvId" data-testid="switch-resume" /><v-switch data-testid="switch-worktree" /></div>`,
+}
+
 // ── AgentBadge (T231) ────────────────────────────────────────────────────────
 
 import AgentBadge from '@renderer/components/AgentBadge.vue'
@@ -51,7 +59,7 @@ describe('LaunchSessionModal — advanced features (T353)', () => {
         plugins: [createTestingPinia({
           initialState: { tasks: { dbPath: '/p/.claude/db' } },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchSessionOptions: launchSessionOptionsStub },
       },
     })
     await flushPromises()

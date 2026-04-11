@@ -5,9 +5,8 @@ import { useTasksStore } from '@renderer/stores/tasks'
 import { renderMarkdown as renderMarkdownShared } from '@renderer/utils/renderMarkdown'
 import { useCopyCode } from '@renderer/composables/useCopyCode'
 import AgentBadge from './AgentBadge.vue'
-import TaskDependencyGraph from './TaskDependencyGraph.vue'
-import GitCommitList from './GitCommitList.vue'
-import { agentFg, agentBg, perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
+import TaskDetailRightCol from './TaskDetailRightCol.vue'
+import { perimeterFg, perimeterBg, perimeterBorder } from '@renderer/utils/agentColor'
 import { parseUtcDate } from '@renderer/utils/parseDate'
 import type { TaskAssignee, TaskLink } from '@renderer/types'
 
@@ -60,7 +59,6 @@ function formatDateFull(iso: string): string {
   })
 }
 
-// Normaliser les retours à la ligne
 function normalizeNewlines(text: string): string {
   return text.replace(/\\n/g, '\n')
 }
@@ -72,7 +70,6 @@ function renderMarkdown(text: string): string {
 const taskPanelRef = ref<HTMLElement | null>(null)
 useCopyCode(taskPanelRef)
 
-// Computed for description
 const renderedDescription = computed(() => {
   if (!task.value?.description) return ''
   return renderMarkdown(task.value.description)
@@ -83,22 +80,9 @@ const renderedComments = computed(() =>
   store.taskComments.map(c => ({ ...c, _html: renderMarkdown(c.content) }))
 )
 
-function relativeTime(iso: string): string {
-  const diff = Date.now() - parseUtcDate(iso).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 1) return t('taskDetail.justNow')
-  if (m < 60) return `${m}min`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
-  return `${Math.floor(h / 24)}j`
-}
-
 // ── Assignees (ADR-008, read-only — T571) ─────────────────────────────────────
-// Synced from store.taskAssignees — display only, no mutation from UI
-
 const assignees = ref<TaskAssignee[]>([])
 
-// Sync display whenever the store loads assignees for the current task
 watch(() => store.taskAssignees, (val) => { assignees.value = Array.isArray(val) ? [...val] : [] }, { immediate: true })
 
 const sortedAssignees = computed(() =>
@@ -110,7 +94,6 @@ const sortedAssignees = computed(() =>
 )
 
 // ── Blocked status (T553) ─────────────────────────────────────────────────────
-// A task is blocked if it is 'todo' and has unresolved blockers (not archived)
 const blockedByLinks = computed<TaskLink[]>(() => {
   if (!task.value) return []
   const id = task.value.id
@@ -164,6 +147,11 @@ watch(task, (val) => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
 })
+
+function navigateTask(id: number) {
+  const t = store.tasks.find(x => x.id === id)
+  if (t) store.openTask(t)
+}
 </script>
 
 <template>
@@ -175,7 +163,7 @@ onUnmounted(() => {
 
       <!-- Panel -->
       <div ref="taskPanelRef" class="task-panel elevation-3">
-<!-- Header -->
+        <!-- Header -->
         <div class="task-header ga-3 py-4 px-5">
           <div class="task-header-left">
             <p class="task-title mb-2 text-body-2">{{ task.title }}</p>
@@ -201,16 +189,16 @@ onUnmounted(() => {
                   backgroundColor: perimeterBg(task.scope),
                 }"
               >
-{{ task.scope }}
-</v-chip>
+                {{ task.scope }}
+              </v-chip>
               <v-chip
                 v-if="task.effort"
                 size="small"
                 variant="tonal"
                 :color="EFFORT_COLOR[task.effort]"
               >
-{{ EFFORT_LABEL[task.effort] }}
-</v-chip>
+                {{ EFFORT_LABEL[task.effort] }}
+              </v-chip>
             </div>
           </div>
           <v-btn
@@ -223,11 +211,10 @@ onUnmounted(() => {
           />
         </div>
 
-        <!-- Body : 2 colonnes -->
+        <!-- Body: 2 columns -->
         <div class="task-body">
-<!-- Colonne gauche : description + commentaire tâche -->
+          <!-- Left column: description -->
           <div class="task-left-col py-4 px-5 ga-5">
-            <!-- Description -->
             <div v-if="task.description">
               <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.description') }}</p>
               <!-- eslint-disable-next-line vue/no-v-html -- sanitized via DOMPurify -->
@@ -239,144 +226,20 @@ onUnmounted(() => {
             </p>
           </div>
 
-          <!-- Colonne droite : assignés + commentaires -->
-          <div class="task-right-col">
-<!-- T553: Blocked indicator -->
-            <div v-if="isBlocked" class="blocked-banner py-2 px-4">
-              <p class="section-label mb-1 text-label-medium" style="color: rgb(var(--v-theme-warning));">{{ t('taskDetail.blockedTitle') }}</p>
-              <ul class="blocked-list">
-                <li
-                  v-for="link in unresolvedBlockers"
-                  :key="link.id"
-                  class="blocked-item text-label-medium"
-                >
-                  #{{ link.from_task === task.id ? link.to_task : link.from_task }}
-                  {{ link.from_task === task.id ? link.to_titre : link.from_titre }}
-                </li>
-              </ul>
-            </div>
-
-            <!-- Section Agents (créateur / assigné / valideur) -->
-            <div class="right-section">
-              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.agents') }}</p>
-              <div class="d-flex flex-column ga-2">
-                <div v-if="task.agent_creator_name" class="d-flex align-center ga-2">
-                  <span class="meta-label text-label-medium">{{ t('taskDetail.creator') }}</span>
-                  <AgentBadge :name="task.agent_creator_name" />
-                </div>
-                <div v-if="task.agent_name" class="d-flex align-center ga-2">
-                  <span class="meta-label text-label-medium">{{ t('taskDetail.assigned') }}</span>
-                  <AgentBadge :name="task.agent_name" />
-                </div>
-                <div v-if="valideurAgent" class="d-flex align-center ga-2">
-                  <span class="meta-label text-label-medium">{{ t('taskDetail.validator') }}</span>
-                  <AgentBadge :name="valideurAgent.name" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Section Dependencies -->
-            <div class="right-section">
-              <p class="section-label mb-2 text-label-medium">{{ t('taskDetail.dependencies') }}</p>
-              <TaskDependencyGraph
-                v-if="task"
-                :task-id="task.id"
-                :links="store.taskLinks"
-                @navigate="(id) => { const t = store.tasks.find(x => x.id === id); if (t) store.openTask(t) }"
-              />
-            </div>
-
-            <!-- Section Commits liés (T761) — hidden when no commits -->
-            <div v-if="gitCommits.length > 0" class="right-section right-section--collapsible">
-              <v-btn
-                variant="text"
-                block
-                class="commits-toggle py-3 px-4"
-                @click="gitCommitsOpen = !gitCommitsOpen"
-              >
-                <p class="section-label text-label-medium">
-                  {{ t('taskDetail.commits') }}
-                  <span class="meta-count">({{ gitCommits.length }})</span>
-                </p>
-                <v-icon
-                  class="toggle-arrow"
-                  :class="gitCommitsOpen ? 'toggle-arrow--open' : ''"
-                  size="14"
-                >
-mdi-chevron-right
-</v-icon>
-              </v-btn>
-              <div v-if="gitCommitsOpen" class="commits-content">
-                <GitCommitList
-                  :commits="gitCommits"
-                  @open-task="(id) => { const t = store.tasks.find(x => x.id === id); if (t) store.openTask(t) }"
-                />
-              </div>
-            </div>
-
-            <!-- Section Assignés (read-only — T571) -->
-            <div class="right-section">
-              <p class="section-label mb-2 text-label-medium">
-                {{ t('taskDetail.assignees') }}
-              </p>
-
-              <!-- Assigned agents list — display only -->
-              <div v-if="sortedAssignees.length > 0" class="d-flex flex-column ga-2">
-                <div v-for="a in sortedAssignees" :key="a.agent_id" class="d-flex align-center ga-2">
-                  <v-avatar
-                    size="20"
-                    :style="{ color: agentFg(a.agent_name), backgroundColor: agentBg(a.agent_name) }"
-                    :title="a.agent_name"
-                    class="text-overline font-weight-bold"
-                  >
-{{ a.agent_name.slice(0, 2).toUpperCase() }}
-</v-avatar>
-                  <span class="text-caption" style="color: var(--content-secondary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.agent_name }}</span>
-                  <span class="text-caption" style="color: var(--content-faint); flex-shrink: 0;">{{ a.role ?? '—' }}</span>
-                </div>
-              </div>
-              <p v-else class="empty-text pt-2 text-caption">
-                {{ t('taskDetail.noAssignees') }}
-              </p>
-            </div>
-
-            <!-- Comments header -->
-            <div class="right-section right-section--no-bottom">
-              <p class="section-label text-label-medium">
-                {{ t('taskDetail.comments') }}
-                <span v-if="store.taskComments.length > 0" class="meta-count ml-1">({{ store.taskComments.length }})</span>
-              </p>
-            </div>
-
-            <div class="comments-list pa-3 ga-3">
-              <!-- Messages conversation -->
-              <div v-for="comment in renderedComments" :key="comment.id">
-                <div class="md-bubble text-caption">
-                  <div class="comment-bubble-header">
-                    <div class="d-flex align-center ga-2" style="min-width: 0; flex: 1; overflow: hidden;">
-                      <v-avatar
-                        size="32"
-                        :style="{ color: agentFg(comment.agent_name ?? 'unknown'), backgroundColor: agentBg(comment.agent_name ?? 'unknown') }"
-                        class="text-overline font-weight-bold flex-shrink-0"
-                      >
-{{ (comment.agent_name ?? '?').slice(0, 2).toUpperCase() }}
-</v-avatar>
-                      <span class="comment-author">{{ comment.agent_name ?? '?' }}</span>
-                    </div>
-                    <span class="comment-time" :title="formatDateFull(comment.created_at)">
-                      {{ relativeTime(comment.created_at) }}
-                    </span>
-                  </div>
-                  <!-- eslint-disable-next-line vue/no-v-html -- sanitized via DOMPurify -->
-                  <div class="comment-bubble-body" v-html="comment._html"></div>
-                </div>
-              </div>
-
-              <p v-if="store.taskComments.length === 0" class="empty-text text-center py-4 text-caption">
-                {{ t('taskDetail.noComments') }}
-              </p>
-            </div>
-          </div>
+          <!-- Right column (extracted) -->
+          <TaskDetailRightCol
+            :task="task"
+            :valideur-agent-name="valideurAgent?.name ?? null"
+            :sorted-assignees="sortedAssignees"
+            :blocked-by-links="blockedByLinks"
+            :unresolved-blockers="unresolvedBlockers"
+            :is-blocked="isBlocked"
+            :git-commits="gitCommits"
+            :git-commits-open="gitCommitsOpen"
+            :rendered-comments="renderedComments"
+            @update:git-commits-open="gitCommitsOpen = $event"
+            @navigate-task="navigateTask"
+          />
         </div>
 
         <!-- Footer -->
@@ -397,13 +260,11 @@ mdi-chevron-right
 </template>
 
 <style scoped>
-/* Backdrop overlay — kept for test compat (some tests look for click handler) */
 .backdrop-overlay {
   position: absolute;
   inset: 0;
 }
 
-/* Main panel */
 .task-panel {
   position: relative;
   width: 100%;
@@ -417,7 +278,6 @@ mdi-chevron-right
   user-select: text;
 }
 
-/* Header */
 .task-header {
   display: flex;
   align-items: flex-start;
@@ -436,11 +296,9 @@ mdi-chevron-right
 }
 .btn-close {
   flex-shrink: 0;
-  /* size="x-small" sets 28×28px — border-radius and color via :style binding */
   transition: all var(--md-duration-short3) var(--md-easing-standard);
 }
 
-/* Body layout: 2 columns */
 .task-body {
   display: flex;
   flex: 1;
@@ -451,7 +309,6 @@ mdi-chevron-right
   border-right: 1px solid var(--edge-subtle);
 }
 
-/* Left column */
 .task-left-col {
   flex: 1;
   min-width: 0;
@@ -460,129 +317,17 @@ mdi-chevron-right
   flex-direction: column;
 }
 
-/* Right column */
-.task-right-col {
-  width: 380px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-/* Section headings */
 .section-label {
   font-weight: 600;
   color: var(--content-subtle);
   letter-spacing: 0.02em;
 }
-.right-section {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--edge-subtle);
-  flex-shrink: 0;
-}
-.right-section--collapsible {
-  padding: 0;
-}
-.right-section--no-bottom {
-  padding-bottom: 12px;
-}
 
-/* Blocked banner */
-.blocked-banner {
-  border-bottom: 1px solid rgba(var(--v-theme-warning), 0.3);
-  background: rgba(var(--v-theme-warning), 0.1);
-  flex-shrink: 0;
-}
-.blocked-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.blocked-item {
-  color: rgb(var(--v-theme-warning));
-}
-
-/* Meta labels */
-.meta-label {
-  color: var(--content-secondary);
-  width: 56px;
-  flex-shrink: 0;
-}
-.meta-count {
-  color: var(--content-faint);
-}
-
-/* Commits collapsible */
-.commits-toggle {
-  justify-content: space-between !important; /* override Vuetify v-btn default center — no prop available */
-  height: auto !important; /* override Vuetify v-btn fixed height — content drives height here */
-  transition: background var(--md-duration-short3) var(--md-easing-standard);
-}
-.toggle-arrow {
-  width: 12px;
-  height: 12px;
-  color: var(--content-faint);
-  transition: transform var(--md-duration-short3) var(--md-easing-standard);
-}
-.toggle-arrow--open {
-  transform: rotate(90deg);
-}
-.commits-content {
-  max-height: 160px;
-  overflow-y: auto;
-  border-top: 1px solid var(--edge-subtle);
-}
-
-/* Comments */
-.comments-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-.comment-bubble-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--edge-subtle);
-}
-.comment-bubble-body {
-  padding: 8px 12px;
-}
-.comment-author {
-  font-size: 11px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.comment-time {
-  opacity: 0.65;
-  flex-shrink: 0;
-}
-
-/* md-bubble: keep class for tests */
-.md-bubble {
-  border-radius: var(--shape-sm);
-  line-height: 1.5;
-  word-break: break-words;
-  border: 1px solid var(--edge-subtle);
-  background: var(--surface-card);
-  color: var(--content-primary);
-}
-
-/* Empty states */
 .empty-text {
   color: var(--content-faint);
   font-style: italic;
 }
 
-/* Footer */
 .task-footer {
   border-top: 1px solid var(--edge-subtle);
   display: flex;

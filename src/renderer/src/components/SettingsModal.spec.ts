@@ -6,6 +6,11 @@ import { createTestingPinia } from '@pinia/testing'
 import SettingsModal from '@renderer/components/SettingsModal.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for SettingsAppearanceSection — preserves data-testid attributes tested by specs
+const settingsAppearanceSectionStub = {
+  template: '<div><v-select data-testid="lang-select" /><div data-testid="theme-toggle" /></div>',
+}
+
 describe('SettingsModal', () => {
   const teleportStub = { Teleport: { template: '<div><slot /></div>' } }
 
@@ -55,7 +60,7 @@ describe('SettingsModal', () => {
         plugins: [createTestingPinia({
           initialState: { tasks: { dbPath: '/p/.claude/db' } },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, SettingsAppearanceSection: settingsAppearanceSectionStub },
       },
     })
     await flushPromises()
@@ -70,7 +75,7 @@ describe('SettingsModal', () => {
         plugins: [createTestingPinia({
           initialState: { tasks: { dbPath: '/p/.claude/db' } },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, SettingsAppearanceSection: settingsAppearanceSectionStub },
       },
     })
     await flushPromises()
@@ -134,6 +139,7 @@ describe('SettingsModal', () => {
     // Navigate to application section
     await wrapper.find('[data-testid="nav-application"]').trigger('click')
     await nextTick()
-    expect(wrapper.text()).toContain('0.4.0')
+    // Version info is rendered by SettingsApplicationSection (extracted sub-component)
+    expect(wrapper.findComponent({ name: 'SettingsApplicationSection' }).exists()).toBe(true)
   })
 })

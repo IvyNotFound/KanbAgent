@@ -6,6 +6,12 @@ import Sidebar from '@renderer/components/Sidebar.vue'
 import SidebarAgentSection from '@renderer/components/SidebarAgentSection.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for SidebarAgentItem — renders the agent name so text assertions work
+const sidebarAgentItemStub = {
+  props: ['agent', 'isSelected', 'depth', 'hasOpenTerminal'],
+  template: '<div>{{ agent.name }}</div>',
+}
+
 describe('Sidebar', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -31,6 +37,7 @@ describe('Sidebar', () => {
           CreateAgentModal: true,
           ConfirmModal: true,
           Teleport: true,
+          SidebarAgentItem: sidebarAgentItemStub,
         },
       },
     })
@@ -207,6 +214,8 @@ describe('Sidebar — agent groupings (T558)', () => {
     CreateAgentModal: true,
     ConfirmModal: true,
     Teleport: true,
+    // SidebarAgentItem renders agent names — stub it so text assertions work with shallowMount
+    SidebarAgentItem: sidebarAgentItemStub,
   }
 
   const makeGroupAgent = (overrides = {}) => ({

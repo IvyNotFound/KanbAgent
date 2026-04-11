@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSettingsStore, type Language, type Theme } from '@renderer/stores/settings'
+import { useSettingsStore } from '@renderer/stores/settings'
 import { useTasksStore } from '@renderer/stores/tasks'
 import CliDetectionList from '@renderer/components/CliDetectionList.vue'
-import { useUpdater } from '@renderer/composables/useUpdater'
+import SettingsAppearanceSection from '@renderer/components/SettingsAppearanceSection.vue'
+import SettingsAutomationSection from '@renderer/components/SettingsAutomationSection.vue'
+import SettingsApplicationSection from '@renderer/components/SettingsApplicationSection.vue'
 import { CLI_CAPABILITIES, CLI_LABELS } from '@renderer/utils/cliCapabilities'
 import type { CliType } from '@shared/cli-types'
 import type { CliModelDef } from '@shared/cli-models'
@@ -62,7 +64,6 @@ async function exportZip() {
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
 const store = useTasksStore()
-const { status: updaterStatus, check: checkUpdaterNow } = useUpdater()
 
 async function regenerateRulesFiles() {
   if (!store.projectPath) return
@@ -87,27 +88,6 @@ async function regenerateRulesFiles() {
     regenerating.value = false
   }
 }
-
-const availableLocales = [
-  { code: 'fr', label: 'Français' },
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
-  { code: 'pt', label: 'Português' },
-  { code: 'pt-BR', label: 'Português (Brasil)' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'no', label: 'Norsk' },
-  { code: 'it', label: 'Italiano' },
-  { code: 'ar', label: 'العربية' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'pl', label: 'Polski' },
-  { code: 'sv', label: 'Svenska' },
-  { code: 'fi', label: 'Suomi' },
-  { code: 'da', label: 'Dansk' },
-  { code: 'tr', label: 'Türkçe' },
-  { code: 'zh-CN', label: '中文（简体）' },
-  { code: 'ko', label: '한국어' },
-  { code: 'ja', label: '日本語' },
-] as const
 
 // Deduplicate by cli:distro so each CLI×environment pair gets its own entry (T1090)
 const availableDistros = computed(() => {
@@ -164,7 +144,7 @@ function onDefaultCliChange(v: string) {
 <template>
   <v-dialog model-value width="760" height="560" @update:model-value="emit('close')">
     <v-card class="d-flex flex-column" height="100%" @keydown="handleKeydown">
-<!-- Header -->
+      <!-- Header -->
       <v-toolbar density="compact" flat color="surface">
         <v-toolbar-title class="text-subtitle-1 font-weight-medium">
           {{ t('settings.title') }}
@@ -183,7 +163,7 @@ function onDefaultCliChange(v: string) {
 
       <!-- Body: nav rail + content panel -->
       <div class="settings-body d-flex flex-grow-1">
-<!-- Nav rail -->
+        <!-- Nav rail -->
         <v-list
           nav
           density="compact"
@@ -208,100 +188,14 @@ function onDefaultCliChange(v: string) {
 
         <!-- Content panel -->
         <div class="settings-content pa-4 d-flex flex-column ga-3">
-<!-- Appearance: Language + Theme -->
+          <!-- Appearance -->
           <template v-if="activeSection === 'appearance'">
-            <v-sheet rounded="lg" border class="pa-4">
-              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.language') }}</p>
-              <v-select
-                :model-value="settingsStore.language"
-                :items="availableLocales"
-                item-title="label"
-                item-value="code"
-                variant="outlined"
-                density="compact"
-                hide-details
-                data-testid="lang-select"
-                @update:model-value="(v) => settingsStore.setLanguage(v as Language)"
-              />
-            </v-sheet>
-            <v-sheet rounded="lg" border class="pa-4">
-              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.theme') }}</p>
-              <v-btn-toggle
-                :model-value="settingsStore.theme"
-                mandatory
-                color="primary"
-                variant="outlined"
-                density="compact"
-                data-testid="theme-toggle"
-                @update:model-value="(v) => settingsStore.setTheme(v as Theme)"
-              >
-                <v-btn value="dark">{{ t('settings.dark') }}</v-btn>
-                <v-btn value="light">{{ t('settings.light') }}</v-btn>
-              </v-btn-toggle>
-            </v-sheet>
+            <SettingsAppearanceSection />
           </template>
 
-          <!-- Automation: Auto-launch + Auto-review + Worktree -->
+          <!-- Automation -->
           <template v-else-if="activeSection === 'automation'">
-            <v-sheet rounded="lg" border class="pa-4">
-              <div class="d-flex align-center justify-space-between ga-4">
-                <div>
-                  <p class="text-body-2 font-weight-medium">{{ t('settings.autoLaunch') }}</p>
-                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.autoLaunchDesc') }}</p>
-                </div>
-                <v-switch
-                  hide-details
-                  density="compact"
-                  color="primary"
-                  :model-value="settingsStore.autoLaunchAgentSessions"
-                  @update:model-value="settingsStore.setAutoLaunchAgentSessions(Boolean($event))"
-                />
-              </div>
-            </v-sheet>
-            <v-sheet rounded="lg" border class="pa-4">
-              <div class="d-flex align-center justify-space-between ga-4">
-                <div>
-                  <p class="text-body-2 font-weight-medium">{{ t('settings.autoReview') }}</p>
-                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.autoReviewDesc') }}</p>
-                </div>
-                <v-switch
-                  hide-details
-                  density="compact"
-                  color="primary"
-                  :model-value="settingsStore.autoReviewEnabled"
-                  @update:model-value="settingsStore.setAutoReviewEnabled(Boolean($event))"
-                />
-              </div>
-              <div v-if="settingsStore.autoReviewEnabled" class="d-flex align-center ga-2 mt-3">
-                <label class="text-body-2 text-medium-emphasis">{{ t('settings.autoReviewThreshold') }}</label>
-                <v-text-field
-                  type="number"
-                  :model-value="settingsStore.autoReviewThreshold"
-                  :min="3"
-                  :max="100"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  style="width: 80px"
-                  @update:model-value="(v) => settingsStore.setAutoReviewThreshold(Number(v))"
-                />
-              </div>
-            </v-sheet>
-            <v-sheet rounded="lg" border class="pa-4">
-              <div class="d-flex align-center justify-space-between ga-4">
-                <div>
-                  <p class="text-body-2 font-weight-medium">{{ t('settings.worktreeDefault') }}</p>
-                  <p class="text-body-2 text-medium-emphasis">{{ t('settings.worktreeDefaultDesc') }}</p>
-                </div>
-                <v-switch
-                  hide-details
-                  density="compact"
-                  color="primary"
-                  :model-value="settingsStore.worktreeDefault"
-                  @update:model-value="store.dbPath && settingsStore.setWorktreeDefault(store.dbPath, Boolean($event))"
-                />
-              </div>
-            </v-sheet>
+            <SettingsAutomationSection />
           </template>
 
           <!-- Editor: Max file lines -->
@@ -444,61 +338,11 @@ function onDefaultCliChange(v: string) {
             </v-sheet>
           </template>
 
-          <!-- Application: Updates + About + Export + DB -->
+          <!-- Application -->
           <template v-else-if="activeSection === 'application'">
-            <v-sheet rounded="lg" border class="pa-4">
-              <p class="text-body-2 font-weight-medium mb-3">{{ t('settings.updates') }}</p>
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-body-2 text-medium-emphasis">
-                  {{ t('settings.version') }}: <code>{{ settingsStore.appInfo.version }}</code>
-                </span>
-                <v-btn
-                  color="primary"
-                  :disabled="updaterStatus === 'checking' || updaterStatus === 'downloading'"
-                  @click="checkUpdaterNow"
-                >
-{{ updaterStatus === 'checking' ? t('settings.checking') : t('settings.check') }}
-</v-btn>
-              </div>
-              <div v-if="updaterStatus !== 'idle' && updaterStatus !== 'checking'" class="mt-2">
-                <span
-                  :class="[
-                    'text-body-2 font-weight-medium',
-                    (updaterStatus === 'available' || updaterStatus === 'downloaded') ? 'text-warning' :
-                    updaterStatus === 'up-to-date' ? 'text-secondary' :
-                    updaterStatus === 'error' ? 'text-error' : ''
-                  ]"
-                >
-                  <template v-if="updaterStatus === 'up-to-date'">{{ t('settings.upToDate') }}</template>
-                  <template v-else-if="updaterStatus === 'available'">{{ t('settings.updateAvailable') }}</template>
-                  <template v-else-if="updaterStatus === 'downloading'">{{ t('settings.downloading') }}</template>
-                  <template v-else-if="updaterStatus === 'downloaded'">{{ t('settings.downloaded') }}</template>
-                  <template v-else-if="updaterStatus === 'error'">{{ t('settings.updateError') }}</template>
-                </span>
-              </div>
-            </v-sheet>
-            <v-sheet rounded="lg" border class="pa-4">
-              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.about') }}</p>
-              <p class="text-body-2 text-medium-emphasis">{{ settingsStore.appInfo.name }} v{{ settingsStore.appInfo.version }}</p>
-              <p class="text-body-2 text-medium-emphasis mt-1">{{ t('settings.aboutDesc') }}</p>
-            </v-sheet>
-            <v-sheet v-if="store.dbPath" rounded="lg" border class="pa-4">
-              <p class="text-body-2 font-weight-medium mb-3">{{ t('settings.exportData') }}</p>
-              <v-btn
-                color="primary"
-                prepend-icon="mdi-download"
-                :disabled="exporting"
-                @click="showExportConfirm = true"
-              >
-{{ exporting ? t('settings.exporting') : t('settings.exportBtn') }}
-</v-btn>
-            </v-sheet>
-            <v-sheet v-if="store.dbPath" rounded="lg" border class="pa-4">
-              <p class="text-body-2 font-weight-medium mb-2">{{ t('settings.database') }}</p>
-              <p class="text-body-2 text-medium-emphasis" style="font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace; word-break: break-all;">{{ store.dbPath }}</p>
-            </v-sheet>
+            <SettingsApplicationSection @export="showExportConfirm = true" />
           </template>
-</div>
+        </div>
       </div>
     </v-card>
   </v-dialog>

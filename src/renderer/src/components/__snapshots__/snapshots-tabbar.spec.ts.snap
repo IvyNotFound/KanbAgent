@@ -12,15 +12,14 @@ exports[`TabBar — snapshots > matches snapshot: empty tab bar (no tabs) 1`] = 
     </v-tab>
   </v-tabs><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-left</v-icon>
-  </button><!-- Onglets (scrollable) -->
+  </button><!-- Scrollable tabs area -->
   <div data-v-3c3dc65a="" class="scroll-container">
-    <!-- Onglets fichiers -->
-    <!-- Groupe agent — envelope pill wrapping pill-header + sub-chips -->
+    <tab-bar-scroll-area-stub data-v-3c3dc65a="" filetabs="" groupedterminaltabs="" agenttabstylemap="[object Map]" groupenvelopestylemap="[object Map]" subtabbgmap="[object Map]" subtablabel="[Function]" isgroupcollapsed="[Function]"></tab-bar-scroll-area-stub>
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
   </button>
 </div>
-<!-- Menu contextuel groupe d'onglets -->
+<!-- Tab group context menu -->
 <!--v-if-->"
 `;
 
@@ -36,23 +35,13 @@ exports[`TabBar — snapshots > matches snapshot: tab bar with one terminal tab 
     </v-tab>
   </v-tabs><!-- Scroll left arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-left</v-icon>
-  </button><!-- Onglets (scrollable) -->
+  </button><!-- Scrollable tabs area -->
   <div data-v-3c3dc65a="" class="scroll-container">
-    <!-- Onglets fichiers -->
-    <!-- Groupe agent — envelope pill wrapping pill-header + sub-chips -->
-    <div data-v-3c3dc65a="" class="tab-group" style="border: 1.5px solid rgba(255, 236, 179, 0.45); background: rgba(255, 236, 179, 0.12);">
-      <!-- Pill header (identité de l'agent) --><button data-v-3c3dc65a="" class="tab-agent" style="color: rgb(0, 0, 0); background-color: rgb(255, 236, 179);">
-        <v-icon data-v-3c3dc65a="" size="11" style="flex-shrink: 0;">mdi-console</v-icon><span data-v-3c3dc65a="" class="tab-agent-name">dev-front</span>
-        <v-icon data-v-3c3dc65a="" class="tab-chevron" style="transform: rotate(-90deg);" size="10"> mdi-chevron-down </v-icon>
-        <!--v-if-->
-      </button><!-- Sub-chips session (masqués si groupe collapsé) --><button data-v-3c3dc65a="" class="tab-sub tab-sub--active" style="background-color: rgb(255, 236, 179); color: rgb(0, 0, 0);" title="#1"><span data-v-3c3dc65a="" class="tab-sub-label">#1</span>
-        <!--v-if--><span data-v-3c3dc65a="" class="tab-close text-label-medium" title="Fermer">✕</span>
-      </button>
-    </div>
+    <tab-bar-scroll-area-stub data-v-3c3dc65a="" filetabs="" groupedterminaltabs="[object Object]" activetabid="tab-1" agenttabstylemap="[object Map]" groupenvelopestylemap="[object Map]" subtabbgmap="[object Map]" subtablabel="[Function]" isgroupcollapsed="[Function]"></tab-bar-scroll-area-stub>
   </div><!-- Scroll right arrow --><button data-v-3c3dc65a="" class="scroll-arrow" style="display: none;">
     <v-icon data-v-3c3dc65a="" size="12">mdi-chevron-right</v-icon>
   </button>
 </div>
-<!-- Menu contextuel groupe d'onglets -->
+<!-- Tab group context menu -->
 <!--v-if-->"
 `;

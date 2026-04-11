@@ -7,6 +7,17 @@ import StreamView from '@renderer/components/StreamView.vue'
 import TaskDetailModal from '@renderer/components/TaskDetailModal.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for TaskDetailRightCol — renders assignee names, valideur label, and blocked indicator
+const taskDetailRightColStub = {
+  props: ['task', 'valideurAgentName', 'sortedAssignees', 'blockedByLinks',
+    'unresolvedBlockers', 'isBlocked', 'gitCommits', 'gitCommitsOpen', 'renderedComments'],
+  template: `<div>
+    <div v-if="isBlocked"><span>Tâche bloquée</span></div>
+    <div v-if="valideurAgentName"><span>Valideur</span> <span>{{ valideurAgentName }}</span></div>
+    <span v-for="a in sortedAssignees" :key="a.agent_id">{{ a.agent_name }}</span>
+  </div>`,
+}
+
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
     id: 1,
@@ -206,7 +217,7 @@ describe('TaskDetailModal — multi-agents', () => {
     const wrapper = shallowMount(TaskDetailModal, {
       global: {
         plugins: [pinia, i18n],
-        stubs: { AgentBadge: true, Transition: false },
+        stubs: { AgentBadge: true, Transition: false, TaskDetailRightCol: taskDetailRightColStub },
       },
     })
 
@@ -282,7 +293,7 @@ describe('TaskDetailModal — multi-agents', () => {
       initialState: { tasks: { selectedTask: null, agents: [valideurAgent], dbPath: '/p/db', taskComments: [], taskAssignees: [] } },
     })
     const wrapper = shallowMount(TaskDetailModal, {
-      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false } },
+      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false, TaskDetailRightCol: taskDetailRightColStub } },
     })
     const { useTasksStore } = await import('@renderer/stores/tasks')
     const store = useTasksStore()
@@ -325,7 +336,7 @@ describe('TaskDetailModal — multi-agents', () => {
       initialState: { tasks: { selectedTask: task, agents: [], dbPath: '/p/db', taskComments: [], taskAssignees: [], taskLinks: [blockingLink] } },
     })
     const wrapper = shallowMount(TaskDetailModal, {
-      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false } },
+      global: { plugins: [pinia, i18n], stubs: { AgentBadge: true, Transition: false, TaskDetailRightCol: taskDetailRightColStub } },
     })
     await nextTick()
     // 'Tâche bloquée' is the fr translation of taskDetail.blockedTitle

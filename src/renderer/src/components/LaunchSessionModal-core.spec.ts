@@ -5,6 +5,12 @@ import { createTestingPinia } from '@pinia/testing'
 import LaunchSessionModal from '@renderer/components/LaunchSessionModal.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for LaunchInstanceSelector — renders radio buttons + labels so text/element queries work
+const launchInstanceSelectorStub = {
+  props: ['modelValue', 'instances', 'loading', 'agentName', 'noInstanceText'],
+  template: `<div><label v-for="inst in instances" :key="inst.cli + inst.distro"><input type="radio" :value="inst" /><span>{{ inst.type === 'wsl' ? inst.distro : 'Linux' }}</span><span>{{ { claude: 'Claude', codex: 'Codex', gemini: 'Gemini' }[inst.cli] || inst.cli }}</span></label></div>`,
+}
+
 describe('LaunchSessionModal', () => {
   const mockAgent = {
     id: 1,
@@ -75,7 +81,7 @@ describe('LaunchSessionModal', () => {
             },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchInstanceSelector: launchInstanceSelectorStub },
       },
     })
     await flushPromises()
@@ -161,7 +167,7 @@ describe('LaunchSessionModal', () => {
             },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchInstanceSelector: launchInstanceSelectorStub },
       },
     })
     await flushPromises()
@@ -183,7 +189,7 @@ describe('LaunchSessionModal', () => {
             },
           },
         }), i18n],
-        stubs: teleportStub,
+        stubs: { ...teleportStub, LaunchInstanceSelector: launchInstanceSelectorStub },
       },
     })
     await flushPromises()

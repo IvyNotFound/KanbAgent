@@ -6,6 +6,7 @@ import { useConfirmDialog } from '@renderer/composables/useConfirmDialog'
 import { useTabBarGroups } from '@renderer/composables/useTabBarGroups'
 import ContextMenu from './ContextMenu.vue'
 import type { ContextMenuItem } from './ContextMenu.vue'
+import TabBarScrollArea from './TabBarScrollArea.vue'
 
 const { t } = useI18n()
 const { confirm } = useConfirmDialog()
@@ -112,7 +113,7 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
 
 <template>
   <div class="tabbar">
-<!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
+    <!-- Fixed tabs: Backlog + Dashboard — MD3 Secondary Tabs with Vuetify ripple -->
     <v-tabs
       :model-value="fixedActiveTab"
       density="compact"
@@ -140,88 +141,29 @@ function openGroupMenu(event: MouseEvent, group: { agentName: string | null; tab
       <v-icon size="12">mdi-chevron-left</v-icon>
     </button>
 
-    <!-- Onglets (scrollable) -->
+    <!-- Scrollable tabs area -->
     <div
       ref="scrollContainer"
       class="scroll-container"
       @wheel="onWheel"
       @scroll="updateScrollState"
     >
-      <!-- Onglets fichiers -->
-      <button
-        v-for="tab in fileTabs"
-        :key="tab.id"
-        class="text-caption"
-        :class="['tab-file', store.activeTabId === tab.id && 'tab-file--active']"
-        :title="tab.title"
-        :aria-label="t('explorer.files') + ': ' + tab.title"
-        @click="store.setActive(tab.id)"
-        @mousedown="onMiddleClick($event, tab)"
-      >
-        <v-icon size="14" style="flex-shrink: 0; opacity: 0.5;">mdi-file-outline</v-icon>
-        <span class="tab-title-mono">{{ tab.title }}</span>
-        <span v-if="tab.dirty" class="tab-dirty" :title="t('tabBar.unsaved')" />
-        <span
-          class="tab-close text-label-medium"
-          :title="t('tabBar.closeTab')"
-          @click.stop="handleCloseTab(tab)"
-        >✕</span>
-      </button>
-
-      <!-- Groupe agent — envelope pill wrapping pill-header + sub-chips -->
-      <div
-        v-for="group in groupedTerminalTabs"
-        :key="group.agentName ?? '__misc__'"
-        class="tab-group"
-        :style="groupEnvelopeStyleMap.get(group.agentName)"
-      >
-        <!-- Pill header (identité de l'agent) -->
-        <button
-          v-ripple
-          class="tab-agent"
-          :style="agentTabStyleMap.get(group.agentName)"
-          @click="activateAgentGroup(group)"
-          @contextmenu.prevent="openGroupMenu($event, group)"
-        >
-          <v-icon size="11" style="flex-shrink: 0;">mdi-console</v-icon>
-          <span class="tab-agent-name">{{ group.agentName ?? '?' }}</span>
-          <v-icon
-            class="tab-chevron"
-            :style="isGroupCollapsed(group.agentName) ? {} : { transform: 'rotate(-90deg)' }"
-            size="10"
-            @click.stop="toggleGroup(group.agentName)"
-          >
-mdi-chevron-down
-</v-icon>
-          <span
-            v-if="isGroupCollapsed(group.agentName)"
-            class="tab-group-count"
-          >{{ group.tabs.length }}</span>
-        </button>
-
-        <!-- Sub-chips session (masqués si groupe collapsé) -->
-        <template v-if="!isGroupCollapsed(group.agentName)">
-          <button
-            v-for="tab in group.tabs"
-            :key="tab.id"
-            v-ripple
-            class="tab-sub"
-            :class="{ 'tab-sub--active': store.activeTabId === tab.id }"
-            :style="subTabBgMap.get(tab.id)"
-            :title="subTabLabel(tab)"
-            @click="store.setActive(tab.id)"
-            @mousedown="onMiddleClick($event, tab)"
-          >
-            <span class="tab-sub-label">{{ subTabLabel(tab) }}</span>
-            <span v-if="tab.dirty" class="tab-dirty" :title="t('tabBar.unsaved')" />
-            <span
-              class="tab-close text-label-medium"
-              :title="t('tabBar.closeTab')"
-              @click.stop="handleCloseTab(tab)"
-            >✕</span>
-          </button>
-        </template>
-      </div>
+      <TabBarScrollArea
+        :file-tabs="fileTabs"
+        :grouped-terminal-tabs="groupedTerminalTabs"
+        :active-tab-id="store.activeTabId"
+        :agent-tab-style-map="agentTabStyleMap"
+        :group-envelope-style-map="groupEnvelopeStyleMap"
+        :sub-tab-bg-map="subTabBgMap"
+        :sub-tab-label="subTabLabel"
+        :is-group-collapsed="isGroupCollapsed"
+        @activate="store.setActive($event)"
+        @close-tab="handleCloseTab"
+        @middle-click="onMiddleClick"
+        @toggle-group="toggleGroup"
+        @activate-agent-group="activateAgentGroup"
+        @group-contextmenu="openGroupMenu"
+      />
     </div>
 
     <!-- Scroll right arrow -->
@@ -232,9 +174,9 @@ mdi-chevron-down
     >
       <v-icon size="12">mdi-chevron-right</v-icon>
     </button>
-</div>
+  </div>
 
-  <!-- Menu contextuel groupe d'onglets -->
+  <!-- Tab group context menu -->
   <ContextMenu
     v-if="contextMenu"
     :x="contextMenu.x"
@@ -287,152 +229,5 @@ mdi-chevron-down
 }
 .scroll-container::-webkit-scrollbar {
   display: none;
-}
-.tab-file {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  height: 36px;
-  align-self: center;
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: 18px;
-  flex-shrink: 0;
-  cursor: pointer;
-  background: none;
-  border: none;
-  color: rgba(var(--v-theme-on-surface), 0.60);
-  transition: background var(--md-duration-short3) var(--md-easing-standard),
-              color var(--md-duration-short3) var(--md-easing-standard);
-  user-select: none;
-}
-.tab-file:hover {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-  color: rgba(var(--v-theme-on-surface), 0.80);
-}
-.tab-file--active {
-  background: rgba(var(--v-theme-primary), 0.15);
-  color: rgb(var(--v-theme-primary));
-}
-.tab-title-mono {
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: monospace;
-  font-size: 12px;
-}
-.tab-dirty {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgb(var(--v-theme-warning));
-  flex-shrink: 0;
-}
-.tab-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  opacity: 0.4;
-  cursor: pointer;
-  margin-left: 16px;
-  transition: all var(--md-duration-short3) var(--md-easing-standard);
-}
-.tab-close:hover {
-  opacity: 1;
-  color: rgb(var(--v-theme-error));
-  background: rgba(0,0,0,0.2);
-}
-/* Group envelope — pill container tinted with agent color.
-   border and background come from :style (groupEnvelopeStyleMap). */
-.tab-group {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-  height: 44px;
-  align-self: center;
-  border-radius: 22px;
-  padding: 2px 3px;
-}
-/* Pill header — agent identity, always visible */
-.tab-agent {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 10px;
-  height: 36px;
-  font-size: 11px;
-  font-weight: 600;
-  transition: filter var(--md-duration-short3) var(--md-easing-standard);
-  user-select: none;
-  border-radius: 18px;
-  flex-shrink: 0;
-  cursor: pointer;
-  border: none;
-}
-.tab-agent:hover {
-  filter: brightness(1.12);
-}
-.tab-agent:active {
-  filter: brightness(0.9);
-}
-.tab-agent-name {
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tab-chevron {
-  width: 10px;
-  height: 10px;
-  flex-shrink: 0;
-  transition: transform var(--md-duration-short3) var(--md-easing-standard);
-}
-.tab-group-count {
-  font-size: 10px;
-  font-family: inherit;
-  opacity: 0.7;
-  flex-shrink: 0;
-}
-/* Sub-chips — session tabs inside the group envelope.
-   Active state: tinted bg (0.60) + agentFg text via subTabBgMap :style.
-   Inactive: subtle agent tint (0.08) via --sub-tab-bg CSS custom prop (allows hover override). */
-.tab-sub {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 10px;
-  height: 36px;
-  font-size: 11px;
-  font-weight: 500;
-  transition: background var(--md-duration-short3) var(--md-easing-standard),
-              color var(--md-duration-short3) var(--md-easing-standard);
-  user-select: none;
-  border-radius: 14px;
-  flex-shrink: 0;
-  cursor: pointer;
-  background-color: var(--sub-tab-bg, transparent);
-  border: none;
-  color: rgba(var(--v-theme-on-surface), 0.70);
-}
-.tab-sub:not(.tab-sub--active):hover {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-  color: rgba(var(--v-theme-on-surface), 0.80);
-}
-.tab-sub:not(.tab-sub--active):active {
-  background: rgba(var(--v-theme-on-surface), 0.12);
-}
-.tab-sub-label {
-  font-size: 11px;
-  flex-shrink: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 </style>

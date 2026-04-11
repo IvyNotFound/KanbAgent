@@ -7,6 +7,11 @@ import BoardView from '@renderer/components/BoardView.vue'
 import StatusColumn from '@renderer/components/StatusColumn.vue'
 import i18n from '@renderer/plugins/i18n'
 
+// Stub for ArchiveTaskList — preserves .archive-area class so findAll('.archive-area') works
+const archiveTaskListStub = {
+  template: '<div class="archive-area"></div>',
+}
+
 describe('BoardView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -29,7 +34,10 @@ describe('BoardView', () => {
 
   it('switches active tab when archive is clicked', async () => {
     const wrapper = shallowMount(BoardView, {
-      global: { plugins: [createTestingPinia(), i18n] },
+      global: {
+        plugins: [createTestingPinia(), i18n],
+        stubs: { ArchiveTaskList: archiveTaskListStub },
+      },
     })
     // v-btn-toggle manages active state natively; simulate the tab switch directly
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

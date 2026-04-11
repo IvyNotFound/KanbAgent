@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useTasksStore } from '@renderer/stores/tasks'
-import { useSettingsStore, parseDefaultCliInstance } from '@renderer/stores/settings'
-import { agentBorder, agentAccent, agentBg, agentFg } from '@renderer/utils/agentColor'
+import { agentAccent, agentBg, agentFg } from '@renderer/utils/agentColor'
 import { useModalEscape } from '@renderer/composables/useModalEscape'
 import { useLaunchSession, MAX_AGENT_SESSIONS } from '@renderer/composables/useLaunchSession'
+import { useLaunchModalInit } from '@renderer/composables/useLaunchModalInit'
 import { useToast } from '@renderer/composables/useToast'
-import { CLI_CAPABILITIES, CLI_LABELS, CLI_BADGE, systemLabel as getSystemLabel } from '@renderer/utils/cliCapabilities'
+import { useTasksStore } from '@renderer/stores/tasks'
+import { useSettingsStore } from '@renderer/stores/settings'
+import LaunchInstanceSelector from './LaunchInstanceSelector.vue'
+import LaunchSessionOptions from './LaunchSessionOptions.vue'
 import type { Agent } from '@renderer/types'
-import type { CliType, CliInstance, CliCapabilities } from '@shared/cli-types'
-import type { CliModelDef } from '@shared/cli-models'
 
 const props = defineProps<{ agent: Agent }>()
 const emit = defineEmits<{ close: [] }>()
@@ -18,180 +18,26 @@ const emit = defineEmits<{ close: [] }>()
 useModalEscape(() => emit('close'))
 
 const { t } = useI18n()
-const tasksStore = useTasksStore()
-const settingsStore = useSettingsStore()
 const { launchAgentTerminal } = useLaunchSession()
 const toast = useToast()
+const tasksStore = useTasksStore()
+const settingsStore = useSettingsStore()
 
-const selectedInstance = ref<CliInstance | null>(null)
-const loading = ref(true)
+const {
+  selectedInstance, loading,
+  thinkingMode, lastConvId, useResume, multiInstance,
+  worktreeSource, worktreeError, selectedModel,
+  selectedCli, caps, allAvailableInstances, noInstanceText,
+  availableModels, defaultModelLabel, fullSystemPrompt,
+} = useLaunchModalInit(props)
+
 const customPrompt = ref('')
 const launching = ref(false)
-const systemPrompt = ref<string | null>(null)
-const systemPromptSuffix = ref<string | null>(null)
-const thinkingMode = ref<'auto' | 'disabled'>('auto')
-/** Claude Code conversation UUID from last session — used for --resume */
-const lastConvId = ref<string | null>(null)
-const useResume = ref(false)
-/** Multi-instance mode: create an isolated git worktree before launching (ADR-006) */
-const multiInstance = ref(true)
-/** Tracks origin of multiInstance value for UI hint (T1143) */
-const worktreeSource = ref<'global' | 'agent' | 'manual'>('global')
-/** Error message if worktree creation fails */
-const worktreeError = ref<string | null>(null)
-/** Selected model override for this session (T1805) */
-const selectedModel = ref<string | null>(null)
-
-/** Available models for the currently selected CLI */
-const availableModels = computed(() => {
-  const models: CliModelDef[] = settingsStore.cliModels[selectedCli.value] ?? []
-  return models.map(m => ({ title: m.label, value: m.modelId }))
-})
-
-/** Human-readable label for the default model configured in settings (T1826) */
-const defaultModelLabel = computed(() => {
-  const modelId = settingsStore.getDefaultModel(selectedCli.value)
-  if (!modelId) return null
-  const models: CliModelDef[] = settingsStore.cliModels[selectedCli.value] ?? []
-  return models.find(m => m.modelId === modelId)?.label ?? modelId
-})
-
-const fullSystemPrompt = computed(() => {
-  const parts: string[] = []
-  if (systemPrompt.value) parts.push(systemPrompt.value)
-  if (systemPromptSuffix.value) parts.push(systemPromptSuffix.value)
-  if (settingsStore.maxFileLinesEnabled) {
-    parts.push(`Always produce and maintain files of maximum ${settingsStore.maxFileLinesCount} lines. Split files that exceed this limit into logical modules.`)
-  }
-  return parts.join('\n\n')
-})
-
-/** CLI derived from selected instance, falling back to first enabled CLI */
-const selectedCli = computed<CliType>(() =>
-  selectedInstance.value?.cli ?? settingsStore.primaryCli
-)
-
-/** Capabilities of the currently selected CLI — drives conditional sections (T1036) */
-const caps = computed<CliCapabilities>(() => CLI_CAPABILITIES[selectedCli.value])
-
-/** All instances across every enabled CLI — the unified list shown to the user */
-const allAvailableInstances = computed(() =>
-  settingsStore.allCliInstances.filter(i => settingsStore.enabledClis.includes(i.cli as CliType))
-)
-
-/** Platform-aware "no CLI detected" message */
-const noInstanceText = computed(() => {
-  const p = window.electronAPI.platform
-  if (p === 'darwin') return t('launch.noInstanceMac')
-  if (p === 'linux')  return t('launch.noInstanceLinux')
-  return t('launch.noInstanceWin')
-})
-
-function systemLabel(inst: CliInstance): string {
-  return getSystemLabel(inst.type, inst.distro)
-}
-
-onMounted(async () => {
-  try {
-    // Use warmup cache if available — only detect if empty (T1118)
-    if (settingsStore.allCliInstances.length === 0) {
-      await settingsStore.refreshCliDetection()
-    }
-
-    // Auto-select: agent preferred CLI > stored preference > default > first (T1804/T1090)
-    const instances = allAvailableInstances.value
-    if (instances.length > 0) {
-      let picked: CliInstance | null = null
-
-      // 1. Agent preferred CLI — filter instances to that CLI first
-      if (props.agent.preferred_cli) {
-        const cliInstances = instances.filter(i => i.cli === props.agent.preferred_cli)
-        if (cliInstances.length > 0) {
-          picked = cliInstances.find(i => i.isDefault) ?? cliInstances[0]
-        }
-        // If preferred CLI has no instances, fall through to global default
-      }
-
-      // 2. Global stored preference
-      if (!picked) {
-        const stored = settingsStore.defaultCliInstance
-        const parsed = parseDefaultCliInstance(stored)
-        picked =
-          (stored
-            ? instances.find(i =>
-                i.distro === parsed.distro &&
-                (parsed.cli === null || i.cli === parsed.cli)
-              )
-            : undefined)
-          ?? instances.find(i => i.isDefault)
-          ?? instances[0]
-          ?? null
-      }
-
-      selectedInstance.value = picked
-    }
-
-    if (tasksStore.dbPath) {
-      const [promptResult, sessionRows] = await Promise.all([
-        window.electronAPI.getAgentSystemPrompt(tasksStore.dbPath, props.agent.id),
-        window.electronAPI.queryDb(
-          tasksStore.dbPath,
-          `SELECT conv_id FROM sessions
-           WHERE agent_id = ? AND conv_id IS NOT NULL
-           ORDER BY id DESC LIMIT 1`,
-          [props.agent.id]
-        ) as Promise<Array<{ conv_id: string }>>
-      ])
-      if (promptResult.success) {
-        systemPrompt.value = promptResult.systemPrompt
-        systemPromptSuffix.value = promptResult.systemPromptSuffix
-        thinkingMode.value = (promptResult.thinkingMode as 'auto' | 'disabled') ?? 'auto'
-      }
-      if (sessionRows.length > 0 && sessionRows[0].conv_id) {
-        lastConvId.value = sessionRows[0].conv_id
-        useResume.value = false
-      }
-    }
-
-    // Load CLI models if not already cached (T1805)
-    if (Object.keys(settingsStore.cliModels).length === 0) {
-      await settingsStore.loadCliModels()
-    }
-
-    // Model pre-fill: agent preference > null (T1805)
-    selectedModel.value = props.agent.preferred_model ?? null
-
-    // Cascade resolution: agent override > global default (T1143)
-    const agentWorktree = props.agent.worktree_enabled
-    if (agentWorktree !== null && agentWorktree !== undefined) {
-      multiInstance.value = agentWorktree === 1
-      worktreeSource.value = 'agent'
-    } else {
-      multiInstance.value = settingsStore.worktreeDefault
-      worktreeSource.value = 'global'
-    }
-  } catch (err) {
-    console.error('[LaunchSessionModal] init failed:', err)
-  } finally {
-    loading.value = false
-  }
-})
-
-// Track manual override of worktree toggle (T1143)
-watch(multiInstance, () => {
-  if (!loading.value) worktreeSource.value = 'manual'
-})
-
-// Reset model selection when CLI changes — models are CLI-specific (T1805)
-watch(selectedCli, () => {
-  if (!loading.value) selectedModel.value = null
-})
 
 async function launch() {
   launching.value = true
   worktreeError.value = null
   try {
-    // Multi-instance: create a git worktree before launching (ADR-006)
     let workDir: string | undefined
     if (multiInstance.value && tasksStore.projectPath) {
       const sessionNonce = Date.now().toString()
@@ -268,182 +114,33 @@ async function launch() {
 
         <!-- Body -->
         <div class="modal-body">
-<!-- Unified instance list: all CLIs × all environments (Windows, WSL distros, local) -->
-          <div>
-            <p class="section-title mb-2 text-body-2">{{ t('launch.instance') }}</p>
+          <LaunchInstanceSelector
+            v-model="selectedInstance"
+            :instances="allAvailableInstances"
+            :loading="loading"
+            :agent-name="agent.name"
+            :no-instance-text="noInstanceText"
+          />
 
-            <div v-if="loading" class="text-body-2 text-medium-emphasis">{{ t('common.loading') }}</div>
-
-            <div v-else-if="allAvailableInstances.length === 0" class="text-body-2" style="color: var(--content-muted); font-style: italic;">
-              {{ noInstanceText }}
-            </div>
-
-            <div v-else class="d-flex flex-column ga-2">
-              <label
-                v-for="inst in allAvailableInstances"
-                :key="`${inst.cli}-${inst.distro}`"
-                class="instance-row"
-                :class="selectedInstance?.cli === inst.cli && selectedInstance?.distro === inst.distro ? '' : 'instance-row--idle'"
-                :style="selectedInstance?.cli === inst.cli && selectedInstance?.distro === inst.distro
-                  ? { borderColor: agentBorder(agent.name), backgroundColor: agentAccent(agent.name) + '15' }
-                  : {}"
-              >
-                <input
-                  v-model="selectedInstance"
-                  type="radio"
-                  :value="inst"
-                  :style="{ accentColor: agentAccent(agent.name) }"
-                />
-                <!-- CLI badge -->
-                <span class="cli-badge">
-                  {{ CLI_BADGE[inst.cli] }}
-                </span>
-                <!-- System label + CLI name -->
-                <span class="instance-label">
-                  <span style="color: var(--content-muted)">{{ systemLabel(inst) }}</span>
-                  <span style="color: var(--content-faint); margin: 0 4px;">—</span>
-                  <span>{{ CLI_LABELS[inst.cli] }}</span>
-                </span>
-                <!-- Version -->
-                <span class="version-badge">v{{ inst.version }}</span>
-                <!-- Default badge (WSL only) -->
-                <span
-                  v-if="inst.isDefault && inst.type === 'wsl'"
-                  class="default-badge"
-                >{{ t('launch.defaultBadge') }}</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Model selection — modelSelection CLIs only (T1805) -->
-          <Transition
-            enter-active-class="expand-enter-active"
-            enter-from-class="expand-enter-from"
-            enter-to-class="expand-enter-to"
-            leave-active-class="expand-leave-active"
-            leave-from-class="expand-leave-from"
-            leave-to-class="expand-leave-to"
-          >
-            <div v-if="caps.modelSelection && availableModels.length > 0">
-              <p class="section-title mb-2 text-body-2">{{ t('launch.model') }}</p>
-              <v-select
-                v-model="selectedModel"
-                :items="availableModels"
-                clearable
-                :placeholder="defaultModelLabel ? t('launch.modelDefaultNamed', { model: defaultModelLabel }) : t('launch.modelDefault')"
-                variant="outlined"
-                density="compact"
-                hide-details
-                :base-color="agentAccent(agent.name)"
-                :color="agentAccent(agent.name)"
-              />
-              <p class="field-hint mt-1 text-caption">
-                {{ t('launch.modelNote') }}
-              </p>
-            </div>
-          </Transition>
-
-          <!-- Resume session — convResume CLIs only (Claude) (T1036) -->
-          <Transition
-            enter-active-class="expand-enter-active"
-            enter-from-class="expand-enter-from"
-            enter-to-class="expand-enter-to"
-            leave-active-class="expand-leave-active"
-            leave-from-class="expand-leave-from"
-            leave-to-class="expand-leave-to"
-          >
-            <div v-if="caps.convResume && lastConvId">
-              <p class="section-title mb-2 text-body-2">{{ t('launch.prevSession') }}</p>
-              <v-switch
-                v-model="useResume"
-                data-testid="switch-resume"
-                density="compact"
-                hide-details
-                :color="agentAccent(agent.name)"
-                :style="{ '--switch-accent': agentAccent(agent.name) }"
-                :label="t('launch.resume', { resume: '--resume' })"
-                class="launch-switch"
-              />
-              <p class="field-hint mt-1 text-caption">{{ t('launch.resumeNote') }}</p>
-            </div>
-          </Transition>
-
-          <!-- Thinking mode — thinkingMode CLIs only (Claude) (T1036) -->
-          <Transition
-            enter-active-class="expand-enter-active"
-            enter-from-class="expand-enter-from"
-            enter-to-class="expand-enter-to"
-            leave-active-class="expand-leave-active"
-            leave-from-class="expand-leave-from"
-            leave-to-class="expand-leave-to"
-          >
-            <div v-if="caps.thinkingMode">
-              <p class="section-title mb-2 text-body-2">{{ t('launch.thinkingMode') }}</p>
-              <v-btn-toggle
-                v-model="thinkingMode"
-                mandatory
-                :color="agentAccent(agent.name)"
-                :style="{ '--toggle-accent': agentAccent(agent.name) }"
-                variant="outlined"
-                density="compact"
-                rounded="lg"
-                class="w-100 launch-toggle"
-              >
-                <v-btn value="auto" size="small" class="flex-1">
-                  {{ t('launch.auto') }}
-                </v-btn>
-                <v-btn value="disabled" size="small" class="flex-1">
-                  {{ t('launch.disabled') }}
-                </v-btn>
-              </v-btn-toggle>
-              <p class="field-hint mt-1 text-caption">
-                {{ t('launch.thinkingNote') }}
-              </p>
-            </div>
-          </Transition>
-
-          <!-- Custom prompt -->
-          <div>
-            <v-textarea
-              v-model="customPrompt"
-              :label="t('launch.startPrompt')"
-              :placeholder="t('launch.startPromptPlaceholder')"
-              rows="3"
-              auto-grow
-              spellcheck="true"
-              variant="outlined"
-              density="compact"
-              hide-details="auto"
-              :base-color="agentAccent(agent.name)"
-              :color="agentAccent(agent.name)"
-              class="launch-textarea"
-            />
-            <div class="d-flex align-center ga-2 mt-2">
-              <v-icon size="12" style="color: var(--content-faint); flex-shrink: 0;">mdi-information-outline</v-icon>
-              <span class="field-hint text-caption" style="margin-top: 0;">{{ t('launch.promptNote') }}</span>
-            </div>
-          </div>
-
-          <!-- Multi-instance toggle (ADR-006) — worktree: true for all CLIs -->
-          <div>
-            <v-switch
-              v-model="multiInstance"
-              data-testid="switch-worktree"
-              density="compact"
-              hide-details
-              :color="agentAccent(agent.name)"
-              :style="{ '--switch-accent': agentAccent(agent.name) }"
-              :label="t('launch.multiInstance')"
-              class="launch-switch"
-            />
-            <p class="field-hint mt-1 text-caption">{{ t('launch.multiInstanceNote') }}</p>
-            <p class="field-hint text-caption" style="font-style: italic;">
-              {{ t('launch.worktreeSource', { source: worktreeSource === 'global' ? t('launch.worktreeSourceGlobal') : worktreeSource === 'agent' ? t('launch.worktreeSourceAgent') : t('launch.worktreeSourceManual') }) }}
-            </p>
-            <p v-if="worktreeError" class="field-hint field-hint--error text-caption">
-              {{ t('launch.multiInstanceError', { error: worktreeError }) }}
-            </p>
-          </div>
+          <LaunchSessionOptions
+            :caps="caps"
+            :available-models="availableModels"
+            :default-model-label="defaultModelLabel"
+            :last-conv-id="lastConvId"
+            :worktree-source="worktreeSource"
+            :worktree-error="worktreeError"
+            :accent-color="agentAccent(agent.name)"
+            :selected-model="selectedModel"
+            :use-resume="useResume"
+            :thinking-mode="thinkingMode"
+            :custom-prompt="customPrompt"
+            :multi-instance="multiInstance"
+            @update:selected-model="selectedModel = $event"
+            @update:use-resume="useResume = $event"
+            @update:thinking-mode="thinkingMode = $event"
+            @update:custom-prompt="customPrompt = $event"
+            @update:multi-instance="multiInstance = $event"
+          />
         </div>
 
         <!-- Footer -->
@@ -470,9 +167,7 @@ async function launch() {
                 style="min-width: 80px;"
                 :color="agentAccent(agent.name)"
                 @click="emit('close')"
-              >
-                {{ t('launch.cancel') }}
-              </v-btn>
+              >{{ t('launch.cancel') }}</v-btn>
               <v-btn
                 data-testid="btn-launch"
                 variant="tonal"
@@ -495,7 +190,6 @@ async function launch() {
 </template>
 
 <style scoped>
-/* Card layout */
 .modal-header {
   display: flex;
   align-items: center;
@@ -521,7 +215,6 @@ async function launch() {
   flex-shrink: 0;
 }
 
-/* Header avatar */
 .agent-avatar {
   width: 36px;
   height: 36px;
@@ -534,125 +227,12 @@ async function launch() {
   flex-shrink: 0;
 }
 
-.section-title {
-  font-weight: 500;
-  color: var(--content-secondary);
-}
 .field-hint {
-  /* content-muted (zinc-400) = 6.25:1 on surface-dialog (zinc-800) — WCAG AA compliant.
-     content-faint (zinc-600) was only 2.07:1, well below the 4.5:1 minimum for 12px text. */
   color: var(--content-muted);
   margin-top: 4px;
 }
-.field-hint--error {
-  color: rgb(var(--v-theme-error));
-}
-
-/* Instance rows (radio) */
-.instance-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-radius: var(--shape-sm);
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all var(--md-duration-short3) var(--md-easing-standard);
-}
-.instance-row--idle {
-  border-color: var(--edge-default);
-  background: var(--surface-secondary);
-}
-.instance-row--idle:hover {
-  border-color: var(--content-faint);
-}
-.cli-badge {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 3px;
-  font-size: 9px;
-  font-weight: 700;
-  background: var(--surface-tertiary);
-  color: var(--content-muted);
-  flex-shrink: 0;
-}
-.instance-label {
-  flex: 1;
-  font-size: 14px;
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  color: var(--content-secondary);
-}
-.version-badge {
-  font-size: 10px;
-  color: var(--content-subtle);
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  flex-shrink: 0;
-}
-.default-badge {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 3px;
-  background: var(--surface-tertiary);
-  color: var(--content-muted);
-  flex-shrink: 0;
-}
-
-/* :deep() required — v-switch label font-size/color not exposed as props; targets label text only */
-.launch-switch :deep(.v-label) {
-  font-size: 14px;
-  color: var(--content-secondary);
-}
-
-/* Switch track color — force agent hex in teleported dialog (Vuetify hex color doesn't cascade correctly) */
-.launch-switch :deep(.v-selection-control--dirty .v-switch__track) {
-  background-color: var(--switch-accent) !important;
-}
-
-/* :deep() required — native <textarea> inside v-textarea; font props not exposed by Vuetify */
-.launch-textarea :deep(textarea) {
-  font-size: 12px;
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-}
-
 .no-instance-warning {
   color: rgb(var(--v-theme-warning));
   text-align: right;
-}
-
-/* Expand/collapse animation for conditional sections using MD3 duration/easing tokens */
-.expand-enter-active {
-  transition: all var(--md-duration-short4) var(--md-easing-standard);
-  overflow: hidden;
-}
-.expand-enter-from {
-  opacity: 0;
-  max-height: 0;
-}
-.expand-enter-to {
-  opacity: 1;
-  max-height: 8rem;
-}
-.expand-leave-active {
-  transition: all var(--md-duration-short3) var(--md-easing-standard);
-  overflow: hidden;
-}
-.expand-leave-from {
-  opacity: 1;
-  max-height: 8rem;
-}
-.expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-
-/* v-btn-toggle active state — force agent color in teleported dialog (:color prop doesn't cascade) */
-.launch-toggle :deep(.v-btn--active) {
-  color: var(--toggle-accent) !important;
 }
 </style>

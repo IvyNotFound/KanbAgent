@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTasksStore } from '@renderer/stores/tasks'
-import { useAgentsStore } from '@renderer/stores/agents'
 import { useTabsStore } from '@renderer/stores/tabs'
-import { agentFg, agentBg, agentAccent } from '@renderer/utils/agentColor'
 import { useToast } from '@renderer/composables/useToast'
 import { useSidebarDragDrop } from '@renderer/composables/useSidebarDragDrop'
 import { useSidebarGroups } from '@renderer/composables/useSidebarGroups'
+import { useSidebarTree } from '@renderer/composables/useSidebarTree'
 import LaunchSessionModal from './LaunchSessionModal.vue'
 import ContextMenu from './ContextMenu.vue'
 import CreateAgentModal from './CreateAgentModal.vue'
 import ConfirmModal from './ConfirmModal.vue'
+import SidebarAgentItem from './SidebarAgentItem.vue'
+import SidebarGroupNode from './SidebarGroupNode.vue'
 import type { ContextMenuItem } from './ContextMenu.vue'
 import type { Agent, AgentGroup } from '@renderer/types'
 
 const { t } = useI18n()
 const store = useTasksStore()
-const agentsStore = useAgentsStore()
 const tabsStore = useTabsStore()
 const { push: pushToast } = useToast()
 
@@ -53,134 +53,7 @@ const {
   onConfirmDeleteGroup,
 } = useSidebarGroups()
 
-// ── Tree node types ───────────────────────────────────────────────────────────
-
-interface GroupTreeNode {
-  id: string
-  name: string
-  nodeType: 'group'
-  group: AgentGroup
-  children: (GroupTreeNode | AgentTreeNode)[]
-}
-
-interface AgentTreeNode {
-  id: string
-  name: string
-  nodeType: 'agent'
-  agent: Agent
-}
-
-// ── Flat list types for template rendering ────────────────────────────────────
-
-interface FlatGroupNode {
-  id: string
-  type: 'group'
-  depth: number
-  group: AgentGroup
-}
-
-interface FlatAgentNode {
-  id: string
-  type: 'agent'
-  depth: number
-  agent: Agent
-}
-
-type FlatNode = FlatGroupNode | FlatAgentNode
-
-// ── Tree items ────────────────────────────────────────────────────────────────
-
-const treeItems = computed<GroupTreeNode[]>(() => {
-  const agents = store.agents
-
-  function convertGroup(group: AgentGroup): GroupTreeNode {
-    const agentNodes: AgentTreeNode[] = [...(group.members ?? [])]
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map(m => agents.find(a => a.id === m.agent_id))
-      .filter((a): a is Agent => !!a)
-      .map(agent => ({
-        id: `a-${agent.id}`,
-        name: agent.name,
-        nodeType: 'agent' as const,
-        agent,
-      }))
-
-    const childGroups: GroupTreeNode[] = (group.children ?? []).map(convertGroup)
-
-    return {
-      id: `g-${group.id}`,
-      name: group.name,
-      nodeType: 'group' as const,
-      group,
-      children: [...childGroups, ...agentNodes],
-    }
-  }
-
-  return agentsStore.agentGroupsTree.map(convertGroup)
-})
-
-// ── Opened state (localStorage-synced) ───────────────────────────────────────
-// Key `sidebar-group-{id}`: 'true' = collapsed, 'false' / absent = expanded (inverted semantics —
-// do not change, would break existing user state)
-
-const openedSet = ref(new Set<string>())
-const initializedGroupIds = new Set<number>()
-
-watch(treeItems, (items) => {
-  let changed = false
-  const s = new Set(openedSet.value)
-
-  function collect(nodes: (GroupTreeNode | AgentTreeNode)[]): void {
-    for (const n of nodes) {
-      if (n.nodeType === 'group') {
-        if (!initializedGroupIds.has(n.group.id)) {
-          initializedGroupIds.add(n.group.id)
-          if (localStorage.getItem(`sidebar-group-${n.group.id}`) !== 'true') {
-            s.add(n.id)
-            changed = true
-          }
-        }
-        collect(n.children)
-      }
-    }
-  }
-  collect(items)
-  if (changed) openedSet.value = s
-}, { immediate: true })
-
-function toggleGroup(treeId: string, numericId: number): void {
-  const s = new Set(openedSet.value)
-  if (s.has(treeId)) {
-    s.delete(treeId)
-    localStorage.setItem(`sidebar-group-${numericId}`, 'true')
-  } else {
-    s.add(treeId)
-    localStorage.setItem(`sidebar-group-${numericId}`, 'false')
-  }
-  openedSet.value = s
-}
-
-// ── Flat node list for rendering (groups + their visible agents) ──────────────
-
-const flatNodes = computed<FlatNode[]>(() => {
-  const result: FlatNode[] = []
-
-  function flatten(nodes: (GroupTreeNode | AgentTreeNode)[], depth: number): void {
-    for (const node of nodes) {
-      if (node.nodeType === 'group') {
-        result.push({ id: node.id, type: 'group', depth, group: node.group })
-        if (openedSet.value.has(node.id)) {
-          flatten(node.children, depth + 1)
-        }
-      } else {
-        result.push({ id: node.id, type: 'agent', depth, agent: node.agent })
-      }
-    }
-  }
-
-  flatten(treeItems.value, 0)
-  return result
-})
+const { flatNodes, openedSet, toggleGroup } = useSidebarTree()
 
 // ── Modal state ───────────────────────────────────────────────────────────────
 
@@ -290,7 +163,7 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 
 <template>
   <div class="agent-section py-3 px-4">
-<!-- Reset agent filter -->
+    <!-- Reset agent filter -->
     <div v-if="store.selectedAgentId !== null" class="reset-row mb-2">
       <v-btn variant="text" size="small" color="primary" class="reset-btn text-caption" @click="store.selectedAgentId = null">
         {{ t('sidebar.reset') }}
@@ -314,122 +187,47 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       <v-btn variant="text" density="compact" size="x-small" class="inline-form__btn inline-form__btn--cancel" @click="cancelCreateGroup">✕</v-btn>
     </div>
 
-    <!-- Grouped agents — flat list with depth-based indentation (replaces v-treeview) -->
+    <!-- Grouped agents — flat list with depth-based indentation -->
     <div v-if="flatNodes.length > 0" class="tree mb-2">
       <template v-for="node in flatNodes" :key="node.id">
-<!-- GROUP NODE -->
-        <div
+        <!-- GROUP NODE -->
+        <SidebarGroupNode
           v-if="node.type === 'group'"
-          class="group-zone"
-          :class="{ 'group-zone--drop': dragOverGroupId === node.group.id }"
-          :style="{ paddingLeft: `${node.depth * 12}px` }"
-          draggable="true"
+          :node="node"
+          :is-opened="openedSet.has(node.id)"
+          :renaming-group-id="renamingGroupId"
+          :rename-group-name="renameGroupName"
+          :creating-subgroup-for-id="creatingSubgroupForId"
+          :new-subgroup-name="newSubgroupName"
+          :is-drag-target="dragOverGroupId === node.group.id"
+          @toggle="toggleGroup(node.id, node.group.id)"
+          @contextmenu="openGroupContextMenu($event, node.group)"
           @dragstart="onGroupDragStart($event, node.group)"
-          @dragover.prevent="onGroupDragOver($event, node.group.id)"
+          @dragover="onGroupDragOver($event, node.group.id)"
           @dragleave="onGroupDragLeave"
           @drop="onGroupDrop($event, node.group.id)"
-          @contextmenu.prevent="openGroupContextMenu($event, node.group)"
-        >
-          <!-- Group header -->
-          <div class="group-header">
-            <button
-              class="group-header__chevron"
-              type="button"
-              :aria-expanded="openedSet.has(node.id)"
-              @click.stop="toggleGroup(node.id, node.group.id)"
-            >
-              <v-icon size="14" :class="{ 'chevron--open': openedSet.has(node.id) }">mdi-chevron-right</v-icon>
-            </button>
-
-            <!-- Rename input — v-show (not v-if) to avoid element recreation while typing -->
-            <v-text-field
-              v-show="renamingGroupId === node.group.id"
-              v-model="renameGroupName"
-              density="compact"
-              variant="outlined"
-              hide-details
-              autofocus
-              class="group-header__rename"
-              @keydown.enter="confirmRename(node.group.id)"
-              @keydown.esc="cancelRename"
-              @blur="confirmRename(node.group.id)"
-            />
-
-            <!-- Group name (dblclick → inline rename) -->
-            <span
-              v-show="renamingGroupId !== node.group.id"
-              class="group-header__name"
-              @dblclick="startRename(node.group)"
-            >{{ node.group.name }}</span>
-
-            <!-- Action buttons — fade in on hover -->
-            <div class="group-header__actions">
-              <v-btn variant="text" density="compact" size="x-small" class="group-action" :title="t('sidebar.renameGroup')" @click.stop="startRename(node.group)">
-                <v-icon size="12">mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn variant="text" density="compact" size="x-small" class="group-action group-action--danger" :title="t('sidebar.deleteGroup')" @click.stop="handleDeleteGroup(node.group.id)">
-                <v-icon size="12">mdi-delete</v-icon>
-              </v-btn>
-            </div>
-          </div>
-
-          <!-- DnD drop hint -->
-          <div v-show="dragOverGroupId === node.group.id" class="drop-hint text-label-medium">
-            {{ t('sidebar.dropAgentHere') }}
-          </div>
-
-          <!-- Inline subgroup creation form -->
-          <div v-show="creatingSubgroupForId === node.group.id" class="inline-form inline-form--sub mt-1">
-            <v-text-field
-              v-model="newSubgroupName"
-              density="compact"
-              variant="outlined"
-              hide-details
-              autofocus
-              class="inline-form__input"
-              :placeholder="t('sidebar.newGroupPlaceholder')"
-              @keydown.enter="confirmCreateSubgroup"
-              @keydown.esc="cancelCreateSubgroup"
-            />
-            <v-btn variant="text" density="compact" size="x-small" class="inline-form__btn inline-form__btn--confirm" @click="confirmCreateSubgroup">✓</v-btn>
-            <v-btn variant="text" density="compact" size="x-small" class="inline-form__btn inline-form__btn--cancel" @click="cancelCreateSubgroup">✕</v-btn>
-          </div>
-        </div>
-
+          @update:rename-group-name="renameGroupName = $event"
+          @confirm-rename="confirmRename(node.group.id)"
+          @cancel-rename="cancelRename"
+          @update:new-subgroup-name="newSubgroupName = $event"
+          @confirm-create-subgroup="confirmCreateSubgroup"
+          @cancel-create-subgroup="cancelCreateSubgroup"
+          @start-rename="startRename(node.group)"
+          @delete-group="handleDeleteGroup(node.group.id)"
+        />
         <!-- AGENT NODE (inside a group) -->
-        <div
+        <SidebarAgentItem
           v-else
-          class="agent-item"
-          :style="{ paddingLeft: `${node.depth * 12 + 8}px` }"
-          draggable="true"
+          :agent="node.agent"
+          :is-selected="isAgentSelected(node.agent.id)"
+          :depth="node.depth"
+          @select="store.toggleAgentFilter(node.agent.id)"
+          @edit="editAgentTarget = node.agent"
+          @launch="openLaunchModal($event, node.agent)"
           @dragstart="onAgentDragStart($event, node.agent)"
-          @contextmenu.prevent="openContextMenuLocal($event, node.agent)"
-        >
-          <v-list-item
-            :title="undefined"
-            density="compact"
-            rounded="lg"
-            class="px-1"
-            :active="isAgentSelected(node.agent.id)"
-            active-color="secondary-container"
-            @click="store.toggleAgentFilter(node.agent.id)"
-          >
-            <div class="agent-row">
-              <span class="agent-status">
-                <v-progress-circular v-show="tabsStore.isAgentActive(node.agent.name)" indeterminate :size="12" :width="2" :style="{ color: agentAccent(node.agent.name) }" class="status-spinner" />
-                <v-icon v-show="hasOpenTerminal(node.agent.name) && !tabsStore.isAgentActive(node.agent.name)" size="12" :style="{ color: agentAccent(node.agent.name) }">mdi-circle-medium</v-icon>
-                <span v-show="!tabsStore.isAgentActive(node.agent.name) && !hasOpenTerminal(node.agent.name)" class="status-dot" :style="{ backgroundColor: agentAccent(node.agent.name) }" />
-              </span>
-              <span class="agent-name" :class="{ 'agent-name--active': isAgentSelected(node.agent.id) }">{{ node.agent.name }}</span>
-              <div class="agent-actions">
-                <span class="drag-handle" :title="t('sidebar.move')"><v-icon size="12">mdi-drag</v-icon></span>
-                <v-btn variant="text" density="compact" size="x-small" class="action-btn" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = node.agent"><v-icon size="12">mdi-pencil</v-icon></v-btn>
-                <v-btn variant="text" density="compact" size="x-small" class="action-btn action-btn--launch" :style="{ color: agentFg(node.agent.name), backgroundColor: agentBg(node.agent.name) }" :title="t('sidebar.launchAgent', { name: node.agent.name })" @click.stop="openLaunchModal($event, node.agent)"><v-icon size="12">mdi-play</v-icon></v-btn>
-              </div>
-            </div>
-          </v-list-item>
-        </div>
-</template>
+          @contextmenu="openContextMenuLocal($event, node.agent)"
+        />
+      </template>
     </div>
 
     <!-- Ungrouped agents section -->
@@ -449,37 +247,17 @@ async function duplicateAgent(agent: Agent): Promise<void> {
       </div>
 
       <v-list density="compact" bg-color="transparent" class="pa-0">
-        <div
+        <SidebarAgentItem
           v-for="agent in ungroupedAgents"
           :key="agent.id"
-          class="agent-item"
-          draggable="true"
+          :agent="agent"
+          :is-selected="isAgentSelected(agent.id)"
+          @select="store.toggleAgentFilter(agent.id)"
+          @edit="editAgentTarget = agent"
+          @launch="openLaunchModal($event, agent)"
           @dragstart="onAgentDragStart($event, agent)"
-          @contextmenu.prevent="openContextMenuLocal($event, agent)"
-        >
-          <v-list-item
-            density="compact"
-            rounded="lg"
-            class="px-1"
-            :active="isAgentSelected(agent.id)"
-            active-color="secondary-container"
-            @click="store.toggleAgentFilter(agent.id)"
-          >
-            <div class="agent-row">
-              <span class="agent-status">
-                <v-progress-circular v-show="tabsStore.isAgentActive(agent.name)" indeterminate :size="12" :width="2" :style="{ color: agentAccent(agent.name) }" class="status-spinner" />
-                <v-icon v-show="hasOpenTerminal(agent.name) && !tabsStore.isAgentActive(agent.name)" size="12" :style="{ color: agentAccent(agent.name) }">mdi-circle-medium</v-icon>
-                <span v-show="!tabsStore.isAgentActive(agent.name) && !hasOpenTerminal(agent.name)" class="status-dot" :style="{ backgroundColor: agentAccent(agent.name) }" />
-              </span>
-              <span class="agent-name" :class="{ 'agent-name--active': isAgentSelected(agent.id) }">{{ agent.name }}</span>
-              <div class="agent-actions">
-                <span class="drag-handle" :title="t('sidebar.move')"><v-icon size="12">mdi-drag</v-icon></span>
-                <v-btn variant="text" density="compact" size="x-small" class="action-btn" :title="t('sidebar.editAgent')" @click.stop="editAgentTarget = agent"><v-icon size="12">mdi-pencil</v-icon></v-btn>
-                <v-btn variant="text" density="compact" size="x-small" class="action-btn action-btn--launch" :style="{ color: agentFg(agent.name), backgroundColor: agentBg(agent.name) }" :title="t('sidebar.launchAgent', { name: agent.name })" @click.stop="openLaunchModal($event, agent)"><v-icon size="12">mdi-play</v-icon></v-btn>
-              </div>
-            </div>
-          </v-list-item>
-        </div>
+          @contextmenu="openContextMenuLocal($event, agent)"
+        />
 
         <div v-if="ungroupedAgents.length === 0 && store.agents.length > 0 && dragOverGroupId !== '__ungrouped__'" class="empty-msg py-1 px-2 text-label-medium">
           {{ t('sidebar.dropAgentHere') }}
@@ -523,15 +301,12 @@ async function duplicateAgent(agent: Agent): Promise<void> {
   justify-content: flex-end;
 }
 
-/* ── Inline creation forms (top-level group / subgroup) ─────────────────────── */
+/* ── Inline creation form (top-level group) ─────────────────────────────────── */
 
 .inline-form {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-.inline-form--sub {
-  padding-left: 20px;
 }
 .inline-form__input {
   flex: 1;
@@ -546,186 +321,6 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 .inline-form__btn--confirm { color: rgb(var(--v-theme-secondary)) !important; }
 .inline-form__btn--cancel  { color: var(--content-faint) !important; }
 
-/* ── GROUP NODE ─────────────────────────────────────────────────────────────── */
-
-.group-zone {
-  border-radius: 6px;
-  margin-bottom: 1px;
-  transition: background var(--md-duration-short3, 100ms) var(--md-easing-standard, ease),
-              box-shadow var(--md-duration-short3, 100ms) var(--md-easing-standard, ease);
-}
-.group-zone--drop {
-  background: rgba(var(--v-theme-primary), 0.1);
-  box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.4);
-}
-
-.group-header {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-height: 28px;
-  padding: 2px 2px 2px 0;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background var(--md-duration-short3, 100ms) var(--md-easing-standard, ease);
-}
-.group-header:hover {
-  background: rgba(var(--v-theme-on-surface), 0.08);
-}
-
-/* Collapse chevron — bare button for accessibility */
-.group-header__chevron {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--content-dim);
-}
-.group-header__chevron .v-icon {
-  transition: transform var(--md-duration-short3, 150ms) var(--md-easing-standard, ease);
-}
-.group-header__chevron .chevron--open {
-  transform: rotate(90deg);
-}
-
-.group-header__rename {
-  flex: 1;
-  min-width: 0;
-}
-
-.group-header__name {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.00625em;
-  user-select: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-  color: var(--content-subtle);
-}
-
-/* Action buttons — fade in on group header hover */
-.group-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  opacity: 0;
-  transition: opacity var(--md-duration-short3, 100ms) var(--md-easing-standard, ease);
-}
-.group-header:hover .group-header__actions {
-  opacity: 1;
-}
-
-.group-action {
-  width: 20px !important;
-  min-width: 20px !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  padding: 0 !important;
-  color: var(--content-dim) !important;
-}
-.group-action--danger:hover {
-  color: rgb(var(--v-theme-error)) !important;
-}
-
-/* Drop hint — shown below group header when dragging over */
-.drop-hint {
-  margin: 2px 4px 4px;
-  padding: 4px 0;
-  color: rgba(var(--v-theme-primary), 0.7);
-  text-align: center;
-  border: 1px dashed rgba(var(--v-theme-primary), 0.4);
-  border-radius: 4px;
-}
-
-/* ── AGENT ROW ──────────────────────────────────────────────────────────────── */
-
-.agent-item {
-  margin-bottom: 1px;
-}
-
-.agent-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-}
-
-/* Fixed-width status indicator — shows exactly one of spinner / icon / dot */
-.agent-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-}
-
-.status-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  opacity: 0.6;
-}
-
-.agent-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.87);
-  transition: color var(--md-duration-short3, 100ms) var(--md-easing-standard, ease);
-}
-.agent-name--active {
-  color: rgb(var(--v-theme-on-secondary-container));
-  font-weight: 500;
-}
-
-/* Agent action buttons — fade in on row hover */
-.agent-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity var(--md-duration-short3, 100ms) var(--md-easing-standard, ease);
-}
-.agent-item:hover .agent-actions {
-  opacity: 1;
-}
-
-.drag-handle {
-  display: flex;
-  align-items: center;
-  color: var(--content-dim);
-  cursor: grab;
-  padding: 2px;
-}
-
-.action-btn {
-  width: 20px !important;
-  min-width: 20px !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  padding: 0 !important;
-  color: var(--content-dim) !important;
-}
-.action-btn--launch {
-  border-radius: 4px !important;
-}
-
 /* ── UNGROUPED ZONE ─────────────────────────────────────────────────────────── */
 
 .ungrouped-zone {
@@ -736,6 +331,16 @@ async function duplicateAgent(agent: Agent): Promise<void> {
 .ungrouped-zone--drop {
   background: rgba(var(--v-theme-primary), 0.1);
   box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.4);
+}
+
+/* Drop hint for ungrouped zone */
+.drop-hint {
+  margin: 2px 4px 4px;
+  padding: 4px 0;
+  color: rgba(var(--v-theme-primary), 0.7);
+  text-align: center;
+  border: 1px dashed rgba(var(--v-theme-primary), 0.4);
+  border-radius: 4px;
 }
 
 .section-label {

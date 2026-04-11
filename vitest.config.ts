@@ -30,6 +30,13 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    fs: {
+      // Allow access to parent directories — required when running tests from a
+      // git worktree where node_modules live in the main repo root (3 levels up).
+      strict: false,
+    },
+  },
   test: {
     // Global test configuration
     globals: true,
