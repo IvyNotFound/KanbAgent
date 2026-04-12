@@ -156,15 +156,9 @@ describe('listen callback addr port computation L309', () => {
         logSpy.mockRestore()
         server.close(() => resolve())
       })
-      server.once('error', (err) => {
-        // EADDRINUSE: port in use on CI — listen callback not reached, that's OK
-        // The addr computation is covered by the test above
-        logSpy.mockRestore()
-        if (!server.listening) {
-          resolve() // EADDRINUSE swallowed by hookServer
-        } else {
-          server.close(() => resolve())
-        }
+      server.once('error', () => {
+        // ADR-013: EADDRINUSE triggers port scan retry — server will listen on next port.
+        // Don't resolve yet and don't restore the spy; the 'listening' handler will fire.
       })
     })
   })

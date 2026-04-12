@@ -117,7 +117,8 @@ export async function injectGeminiHooks(
   settingsPath: string,
   ip: string,
   secret: string,
-  stubsDir: string
+  stubsDir: string,
+  port: number = HOOK_PORT
 ): Promise<void> {
   let settings: ClaudeSettings = {}
   let fileExists = true
@@ -144,8 +145,8 @@ export async function injectGeminiHooks(
 
   for (const { event, route } of GEMINI_HOOK_EVENTS) {
     const stubPath = join(stubsDir, `gemini-${event.toLowerCase()}${ext}`)
-    // Always regenerate stub so IP/secret stay current
-    await generateHookStub(stubPath, ip, HOOK_PORT, route, secret).catch(
+    // Always regenerate stub so IP/secret/port stay current
+    await generateHookStub(stubPath, ip, port, route, secret).catch(
       (err) => console.warn(`[hookServer] Could not generate Gemini stub for ${event}:`, err)
     )
 
@@ -190,7 +191,8 @@ export async function injectCodexHooks(
   hooksPath: string,
   ip: string,
   secret: string,
-  stubsDir: string
+  stubsDir: string,
+  port: number = HOOK_PORT
 ): Promise<void> {
   // Codex hooks are WSL/Linux only — skip on Windows native
   if (process.platform === 'win32') return
@@ -215,8 +217,8 @@ export async function injectCodexHooks(
 
   for (const { event, route } of CODEX_HOOK_EVENTS) {
     const stubPath = join(stubsDir, `codex-${event.toLowerCase()}.sh`)
-    // Always regenerate stub so IP/secret stay current
-    await generateHookStub(stubPath, ip, HOOK_PORT, route, secret).catch(
+    // Always regenerate stub so IP/secret/port stay current
+    await generateHookStub(stubPath, ip, port, route, secret).catch(
       (err) => console.warn(`[hookServer] Could not generate Codex stub for ${event}:`, err)
     )
 

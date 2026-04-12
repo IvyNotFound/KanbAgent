@@ -22,6 +22,7 @@ import { registerWslHandlers } from './ipc-wsl'
 import { registerCliDetectHandlers, warmupCliDetection } from './ipc-cli-detect'
 import { registerTelemetryHandlers } from './ipc-telemetry'
 import { registerCliModelsHandlers } from './ipc-cli-models'
+import { registerHookServerHandlers } from './ipc-hookserver'
 
 /** Register all IPC handlers by delegating to domain-specific modules. */
 export function registerIpcHandlers(): void {
@@ -38,4 +39,5 @@ export function registerIpcHandlers(): void {
   warmupCliDetection()
   registerTelemetryHandlers()
   registerCliModelsHandlers()
+  registerHookServerHandlers()
 }

@@ -11,7 +11,7 @@
 import os from 'os'
 import { join, dirname } from 'path'
 import { readFile, writeFile, mkdir } from 'fs/promises'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, writeFileSync, readdirSync, unlinkSync } from 'fs'
 import { randomBytes } from 'crypto'
 import { execSync } from 'child_process'
 
@@ -35,7 +35,20 @@ interface ClaudeSettings {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-export const HOOK_PORT = 27182
+/** Base port for the hook server. First port tried on startup. */
+export const HOOK_PORT_BASE = 27182
+/** Maximum port in the scan range (inclusive). 8 slots: 27182-27189. */
+export const HOOK_PORT_MAX  = 27189
+/** Backward-compatible alias — points to HOOK_PORT_BASE. */
+export const HOOK_PORT = HOOK_PORT_BASE
+
+/** Regex that matches any KanbAgent http hook URL (any port in 27182-27189). */
+const KANBAGENT_URL_RE = /^http:\/\/[^/]+:2718[2-9]\/hooks\//
+
+/** Returns true if `url` belongs to a KanbAgent http hook on `port` specifically. */
+function isOwnPortUrl(url: string, port: number): boolean {
+  return url.startsWith(`http://`) && url.includes(`:${port}/hooks/`)
+}
 
 /** Hook routes managed by KanbAgent — bootstrapped automatically if absent. */
 export const HOOK_ROUTES: Record<string, string> = {
@@ -82,6 +95,111 @@ function loadOrGenerateSecret(userDataPath?: string): string {
 /** Initialize the hook auth secret. Call once during server startup. */
 export function initHookSecret(userDataPath?: string): void {
   hookSecret = loadOrGenerateSecret(userDataPath)
+}
+
+// ── Lockfile protocol (ADR-013) ───────────────────────────────────────────────
+
+interface LockfileData {
+  pid: number
+  port: number
+  startedAt: string
+}
+
+function getLockfilePath(userDataPath: string, port: number): string {
+  return join(userDataPath, `hookserver-${port}.lock`)
+}
+
+/** Write a lockfile for this instance at startup. Best-effort. */
+export function writeLockfile(userDataPath: string, port: number): void {
+  const data: LockfileData = { pid: process.pid, port, startedAt: new Date().toISOString() }
+  try {
+    writeFileSync(getLockfilePath(userDataPath, port), JSON.stringify(data), { mode: 0o600 })
+  } catch (err) {
+    console.warn('[hookServer] Could not write lockfile:', err)
+  }
+}
+
+/** Delete the lockfile for this instance on shutdown. Best-effort. */
+export function deleteLockfile(userDataPath: string, port: number): void {
+  try { unlinkSync(getLockfilePath(userDataPath, port)) } catch { /* ignore */ }
+}
+
+function isPidAlive(pid: number): boolean {
+  try { process.kill(pid, 0); return true } catch { return false }
+}
+
+/**
+ * Read all hookserver-*.lock files in userDataPath, check if each PID is alive.
+ * Deletes stale lockfiles (dead PIDs).
+ * Returns { alivePorts, stalePorts }.
+ */
+export function cleanupStaleLockfiles(userDataPath: string): { alivePorts: Set<number>; stalePorts: number[] } {
+  const alivePorts = new Set<number>()
+  const stalePorts: number[] = []
+
+  let files: string[]
+  try {
+    files = readdirSync(userDataPath).filter(f => /^hookserver-\d+\.lock$/.test(f))
+  } catch {
+    return { alivePorts, stalePorts }
+  }
+
+  for (const file of files) {
+    const lockPath = join(userDataPath, file)
+    try {
+      const raw = readFileSync(lockPath, 'utf-8')
+      const data = JSON.parse(raw) as LockfileData
+      if (isPidAlive(data.pid)) {
+        alivePorts.add(data.port)
+      } else {
+        stalePorts.push(data.port)
+        try { unlinkSync(lockPath) } catch { /* ignore */ }
+        console.log(`[hookServer] Deleted stale lockfile: ${file} (PID ${data.pid} dead)`)
+      }
+    } catch {
+      // Unreadable / corrupt lockfile — delete it
+      try { unlinkSync(lockPath) } catch { /* ignore */ }
+    }
+  }
+
+  return { alivePorts, stalePorts }
+}
+
+/**
+ * Remove hook entries pointing to stale ports from settings.json.
+ * Called at startup after cleanupStaleLockfiles identifies dead PIDs.
+ */
+export async function removeStaleHookEntries(settingsPath: string, stalePorts: number[]): Promise<void> {
+  if (stalePorts.length === 0) return
+  let settings: ClaudeSettings
+  try {
+    const raw = await readFile(settingsPath, 'utf-8')
+    settings = JSON.parse(raw) as ClaudeSettings
+  } catch {
+    return // file missing or unreadable — nothing to clean
+  }
+  if (!settings.hooks) return
+
+  let changed = false
+  for (const [event, groups] of Object.entries(settings.hooks)) {
+    const filtered = groups.filter(g => {
+      if (!Array.isArray(g.hooks)) return true
+      // Drop this group if ALL its http hooks point to a stale port
+      const hasStaleHttp = g.hooks.some(
+        h => h.type === 'http' && h.url && stalePorts.some(p => isOwnPortUrl(h.url!, p))
+      )
+      return !hasStaleHttp
+    })
+    if (filtered.length !== groups.length) {
+      settings.hooks[event] = filtered
+      changed = true
+    }
+  }
+
+  if (changed) {
+    await writeFile(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
+    console.log('[hookServer] Removed stale hook entries from', settingsPath)
+  }
 }
 
 /**
@@ -137,18 +255,22 @@ export function detectWslGatewayIp(): string | null {
 }
 
 /**
- * Inject the detected Windows/WSL gateway IP into all http-type hook URLs
- * in a Claude Code settings.json file.
+ * Inject hook URLs for this instance (identified by `port`) into settings.json.
  *
- * - If settings.json is missing: creates it with all 7 managed hooks.
- * - If settings.json exists but `hooks` is absent: adds the full hooks structure.
- * - If `hooks` is present but some events are missing: adds only the missing ones.
- * - Always updates the host of existing http hook URLs to `ip:HOOK_PORT`.
+ * Additive (ADR-013): each instance manages only its own entries, identified by
+ * the port number in the URL. Entries belonging to other KanbAgent instances
+ * (ports 27182-27189) are never modified.
+ *
+ * - If settings.json is missing: creates it with all 8 managed hooks.
+ * - For each hook event:
+ *   - If our port's entry already exists: updates the IP if it changed.
+ *   - If our port's entry is absent: adds a new group (alongside command hooks
+ *     or other instances' http hooks — Claude Code fires all groups in parallel).
  * - Non-http hooks (type: command) are never modified.
  *
  * Best-effort: silently skips on unrecoverable errors.
  */
-export async function injectHookUrls(settingsPath: string, ip: string): Promise<void> {
+export async function injectHookUrls(settingsPath: string, ip: string, port: number): Promise<void> {
   let settings: ClaudeSettings = {}
   let fileExists = true
 
@@ -167,44 +289,45 @@ export async function injectHookUrls(settingsPath: string, ip: string): Promise<
 
   let changed = false
 
-  // Bootstrap hooks object if absent
   if (!settings.hooks) {
     settings.hooks = {}
   }
 
-  // Add managed hook events that are missing, or inject http hook into existing events
   for (const [event, path] of Object.entries(HOOK_ROUTES)) {
+    const targetUrl = `http://${ip}:${port}${path}`
+
     if (!settings.hooks[event]) {
-      const entry: HookEntry = { type: 'http', url: `http://${ip}:${HOOK_PORT}${path}` }
+      // Event missing entirely — create with our entry
+      const entry: HookEntry = { type: 'http', url: targetUrl }
       if (HOOK_TIMEOUTS[event]) entry.timeout = HOOK_TIMEOUTS[event]
       settings.hooks[event] = [{ hooks: [entry] }]
       changed = true
     } else {
-      // Event exists (e.g. peon-ping command hooks) — add http hook if not already present
       const groups = settings.hooks[event]
-      const hasHttp = groups.some(g => Array.isArray(g.hooks) && g.hooks.some(h => h.type === 'http'))
-      if (!hasHttp) {
-        groups.push({ hooks: [{ type: 'http', url: `http://${ip}:${HOOK_PORT}${path}` }] })
-        changed = true
-      }
-    }
-  }
-
-  // Update host in existing http hook URLs
-  for (const eventGroups of Object.values(settings.hooks)) {
-    for (const group of eventGroups) {
-      if (!Array.isArray(group.hooks)) continue
-      for (const hook of group.hooks) {
-        if (hook.type === 'http' && hook.url) {
-          const updated = hook.url.replace(
-            /^http:\/\/[^/]+\/hooks\//,
-            `http://${ip}:${HOOK_PORT}/hooks/`
-          )
-          if (updated !== hook.url) {
-            hook.url = updated
-            changed = true
+      // Find the group that already contains OUR port's http hook
+      let foundOurGroup = false
+      for (const group of groups) {
+        if (!Array.isArray(group.hooks)) continue
+        for (const hook of group.hooks) {
+          if (hook.type === 'http' && hook.url && isOwnPortUrl(hook.url, port)) {
+            // Our entry found — update URL if IP changed
+            if (hook.url !== targetUrl) {
+              hook.url = targetUrl
+              changed = true
+            }
+            foundOurGroup = true
+            break
           }
         }
+        if (foundOurGroup) break
+      }
+
+      if (!foundOurGroup) {
+        // No entry for our port yet — add a new group (additive)
+        const entry: HookEntry = { type: 'http', url: targetUrl }
+        if (HOOK_TIMEOUTS[event]) entry.timeout = HOOK_TIMEOUTS[event]
+        groups.push({ hooks: [entry] })
+        changed = true
       }
     }
   }
@@ -214,7 +337,7 @@ export async function injectHookUrls(settingsPath: string, ip: string): Promise<
       await mkdir(dirname(settingsPath), { recursive: true })
     }
     await writeFile(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8')
-    console.log('[hookServer] Updated hook URLs with IP:', ip, '| created:', !fileExists)
+    console.log(`[hookServer] Updated hook URLs (port ${port}) with IP:`, ip, '| created:', !fileExists)
   }
 }
 
@@ -225,7 +348,7 @@ export async function injectHookUrls(settingsPath: string, ip: string): Promise<
  * Bypasses the UNC path approach (\\wsl.localhost\...) which fails silently on
  * Windows when the distro filesystem is not fully mounted.
  */
-async function injectIntoDistroViaWsl(distro: string, wslIp: string | null): Promise<void> {
+async function injectIntoDistroViaWsl(distro: string, wslIp: string | null, port: number): Promise<void> {
   // Read current settings via wsl.exe (cat returns '{}' if file missing)
   let settings: ClaudeSettings
   try {
@@ -258,44 +381,41 @@ async function injectIntoDistroViaWsl(distro: string, wslIp: string | null): Pro
     }
   }
 
-  // Inject hook URLs for the WSL gateway IP
+  // Inject hook URLs for the WSL gateway IP — additive (ADR-013)
   if (wslIp) {
     if (!settings.hooks) settings.hooks = {}
     const hooks = settings.hooks
 
     for (const [event, path] of Object.entries(HOOK_ROUTES)) {
+      const targetUrl = `http://${wslIp}:${port}${path}`
+
       if (!hooks[event]) {
-        const entry: HookEntry = { type: 'http', url: `http://${wslIp}:${HOOK_PORT}${path}` }
+        const entry: HookEntry = { type: 'http', url: targetUrl }
         if (HOOK_TIMEOUTS[event]) entry.timeout = HOOK_TIMEOUTS[event]
         hooks[event] = [{ hooks: [entry] }]
         changed = true
       } else {
         const groups = hooks[event]
-        const hasHttp = groups.some(g => Array.isArray(g.hooks) && g.hooks.some(h => h.type === 'http'))
-        if (!hasHttp) {
-          const entry: HookEntry = { type: 'http', url: `http://${wslIp}:${HOOK_PORT}${path}` }
+        let foundOurGroup = false
+        for (const group of groups) {
+          if (!Array.isArray(group.hooks)) continue
+          for (const hook of group.hooks) {
+            if (hook.type === 'http' && hook.url && isOwnPortUrl(hook.url, port)) {
+              if (hook.url !== targetUrl) {
+                hook.url = targetUrl
+                changed = true
+              }
+              foundOurGroup = true
+              break
+            }
+          }
+          if (foundOurGroup) break
+        }
+        if (!foundOurGroup) {
+          const entry: HookEntry = { type: 'http', url: targetUrl }
           if (HOOK_TIMEOUTS[event]) entry.timeout = HOOK_TIMEOUTS[event]
           groups.push({ hooks: [entry] })
           changed = true
-        }
-      }
-    }
-
-    // Update host in existing http hook URLs
-    for (const eventGroups of Object.values(hooks)) {
-      for (const group of eventGroups) {
-        if (!Array.isArray(group.hooks)) continue
-        for (const hook of group.hooks) {
-          if (hook.type === 'http' && hook.url) {
-            const updated = hook.url.replace(
-              /^http:\/\/[^/]+\/hooks\//,
-              `http://${wslIp}:${HOOK_PORT}/hooks/`
-            )
-            if (updated !== hook.url) {
-              hook.url = updated
-              changed = true
-            }
-          }
         }
       }
     }
@@ -321,7 +441,7 @@ export { generateHookStub, injectGeminiHooks, injectCodexHooks } from './hookSer
  * No-op on non-Windows or when wsl.exe is unavailable.
  * Logs errors for stopped/unreachable distros instead of silently skipping.
  */
-export async function injectIntoWslDistros(wslIp: string | null): Promise<void> {
+export async function injectIntoWslDistros(wslIp: string | null, port: number): Promise<void> {
   if (process.platform !== 'win32') return
 
   let distros: string[]
@@ -341,7 +461,7 @@ export async function injectIntoWslDistros(wslIp: string | null): Promise<void> 
 
   for (const distro of distros) {
     try {
-      await injectIntoDistroViaWsl(distro, wslIp)
+      await injectIntoDistroViaWsl(distro, wslIp, port)
     } catch (err) {
       console.error(`[hookServer] Failed to inject into WSL distro "${distro}":`, err)
     }

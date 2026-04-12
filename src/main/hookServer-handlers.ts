@@ -69,6 +69,25 @@ export function handlePermissionRequest(
   res: http.ServerResponse,
   getHookWindow: GetHookWindowFn
 ): void {
+  // Guard: only handle permission requests for projects managed by this instance (ADR-013)
+  const cwd = payload.cwd as string | undefined
+  if (cwd) {
+    try {
+      assertProjectPathAllowed(cwd)
+    } catch {
+      console.warn('[hookServer] PermissionRequest: cwd not in allowlist — denying (not our project)', cwd)
+      const body = JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PermissionRequest',
+          decision: { behavior: 'deny', reason: 'Project not managed by this instance' },
+        },
+      })
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(body)
+      return
+    }
+  }
+
   // Cap concurrent pending permissions to prevent unbounded timer/closure accumulation
   if (pendingPermissions.size >= MAX_PENDING_PERMISSIONS) {
     console.warn(`[hookServer] PermissionRequest denied: ${pendingPermissions.size} pending (max ${MAX_PENDING_PERMISSIONS})`)

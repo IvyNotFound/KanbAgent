@@ -260,10 +260,11 @@ describe('Bearer auth check L236 — unauthorized requests must not trigger hand
 //   Other code → console.error (not console.warn for the branch)
 
 describe('server error handler L294 — EADDRINUSE vs other error codes', () => {
-  it('EADDRINUSE emits console.warn with port message (not console.error)', () => {
+  it('EADDRINUSE emits console.log with port message (not console.error)', () => {
     vi.resetAllMocks()
     mockGetHookSecret.mockReturnValue('secret-t1316')
 
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -273,10 +274,11 @@ describe('server error handler L294 — EADDRINUSE vs other error codes', () => 
     const eaddrinuse = Object.assign(new Error('listen EADDRINUSE'), { code: 'EADDRINUSE' }) as NodeJS.ErrnoException
     server.emit('error', eaddrinuse)
 
-    // EADDRINUSE → must use console.warn, NOT console.error
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('already in use'))
+    // First EADDRINUSE (port scan) → console.log("Port X in use, trying Y"), NOT console.error
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('in use'))
     expect(errorSpy).not.toHaveBeenCalled()
 
+    logSpy.mockRestore()
     warnSpy.mockRestore()
     errorSpy.mockRestore()
 
@@ -313,10 +315,11 @@ describe('server error handler L294 — EADDRINUSE vs other error codes', () => 
     }
   })
 
-  it('EADDRINUSE warning message contains the HOOK_PORT value', () => {
+  it('EADDRINUSE log message contains the HOOK_PORT value', () => {
     vi.resetAllMocks()
     mockGetHookSecret.mockReturnValue('secret-t1316')
 
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const server = startHookServer().primaryServer
@@ -324,8 +327,9 @@ describe('server error handler L294 — EADDRINUSE vs other error codes', () => 
     server.emit('error', eaddrinuse)
 
     // Message must contain the port number (kills StringLiteral mutant on the message)
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining(String(HOOK_PORT)))
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(String(HOOK_PORT)))
 
+    logSpy.mockRestore()
     warnSpy.mockRestore()
     if (server.listening) {
       server.close()

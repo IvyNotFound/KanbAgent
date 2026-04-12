@@ -248,22 +248,25 @@ describe('startHookServer — url in LIFECYCLE_ROUTES routing correctness', () =
 // Test: verify EADDRINUSE → console.warn (not console.error), non-EADDRINUSE → console.error
 
 describe('startHookServer — EADDRINUSE vs other error logging', () => {
+  let logSpy: ReturnType<typeof vi.spyOn>
   let warnSpy: ReturnType<typeof vi.spyOn>
   let errorSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.resetAllMocks()
     mockGetHookSecret.mockReturnValue('secret-t1336b')
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
   afterEach(() => {
+    logSpy.mockRestore()
     warnSpy.mockRestore()
     errorSpy.mockRestore()
   })
 
-  it('EADDRINUSE error emits console.warn (not console.error)', async () => {
+  it('EADDRINUSE error emits console.log for retry (not console.error)', async () => {
     const hookServer = startHookServer().primaryServer
     await new Promise<void>((resolve) => {
       if (hookServer.listening) { resolve(); return }
@@ -272,17 +275,17 @@ describe('startHookServer — EADDRINUSE vs other error logging', () => {
     })
     if (hookServer.listening) await new Promise<void>((r) => hookServer.close(() => r()))
 
-    // Reset spy counts after server startup (may have logged "Listening on...")
+    // Reset spy counts after server startup
+    logSpy.mockClear()
     warnSpy.mockClear()
     errorSpy.mockClear()
 
     const eaddrinuse = Object.assign(new Error('EADDRINUSE'), { code: 'EADDRINUSE' })
     hookServer.emit('error', eaddrinuse)
 
-    // EADDRINUSE: console.warn should be called, console.error should NOT
-    expect(warnSpy).toHaveBeenCalled()
-    const warnCalls = warnSpy.mock.calls.filter(c => typeof c[0] === 'string' && (c[0] as string).includes('use'))
-    expect(warnCalls.length).toBeGreaterThan(0)
+    // First EADDRINUSE (port scan retry): console.log called ("Port X in use, trying Y"), NOT console.error
+    const logCalls = logSpy.mock.calls.filter(c => typeof c[0] === 'string' && (c[0] as string).includes('in use'))
+    expect(logCalls.length).toBeGreaterThan(0)
     expect(errorSpy).not.toHaveBeenCalled()
   })
 

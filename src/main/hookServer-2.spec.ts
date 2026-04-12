@@ -78,7 +78,7 @@ describe('injectHookUrls (continued)', () => {
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
     // Should not throw; Stop already has an http hook (no url) so hasHttp=true, no extra group added
-    await expect(injectHookUrls('/fake/settings.json', '172.17.240.1')).resolves.toBeUndefined()
+    await expect(injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)).resolves.toBeUndefined()
   })
 
   it('adds only missing hook events when hooks section is partially populated', async () => {
@@ -90,7 +90,7 @@ describe('injectHookUrls (continued)', () => {
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
 
-    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)
 
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
@@ -118,14 +118,14 @@ describe('injectIntoWslDistros', () => {
 
   it('returns early on non-Windows platforms', async () => {
     Object.defineProperty(process, 'platform', { value: 'linux', configurable: true })
-    await injectIntoWslDistros('172.17.240.1')
+    await injectIntoWslDistros('172.17.240.1', 27182)
     expect(mockExecSync).not.toHaveBeenCalled()
   })
 
   it('returns gracefully when wsl.exe --list fails', async () => {
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
     mockExecSync.mockImplementation(() => { throw new Error('wsl.exe not found') })
-    await expect(injectIntoWslDistros('172.17.240.1')).resolves.toBeUndefined()
+    await expect(injectIntoWslDistros('172.17.240.1', 27182)).resolves.toBeUndefined()
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 
@@ -137,7 +137,7 @@ describe('injectIntoWslDistros', () => {
       .mockReturnValueOnce('{}')        // cat ~/.claude/settings.json → empty, hooks created
       .mockReturnValueOnce(undefined)   // mkdir -p + cat > settings.json (write)
 
-    await injectIntoWslDistros('172.17.240.1')
+    await injectIntoWslDistros('172.17.240.1', 27182)
 
     expect(mockExecSync).toHaveBeenCalledWith('wsl.exe --list --quiet', { timeout: 5000 })
     expect(mockExecSync).toHaveBeenCalledWith(
@@ -166,7 +166,7 @@ describe('injectIntoWslDistros', () => {
       .mockImplementationOnce(() => { throw new Error('distro stopped') }) // cat → fails
       .mockImplementationOnce(() => { throw new Error('distro stopped') }) // write → fails
 
-    await expect(injectIntoWslDistros('172.17.240.1')).resolves.toBeUndefined()
+    await expect(injectIntoWslDistros('172.17.240.1', 27182)).resolves.toBeUndefined()
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 
@@ -185,7 +185,7 @@ describe('injectIntoWslDistros', () => {
       .mockReturnValueOnce(settings)    // cat settings for Debian
       .mockReturnValueOnce(undefined)   // write for Debian
 
-    await injectIntoWslDistros('172.17.240.1')
+    await injectIntoWslDistros('172.17.240.1', 27182)
 
     // Verify write commands were called for both distros
     const writeCalls = mockExecSync.mock.calls.filter((c) =>
@@ -203,7 +203,7 @@ describe('injectIntoWslDistros', () => {
       .mockReturnValueOnce(distroList) // wsl.exe --list
       .mockReturnValueOnce('{}')       // cat settings.json → empty, no http hooks to update
 
-    await injectIntoWslDistros(null)
+    await injectIntoWslDistros(null, 27182)
 
     // null wslIp + no hookSecret + no existing hooks → changed = false → no write
     expect(mockExecSync).toHaveBeenCalledTimes(2)

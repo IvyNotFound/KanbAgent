@@ -2,7 +2,7 @@
  * Tests for hookServer — JSONL transcript parsing (T737) + exports (T741) + WSL fix (T858)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { parseTokensFromJSONL, HOOK_PORT, detectWslGatewayIp, injectHookUrls, resolvePermission, pendingPermissions, MAX_PENDING_PERMISSIONS } from './hookServer'
+import { parseTokensFromJSONL, HOOK_PORT, HOOK_PORT_BASE, detectWslGatewayIp, injectHookUrls, resolvePermission, pendingPermissions, MAX_PENDING_PERMISSIONS } from './hookServer'
 
 // ── Hoisted mocks (must be declared before vi.mock, which are hoisted) ────────
 const { mockNetworkInterfaces, mockReadFile, mockWriteFile, mockMkdir, mockExecSync } = vi.hoisted(() => ({
@@ -35,6 +35,10 @@ vi.mock('fs/promises', () => ({
 describe('hookServer constants', () => {
   it('HOOK_PORT is 27182', () => {
     expect(HOOK_PORT).toBe(27182)
+  })
+
+  it('HOOK_PORT_BASE is 27182', () => {
+    expect(HOOK_PORT_BASE).toBe(27182)
   })
 
   it('route-to-eventName conversion matches expected values', () => {
@@ -264,7 +268,7 @@ describe('injectHookUrls', () => {
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
 
-    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)
 
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
@@ -276,7 +280,7 @@ describe('injectHookUrls', () => {
 
   it('creates all 8 hooks when settings.json exists but has no hooks section', async () => {
     mockReadFile.mockResolvedValue('{}')
-    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     expect(typeof written.hooks).toBe('object')
@@ -304,7 +308,7 @@ describe('injectHookUrls', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 
@@ -320,7 +324,7 @@ describe('injectHookUrls', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)
     expect(mockWriteFile).toHaveBeenCalledOnce()
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     // Command hooks preserved
@@ -349,7 +353,7 @@ describe('injectHookUrls', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)
     // All http hooks already present, URLs already match → no write
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
@@ -358,7 +362,7 @@ describe('injectHookUrls', () => {
     const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     mockReadFile.mockRejectedValue(err)
 
-    await injectHookUrls('/fake/.claude/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/.claude/settings.json', '172.17.240.1', 27182)
 
     expect(mockMkdir).toHaveBeenCalledWith('/fake/.claude', { recursive: true })
     expect(mockWriteFile).toHaveBeenCalledOnce()
@@ -370,7 +374,7 @@ describe('injectHookUrls', () => {
   it('returns without writing when readFile fails with non-ENOENT error', async () => {
     const err = Object.assign(new Error('EACCES'), { code: 'EACCES' })
     mockReadFile.mockRejectedValue(err)
-    await injectHookUrls('/fake/settings.json', '172.17.240.1')
+    await injectHookUrls('/fake/settings.json', '172.17.240.1', 27182)
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
 })

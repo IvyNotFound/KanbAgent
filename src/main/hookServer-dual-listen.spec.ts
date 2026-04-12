@@ -77,10 +77,11 @@ describe('startHookServer — dual listen (T1905)', () => {
     }
   })
 
-  it('returns a HookServerHandle with primaryServer and close()', () => {
+  it('returns a HookServerHandle with primaryServer, port, and close()', () => {
     handle = startHookServer()
     expect(handle).toBeDefined()
     expect(handle.primaryServer).toBeInstanceOf(http.Server)
+    expect(typeof handle.port).toBe('number')
     expect(typeof handle.close).toBe('function')
   })
 
@@ -104,9 +105,13 @@ describe('startHookServer — dual listen (T1905)', () => {
     expect(handle.wslServer).toBeNull()
   })
 
-  it('schedules retry when WSL gateway not found at startup', () => {
+  it('schedules retry when WSL gateway not found at startup', async () => {
     mockDetectWslGatewayIp.mockReturnValue(null)
     handle = startHookServer()
+    // tryBindWsl(0) is called from the 'listening' event — wait for it
+    if (!handle.primaryServer.listening) {
+      await new Promise<void>((resolve) => handle!.primaryServer.once('listening', resolve))
+    }
     expect(mockDetectWslGatewayIp).toHaveBeenCalledTimes(1)
 
     // Advance past the first retry delay (5s)
@@ -139,6 +144,10 @@ describe('startHookServer — dual listen (T1905)', () => {
       .mockReturnValueOnce('127.0.0.2')
 
     handle = startHookServer()
+    // tryBindWsl(0) is called from the 'listening' event — wait for it
+    if (!handle.primaryServer.listening) {
+      await new Promise<void>((resolve) => handle!.primaryServer.once('listening', resolve))
+    }
     expect(handle.wslServer).toBeNull()
 
     // Advance to the first retry (5s)
@@ -148,9 +157,13 @@ describe('startHookServer — dual listen (T1905)', () => {
     expect(handle.wslServer).toBeInstanceOf(http.Server)
   })
 
-  it('close() cancels pending WSL retry timers', () => {
+  it('close() cancels pending WSL retry timers', async () => {
     mockDetectWslGatewayIp.mockReturnValue(null)
     handle = startHookServer()
+    // tryBindWsl(0) is called from the 'listening' event — wait for it
+    if (!handle.primaryServer.listening) {
+      await new Promise<void>((resolve) => handle!.primaryServer.once('listening', resolve))
+    }
 
     // Close immediately — should not throw on timer advance
     handle.close()
@@ -158,7 +171,7 @@ describe('startHookServer — dual listen (T1905)', () => {
 
     // Advancing timers should not trigger any retries
     vi.advanceTimersByTime(60_000)
-    // Only the initial call happened
+    // Only the initial call (from 'listening') happened
     expect(mockDetectWslGatewayIp).toHaveBeenCalledTimes(1)
   })
 

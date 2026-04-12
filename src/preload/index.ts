@@ -96,6 +96,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fsSaveImage: (base64: string, mediaType: string): Promise<{ success: true; path: string }> =>
     ipcRenderer.invoke('fs:saveImage', base64, mediaType),
 
+  // ── Hook server (ADR-013) ──────────────────────────────────────────────────
+
+  /** Returns the effective port the hook server is listening on (0 if not bound). */
+  hookServerGetPort: (): Promise<number> => ipcRenderer.invoke('hookServer:getPort'),
+
   // ── Window ─────────────────────────────────────────────────────────────────
 
   windowMinimize: (): Promise<void> => ipcRenderer.invoke('window-minimize'),

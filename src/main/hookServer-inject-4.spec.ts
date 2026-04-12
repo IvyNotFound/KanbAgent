@@ -79,7 +79,7 @@ describe('injectHookUrls — hasHttp check via some() vs every()', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '10.0.0.1')
+    await injectHookUrls('/path/settings.json', '10.0.0.1', 27182)
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     // Stop now has 2 groups: original command + new http
     expect(written.hooks.Stop).toHaveLength(2)
@@ -108,7 +108,7 @@ describe('injectHookUrls — hasHttp check via some() vs every()', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '10.0.0.1')
+    await injectHookUrls('/path/settings.json', '10.0.0.1', 27182)
     // No changes → no write
     expect(mockWriteFile).not.toHaveBeenCalled()
   })
@@ -126,14 +126,14 @@ describe('injectHookUrls — fileExists conditional', () => {
 
   it('calls mkdir when file was missing (fileExists=false)', async () => {
     mockReadFile.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
-    await injectHookUrls('/root/.claude/settings.json', '10.0.0.1')
+    await injectHookUrls('/root/.claude/settings.json', '10.0.0.1', 27182)
     expect(mockMkdir).toHaveBeenCalledWith('/root/.claude', { recursive: true })
   })
 
   it('does NOT call mkdir when file existed (fileExists=true)', async () => {
     // File existed but had no hooks section → adds hooks but no mkdir
     mockReadFile.mockResolvedValue('{}')
-    await injectHookUrls('/root/.claude/settings.json', '10.0.0.1')
+    await injectHookUrls('/root/.claude/settings.json', '10.0.0.1', 27182)
     expect(mockMkdir).not.toHaveBeenCalled()
     expect(mockWriteFile).toHaveBeenCalledOnce()
   })

@@ -274,14 +274,14 @@ describe('injectHookUrls — additional assertion coverage', () => {
 
   it('writes new settings file with trailing newline', async () => {
     mockReadFile.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
-    await injectHookUrls('/path/.claude/settings.json', '10.0.0.1')
+    await injectHookUrls('/path/.claude/settings.json', '10.0.0.1', 27182)
     const written = mockWriteFile.mock.calls[0][1] as string
     expect(written.endsWith('\n')).toBe(true)
   })
 
   it('sets the url host correctly for all 7 managed routes when creating from scratch', async () => {
     mockReadFile.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
-    await injectHookUrls('/path/.claude/settings.json', '192.168.1.5')
+    await injectHookUrls('/path/.claude/settings.json', '192.168.1.5', 27182)
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     for (const [event, path] of Object.entries(HOOK_ROUTES)) {
       expect(written.hooks[event]).toBeDefined()
@@ -298,7 +298,7 @@ describe('injectHookUrls — additional assertion coverage', () => {
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
     // fileExists = true → mkdir NOT called
-    await injectHookUrls('/path/settings.json', '10.1.2.3')
+    await injectHookUrls('/path/settings.json', '10.1.2.3', 27182)
     expect(mockMkdir).not.toHaveBeenCalled()
     expect(mockWriteFile).toHaveBeenCalledOnce()
   })

@@ -15,7 +15,8 @@ import { registerIpcHandlers } from './ipc'
 import { warmupModelDetection } from './cli-model-detect'
 import { restoreTrustedPaths } from './ipc-project'
 import { registerAgentStreamHandlers } from './agent-stream'
-import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks, getHookSecret, type HookServerHandle } from './hookServer'
+import { startHookServer, setHookWindow, injectHookSecret, injectHookUrls, detectWslGatewayIp, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks, getHookSecret, removeStaleHookEntries, type HookServerHandle } from './hookServer'
+import { setEffectiveHookPort } from './ipc-hookserver'
 import { setupAutoUpdater, registerUpdaterIpc } from './updater'
 import { cleanupOrphanWorktreesAtStartup } from './worktree-cleanup'
 import { stopAllDbDaemons } from './db-daemon'
@@ -182,24 +183,40 @@ app.whenReady().then(async () => {
     console.warn('[startup] cleanupOrphanWorktreesAtStartup error:', err)
   )
   registerAgentStreamHandlers()
-  hookServer = startHookServer(app.getPath('userData'))
+  const userDataPath = app.getPath('userData')
+  hookServer = startHookServer(userDataPath)
+
+  // Wait for primary server to bind, then inject and wire port
   const wslIp = detectWslGatewayIp()
   const listenIp = wslIp ?? '127.0.0.1'
-  // Inject into global settings and project settings (all platforms)
   const globalSettings = join(app.getPath('home'), '.claude', 'settings.json')
   const projectSettings = join(process.cwd(), '.claude', 'settings.json')
-  for (const p of [globalSettings, projectSettings]) {
-    injectHookSecret(p).catch(() => {})
-    injectHookUrls(p, listenIp).catch(() => {})
+  const stubsDir = join(userDataPath, 'hooks')
+
+  // Remove stale hook entries from prior crashed instances (ADR-013)
+  if (hookServer.stalePorts.length > 0) {
+    for (const p of [globalSettings, projectSettings]) {
+      removeStaleHookEntries(p, hookServer.stalePorts).catch(() => {})
+    }
   }
-  // Inject into active WSL distros via UNC paths
-  if (process.platform === 'win32') injectIntoWslDistros(wslIp).catch(() => {})
-  const stubsDir = join(app.getPath('userData'), 'hooks')
-  const geminiSettings = join(app.getPath('home'), '.gemini', 'settings.json')
-  injectGeminiHooks(geminiSettings, listenIp, getHookSecret(), stubsDir).catch(() => {})
-  // Inject Codex CLI lifecycle hooks (WSL/Linux only — no-op on Windows native)
-  const codexHooks = join(app.getPath('home'), '.codex', 'hooks.json')
-  injectCodexHooks(codexHooks, listenIp, getHookSecret(), stubsDir).catch(() => {})
+
+  hookServer.primaryServer.once('listening', () => {
+    const effectivePort = hookServer!.port
+    setEffectiveHookPort(effectivePort)
+
+    // Inject into global settings and project settings (all platforms)
+    for (const p of [globalSettings, projectSettings]) {
+      injectHookSecret(p).catch(() => {})
+      injectHookUrls(p, listenIp, effectivePort).catch(() => {})
+    }
+    // Inject into active WSL distros via UNC paths
+    if (process.platform === 'win32') injectIntoWslDistros(wslIp, effectivePort).catch(() => {})
+    const geminiSettings = join(app.getPath('home'), '.gemini', 'settings.json')
+    injectGeminiHooks(geminiSettings, listenIp, getHookSecret(), stubsDir, effectivePort).catch(() => {})
+    // Inject Codex CLI lifecycle hooks (WSL/Linux only — no-op on Windows native)
+    const codexHooks = join(app.getPath('home'), '.codex', 'hooks.json')
+    injectCodexHooks(codexHooks, listenIp, getHookSecret(), stubsDir, effectivePort).catch(() => {})
+  })
   const win = createWindow()
   setupAutoUpdater(win)
 })

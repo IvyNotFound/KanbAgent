@@ -94,7 +94,7 @@ describe('injectIntoWslDistros — auth injection into existing http hooks', () 
       .mockReturnValueOnce(existingSettings)  // cat settings.json
       .mockReturnValueOnce(undefined)         // write
 
-    await injectIntoWslDistros('172.17.0.1')
+    await injectIntoWslDistros('172.17.0.1', 27182)
 
     const writeCall = mockExecSync.mock.calls.find((c) =>
       (c[0] as string).includes('mkdir -p')
@@ -136,7 +136,7 @@ describe('injectIntoWslDistros — auth injection into existing http hooks', () 
       .mockReturnValueOnce(distroList)       // wsl.exe --list
       .mockReturnValueOnce(existingSettings) // cat settings.json
 
-    await injectIntoWslDistros('172.17.0.1')
+    await injectIntoWslDistros('172.17.0.1', 27182)
 
     // No changes → no write call
     const writeCalls = mockExecSync.mock.calls.filter((c) =>
@@ -152,7 +152,7 @@ describe('injectIntoWslDistros — auth injection into existing http hooks', () 
       .mockReturnValueOnce('{}')        // cat settings.json → empty
       .mockReturnValueOnce(undefined)   // write
 
-    await injectIntoWslDistros('10.1.2.3')
+    await injectIntoWslDistros('10.1.2.3', 27182)
 
     const writeCall = mockExecSync.mock.calls.find((c) =>
       (c[0] as string).includes('mkdir -p')
@@ -184,7 +184,7 @@ describe('injectIntoWslDistros — auth injection into existing http hooks', () 
       .mockReturnValueOnce(existingSettings)
       .mockReturnValueOnce(undefined)
 
-    await injectIntoWslDistros('172.25.48.1')
+    await injectIntoWslDistros('172.25.48.1', 27182)
 
     const writeCall = mockExecSync.mock.calls.find((c) =>
       (c[0] as string).includes('mkdir -p')
@@ -215,7 +215,7 @@ describe('injectIntoWslDistros — auth injection into existing http hooks', () 
       .mockReturnValueOnce(distroList)
       .mockReturnValueOnce(existingSettings)
 
-    await injectIntoWslDistros('172.17.0.1')
+    await injectIntoWslDistros('172.17.0.1', 27182)
 
     // No write → no changes (auth already correct, URLs match)
     const writeCalls = mockExecSync.mock.calls.filter((c) =>
@@ -255,7 +255,7 @@ describe('injectIntoWslDistros — distro list parsing', () => {
       .mockReturnValueOnce('{}')        // Debian settings
       .mockReturnValueOnce(undefined)   // Debian write
 
-    await injectIntoWslDistros('10.0.0.1')
+    await injectIntoWslDistros('10.0.0.1', 27182)
 
     // Only Ubuntu and Debian should be processed (not empty strings)
     const catCalls = mockExecSync.mock.calls.filter((c) =>
@@ -274,7 +274,7 @@ describe('injectIntoWslDistros — distro list parsing', () => {
       .mockReturnValueOnce('{}')
       .mockReturnValueOnce(undefined)
 
-    await injectIntoWslDistros('10.0.0.1')
+    await injectIntoWslDistros('10.0.0.1', 27182)
 
     // Distro name passed to wsl.exe should be 'Ubuntu', not 'U\0b\0u\0n\0t\0u\0'
     const catCall = mockExecSync.mock.calls.find((c) =>
@@ -294,7 +294,7 @@ describe('injectIntoWslDistros — distro list parsing', () => {
       .mockReturnValueOnce('{}')
       .mockReturnValueOnce(undefined)
 
-    await injectIntoWslDistros('10.0.0.1')
+    await injectIntoWslDistros('10.0.0.1', 27182)
 
     const catCalls = mockExecSync.mock.calls.filter((c) =>
       (c[0] as string).includes('cat ~/.claude/settings.json')
@@ -313,7 +313,7 @@ describe('injectIntoWslDistros — distro list parsing', () => {
       .mockReturnValueOnce('{}')
       .mockReturnValueOnce(undefined)
 
-    await injectIntoWslDistros('10.0.0.1')
+    await injectIntoWslDistros('10.0.0.1', 27182)
 
     expect(mockExecSync).toHaveBeenCalledWith('wsl.exe --list --quiet', { timeout: 5000 })
   })
@@ -325,7 +325,7 @@ describe('injectIntoWslDistros — distro list parsing', () => {
       .mockReturnValueOnce('{}')
       .mockReturnValueOnce(undefined)
 
-    await injectIntoWslDistros('10.0.0.1')
+    await injectIntoWslDistros('10.0.0.1', 27182)
 
     // Must use the exact cat command with fallback echo '{}'
     const catCall = mockExecSync.mock.calls[1]
@@ -340,7 +340,7 @@ describe('injectIntoWslDistros — distro list parsing', () => {
       .mockReturnValueOnce('{}')
       .mockReturnValueOnce(undefined)
 
-    await injectIntoWslDistros('10.0.0.1')
+    await injectIntoWslDistros('10.0.0.1', 27182)
 
     const writeCall = mockExecSync.mock.calls.find((c) =>
       (c[0] as string).includes('mkdir -p')

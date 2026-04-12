@@ -197,7 +197,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '10.0.0.5')
+    await injectHookUrls('/path/settings.json', '10.0.0.5', 27182)
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://10.0.0.5:27182/hooks/stop')
     expect(written.hooks.SessionStart[0].hooks[0].url).toBe('http://10.0.0.5:27182/hooks/session-start')
@@ -217,7 +217,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '192.168.100.200')
+    await injectHookUrls('/path/settings.json', '192.168.100.200', 27182)
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     // Must replace multi-segment IP (172.17.240.1 → 192.168.100.200)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://192.168.100.200:27182/hooks/stop')
@@ -236,7 +236,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '10.0.0.1')
+    await injectHookUrls('/path/settings.json', '10.0.0.1', 27182)
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     // command hook url unchanged (http type = false → skip)
     expect(written.hooks.Stop[0].hooks[0].url).toBe('http://should-not-change/hooks/stop')
@@ -256,7 +256,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '192.168.1.1')
+    await injectHookUrls('/path/settings.json', '192.168.1.1', 27182)
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     const url = written.hooks.Stop[0].hooks[0].url as string
     expect(url).toContain(`:${HOOK_PORT}/`)
@@ -276,7 +276,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '10.0.0.2')
+    await injectHookUrls('/path/settings.json', '10.0.0.2', 27182)
     const written = JSON.parse(mockWriteFile.mock.calls[0][1] as string)
     // Path suffix must be preserved exactly
     expect(written.hooks.Stop[0].hooks[0].url).toMatch(/\/hooks\/stop$/)
@@ -285,7 +285,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
 
   it('fileExists=false: calls mkdir before writeFile', async () => {
     mockReadFile.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
-    await injectHookUrls('/path/.claude/settings.json', '10.0.0.1')
+    await injectHookUrls('/path/.claude/settings.json', '10.0.0.1', 27182)
     // mkdir must be called before writeFile
     expect(mockMkdir).toHaveBeenCalledBefore
     expect(mockMkdir).toHaveBeenCalledWith('/path/.claude', { recursive: true })
@@ -307,7 +307,7 @@ describe('injectHookUrls — URL host replacement (regex mutants)', () => {
       },
     }
     mockReadFile.mockResolvedValue(JSON.stringify(settings))
-    await injectHookUrls('/path/settings.json', '10.0.0.1')
+    await injectHookUrls('/path/settings.json', '10.0.0.1', 27182)
     // No changes → no write
     expect(mockWriteFile).not.toHaveBeenCalled()
     expect(mockMkdir).not.toHaveBeenCalled()

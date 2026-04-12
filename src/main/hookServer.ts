@@ -18,8 +18,9 @@
  */
 
 import http from 'http'
+import type { AddressInfo } from 'net'
 import type { BrowserWindow } from 'electron'
-import { HOOK_PORT, getHookSecret, initHookSecret, detectWslGatewayIp } from './hookServer-inject'
+import { HOOK_PORT_BASE, HOOK_PORT_MAX, getHookSecret, initHookSecret, detectWslGatewayIp, writeLockfile, deleteLockfile, cleanupStaleLockfiles } from './hookServer-inject'
 import { checkPostToolUseFileSize } from './hookServer-filesize'
 import {
   handleStop,
@@ -29,7 +30,7 @@ import {
 } from './hookServer-handlers'
 
 // Re-exports for backward compatibility
-export { HOOK_PORT } from './hookServer-inject'
+export { HOOK_PORT, HOOK_PORT_BASE, HOOK_PORT_MAX, writeLockfile, deleteLockfile, cleanupStaleLockfiles, removeStaleHookEntries } from './hookServer-inject'
 export { injectHookSecret, detectWslGatewayIp, injectHookUrls, injectIntoWslDistros, injectGeminiHooks, injectCodexHooks } from './hookServer-inject'
 export { getHookSecret } from './hookServer-inject'
 export { parseTokensFromJSONL, parseTokensFromJSONLStream } from './hookServer-tokens'
@@ -95,6 +96,10 @@ export interface HookServerHandle {
   primaryServer: http.Server
   /** WSL gateway server, if bound (null until WSL adapter detected) */
   wslServer: http.Server | null
+  /** Effective port the primary server is listening on (0 until bound). */
+  port: number
+  /** Ports whose lockfiles were deleted at startup (dead instances). Use to clean settings.json. */
+  stalePorts: number[]
   /** Close all servers and cancel pending WSL retries */
   close(callback?: () => void): void
 }
@@ -215,35 +220,67 @@ export function startHookServer(userDataPath?: string): HookServerHandle {
   const hookSecret = getHookSecret()
   const handler = createRequestHandler(hookSecret)
 
-  // ── Primary server: always on 127.0.0.1 ──────────────────────────────────
+  // ── Lockfile cleanup: identify stale instances before port scan ───────────
+  const { alivePorts, stalePorts } = userDataPath
+    ? cleanupStaleLockfiles(userDataPath)
+    : { alivePorts: new Set<number>(), stalePorts: [] as number[] }
+
+  // Build ordered list of ports to try, skipping those held by alive instances
+  const portsToTry: number[] = []
+  for (let p = HOOK_PORT_BASE; p <= HOOK_PORT_MAX; p++) {
+    if (!alivePorts.has(p)) portsToTry.push(p)
+  }
+
+  // ── Primary server: port scan 27182-27189 ─────────────────────────────────
   const primaryServer = http.createServer(handler)
-
-  primaryServer.on('error', (err: NodeJS.ErrnoException) => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`[hookServer] Port ${HOOK_PORT} already in use on 127.0.0.1 — primary hook server disabled.`)
-    } else {
-      console.error('[hookServer] Server error:', err)
-    }
-  })
-
-  primaryServer.listen(HOOK_PORT, '127.0.0.1', () => {
-    console.log(`[hookServer] Listening on 127.0.0.1:${HOOK_PORT}`)
-  })
+  let portAttemptIdx = 0
 
   // ── Handle (declared early so tryBindWsl can update wslServer) ──────────
   const handle: HookServerHandle = {
     primaryServer,
     wslServer: null,
+    port: 0,
+    stalePorts,
     close(callback?: () => void) {
       if (wslRetryTimer) {
         clearTimeout(wslRetryTimer)
         wslRetryTimer = null
       }
+      if (userDataPath && handle.port) deleteLockfile(userDataPath, handle.port)
       let pending = handle.wslServer ? 2 : 1
       const done = (): void => { if (--pending === 0 && callback) callback() }
       primaryServer.close(done)
       if (handle.wslServer) handle.wslServer.close(done)
     },
+  }
+
+  primaryServer.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      portAttemptIdx++
+      if (portAttemptIdx < portsToTry.length) {
+        const nextPort = portsToTry[portAttemptIdx]
+        console.log(`[hookServer] Port ${portsToTry[portAttemptIdx - 1]} in use, trying ${nextPort}`)
+        primaryServer.listen(nextPort, '127.0.0.1')
+      } else {
+        console.warn(`[hookServer] All ports ${HOOK_PORT_BASE}-${HOOK_PORT_MAX} in use — hook server disabled`)
+      }
+    } else {
+      console.error('[hookServer] Server error:', err)
+    }
+  })
+
+  primaryServer.once('listening', () => {
+    const addr = primaryServer.address() as AddressInfo
+    handle.port = addr.port
+    if (userDataPath) writeLockfile(userDataPath, addr.port)
+    console.log(`[hookServer] Listening on 127.0.0.1:${addr.port}`)
+    tryBindWsl(0)
+  })
+
+  if (portsToTry.length > 0) {
+    primaryServer.listen(portsToTry[0], '127.0.0.1')
+  } else {
+    console.warn(`[hookServer] All ports ${HOOK_PORT_BASE}-${HOOK_PORT_MAX} occupied by live instances — hook server disabled`)
   }
 
   // ── WSL gateway server: bind with retry if adapter not yet available ──────
@@ -262,22 +299,21 @@ export function startHookServer(userDataPath?: string): HookServerHandle {
       return
     }
 
+    const wslPort = handle.port || HOOK_PORT_BASE
     const server = http.createServer(handler)
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
-        console.warn(`[hookServer] Port ${HOOK_PORT} already in use on ${wslIp} — WSL listener disabled`)
+        console.warn(`[hookServer] Port ${wslPort} already in use on ${wslIp} — WSL listener disabled`)
       } else {
         console.error(`[hookServer] WSL server error on ${wslIp}:`, err)
       }
       handle.wslServer = null
     })
-    server.listen(HOOK_PORT, wslIp, () => {
-      console.log(`[hookServer] Listening on ${wslIp}:${HOOK_PORT} (WSL gateway)`)
+    server.listen(wslPort, wslIp, () => {
+      console.log(`[hookServer] Listening on ${wslIp}:${wslPort} (WSL gateway)`)
     })
     handle.wslServer = server
   }
-
-  tryBindWsl(0)
 
   return handle
 }
