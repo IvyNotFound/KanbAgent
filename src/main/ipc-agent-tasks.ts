@@ -123,11 +123,6 @@ export function registerAgentTaskHandlers(): void {
           "SELECT id, status, scope, priority, title FROM tasks WHERE agent_assigned_id = ? AND status IN ('todo', 'in_progress') ORDER BY status DESC, updated_at DESC"
         ).all(agentId) as Array<{ id: number; status: string; scope: string | null; priority: string; title: string }>
 
-        // Active locks
-        const lockRows = db.prepare(
-          'SELECT l.file, a.name AS owner FROM locks l JOIN agents a ON a.id = l.agent_id WHERE l.released_at IS NULL'
-        ).all() as Array<{ file: string; owner: string }>
-
         // Format all queried data into a structured context block for agent startup:
         const lines: string[] = [
           '=== IDENTIFIANTS ===',
@@ -146,15 +141,6 @@ export function registerAgentTaskHandlers(): void {
         } else {
           for (const { id, status: taskStatus, scope: taskScope, priority, title } of taskRows) {
             lines.push(`[T${id}] ${taskStatus} | ${taskScope ?? '-'} | prio:${priority} | ${title}`)
-          }
-        }
-
-        lines.push('', '=== LOCKS ACTIFS ===')
-        if (lockRows.length === 0) {
-          lines.push('(aucun)')
-        } else {
-          for (const { file, owner } of lockRows) {
-            lines.push(`${file} → ${owner}`)
           }
         }
 

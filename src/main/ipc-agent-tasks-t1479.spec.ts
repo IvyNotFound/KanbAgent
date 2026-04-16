@@ -320,7 +320,6 @@ describe('build-agent-prompt (T1479)', () => {
     expect(result).toContain('=== IDENTIFIANTS ===')
     expect(result).toContain('=== SESSION PRÉCÉDENTE ===')
     expect(result).toContain('=== TÂCHES ASSIGNÉES ===')
-    expect(result).toContain('=== LOCKS ACTIFS ===')
   })
 
   it('creates a new session row in DB', async () => {

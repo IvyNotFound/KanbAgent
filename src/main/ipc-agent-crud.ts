@@ -25,10 +25,9 @@ export const STANDARD_AGENT_SUFFIX = [
   '---',
   'AGENT PROTOCOL REMINDER (mandatory — do not override):',
   '- On startup: read input session (sessions.summary) + open tasks from project.db',
-  '- Before modifying a file: check locks, then INSERT OR REPLACE INTO locks',
   "- When taking a task: UPDATE tasks SET status='in_progress'",
   "- When finishing a task: UPDATE tasks SET status='done' + INSERT INTO task_comments (task_id, agent_id, content) VALUES (?, ?, '<files changed · what was done · what remains>')",
-  "- When ending session: release all locks + UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)",
+  "- When ending session: UPDATE sessions SET status='completed', summary='Done:... Pending:... Next:...' (this IS the input session for next startup)",
   '- Never commit directly to main in multi-user mode',
   '- Never edit project.db manually',
 ].join('\n')
@@ -239,10 +238,6 @@ export function registerAgentCrudHandlers(): void {
       }
 
       await writeDb(dbPath, (db) => {
-        db.run(
-          "UPDATE locks SET released_at = datetime('now') WHERE agent_id = ? AND released_at IS NULL",
-          [agentId]
-        )
         db.run('DELETE FROM agents WHERE id = ?', [agentId])
       })
       return { success: true, hasHistory: false }

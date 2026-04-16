@@ -144,10 +144,6 @@ describe('STANDARD_AGENT_SUFFIX (T1479)', () => {
     expect(STANDARD_AGENT_SUFFIX).toContain("UPDATE sessions SET status='completed'")
   })
 
-  it('contains lock management instruction', () => {
-    expect(STANDARD_AGENT_SUFFIX).toContain('locks')
-  })
-
   it('starts with --- separator', () => {
     expect(STANDARD_AGENT_SUFFIX.startsWith('---')).toBe(true)
   })

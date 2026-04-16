@@ -275,7 +275,6 @@ describe('build-agent-prompt — whitespace trim and format strings (T1268)', ()
     expect(result).toContain('=== IDENTIFIANTS ===')
     expect(result).toContain('=== SESSION PRÉCÉDENTE ===')
     expect(result).toContain('=== TÂCHES ASSIGNÉES ===')
-    expect(result).toContain('=== LOCKS ACTIFS ===')
   })
 
   it('task format includes prio: prefix in task line', async () => {
@@ -302,16 +301,6 @@ describe('build-agent-prompt — whitespace trim and format strings (T1268)', ()
     ) as string
 
     expect(result).toContain('(aucune tâche todo / in_progress)')
-  })
-
-  it('(aucun) shown when no locks (StringLiteral)', async () => {
-    const agentId = await insertAgent('prompt-no-locks-agent')
-
-    const result = await handlers['build-agent-prompt'](
-      null, 'prompt-no-locks-agent', '', TEST_DB_PATH, agentId
-    ) as string
-
-    expect(result).toContain('(aucun)')
   })
 
   it('(aucune session completed) shown when no previous session', async () => {

@@ -200,16 +200,4 @@ describe('build-agent-prompt (T985)', () => {
     expect(result).toContain('Done:T123')
   })
 
-  it('shows active locks in context block', async () => {
-    const agentId = await insertAgent('agent-locked')
-    await writeDb<void>(TEST_DB_PATH, (db) => {
-      db.run('INSERT INTO locks (file, agent_id) VALUES (?, ?)', ['src/main/ipc.ts', agentId])
-    })
-
-    const result = await handlers['build-agent-prompt'](
-      null, 'agent-locked', '', TEST_DB_PATH, agentId
-    ) as string
-
-    expect(result).toContain('src/main/ipc.ts')
-  })
 })

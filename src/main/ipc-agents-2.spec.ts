@@ -366,26 +366,4 @@ describe('delete-agent — T437', () => {
     expect(result.error).toContain('Invalid agentId')
   })
 
-  it('delete releases active locks for the agent', async () => {
-    const agentId = await insertAgent('agent-with-locks')
-    await writeDb<void>(TEST_DB_PATH, (db) => {
-      db.run('INSERT INTO locks (file, agent_id) VALUES (?, ?)', ['some/file.ts', agentId])
-    })
-
-    const result = await handlers['delete-agent'](
-      null,
-      TEST_DB_PATH,
-      agentId
-    ) as { success: boolean; hasHistory: boolean }
-
-    expect(result.success).toBe(true)
-    expect(result.hasHistory).toBe(false)
-
-    const locks = await queryLive(
-      TEST_DB_PATH,
-      'SELECT released_at FROM locks WHERE agent_id = ?',
-      [agentId]
-    ) as Array<{ released_at: string | null }>
-    expect(locks[0]?.released_at).not.toBeNull()
-  })
 })
