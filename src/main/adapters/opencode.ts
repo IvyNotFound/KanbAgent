@@ -12,7 +12,7 @@
  *
  * @module adapters/opencode
  */
-import { writeFileSync, unlinkSync } from 'fs'
+import { writeFileSync, unlinkSync, existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 import type {
   CliAdapter,
@@ -76,25 +76,69 @@ export const opencodeAdapter: CliAdapter = {
       '--format', 'json', // stream JSONL events to stdout line by line
     ]
 
-    // Note: opencode does not expose a --system-prompt CLI flag.
-    // opts.systemPromptFile is intentionally ignored here; configure system
-    // prompt via opencode's project config file instead.
-
     // Inject --model flag if a model ID is provided (T1356).
     if (opts.modelId) {
       args.push('--model', opts.modelId)
     }
 
-    // opencode run takes the prompt as a positional argument array (not via stdin).
-    // Passing it here ensures opencode processes the message immediately on spawn.
-    if (opts.initialMessage) {
+    // System prompt injection (T1987):
+    // - .jsonc extension: prepareSystemPrompt wrote opencode.jsonc in the worktree with
+    //   an `instructions` field — OpenCode picks it up automatically via project config.
+    //   Push initialMessage as-is; do not read the config file from here.
+    // - .txt extension: no worktree config file was written; prepend the system prompt
+    //   to the initial message between <system-instructions> tags.
+    // - No systemPromptFile: push initialMessage as-is (unchanged behaviour).
+    if (opts.systemPromptFile && opts.systemPromptFile.endsWith('.txt')) {
+      const spContent = readFileSync(opts.systemPromptFile, 'utf-8')
+      const msg = spContent
+        ? `<system-instructions>\n${spContent}\n</system-instructions>\n\n${opts.initialMessage ?? ''}`.trim()
+        : (opts.initialMessage ?? '')
+      if (msg) args.push(msg)
+    } else if (opts.initialMessage) {
+      // Worktree mode (.jsonc) or no system prompt: push message as-is
       args.push(opts.initialMessage)
     }
 
     return { command: cmd, args }
   },
 
-  async prepareSystemPrompt(prompt: string, tempDir: string): Promise<SystemPromptResult> {
+  async prepareSystemPrompt(prompt: string, tempDir: string, cwd?: string): Promise<SystemPromptResult> {
+    if (cwd) {
+      // Worktree mode: write (or merge into) opencode.jsonc inside the isolated worktree.
+      // The worktree is agent-specific so there is no race condition in multi-agent launches.
+      const configPath = join(cwd, 'opencode.jsonc')
+      let originalContent: string | null = null
+      if (existsSync(configPath)) {
+        originalContent = readFileSync(configPath, 'utf-8')
+        try {
+          const existing = JSON.parse(originalContent) as Record<string, unknown>
+          existing.instructions = Array.isArray(existing.instructions)
+            ? [prompt, ...existing.instructions as unknown[]]
+            : [prompt]
+          writeFileSync(configPath, JSON.stringify(existing, null, 2), 'utf-8')
+        } catch {
+          // Malformed JSON — overwrite entirely rather than corrupting the file further
+          writeFileSync(configPath, JSON.stringify({ instructions: [prompt] }, null, 2), 'utf-8')
+        }
+      } else {
+        writeFileSync(configPath, JSON.stringify({ instructions: [prompt] }, null, 2), 'utf-8')
+      }
+      return {
+        filePath: configPath,
+        cleanup: async () => {
+          try {
+            if (originalContent !== null) {
+              writeFileSync(configPath, originalContent, 'utf-8')
+            } else {
+              unlinkSync(configPath)
+            }
+          } catch { /* best-effort */ }
+        },
+      }
+    }
+
+    // No worktree: write a plain .txt temp file.
+    // buildCommand will read it and prepend its content to the initial message.
     const filePath = join(tempDir, `opencode-sp-${Date.now()}.txt`)
     writeFileSync(filePath, prompt, 'utf-8')
     return {

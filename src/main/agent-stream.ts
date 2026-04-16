@@ -197,12 +197,18 @@ export function registerAgentStreamHandlers(): void {
         : wtLine
     }
 
-    // Write system prompt to a Windows temp file so the child process reads it directly —
-    // avoids command-line serialization issues on both WSL (T705) and Windows native (T916).
+    // Prepare system prompt via the adapter (T1987).
+    // - opencode + worktree: prepareSystemPrompt writes opencode.jsonc in the worktree and
+    //   returns its path; buildCommand sees the .jsonc extension and skips prepending.
+    // - opencode + no worktree: writes a .txt temp file; buildCommand reads and prepends it.
+    // - All other adapters: unchanged behaviour (write .txt temp file, pass via --append-system-prompt etc.)
     let spTempFile: string | undefined
+    let spCleanup: (() => Promise<void>) | undefined
     if (effectiveSystemPrompt) {
-      spTempFile = join(tmpdir(), `ka-sp-${id}.txt`)
-      await writeFile(spTempFile, effectiveSystemPrompt, 'utf-8')
+      const effectiveCwd = adapter.cli === 'opencode' ? (worktreeInfo?.path ?? undefined) : undefined
+      const spResult = await adapter.prepareSystemPrompt(effectiveSystemPrompt, tmpdir(), effectiveCwd)
+      spTempFile = spResult.filePath
+      spCleanup = spResult.cleanup
     }
 
     // T1107: Write settings JSON to a temp file for Windows native (.cmd wrapper bypass).
@@ -227,7 +233,7 @@ export function registerAgentStreamHandlers(): void {
     }
 
     attachStreamHandlers({
-      proc, id, wcId, adapter, worktreeInfo, spTempFile, settingsTempFile, scriptTempFile,
+      proc, id, wcId, adapter, worktreeInfo, spTempFile, spCleanup, settingsTempFile, scriptTempFile,
       sessionId: opts.sessionId, projectPath: opts.projectPath, dbPath: opts.dbPath, agentAdapters,
     })
 

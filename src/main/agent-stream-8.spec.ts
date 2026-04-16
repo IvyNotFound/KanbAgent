@@ -295,7 +295,8 @@ describe('agent-stream part 4 — mutation targets', () => {
       const handler = handlers.get('agent:create')!
       await handler({ sender: mockSender }, { systemPrompt: 'my prompt' })
 
-      const spWriteCall = mockWriteFile.mock.calls.find(
+      // System prompt is written via writeFileSync (adapter.prepareSystemPrompt uses sync write)
+      const spWriteCall = mockWriteFileSync.mock.calls.find(
         ([p]: [unknown]) => String(p).includes('ka-sp-')
       )!
       const spPath = spWriteCall[0] as string

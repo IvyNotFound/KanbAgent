@@ -332,7 +332,8 @@ describe('agent-stream', () => {
       const event = { sender: mockSender }
       await handler(event, { systemPrompt: 'Base prompt' })
 
-      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('ka-sp'))
+      // System prompt is written via writeFileSync (adapter.prepareSystemPrompt uses sync write)
+      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('ka-sp'))
       expect(spCall?.[1]).toBe('Base prompt')
       // queryLive must NOT be called
       expect(mockQueryLive).not.toHaveBeenCalled()
@@ -347,7 +348,8 @@ describe('agent-stream', () => {
       const event = { sender: mockSender }
       await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: 5 })
 
-      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('ka-sp'))
+      // System prompt is written via writeFileSync (adapter.prepareSystemPrompt uses sync write)
+      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('ka-sp'))
       expect(spCall?.[1]).toBe('Base prompt\n\nActive tasks: #42 #67')
     })
 
@@ -357,7 +359,8 @@ describe('agent-stream', () => {
       const event = { sender: mockSender }
       await handler(event, { systemPrompt: 'Base prompt', dbPath: '/fake/project.db', sessionId: 5 })
 
-      const spCall = mockWriteFile.mock.calls.find(([p]: [unknown]) => String(p).includes('ka-sp'))
+      // System prompt is written via writeFileSync (adapter.prepareSystemPrompt uses sync write)
+      const spCall = mockWriteFileSync.mock.calls.find(([p]: [unknown]) => String(p).includes('ka-sp'))
       expect(spCall?.[1]).toBe('Base prompt')
     })
 

@@ -29,6 +29,9 @@ export interface StreamHandlerOpts {
   adapter: CliAdapter
   worktreeInfo: WorktreeInfo | undefined
   spTempFile: string | undefined
+  /** Cleanup callback returned by adapter.prepareSystemPrompt. Handles restore/delete correctly
+   *  for both the opencode worktree case (.jsonc restore) and the plain .txt temp-file case. */
+  spCleanup: (() => Promise<void>) | undefined
   settingsTempFile: string | undefined
   scriptTempFile: string | undefined
   sessionId: number | undefined
@@ -46,6 +49,7 @@ export function attachStreamHandlers({
   adapter,
   worktreeInfo,
   spTempFile,
+  spCleanup,
   settingsTempFile,
   scriptTempFile,
   sessionId,
@@ -164,7 +168,8 @@ export function attachStreamHandlers({
     agents.delete(id)
     agentAdapters.delete(id)
     webContentsAgents.get(wcId)?.delete(id)
-    if (spTempFile) try { unlinkSync(spTempFile) } catch { /* cleanup best-effort */ }
+    if (spCleanup) spCleanup().catch(() => { /* cleanup best-effort */ })
+    else if (spTempFile) try { unlinkSync(spTempFile) } catch { /* cleanup best-effort */ }
     if (settingsTempFile) try { unlinkSync(settingsTempFile) } catch { /* cleanup best-effort */ }
     if (scriptTempFile) try { unlinkSync(scriptTempFile) } catch { /* cleanup best-effort */ }
     if (worktreeInfo && projectPath) {

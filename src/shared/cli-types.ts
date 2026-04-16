@@ -233,8 +233,10 @@ export interface CliAdapter {
    * Write the system prompt to a temp file and return the path + cleanup callback.
    * @param prompt  - Raw system prompt string.
    * @param tempDir - Directory for temp file (typically os.tmpdir()).
+   * @param cwd     - Optional worktree path. When provided (opencode only), writes opencode.jsonc
+   *                  into the isolated worktree instead of a temp file (avoids multi-agent race conditions).
    */
-  prepareSystemPrompt(prompt: string, tempDir: string): Promise<SystemPromptResult>
+  prepareSystemPrompt(prompt: string, tempDir: string, cwd?: string): Promise<SystemPromptResult>
 
   /**
    * Parse a single stdout line into a StreamEvent.

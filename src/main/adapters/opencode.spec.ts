@@ -9,12 +9,20 @@
  * - parseLine: text, reasoning, error, lifecycle events, plain text fallback
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { join } from 'path'
 
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 const mockUnlinkSync = vi.hoisted(() => vi.fn())
+const mockExistsSync = vi.hoisted(() => vi.fn<() => boolean>())
+const mockReadFileSync = vi.hoisted(() => vi.fn<() => string>())
 vi.mock('fs', () => {
-  const fns = { writeFileSync: mockWriteFileSync, unlinkSync: mockUnlinkSync }
+  const fns = {
+    writeFileSync: mockWriteFileSync,
+    unlinkSync: mockUnlinkSync,
+    existsSync: mockExistsSync,
+    readFileSync: mockReadFileSync,
+  }
   return { default: fns, ...fns }
 })
 
@@ -59,6 +67,11 @@ describe('OPENCODE_CMD_REGEX', () => {
 // ── opencodeAdapter.buildCommand ──────────────────────────────────────────────
 
 describe('opencodeAdapter.buildCommand', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Default: readFileSync returns empty string (system prompt not present in most tests)
+    mockReadFileSync.mockReturnValue('')
+  })
   it('defaults to "opencode" when customBinaryName is undefined', () => {
     const spec = opencodeAdapter.buildCommand({})
     expect(spec.command).toBe('opencode')
@@ -619,6 +632,178 @@ describe('opencodeAdapter.extractTokenUsage', () => {
     const event = { type: 'system', subtype: 'step_finish', usage: { input_tokens: 10, output_tokens: 5 } } as any
     const result = opencodeAdapter.extractTokenUsage?.(event)
     expect(result?.costUsd).toBeUndefined()
+  })
+})
+
+// ── opencodeAdapter.prepareSystemPrompt ──────────────────────────────────────
+
+describe('opencodeAdapter.prepareSystemPrompt', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockExistsSync.mockReturnValue(false)
+    mockReadFileSync.mockReturnValue('')
+  })
+
+  // ── No worktree (no cwd) ──────────────────────────────────────────────────
+
+  it('without cwd: writes opencode-sp-*.txt to tempDir', async () => {
+    const result = await opencodeAdapter.prepareSystemPrompt('my prompt', '/tmp')
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      expect.stringMatching(/opencode-sp-\d+\.txt$/),
+      'my prompt',
+      'utf-8'
+    )
+    expect(result.filePath).toMatch(/opencode-sp-\d+\.txt$/)
+  })
+
+  it('without cwd: returns filePath inside tempDir', async () => {
+    const result = await opencodeAdapter.prepareSystemPrompt('prompt', join('/tmp'))
+    expect(result.filePath).toContain('tmp')
+    expect(result.filePath).toContain('opencode-sp-')
+  })
+
+  it('without cwd: cleanup calls unlinkSync on the .txt file', async () => {
+    const result = await opencodeAdapter.prepareSystemPrompt('prompt', '/tmp')
+    vi.clearAllMocks()
+    await result.cleanup()
+    expect(mockUnlinkSync).toHaveBeenCalledWith(result.filePath)
+  })
+
+  // ── Worktree mode (cwd provided, no existing opencode.jsonc) ─────────────
+
+  it('with cwd (no existing file): writes opencode.jsonc with instructions array', async () => {
+    mockExistsSync.mockReturnValue(false)
+    await opencodeAdapter.prepareSystemPrompt('sys prompt', '/tmp', '/worktree')
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      join('/worktree', 'opencode.jsonc'),
+      JSON.stringify({ instructions: ['sys prompt'] }, null, 2),
+      'utf-8'
+    )
+  })
+
+  it('with cwd (no existing file): returns filePath = opencode.jsonc in worktree', async () => {
+    mockExistsSync.mockReturnValue(false)
+    const result = await opencodeAdapter.prepareSystemPrompt('prompt', '/tmp', '/worktree')
+    expect(result.filePath).toBe(join('/worktree', 'opencode.jsonc'))
+  })
+
+  it('with cwd (no existing file): cleanup calls unlinkSync (not writeFileSync)', async () => {
+    mockExistsSync.mockReturnValue(false)
+    const result = await opencodeAdapter.prepareSystemPrompt('prompt', '/tmp', '/worktree')
+    vi.clearAllMocks()
+    await result.cleanup()
+    expect(mockUnlinkSync).toHaveBeenCalledWith(join('/worktree', 'opencode.jsonc'))
+    expect(mockWriteFileSync).not.toHaveBeenCalled()
+  })
+
+  // ── Worktree mode (cwd provided, existing opencode.jsonc) ────────────────
+
+  it('with cwd (existing file): prepends system prompt to instructions array', async () => {
+    mockExistsSync.mockReturnValue(true)
+    mockReadFileSync.mockReturnValue(JSON.stringify({ instructions: ['existing instruction'] }))
+    await opencodeAdapter.prepareSystemPrompt('new prompt', '/tmp', '/worktree')
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      join('/worktree', 'opencode.jsonc'),
+      JSON.stringify({ instructions: ['new prompt', 'existing instruction'] }, null, 2),
+      'utf-8'
+    )
+  })
+
+  it('with cwd (existing file, no instructions array): creates instructions array with prompt', async () => {
+    mockExistsSync.mockReturnValue(true)
+    mockReadFileSync.mockReturnValue(JSON.stringify({ model: 'claude-opus-4-6' }))
+    await opencodeAdapter.prepareSystemPrompt('my prompt', '/tmp', '/worktree')
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      join('/worktree', 'opencode.jsonc'),
+      JSON.stringify({ model: 'claude-opus-4-6', instructions: ['my prompt'] }, null, 2),
+      'utf-8'
+    )
+  })
+
+  it('with cwd (existing file): cleanup restores original content via writeFileSync', async () => {
+    const original = JSON.stringify({ instructions: ['old'] })
+    mockExistsSync.mockReturnValue(true)
+    mockReadFileSync.mockReturnValue(original)
+    const result = await opencodeAdapter.prepareSystemPrompt('new', '/tmp', '/worktree')
+    vi.clearAllMocks()
+    await result.cleanup()
+    expect(mockWriteFileSync).toHaveBeenCalledWith(join('/worktree', 'opencode.jsonc'), original, 'utf-8')
+    expect(mockUnlinkSync).not.toHaveBeenCalled()
+  })
+
+  it('with cwd (existing file, malformed JSON): overwrites with fresh instructions', async () => {
+    mockExistsSync.mockReturnValue(true)
+    mockReadFileSync.mockReturnValue('not valid json }{')
+    await opencodeAdapter.prepareSystemPrompt('prompt', '/tmp', '/worktree')
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      join('/worktree', 'opencode.jsonc'),
+      JSON.stringify({ instructions: ['prompt'] }, null, 2),
+      'utf-8'
+    )
+  })
+})
+
+// ── opencodeAdapter.buildCommand — system prompt injection (T1987) ────────────
+
+describe('opencodeAdapter.buildCommand — system prompt injection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockReadFileSync.mockReturnValue('system prompt content')
+  })
+
+  it('with .txt systemPromptFile: wraps content in <system-instructions> tags', () => {
+    const spec = opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt', initialMessage: 'task' })
+    const lastArg = spec.args[spec.args.length - 1]
+    expect(lastArg).toContain('<system-instructions>')
+    expect(lastArg).toContain('</system-instructions>')
+    expect(lastArg).toContain('system prompt content')
+  })
+
+  it('with .txt systemPromptFile: combines system prompt and initialMessage', () => {
+    const spec = opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt', initialMessage: 'do the task' })
+    const lastArg = spec.args[spec.args.length - 1]
+    expect(lastArg).toContain('system prompt content')
+    expect(lastArg).toContain('do the task')
+    expect(lastArg.indexOf('system prompt content')).toBeLessThan(lastArg.indexOf('do the task'))
+  })
+
+  it('with .txt systemPromptFile: calls readFileSync on the provided path', () => {
+    opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt' })
+    expect(mockReadFileSync).toHaveBeenCalledWith('/tmp/sp.txt', 'utf-8')
+  })
+
+  it('with .txt systemPromptFile and empty content: falls back to pushing initialMessage as-is', () => {
+    mockReadFileSync.mockReturnValue('')
+    const spec = opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt', initialMessage: 'hello' })
+    expect(spec.args[spec.args.length - 1]).toBe('hello')
+  })
+
+  it('with .txt systemPromptFile, empty content and no initialMessage: pushes nothing', () => {
+    mockReadFileSync.mockReturnValue('')
+    const spec = opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt' })
+    // run, --format, json — no extra positional
+    expect(spec.args.length).toBe(3)
+  })
+
+  it('with .jsonc systemPromptFile (worktree): pushes initialMessage as-is without reading file', () => {
+    const spec = opencodeAdapter.buildCommand({
+      systemPromptFile: join('/worktree', 'opencode.jsonc'),
+      initialMessage: 'do the task',
+    })
+    expect(spec.args[spec.args.length - 1]).toBe('do the task')
+    expect(mockReadFileSync).not.toHaveBeenCalled()
+  })
+
+  it('with .jsonc systemPromptFile (worktree) and no initialMessage: pushes nothing', () => {
+    const spec = opencodeAdapter.buildCommand({ systemPromptFile: join('/worktree', 'opencode.jsonc') })
+    expect(spec.args.length).toBe(3)
+    expect(mockReadFileSync).not.toHaveBeenCalled()
+  })
+
+  it('with no systemPromptFile: behaves as before (pushes initialMessage directly)', () => {
+    const spec = opencodeAdapter.buildCommand({ initialMessage: 'hello world' })
+    expect(spec.args[spec.args.length - 1]).toBe('hello world')
+    expect(mockReadFileSync).not.toHaveBeenCalled()
   })
 })
 
