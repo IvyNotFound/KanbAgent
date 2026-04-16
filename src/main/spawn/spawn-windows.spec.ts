@@ -63,59 +63,44 @@ function makeFakeAdapter(cli = 'claude') {
 
 import { spawnWindows, escapeCmdArg } from './spawn-windows'
 
-// ── escapeCmdArg — cmd.exe metacharacter escaping (T1943) ─────────────────────
+// ── escapeCmdArg — cmd.exe quoting (T1989) ────────────────────────────────────
 
 describe('escapeCmdArg', () => {
-  it('returns clean args unchanged (no metacharacters)', () => {
-    expect(escapeCmdArg('--model')).toBe('--model')
-    expect(escapeCmdArg('gpt-4o')).toBe('gpt-4o')
-    expect(escapeCmdArg('full-auto')).toBe('full-auto')
-    expect(escapeCmdArg('C:\\tmp\\ka-sp-1.txt')).toBe('C:\\tmp\\ka-sp-1.txt')
+  it('wraps clean args in double-quotes (T1989)', () => {
+    expect(escapeCmdArg('--model')).toBe('"--model"')
+    expect(escapeCmdArg('gpt-4o')).toBe('"gpt-4o"')
+    expect(escapeCmdArg('full-auto')).toBe('"full-auto"')
+    expect(escapeCmdArg('C:\\tmp\\ka-sp-1.txt')).toBe('"C:\\tmp\\ka-sp-1.txt"')
   })
 
-  it('escapes & (command separator) with ^', () => {
-    expect(escapeCmdArg('foo & calc.exe')).toBe('foo ^& calc.exe')
+  it('preserves args with spaces as one token (T1989 — the core fix)', () => {
+    expect(escapeCmdArg('fix this bug')).toBe('"fix this bug"')
+    expect(escapeCmdArg('foo & calc.exe')).toBe('"foo & calc.exe"')
   })
 
-  it('escapes | (pipe) with ^', () => {
-    expect(escapeCmdArg('foo|bar')).toBe('foo^|bar')
+  it('escapes internal double-quotes with backslash (CommandLineToArgvW)', () => {
+    expect(escapeCmdArg('he said "hello"')).toBe('"he said \\"hello\\""')
   })
 
-  it('escapes < and > (redirections) with ^', () => {
-    expect(escapeCmdArg('a<b>c')).toBe('a^<b^>c')
+  it('escapes % to prevent %VAR% expansion inside cmd.exe quoted strings', () => {
+    expect(escapeCmdArg('%PATH%')).toBe('"%%PATH%%"')
+    expect(escapeCmdArg('value%with%percent')).toBe('"value%%with%%percent"')
   })
 
-  it('escapes ( and ) (grouping) with ^', () => {
-    expect(escapeCmdArg('(cmd)')).toBe('^(cmd^)')
+  it('metacharacters & | < > ( ) ^ are inert inside double-quotes — no ^ needed', () => {
+    expect(escapeCmdArg('a & b | c')).toBe('"a & b | c"')
+    expect(escapeCmdArg('a<b>c')).toBe('"a<b>c"')
+    expect(escapeCmdArg('(cmd)')).toBe('"(cmd)"')
+    expect(escapeCmdArg('a^b')).toBe('"a^b"')
   })
 
-  it('escapes ^ (escape char itself) with ^^', () => {
-    expect(escapeCmdArg('a^b')).toBe('a^^b')
+  it('handles system prompt tags with newlines (T1989 — real-world case)', () => {
+    const input = '<system-instructions>\nHello\n</system-instructions>'
+    expect(escapeCmdArg(input)).toBe(`"${input}"`)
   })
 
-  it('escapes ! (delayed expansion) with ^', () => {
-    expect(escapeCmdArg('!var!')).toBe('^!var^!')
-  })
-
-  it('escapes % (variable delimiter) with ^', () => {
-    expect(escapeCmdArg('%PATH%')).toBe('^%PATH^%')
-  })
-
-  it('escapes @ with ^', () => {
-    expect(escapeCmdArg('@echo off')).toBe('^@echo off')
-  })
-
-  it('escapes all metacharacters in a PoC injection string', () => {
-    // PoC from T1943 security audit: modelId = "foo & calc.exe"
-    expect(escapeCmdArg('foo & calc.exe')).toBe('foo ^& calc.exe')
-  })
-
-  it('escapes multiple metacharacters in one arg', () => {
-    expect(escapeCmdArg('a & b | c')).toBe('a ^& b ^| c')
-  })
-
-  it('handles empty string', () => {
-    expect(escapeCmdArg('')).toBe('')
+  it('handles empty string — returns ""', () => {
+    expect(escapeCmdArg('')).toBe('""')
   })
 })
 
@@ -315,7 +300,7 @@ describe('spawnWindows — non-claude adapter', () => {
     expect(cmd).toBe('opencode')
   })
 
-  it('passes spec.args to spawn (ArrayDeclaration not [])', () => {
+  it('passes spec.args to spawn — each arg quoted via escapeCmdArg (ArrayDeclaration not [])', () => {
     const adapter = makeFakeAdapter('opencode')
     adapter.buildCommand.mockReturnValue({ command: 'opencode', args: ['--stream', '--json'], env: {} })
     spawnWindows({
@@ -328,7 +313,7 @@ describe('spawnWindows — non-claude adapter', () => {
       settingsTempFile: undefined,
     })
     const [, args] = mockSpawn.mock.calls[0] as [string, string[]]
-    expect(args).toEqual(['--stream', '--json'])
+    expect(args).toEqual(['"--stream"', '"--json"'])
   })
 
   it('enables shell: true for non-claude (StringLiteral)', () => {
@@ -399,7 +384,7 @@ describe('spawnWindows — non-claude adapter', () => {
     expect(opts.env).toHaveProperty('TERM', 'dumb')
   })
 
-  it('escapes cmd.exe metacharacters in args (T1943 — injection prevention)', () => {
+  it('quotes args with spaces — & inert inside double-quotes (T1989 — injection prevention)', () => {
     const adapter = makeFakeAdapter('aider')
     // Simulate a malicious modelId containing & (command injection PoC)
     adapter.buildCommand.mockReturnValue({
@@ -417,12 +402,13 @@ describe('spawnWindows — non-claude adapter', () => {
       settingsTempFile: undefined,
     })
     const [, args] = mockSpawn.mock.calls[0] as [string, string[]]
-    // The & must be escaped to ^& so cmd.exe does not interpret it as a separator
-    expect(args).toContain('foo ^& calc.exe')
+    // Wrapped in quotes — cmd.exe treats it as one token; & is inert inside quotes
+    expect(args).toContain('"foo & calc.exe"')
     expect(args).not.toContain('foo & calc.exe')
+    expect(args).not.toContain('foo ^& calc.exe')
   })
 
-  it('clean args (no metacharacters) pass through unchanged (T1943)', () => {
+  it('all args are quoted — clean args wrapped in double-quotes (T1989)', () => {
     const adapter = makeFakeAdapter('gemini')
     adapter.buildCommand.mockReturnValue({
       command: 'gemini',
@@ -439,7 +425,7 @@ describe('spawnWindows — non-claude adapter', () => {
       settingsTempFile: undefined,
     })
     const [, args] = mockSpawn.mock.calls[0] as [string, string[]]
-    expect(args).toEqual(['-m', 'gemini-2.0-flash', '-p', 'Fix the bug'])
+    expect(args).toEqual(['"-m"', '"gemini-2.0-flash"', '"-p"', '"Fix the bug"'])
   })
 
   it('cwd priority: worktreeInfo.path wins over workDir (LogicalOperator)', () => {

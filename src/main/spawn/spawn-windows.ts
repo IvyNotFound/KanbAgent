@@ -20,22 +20,29 @@ import { buildWindowsPS1Script, buildWindowsEnv, logDebug } from '../agent-strea
 import type { SpawnInput, SpawnOutput } from './types'
 
 /**
- * Escapes cmd.exe metacharacters in a single argument value by prefixing them with ^.
+ * Quotes and escapes a single argument for cmd.exe shell:true spawn.
  *
  * When Node.js spawns with shell:true on Windows, it constructs:
- *   cmd.exe /d /s /c "<command> <args joined with spaces>"
- * The ^ escape character is processed by cmd.exe inside this context, neutralising
- * shell metacharacters before they reach the child process.
+ *   cmd.exe /d /s /c "<command> <escaped-args>"
+ * Without quoting, arguments containing spaces are split by cmd.exe into multiple
+ * tokens, causing "La syntaxe de la commande n'est pas correcte." errors.
  *
- * Characters escaped: & | < > ( ) ^ @ ! %
+ * Strategy: wrap the argument in double-quotes so cmd.exe treats it as one token.
+ * Inside double-quoted cmd.exe strings, only two characters need special handling:
+ *   - `"` → `\"` (CommandLineToArgvW convention for embedded quotes)
+ *   - `%` → `%%` (prevents environment-variable expansion, e.g. %PATH%)
+ * Other metacharacters (& | < > ^ ( )) are inert inside double-quoted strings.
  *
  * Exported for unit testing.
  *
  * @param arg - Raw argument string (may contain user-controlled data)
- * @returns Argument with cmd.exe metacharacters escaped via ^ prefix
+ * @returns Argument wrapped in double-quotes with internal `"` and `%` escaped
  */
 export function escapeCmdArg(arg: string): string {
-  return arg.replace(/([&|<>()^@!%])/g, '^$1')
+  const escaped = arg
+    .replace(/"/g, '\\"')  // embed literal quote via CommandLineToArgvW convention
+    .replace(/%/g, '%%')   // prevent %VAR% expansion inside cmd.exe double-quoted string
+  return `"${escaped}"`
 }
 
 export function spawnWindows({
