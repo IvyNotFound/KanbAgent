@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ 허용됨: {tool}",
     "permissionDenied": "✗ 거부됨: {tool}",
     "permissionShowArgs": "인수 표시",
-    "permissionHideArgs": "인수 숨기기"
+    "permissionHideArgs": "인수 숨기기",
+    "toolBlocked": "⊘ 차단된 도구 — 권한 거부됨"
   },
   "task": {
     "running": "작업 진행 중",

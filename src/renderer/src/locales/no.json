@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ Tillatt: {tool}",
     "permissionDenied": "✗ Avslått: {tool}",
     "permissionShowArgs": "Vis argumenter",
-    "permissionHideArgs": "Skjul argumenter"
+    "permissionHideArgs": "Skjul argumenter",
+    "toolBlocked": "⊘ Blokkert verktøy — tillatelse nektet"
   },
   "task": {
     "running": "Oppgave pågår",

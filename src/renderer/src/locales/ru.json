@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ Разрешено: {tool}",
     "permissionDenied": "✗ Отклонено: {tool}",
     "permissionShowArgs": "Показать аргументы",
-    "permissionHideArgs": "Скрыть аргументы"
+    "permissionHideArgs": "Скрыть аргументы",
+    "toolBlocked": "⊘ Инструмент заблокирован — доступ запрещён"
   },
   "task": {
     "running": "Задача выполняется",

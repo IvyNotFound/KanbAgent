@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ مسموح: {tool}",
     "permissionDenied": "✗ مرفوض: {tool}",
     "permissionShowArgs": "عرض المعاملات",
-    "permissionHideArgs": "إخفاء المعاملات"
+    "permissionHideArgs": "إخفاء المعاملات",
+    "toolBlocked": "⊘ أداة محظورة — تم رفض الإذن"
   },
   "task": {
     "running": "المهمة قيد التنفيذ",

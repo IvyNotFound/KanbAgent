@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ 已允许：{tool}",
     "permissionDenied": "✗ 已拒绝：{tool}",
     "permissionShowArgs": "显示参数",
-    "permissionHideArgs": "隐藏参数"
+    "permissionHideArgs": "隐藏参数",
+    "toolBlocked": "⊘ 已阻止的工具 — 权限被拒绝"
   },
   "task": {
     "running": "任务进行中",

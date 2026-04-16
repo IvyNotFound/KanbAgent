@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ Sallittu: {tool}",
     "permissionDenied": "✗ Estetty: {tool}",
     "permissionShowArgs": "Näytä argumentit",
-    "permissionHideArgs": "Piilota argumentit"
+    "permissionHideArgs": "Piilota argumentit",
+    "toolBlocked": "⊘ Estetty työkalu — lupa evätty"
   },
   "task": {
     "running": "Tehtävä käynnissä",

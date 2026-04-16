@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ Consentito: {tool}",
     "permissionDenied": "✗ Negato: {tool}",
     "permissionShowArgs": "Mostra argomenti",
-    "permissionHideArgs": "Nascondi argomenti"
+    "permissionHideArgs": "Nascondi argomenti",
+    "toolBlocked": "⊘ Strumento bloccato — autorizzazione negata"
   },
   "task": {
     "running": "Attività in corso",

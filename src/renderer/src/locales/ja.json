@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ 許可済み: {tool}",
     "permissionDenied": "✗ 拒否済み: {tool}",
     "permissionShowArgs": "引数を表示",
-    "permissionHideArgs": "引数を非表示"
+    "permissionHideArgs": "引数を非表示",
+    "toolBlocked": "⊘ ブロックされたツール — 権限が拒否されました"
   },
   "task": {
     "running": "タスク進行中",

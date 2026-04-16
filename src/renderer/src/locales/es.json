@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ Permitido: {tool}",
     "permissionDenied": "✗ Denegado: {tool}",
     "permissionShowArgs": "Mostrar argumentos",
-    "permissionHideArgs": "Ocultar argumentos"
+    "permissionHideArgs": "Ocultar argumentos",
+    "toolBlocked": "⊘ Herramienta bloqueada — permiso denegado"
   },
   "task": {
     "running": "Tarea en progreso",

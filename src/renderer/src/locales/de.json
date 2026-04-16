@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ Erlaubt: {tool}",
     "permissionDenied": "✗ Abgelehnt: {tool}",
     "permissionShowArgs": "Argumente anzeigen",
-    "permissionHideArgs": "Argumente ausblenden"
+    "permissionHideArgs": "Argumente ausblenden",
+    "toolBlocked": "⊘ Gesperrtes Werkzeug — Berechtigung verweigert"
   },
   "task": {
     "running": "Aufgabe in Bearbeitung",

@@ -618,7 +618,8 @@
     "permissionAllowed": "✓ İzin verildi: {tool}",
     "permissionDenied": "✗ Reddedildi: {tool}",
     "permissionShowArgs": "Argümanları göster",
-    "permissionHideArgs": "Argümanları gizle"
+    "permissionHideArgs": "Argümanları gizle",
+    "toolBlocked": "⊘ Engellenmiş araç — izin reddedildi"
   },
   "task": {
     "running": "Görev devam ediyor",
