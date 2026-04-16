@@ -61,7 +61,63 @@ function makeFakeAdapter(cli = 'claude') {
   }
 }
 
-import { spawnWindows } from './spawn-windows'
+import { spawnWindows, escapeCmdArg } from './spawn-windows'
+
+// ── escapeCmdArg — cmd.exe metacharacter escaping (T1943) ─────────────────────
+
+describe('escapeCmdArg', () => {
+  it('returns clean args unchanged (no metacharacters)', () => {
+    expect(escapeCmdArg('--model')).toBe('--model')
+    expect(escapeCmdArg('gpt-4o')).toBe('gpt-4o')
+    expect(escapeCmdArg('full-auto')).toBe('full-auto')
+    expect(escapeCmdArg('C:\\tmp\\ka-sp-1.txt')).toBe('C:\\tmp\\ka-sp-1.txt')
+  })
+
+  it('escapes & (command separator) with ^', () => {
+    expect(escapeCmdArg('foo & calc.exe')).toBe('foo ^& calc.exe')
+  })
+
+  it('escapes | (pipe) with ^', () => {
+    expect(escapeCmdArg('foo|bar')).toBe('foo^|bar')
+  })
+
+  it('escapes < and > (redirections) with ^', () => {
+    expect(escapeCmdArg('a<b>c')).toBe('a^<b^>c')
+  })
+
+  it('escapes ( and ) (grouping) with ^', () => {
+    expect(escapeCmdArg('(cmd)')).toBe('^(cmd^)')
+  })
+
+  it('escapes ^ (escape char itself) with ^^', () => {
+    expect(escapeCmdArg('a^b')).toBe('a^^b')
+  })
+
+  it('escapes ! (delayed expansion) with ^', () => {
+    expect(escapeCmdArg('!var!')).toBe('^!var^!')
+  })
+
+  it('escapes % (variable delimiter) with ^', () => {
+    expect(escapeCmdArg('%PATH%')).toBe('^%PATH^%')
+  })
+
+  it('escapes @ with ^', () => {
+    expect(escapeCmdArg('@echo off')).toBe('^@echo off')
+  })
+
+  it('escapes all metacharacters in a PoC injection string', () => {
+    // PoC from T1943 security audit: modelId = "foo & calc.exe"
+    expect(escapeCmdArg('foo & calc.exe')).toBe('foo ^& calc.exe')
+  })
+
+  it('escapes multiple metacharacters in one arg', () => {
+    expect(escapeCmdArg('a & b | c')).toBe('a ^& b ^| c')
+  })
+
+  it('handles empty string', () => {
+    expect(escapeCmdArg('')).toBe('')
+  })
+})
 
 // ── spawnWindows — claude branch ───────────────────────────────────────────────
 
@@ -341,6 +397,49 @@ describe('spawnWindows — non-claude adapter', () => {
     const [, , opts] = mockSpawn.mock.calls[0] as [string, string[], { env?: Record<string, string> }]
     expect(opts.env).toHaveProperty('CODEX_KEY', 'mykey')
     expect(opts.env).toHaveProperty('TERM', 'dumb')
+  })
+
+  it('escapes cmd.exe metacharacters in args (T1943 — injection prevention)', () => {
+    const adapter = makeFakeAdapter('aider')
+    // Simulate a malicious modelId containing & (command injection PoC)
+    adapter.buildCommand.mockReturnValue({
+      command: 'aider',
+      args: ['--model', 'foo & calc.exe'],
+      env: {},
+    })
+    spawnWindows({
+      id: '30',
+      adapter: adapter as never,
+      validConvId: undefined,
+      opts: {} as never,
+      worktreeInfo: undefined,
+      spTempFile: undefined,
+      settingsTempFile: undefined,
+    })
+    const [, args] = mockSpawn.mock.calls[0] as [string, string[]]
+    // The & must be escaped to ^& so cmd.exe does not interpret it as a separator
+    expect(args).toContain('foo ^& calc.exe')
+    expect(args).not.toContain('foo & calc.exe')
+  })
+
+  it('clean args (no metacharacters) pass through unchanged (T1943)', () => {
+    const adapter = makeFakeAdapter('gemini')
+    adapter.buildCommand.mockReturnValue({
+      command: 'gemini',
+      args: ['-m', 'gemini-2.0-flash', '-p', 'Fix the bug'],
+      env: {},
+    })
+    spawnWindows({
+      id: '31',
+      adapter: adapter as never,
+      validConvId: undefined,
+      opts: {} as never,
+      worktreeInfo: undefined,
+      spTempFile: undefined,
+      settingsTempFile: undefined,
+    })
+    const [, args] = mockSpawn.mock.calls[0] as [string, string[]]
+    expect(args).toEqual(['-m', 'gemini-2.0-flash', '-p', 'Fix the bug'])
   })
 
   it('cwd priority: worktreeInfo.path wins over workDir (LogicalOperator)', () => {
