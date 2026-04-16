@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, type ComputedRef } from 'vue'
+import { ref, computed, effectScope, type ComputedRef, type EffectScope } from 'vue'
 
 export interface HookEvent {
   /** Unique monotonic counter */
@@ -61,36 +61,49 @@ export const useHookEventsStore = defineStore('hookEvents', () => {
     }
   }
 
+  interface ScopedComputed<T> {
+    ref: ComputedRef<T>
+    scope: EffectScope
+  }
+
   /** Memoized computed views by sessionId — avoids orphaned computeds on repeated calls. */
-  const _sessionComputeds = new Map<string, ComputedRef<HookEvent[]>>()
+  const _sessionComputeds = new Map<string, ScopedComputed<HookEvent[]>>()
 
   /** Reactive computed view of events for a given sessionId. */
   function eventsForSession(sessionId: string | null) {
     const key = sessionId ?? '__null__'
     if (!_sessionComputeds.has(key)) {
-      _sessionComputeds.set(key, computed(() => events.value.filter(e => e.sessionId === sessionId)))
-      // LRU eviction — drop oldest entry when cap exceeded (T1135)
+      const scope = effectScope()
+      const ref = scope.run(() => computed(() => events.value.filter(e => e.sessionId === sessionId)))!
+      _sessionComputeds.set(key, { ref, scope })
+      // LRU eviction — stop reactive scope before dropping entry (T1954)
       if (_sessionComputeds.size > MAX_CACHED_COMPUTEDS) {
-        _sessionComputeds.delete(_sessionComputeds.keys().next().value!)
+        const oldestKey = _sessionComputeds.keys().next().value!
+        _sessionComputeds.get(oldestKey)!.scope.stop()
+        _sessionComputeds.delete(oldestKey)
       }
     }
-    return _sessionComputeds.get(key)!
+    return _sessionComputeds.get(key)!.ref
   }
 
   /** Memoized computed views by sessionId — avoids orphaned computeds on repeated calls. */
-  const _activeToolComputeds = new Map<string, ComputedRef<string | null>>()
+  const _activeToolComputeds = new Map<string, ScopedComputed<string | null>>()
 
   /** Reactive computed active tool name for a given sessionId. null = idle. */
   function activeToolForSession(sessionId: string | null) {
     const key = sessionId ?? '__global__'
     if (!_activeToolComputeds.has(key)) {
-      _activeToolComputeds.set(key, computed(() => activeTools.value[key] ?? null))
-      // LRU eviction — drop oldest entry when cap exceeded (T1135)
+      const scope = effectScope()
+      const ref = scope.run(() => computed(() => activeTools.value[key] ?? null))!
+      _activeToolComputeds.set(key, { ref, scope })
+      // LRU eviction — stop reactive scope before dropping entry (T1954)
       if (_activeToolComputeds.size > MAX_CACHED_COMPUTEDS) {
-        _activeToolComputeds.delete(_activeToolComputeds.keys().next().value!)
+        const oldestKey = _activeToolComputeds.keys().next().value!
+        _activeToolComputeds.get(oldestKey)!.scope.stop()
+        _activeToolComputeds.delete(oldestKey)
       }
     }
-    return _activeToolComputeds.get(key)!
+    return _activeToolComputeds.get(key)!.ref
   }
 
   return { events, activeTools, push, eventsForSession, activeToolForSession }
