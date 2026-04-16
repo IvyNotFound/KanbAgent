@@ -108,61 +108,66 @@ describe('selectedPeriod watcher', () => {
   })
 })
 
-// ─── Tests: estimatedCost (computeCost) ───────────────────────────────────────
+// ─── Tests: estimatedCost (T1924: sums per-session costs from sessionRows) ───
+
+// Helper to build a minimal SessionTokenRow for cost tests.
+// model_used=null + cli_type=null triggers Sonnet 4.6 fallback pricing.
+function makeRow(tokens: { in?: number; out?: number; cacheRead?: number; cacheWrite?: number }) {
+  return {
+    id: 1, agent_id: 1, agent_name: 'test', started_at: '2026-01-01', ended_at: null,
+    status: 'completed', cli_type: null, cost_usd: null, model_used: null,
+    tokens_in: tokens.in ?? 0, tokens_out: tokens.out ?? 0,
+    tokens_cache_read: tokens.cacheRead ?? 0, tokens_cache_write: tokens.cacheWrite ?? 0,
+    total: (tokens.in ?? 0) + (tokens.out ?? 0),
+  }
+}
 
 describe('estimatedCost', () => {
   afterEach(() => {
     localStorage.clear()
   })
 
-  it('returns 0 when all token counts are 0', async () => {
-    const { estimatedCost, globalStats } = await setupComposable()
-    globalStats.value = { tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 0, session_count: 0 }
+  it('returns 0 when sessionRows is empty', async () => {
+    const { estimatedCost, sessionRows } = await setupComposable()
+    sessionRows.value = []
     expect(estimatedCost.value).toBe(0)
   })
 
   it('computes cost correctly: 1M tokens_in at $3.00/1M = $3.00', async () => {
-    const { estimatedCost, globalStats } = await setupComposable()
-    globalStats.value = { tokens_in: 1_000_000, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 1_000_000, session_count: 1 }
+    const { estimatedCost, sessionRows } = await setupComposable()
+    sessionRows.value = [makeRow({ in: 1_000_000 })]
     expect(estimatedCost.value).toBeCloseTo(3.0, 5)
   })
 
   it('computes cost correctly: 1M tokens_out at $15.00/1M = $15.00', async () => {
-    const { estimatedCost, globalStats } = await setupComposable()
-    globalStats.value = { tokens_in: 0, tokens_out: 1_000_000, tokens_cache_read: 0, tokens_cache_write: 0, total: 1_000_000, session_count: 1 }
+    const { estimatedCost, sessionRows } = await setupComposable()
+    sessionRows.value = [makeRow({ out: 1_000_000 })]
     expect(estimatedCost.value).toBeCloseTo(15.0, 5)
   })
 
   it('computes cost correctly: 1M cache_read at $0.30/1M = $0.30', async () => {
-    const { estimatedCost, globalStats } = await setupComposable()
-    globalStats.value = { tokens_in: 0, tokens_out: 0, tokens_cache_read: 1_000_000, tokens_cache_write: 0, total: 0, session_count: 1 }
+    const { estimatedCost, sessionRows } = await setupComposable()
+    sessionRows.value = [makeRow({ cacheRead: 1_000_000 })]
     expect(estimatedCost.value).toBeCloseTo(0.30, 5)
   })
 
   it('computes cost correctly: 1M cache_write at $3.75/1M = $3.75', async () => {
-    const { estimatedCost, globalStats } = await setupComposable()
-    globalStats.value = { tokens_in: 0, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 1_000_000, total: 0, session_count: 1 }
+    const { estimatedCost, sessionRows } = await setupComposable()
+    sessionRows.value = [makeRow({ cacheWrite: 1_000_000 })]
     expect(estimatedCost.value).toBeCloseTo(3.75, 5)
   })
 
   it('sums all 4 pricing terms correctly', async () => {
-    const { estimatedCost, globalStats } = await setupComposable()
+    const { estimatedCost, sessionRows } = await setupComposable()
     // 1M each: 3.00 + 15.00 + 0.30 + 3.75 = 22.05
-    globalStats.value = {
-      tokens_in: 1_000_000,
-      tokens_out: 1_000_000,
-      tokens_cache_read: 1_000_000,
-      tokens_cache_write: 1_000_000,
-      total: 2_000_000,
-      session_count: 4,
-    }
+    sessionRows.value = [makeRow({ in: 1_000_000, out: 1_000_000, cacheRead: 1_000_000, cacheWrite: 1_000_000 })]
     expect(estimatedCost.value).toBeCloseTo(22.05, 5)
   })
 
   it('uses multiplication not division (pricing * tokens / 1M)', async () => {
-    const { estimatedCost, globalStats } = await setupComposable()
+    const { estimatedCost, sessionRows } = await setupComposable()
     // 500_000 tokens_in => 0.5M * $3 = $1.50
-    globalStats.value = { tokens_in: 500_000, tokens_out: 0, tokens_cache_read: 0, tokens_cache_write: 0, total: 500_000, session_count: 1 }
+    sessionRows.value = [makeRow({ in: 500_000 })]
     expect(estimatedCost.value).toBeCloseTo(1.5, 5)
   })
 })

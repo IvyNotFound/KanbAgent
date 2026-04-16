@@ -264,7 +264,7 @@ describe('sessions:statsCost (T985)', () => {
     expect(result.rows[0].agent_name).toBe('agent-stats-a')
   })
 
-  it('returns deterministic model_used via GROUP_CONCAT when agent uses multiple models in same period', async () => {
+  it('groups by model_used: multiple models in same period produce separate rows (T1924)', async () => {
     const agentId = await insertAgent('agent-multi-model')
     await insertSession(agentId, { status: 'completed', costUsd: 0.01, startedAt: '2026-03-01 10:00:00', modelUsed: 'sonnet' })
     await insertSession(agentId, { status: 'completed', costUsd: 0.02, startedAt: '2026-03-01 11:00:00', modelUsed: 'opus' })
@@ -275,11 +275,14 @@ describe('sessions:statsCost (T985)', () => {
     ) as { success: boolean; rows: Array<{ model_used: string; session_count: number }> }
 
     expect(result.success).toBe(true)
-    expect(result.rows).toHaveLength(1)
-    // GROUP_CONCAT(DISTINCT) returns each model once — order may vary
-    const models = result.rows[0].model_used.split(',').sort()
+    // T1924: GROUP BY includes model_used — one row per model per period
+    expect(result.rows).toHaveLength(2)
+    const models = result.rows.map(r => r.model_used).sort()
     expect(models).toEqual(['opus', 'sonnet'])
-    expect(result.rows[0].session_count).toBe(3)
+    const sonnetRow = result.rows.find(r => r.model_used === 'sonnet')!
+    expect(sonnetRow.session_count).toBe(2)
+    const opusRow = result.rows.find(r => r.model_used === 'opus')!
+    expect(opusRow.session_count).toBe(1)
   })
 
   it('rejects unregistered dbPath', async () => {
