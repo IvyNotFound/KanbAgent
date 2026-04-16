@@ -136,7 +136,8 @@ describe('opencodeAdapter.buildCommand', () => {
 
   it('appends initialMessage as positional arg when provided', () => {
     const spec = opencodeAdapter.buildCommand({ initialMessage: 'hello world' })
-    expect(spec.args[spec.args.length - 1]).toBe('hello world')
+    // Message must be at index 1, right after 'run', before --format (T1990)
+    expect(spec.args[1]).toBe('hello world')
   })
 
   it('does not append positional arg when initialMessage is absent', () => {
@@ -147,8 +148,8 @@ describe('opencodeAdapter.buildCommand', () => {
 
   it('initialMessage is passed as a single arg (not split on spaces)', () => {
     const spec = opencodeAdapter.buildCommand({ initialMessage: 'fix the bug in app.ts' })
-    const positionalArgs = spec.args.slice(3)
-    expect(positionalArgs).toEqual(['fix the bug in app.ts'])
+    // Message is at index 1 (after 'run', before --format) — must not be split on spaces (T1990)
+    expect(spec.args[1]).toBe('fix the bug in app.ts')
   })
 
   it('injects --model flag when modelId is provided (T1356)', () => {
@@ -163,12 +164,13 @@ describe('opencodeAdapter.buildCommand', () => {
     expect(spec.args).not.toContain('--model')
   })
 
-  it('places --model before initialMessage positional arg (T1356)', () => {
+  it('places initialMessage before --model flag (message is positional arg at index 1, T1356+T1990)', () => {
     const spec = opencodeAdapter.buildCommand({ modelId: 'gemini-2.5-pro', initialMessage: 'hello' })
     const modelIdx = spec.args.indexOf('--model')
     const msgIdx = spec.args.indexOf('hello')
     expect(modelIdx).toBeGreaterThan(-1)
-    expect(msgIdx).toBeGreaterThan(modelIdx)
+    // Message must come before --model: run "msg" --format json --model id
+    expect(msgIdx).toBeLessThan(modelIdx)
   })
 })
 
@@ -753,18 +755,19 @@ describe('opencodeAdapter.buildCommand — system prompt injection', () => {
 
   it('with .txt systemPromptFile: wraps content in <system-instructions> tags', () => {
     const spec = opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt', initialMessage: 'task' })
-    const lastArg = spec.args[spec.args.length - 1]
-    expect(lastArg).toContain('<system-instructions>')
-    expect(lastArg).toContain('</system-instructions>')
-    expect(lastArg).toContain('system prompt content')
+    // Message is at index 1 (after 'run', before --format) — T1990
+    const msgArg = spec.args[1]
+    expect(msgArg).toContain('<system-instructions>')
+    expect(msgArg).toContain('</system-instructions>')
+    expect(msgArg).toContain('system prompt content')
   })
 
   it('with .txt systemPromptFile: combines system prompt and initialMessage', () => {
     const spec = opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt', initialMessage: 'do the task' })
-    const lastArg = spec.args[spec.args.length - 1]
-    expect(lastArg).toContain('system prompt content')
-    expect(lastArg).toContain('do the task')
-    expect(lastArg.indexOf('system prompt content')).toBeLessThan(lastArg.indexOf('do the task'))
+    const msgArg = spec.args[1]
+    expect(msgArg).toContain('system prompt content')
+    expect(msgArg).toContain('do the task')
+    expect(msgArg.indexOf('system prompt content')).toBeLessThan(msgArg.indexOf('do the task'))
   })
 
   it('with .txt systemPromptFile: calls readFileSync on the provided path', () => {
@@ -775,7 +778,7 @@ describe('opencodeAdapter.buildCommand — system prompt injection', () => {
   it('with .txt systemPromptFile and empty content: falls back to pushing initialMessage as-is', () => {
     mockReadFileSync.mockReturnValue('')
     const spec = opencodeAdapter.buildCommand({ systemPromptFile: '/tmp/sp.txt', initialMessage: 'hello' })
-    expect(spec.args[spec.args.length - 1]).toBe('hello')
+    expect(spec.args[1]).toBe('hello')
   })
 
   it('with .txt systemPromptFile, empty content and no initialMessage: pushes nothing', () => {
@@ -790,7 +793,7 @@ describe('opencodeAdapter.buildCommand — system prompt injection', () => {
       systemPromptFile: join('/worktree', 'opencode.jsonc'),
       initialMessage: 'do the task',
     })
-    expect(spec.args[spec.args.length - 1]).toBe('do the task')
+    expect(spec.args[1]).toBe('do the task')
     expect(mockReadFileSync).not.toHaveBeenCalled()
   })
 
@@ -802,7 +805,7 @@ describe('opencodeAdapter.buildCommand — system prompt injection', () => {
 
   it('with no systemPromptFile: behaves as before (pushes initialMessage directly)', () => {
     const spec = opencodeAdapter.buildCommand({ initialMessage: 'hello world' })
-    expect(spec.args[spec.args.length - 1]).toBe('hello world')
+    expect(spec.args[1]).toBe('hello world')
     expect(mockReadFileSync).not.toHaveBeenCalled()
   })
 })

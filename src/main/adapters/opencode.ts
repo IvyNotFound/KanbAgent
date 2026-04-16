@@ -71,16 +71,12 @@ export const opencodeAdapter: CliAdapter = {
       ? opts.customBinaryName
       : 'opencode'
 
-    const args: string[] = [
-      'run',            // non-interactive subcommand (no TUI launched)
-      '--format', 'json', // stream JSONL events to stdout line by line
-    ]
+    const args: string[] = ['run'] // non-interactive subcommand (no TUI launched)
 
-    // Inject --model flag if a model ID is provided (T1356).
-    if (opts.modelId) {
-      args.push('--model', opts.modelId)
-    }
-
+    // Initial message is a positional argument that must come right after the
+    // subcommand, BEFORE any flags: `opencode run "message" --format json`.
+    // Placing it after --format causes OpenCode to ignore it (T1990).
+    //
     // System prompt injection (T1987):
     // - .jsonc extension: prepareSystemPrompt wrote opencode.jsonc in the worktree with
     //   an `instructions` field — OpenCode picks it up automatically via project config.
@@ -97,6 +93,13 @@ export const opencodeAdapter: CliAdapter = {
     } else if (opts.initialMessage) {
       // Worktree mode (.jsonc) or no system prompt: push message as-is
       args.push(opts.initialMessage)
+    }
+
+    args.push('--format', 'json') // stream JSONL events to stdout line by line
+
+    // Inject --model flag if a model ID is provided (T1356).
+    if (opts.modelId) {
+      args.push('--model', opts.modelId)
     }
 
     return { command: cmd, args }
