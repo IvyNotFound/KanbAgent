@@ -104,10 +104,11 @@ describe('useAutoLaunch T1246/T1820: no-task tabs have 120s safety fallback', ()
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)
   })
 
-  it('should NOT schedule close for no-task tab with active streamId (T1937)', async () => {
-    // T1937: Chemin 2 must skip tabs with an active process (streamId set).
-    // Even past 120s fallback, the tab must stay open.
-    const agent = makeAgent({ id: 52, name: 'review-master' })
+  it('should NOT schedule close for no-task non-review tab with active streamId (T1937)', async () => {
+    // T1937: Chemin 2 must skip tabs with an active process (streamId set), for non-review agents.
+    // After T1982, review agents are exempt — but type:'doc' must still be guarded.
+    // Even past 120s fallback, a doc tab with active streamId must stay open.
+    const agent = makeAgent({ id: 52, name: 'doc-agent', type: 'doc' })
     agents.value = [agent]
 
     useAutoLaunch({ tasks, agents, dbPath })
@@ -115,14 +116,14 @@ describe('useAutoLaunch T1246/T1820: no-task tabs have 120s safety fallback', ()
     await nextTick()
 
     const tabsStore = useTabsStore()
-    tabsStore.addTerminal('review-master', 'Ubuntu-24.04')
-    const reviewTab = tabsStore.tabs.find(t => t.type === 'terminal')!
-    reviewTab.streamId = 'stream-review-active'
+    tabsStore.addTerminal('doc-agent', 'Ubuntu-24.04')
+    const docTab = tabsStore.tabs.find(t => t.type === 'terminal')!
+    docTab.streamId = 'stream-doc-active'
 
     tasks.value = [makeTask({ id: 99, status: 'done', agent_assigned_id: 999 })]
     await nextTick()
 
-    // Advance past 120s fallback — tab must stay open because process is active
+    // Advance past 120s fallback — tab must stay open because process is active (non-review guard)
     await vi.advanceTimersByTimeAsync(120_000 + 30_000 + 100)
     expect(api.agentKill).not.toHaveBeenCalled()
     expect(tabsStore.tabs.filter(t => t.type === 'terminal')).toHaveLength(1)

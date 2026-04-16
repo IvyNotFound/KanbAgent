@@ -152,7 +152,8 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
           const agent = agentForTab
           if (!agent || agent.auto_launch === 0) continue
           if (tab.taskId) continue // task-linked tab: handled by Chemin 1
-          if (tab.streamId) continue // T1937: don't auto-close tabs with an active agent process
+          const agentType = agent?.type
+          if (tab.streamId && agentType !== 'review') continue // T1937: skip active process, except review agents
           if (!pendingCloses.has(tab.id)) {
             // lookbackMs=0: only match sessions that completed AFTER this schedule (T1242 Fix 3)
             // fallbackMs=120s: safety net for tabs that never get a session completion (T1820)
