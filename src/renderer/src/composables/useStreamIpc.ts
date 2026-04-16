@@ -149,8 +149,8 @@ export function useStreamIpc(options: {
           const tb = tabsStore.tabs.find(tb => tb.id === terminalId)
           if (tb) {
             const agent = agentsStore.agents.find(a => a.name === tb.agentName)
-            const isTaskCreator = tb.agentName === 'task-creator' || agent?.type === 'planner'
-            if (!isTaskCreator) {
+            const isPlanner = agent?.type === 'planner'
+            if (!isPlanner) {
               setTimeout(() => tabsStore.closeTab(terminalId), 3000)
             }
           }

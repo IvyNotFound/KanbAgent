@@ -45,7 +45,7 @@ const unsubSessionsCompleted = window.electronAPI.onSessionsCompleted?.((agentId
   for (const agentId of agentIds) {
     const agent = agentsStore.agents.find((a) => a.id === agentId)
     if (!agent) continue
-    if (agent.name === 'task-creator') continue // never auto-close: interactive agent
+    if (agent.type === 'planner') continue // never auto-close: planner agents are interactive
     // T1937: close only inactive tabs (no streamId) — previous logic skipped the
     // entire agent when ANY tab had a process, leaving finished tabs open; and when
     // no tab had a process it killed ALL tabs including ones about to reconnect.

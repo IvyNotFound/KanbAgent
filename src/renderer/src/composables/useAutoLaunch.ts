@@ -131,7 +131,7 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
           if (prevStatus && prevStatus !== 'done' && task.status === 'done' && task.agent_assigned_id) {
             const agent = agents.value.find(a => a.id === task.agent_assigned_id)
             if (!agent || agent.auto_launch === 0) continue
-            if (agent.name === 'task-creator') continue // never auto-close: interactive agent
+            if (agent.type === 'planner') continue // never auto-close: planner agents are interactive
             // Find the specific tab linked to this task (T1249)
             const tab = tabsStore.tabs.find(t =>
               t.type === 'terminal' &&
@@ -147,8 +147,9 @@ export function useAutoLaunch({ tasks, agents, dbPath }: AutoLaunchOptions): voi
         // No fallback timer (T1246): session duration is unpredictable for these agents.
         for (const tab of tabsStore.tabs.filter(t => t.type === 'terminal')) {
           if (!tab.agentName) continue
-          if (tab.agentName === 'task-creator') continue // never auto-close: runs interactively
-          const agent = agents.value.find(a => a.name === tab.agentName)
+          const agentForTab = agents.value.find(a => a.name === tab.agentName)
+          if (agentForTab?.type === 'planner') continue // never auto-close: planner agents are interactive
+          const agent = agentForTab
           if (!agent || agent.auto_launch === 0) continue
           if (tab.taskId) continue // task-linked tab: handled by Chemin 1
           if (tab.streamId) continue // T1937: don't auto-close tabs with an active agent process
