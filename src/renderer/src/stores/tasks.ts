@@ -28,6 +28,7 @@ export const useTasksStore = defineStore('tasks', () => {
   const projectStore = useProjectStore()
   const agentsStore = useAgentsStore()
   const settingsStore = useSettingsStore()
+  const tabsStore = useTabsStore()
 
   const { projectPath, dbPath, setupWizardTarget } = storeToRefs(projectStore)
   const { agents, agentGroups } = storeToRefs(agentsStore)
@@ -140,7 +141,6 @@ export const useTasksStore = defineStore('tasks', () => {
    *   if the user cancels the dialog or the confirmation prompt.
    */
   async function selectProject(): Promise<void> {
-    const tabsStore = useTabsStore()
     const openTerminals = tabsStore.tabs.filter(t => t.type === 'terminal')
 
     if (openTerminals.length > 0) {
@@ -176,6 +176,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
   function closeProject(): void {
     cleanupTimers()
+    tabsStore.cleanupAllTimers()
     window.electronAPI.unwatchDb(dbPath.value ?? undefined)
     projectPath.value = null
     dbPath.value = null

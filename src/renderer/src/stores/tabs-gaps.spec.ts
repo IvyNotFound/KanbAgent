@@ -1,6 +1,7 @@
 /**
  * tabs-gaps.spec.ts
- * Coverage gaps for tabs.ts — worktree cleanup path, tabCounter ID suffix, exact 500ms boundary.
+ * Coverage gaps for tabs.ts — worktree cleanup path, tabCounter ID suffix, exact 500ms boundary,
+ * cleanupAllTimers (T1958).
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
@@ -229,5 +230,61 @@ describe('stores/tabs — closeTab non-terminal linear fallback', () => {
     store.closeTab(explorerTab.id)
 
     expect(store.activeTabId).toBe(terminalTab.id)
+  })
+})
+
+
+// ─── cleanupAllTimers (T1958) ─────────────────────────────────────────────────
+
+describe('stores/tabs — cleanupAllTimers', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('clears all pending activity timers so they do not fire after cleanup', () => {
+    const store = useTabsStore()
+    store.addTerminal('agent-a')
+    store.addTerminal('agent-b')
+    const [tabA, tabB] = store.tabs.filter(t => t.type === 'terminal')
+
+    store.markTabActive(tabA.id)
+    store.markTabActive(tabB.id)
+    expect(store.tabActivity[tabA.id]).toBe(true)
+    expect(store.tabActivity[tabB.id]).toBe(true)
+
+    store.cleanupAllTimers()
+
+    // tabActivity is reset immediately
+    expect(store.tabActivity[tabA.id]).toBeUndefined()
+    expect(store.tabActivity[tabB.id]).toBeUndefined()
+
+    // Advancing time should not flip activity back — timers were cancelled
+    vi.advanceTimersByTime(6000)
+    expect(store.tabActivity[tabA.id]).toBeUndefined()
+    expect(store.tabActivity[tabB.id]).toBeUndefined()
+  })
+
+  it('is a no-op when no timers are pending', () => {
+    const store = useTabsStore()
+    expect(() => store.cleanupAllTimers()).not.toThrow()
+    expect(store.tabActivity).toEqual({})
+  })
+
+  it('resets tabActivity to empty object', () => {
+    const store = useTabsStore()
+    store.addTerminal('agent-x')
+    const [tab] = store.tabs.filter(t => t.type === 'terminal')
+    store.markTabActive(tab.id)
+    expect(Object.keys(store.tabActivity).length).toBeGreaterThan(0)
+
+    store.cleanupAllTimers()
+
+    expect(store.tabActivity).toEqual({})
   })
 })

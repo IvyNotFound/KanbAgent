@@ -273,5 +273,18 @@ export const useTabsStore = defineStore('tabs', () => {
     }
   }
 
-  return { tabs, activeTabId, activeTab, tabActivity, setActive, addTerminal, addLogs, addExplorer, openFile, setTabDirty, setPtyId, setStreamId, closeTab, renameTab, closeTabGroup, closeAllTerminals, markTabActive, isAgentActive, hasAgentTerminal }
+  /**
+   * Clear all pending activity timers and reset tabActivity.
+   * Called by tasks.closeProject() to prevent stale callbacks from firing
+   * after a project switch when terminals are not individually closed.
+   */
+  function cleanupAllTimers(): void {
+    for (const id of Object.keys(activityTimers)) {
+      clearTimeout(activityTimers[id])
+      delete activityTimers[id]
+    }
+    tabActivity.value = {}
+  }
+
+  return { tabs, activeTabId, activeTab, tabActivity, setActive, addTerminal, addLogs, addExplorer, openFile, setTabDirty, setPtyId, setStreamId, closeTab, renameTab, closeTabGroup, closeAllTerminals, cleanupAllTimers, markTabActive, isAgentActive, hasAgentTerminal }
 })

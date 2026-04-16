@@ -53,7 +53,11 @@ const unsubSessionsCompleted = window.electronAPI.onSessionsCompleted?.((agentId
       (t) => t.type === 'terminal' && t.agentName === agent.name && !t.streamId
     )
     for (const tab of inactiveTabs) {
-      const timer = setTimeout(() => tabsStore.closeTab(tab.id), 3000)
+      const timer = setTimeout(() => {
+        tabsStore.closeTab(tab.id)
+        const idx = pendingCloseTimers.indexOf(timer)
+        if (idx !== -1) pendingCloseTimers.splice(idx, 1)
+      }, 3000)
       pendingCloseTimers.push(timer)
     }
   }
