@@ -626,7 +626,8 @@
     "permissionAllowed": "✓ Allowed: {tool}",
     "permissionDenied": "✗ Denied: {tool}",
     "permissionShowArgs": "Show arguments",
-    "permissionHideArgs": "Hide arguments"
+    "permissionHideArgs": "Hide arguments",
+    "toolBlocked": "⊘ Blocked tool — permission denied"
   },
   "task": {
     "running": "Task in progress",

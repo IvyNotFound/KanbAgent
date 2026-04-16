@@ -155,6 +155,18 @@ function resultPreview(html: string | undefined): string {
     </div>
   </div>
 
+  <!-- tool_use with name=unknown — auto-rejected permission (T1938) -->
+  <div
+    v-else-if="block.type === 'tool_use' && block.name === 'unknown'"
+    class="tool-block tool-block--blocked mb-2"
+    data-testid="block-tool-blocked"
+  >
+    <div class="tool-header tool-header--blocked py-2 px-3 text-body-2 d-flex align-center ga-2">
+      <v-icon icon="mdi-cancel" size="small" />
+      <span>{{ t('stream.toolBlocked') }}</span>
+    </div>
+  </div>
+
   <!-- tool_use block — inline action bar couleur agent, déplié par défaut (T680, T1530) -->
   <div
     v-else-if="block.type === 'tool_use'"
@@ -282,6 +294,17 @@ function resultPreview(html: string | undefined): string {
 .tool-block--error {
   border-left-color: rgba(var(--v-theme-error), 0.8);
   background-color: rgba(var(--v-theme-error), 0.08);
+}
+
+/* T1938: blocked tool — auto-rejected permission (warning color, no collapse toggle) */
+.tool-block--blocked {
+  border-left-color: rgba(var(--v-theme-warning), 0.7);
+  background-color: rgba(var(--v-theme-warning), 0.07);
+}
+.tool-header--blocked {
+  color: rgb(var(--v-theme-warning)) !important;
+  cursor: default;
+  gap: 8px;
 }
 
 /* :deep() required — v-btn__content flex layout (gap, width, justify) has no Vuetify prop equivalent */
