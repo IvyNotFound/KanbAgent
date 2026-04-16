@@ -258,6 +258,75 @@ describe('opencodeAdapter.parseLine', () => {
     expect(event?.message?.content[0]?.is_error).toBe(false)
   })
 
+  it('converts type:tool_use with part wrapper (v1.3+) — extracts name and input from part', () => {
+    const line = '{"type":"tool_use","sessionID":"s1","part":{"name":"bash","input":{"cmd":"ls -la"},"toolCallId":"call_xyz"}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.type).toBe('assistant')
+    expect(event?.message?.content[0]?.type).toBe('tool_use')
+    expect(event?.message?.content[0]?.name).toBe('bash')
+    expect(event?.message?.content[0]?.input).toEqual({ cmd: 'ls -la' })
+    expect(event?.message?.content[0]?.tool_use_id).toBe('call_xyz')
+  })
+
+  it('converts type:tool_use with part wrapper (v1.3+) — id fallback in part', () => {
+    const line = '{"type":"tool_use","part":{"name":"str_replace","input":{},"id":"tu_part_id"}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.tool_use_id).toBe('tu_part_id')
+  })
+
+  it('converts type:tool_use with part wrapper (v1.3+) — unknown name fallback when part.name missing', () => {
+    const line = '{"type":"tool_use","part":{"input":{}}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.name).toBe('unknown')
+  })
+
+  it('converts type:tool_use with part wrapper (v1.3+) — prefers part.name over flat name', () => {
+    const line = '{"type":"tool_use","name":"flat_name","part":{"name":"part_name","input":{}}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.name).toBe('part_name')
+  })
+
+  it('converts type:tool_result with part wrapper (v1.3+) — extracts content from part', () => {
+    const line = '{"type":"tool_result","sessionID":"s1","part":{"content":"tool output","toolCallId":"call_abc","isError":false}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.type).toBe('assistant')
+    expect(event?.message?.content[0]?.type).toBe('tool_result')
+    expect(event?.message?.content[0]?.content).toBe('tool output')
+    expect(event?.message?.content[0]?.tool_use_id).toBe('call_abc')
+    expect(event?.message?.content[0]?.is_error).toBe(false)
+  })
+
+  it('converts type:tool_result with part wrapper (v1.3+) — result field fallback', () => {
+    const line = '{"type":"tool_result","part":{"result":"fallback result","id":"tr_id"}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.content).toBe('fallback result')
+    expect(event?.message?.content[0]?.tool_use_id).toBe('tr_id')
+  })
+
+  it('converts type:tool_result with part wrapper (v1.3+) — output field fallback', () => {
+    const line = '{"type":"tool_result","part":{"output":"cmd output"}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.content).toBe('cmd output')
+  })
+
+  it('converts type:tool_result with part wrapper (v1.3+) — isError:true propagated', () => {
+    const line = '{"type":"tool_result","part":{"content":"err","isError":true}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.is_error).toBe(true)
+  })
+
+  it('converts type:tool_result with part wrapper (v1.3+) — is_error:true propagated (snake_case)', () => {
+    const line = '{"type":"tool_result","part":{"content":"err","is_error":true}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.is_error).toBe(true)
+  })
+
+  it('converts type:tool_result with part wrapper (v1.3+) — prefers part.content over flat content', () => {
+    const line = '{"type":"tool_result","content":"flat_content","part":{"content":"part_content"}}'
+    const event = opencodeAdapter.parseLine(line)
+    expect(event?.message?.content[0]?.content).toBe('part_content')
+  })
+
   it('returns null for type:step_start (lifecycle event)', () => {
     const event = opencodeAdapter.parseLine('{"type":"step_start","timestamp":1234}')
     expect(event).toBeNull()
