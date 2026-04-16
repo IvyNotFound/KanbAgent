@@ -183,8 +183,9 @@ export function registerAgentGroupHandlers(): void {
     try {
       assertDbPathAllowed(dbPath)
       await writeDb(dbPath, (db) => {
+        const stmt = db.prepare('UPDATE agent_groups SET sort_order = ? WHERE id = ?')
         for (let i = 0; i < groupIds.length; i++) {
-          db.run('UPDATE agent_groups SET sort_order = ? WHERE id = ?', [i, groupIds[i]])
+          stmt.run([i, groupIds[i]])
         }
       })
       return { success: true }

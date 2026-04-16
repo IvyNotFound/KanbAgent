@@ -212,11 +212,9 @@ export function registerAgentTaskHandlers(): void {
       assertDbPathAllowed(dbPath)
       await writeDb(dbPath, (db) => {
         db.run('DELETE FROM task_agents WHERE task_id = ?', [taskId])
+        const stmt = db.prepare('INSERT INTO task_agents (task_id, agent_id, role) VALUES (?, ?, ?)')
         for (const a of assignees) {
-          db.run(
-            'INSERT INTO task_agents (task_id, agent_id, role) VALUES (?, ?, ?)',
-            [taskId, a.agentId, a.role ?? null]
-          )
+          stmt.run([taskId, a.agentId, a.role ?? null])
         }
         // Sync tasks.agent_assigned_id: primary > first > NULL
         const primary = assignees.find(a => a.role === 'primary')
