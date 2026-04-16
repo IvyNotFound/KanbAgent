@@ -71,7 +71,7 @@ const OPENCODE_CACHE_JSON = JSON.stringify({
 const AIDER_LIST_OUTPUT = `
 Aider v0.82.0
 - anthropic/claude-sonnet-4-6
-- anthropic/claude-opus-4-6
+- anthropic/claude-opus-4-7
 - anthropic/claude-haiku-4-5
 `
 

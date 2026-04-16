@@ -162,7 +162,7 @@ describe('agent:create — modelId validation (T1945)', () => {
   // ── Valid model IDs — must NOT throw ────────────────────────────────────────
 
   it.each([
-    'claude-opus-4-6',
+    'claude-opus-4-7',
     'gemini-2.5-flash',
     'gpt-4o',
     'o3-mini',
@@ -262,7 +262,7 @@ import { MODEL_ID_REGEX } from '../shared/cli-types'
 
 describe('MODEL_ID_REGEX', () => {
   it.each([
-    'claude-opus-4-6',
+    'claude-opus-4-7',
     'gemini-2.5-flash',
     'gpt-4o',
     'o3-mini',

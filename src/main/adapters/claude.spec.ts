@@ -127,8 +127,8 @@ describe('buildClaudeCmd', () => {
   })
 
   it('includes --model <modelId> when modelId provided', () => {
-    const cmd = buildClaudeCmd({ modelId: 'claude-opus-4-6' })
-    expect(cmd).toContain('--model claude-opus-4-6')
+    const cmd = buildClaudeCmd({ modelId: 'claude-opus-4-7' })
+    expect(cmd).toContain('--model claude-opus-4-7')
   })
 
   it('does not include --model when modelId is absent', () => {

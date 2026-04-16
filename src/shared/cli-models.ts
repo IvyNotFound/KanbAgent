@@ -54,7 +54,7 @@ export const CLI_STATIC_MODELS: Partial<Record<CliType, CliModelDef[]>> = {
   claude: [
     { id: 'sonnet', label: 'Sonnet', modelId: 'sonnet',
       pricing: { input: 3.00, output: 15.00, cacheRead: 0.30, cacheWrite: 3.75 } },
-    { id: 'opus', label: 'Opus', modelId: 'opus',
+    { id: 'opus', label: 'Opus', modelId: 'claude-opus-4-7',
       pricing: { input: 15.00, output: 75.00, cacheRead: 1.50, cacheWrite: 18.75 } },
     { id: 'haiku', label: 'Haiku', modelId: 'haiku',
       pricing: { input: 0.80, output: 4.00, cacheRead: 0.08, cacheWrite: 1.00 } },
@@ -68,7 +68,7 @@ export const CLI_STATIC_MODELS: Partial<Record<CliType, CliModelDef[]>> = {
   aider: [
     { id: 'sonnet', label: 'Claude Sonnet', modelId: 'claude-sonnet-4-6',
       pricing: { input: 3.00, output: 15.00, cacheRead: 0.30, cacheWrite: 3.75 } },
-    { id: 'opus', label: 'Claude Opus', modelId: 'claude-opus-4-6',
+    { id: 'opus', label: 'Claude Opus', modelId: 'claude-opus-4-7',
       pricing: { input: 15.00, output: 75.00, cacheRead: 1.50, cacheWrite: 18.75 } },
     { id: 'gpt-4o', label: 'GPT-4o', modelId: 'gpt-4o',
       pricing: { input: 2.50, output: 10.00 } },
@@ -90,7 +90,7 @@ export const CLI_STATIC_MODELS: Partial<Record<CliType, CliModelDef[]>> = {
       pricing: { input: 2.00, output: 8.00 } },
     { id: 'claude-sonnet-4-6', label: 'Claude Sonnet', modelId: 'claude-sonnet-4-6',
       pricing: { input: 3.00, output: 15.00, cacheRead: 0.30, cacheWrite: 3.75 } },
-    { id: 'claude-opus-4-6', label: 'Claude Opus', modelId: 'claude-opus-4-6',
+    { id: 'claude-opus-4-7', label: 'Claude Opus', modelId: 'claude-opus-4-7',
       pricing: { input: 15.00, output: 75.00, cacheRead: 1.50, cacheWrite: 18.75 } },
   ],
   opencode: [], // populated dynamically via cli:get-models

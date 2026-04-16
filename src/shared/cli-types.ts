@@ -22,7 +22,7 @@
  * Rejects shell metacharacters (`&`, `|`, `;`, `$`, `(`, `)`, etc.) that could
  * enable command injection when args are passed through spawn with shell:true on Windows.
  *
- * @example Valid: `claude-opus-4-6`, `gemini-2.5-flash`, `google/gemini-2.0-flash`
+ * @example Valid: `claude-opus-4-7`, `gemini-2.5-flash`, `google/gemini-2.0-flash`
  * @example Invalid: `foo & calc.exe`, `$(whoami)`, `foo|bar`
  */
 export const MODEL_ID_REGEX = /^[a-zA-Z0-9._/-]+$/

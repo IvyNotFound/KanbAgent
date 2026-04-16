@@ -20,8 +20,8 @@ describe('getModelPricing (T1924)', () => {
     expect(p!.cacheWrite).toBe(3.75)
   })
 
-  it('returns Opus 4.6 pricing for claude cli modelId "opus"', () => {
-    const p = getModelPricing('opus', 'claude')
+  it('returns Opus 4.7 pricing for claude cli modelId "claude-opus-4-7"', () => {
+    const p = getModelPricing('claude-opus-4-7', 'claude')
     expect(p).not.toBeNull()
     expect(p!.input).toBe(15.00)
     expect(p!.output).toBe(75.00)
@@ -40,7 +40,7 @@ describe('getModelPricing (T1924)', () => {
 
   it('Opus pricing is ~5x Sonnet input price', () => {
     const sonnet = getModelPricing('sonnet', 'claude')!
-    const opus = getModelPricing('opus', 'claude')!
+    const opus = getModelPricing('claude-opus-4-7', 'claude')!
     expect(opus.input / sonnet.input).toBe(5)
   })
 
@@ -53,8 +53,8 @@ describe('getModelPricing (T1924)', () => {
     expect(p!.output).toBe(15.00)
   })
 
-  it('returns Opus pricing for aider modelId "claude-opus-4-6"', () => {
-    const p = getModelPricing('claude-opus-4-6', 'aider')
+  it('returns Opus pricing for aider modelId "claude-opus-4-7"', () => {
+    const p = getModelPricing('claude-opus-4-7', 'aider')
     expect(p).not.toBeNull()
     expect(p!.input).toBe(15.00)
   })

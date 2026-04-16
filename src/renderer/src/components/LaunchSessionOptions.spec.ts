@@ -28,7 +28,7 @@ const MINIMAL_CAPS: CliCapabilities = {
 }
 
 const MODELS = [
-  { title: 'claude-opus-4-6', value: 'claude-opus-4-6' },
+  { title: 'claude-opus-4-7', value: 'claude-opus-4-7' },
   { title: 'claude-sonnet-4-6', value: 'claude-sonnet-4-6' },
 ]
 
@@ -79,12 +79,12 @@ describe('LaunchSessionOptions (T1975)', () => {
 
   it('v-select has the correct model-value attribute bound from selectedModel prop', () => {
     const wrapper = mount(LaunchSessionOptions, {
-      props: { ...BASE_PROPS, selectedModel: 'claude-opus-4-6' },
+      props: { ...BASE_PROPS, selectedModel: 'claude-opus-4-7' },
       global: { plugins: [i18n] },
     })
     const vSelect = wrapper.find('v-select')
     // Vue binds :model-value as an attribute on custom elements
-    expect(vSelect.attributes('model-value')).toBe('claude-opus-4-6')
+    expect(vSelect.attributes('model-value')).toBe('claude-opus-4-7')
     wrapper.unmount()
   })
 
