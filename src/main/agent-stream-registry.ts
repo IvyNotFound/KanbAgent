@@ -6,7 +6,7 @@
  * @module agent-stream-registry
  */
 import type { ChildProcess } from 'child_process'
-import { execFile } from 'child_process'
+import { execFile, execFileSync } from 'child_process'
 import { webContents } from 'electron'
 import { toWslPath } from './utils/wsl'
 import {
@@ -87,7 +87,8 @@ export function sendTerminalEvent(id: string, wcId: number, event: Record<string
 
 /**
  * Kill a single agent process and clean up registry.
- * On Windows, also runs taskkill /F /T to terminate the full wsl.exe process tree.
+ * On Windows, runs taskkill /F /PID /T BEFORE proc.kill() to prevent orphaned children
+ * (with shell:true, proc.pid is cmd.exe — killing it first would orphan bun.exe etc.).
  */
 export function killAgent(id: string): void {
   const proc = agents.get(id)
@@ -102,14 +103,16 @@ export function killAgent(id: string): void {
   }
   streamBatches.delete(id)
 
+  // On Windows, kill the full process tree FIRST (before proc.kill orphans children).
+  // With shell:true, proc.pid is cmd.exe; killing it first would orphan bun.exe etc.
+  if (process.platform === 'win32' && pid) {
+    try {
+      execFileSync('taskkill', ['/F', '/PID', String(pid), '/T'], { timeout: 5000 })
+    } catch { /* process may already be dead */ }
+  }
+
   try { proc.kill() } catch { /* already dead */ }
   agents.delete(id)
-
-  // On Windows, proc.kill() may not terminate wsl.exe child processes (bash, claude).
-  // Force-kill the full process tree via taskkill — non-blocking, errors ignored.
-  if (process.platform === 'win32' && pid) {
-    execFile('taskkill', ['/F', '/PID', String(pid), '/T'], () => { /* ignore */ })
-  }
 }
 
 /** Kill all active agent processes. Called on app quit. */

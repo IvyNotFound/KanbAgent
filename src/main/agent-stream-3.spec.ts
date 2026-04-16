@@ -65,14 +65,17 @@ class FakeProc extends EventEmitter {
 let mockProc: FakeProc
 const mockSpawn = vi.fn(() => mockProc)
 const mockExecFile = vi.fn()
+const mockExecFileSync = vi.fn()
 
 vi.mock('child_process', () => {
   const spawnFn = (...args: unknown[]) => mockSpawn(...args)
   const execFileFn = (...args: unknown[]) => mockExecFile(...args)
+  const execFileSyncFn = (...args: unknown[]) => mockExecFileSync(...args)
   return {
-    default: { spawn: spawnFn, execFile: execFileFn },
+    default: { spawn: spawnFn, execFile: execFileFn, execFileSync: execFileSyncFn },
     spawn: spawnFn,
     execFile: execFileFn,
+    execFileSync: execFileSyncFn,
   }
 })
 
@@ -333,24 +336,31 @@ describe('agent-stream', () => {
   // ── killAgent: Windows taskkill (L62) ─────────────────────────────────────
 
   describe('killAgent Windows taskkill (L62)', () => {
-    it('calls execFile taskkill /F /PID /T on win32 when agent has a pid', async () => {
+    it('calls execFileSync taskkill /F /PID /T on win32 BEFORE proc.kill (T1984)', async () => {
       const originalPlatform = process.platform
       Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
 
       const createHandler = handlers.get('agent:create')!
       const killHandler = handlers.get('agent:kill')!
       const id = (await createHandler({ sender: mockSender }, {})) as string
+
+      const callOrder: string[] = []
+      mockExecFileSync.mockImplementation(() => { callOrder.push('execFileSync') })
+      mockProc.kill.mockImplementation(() => { callOrder.push('proc.kill') })
+
       await killHandler({ sender: mockSender }, id)
 
-      expect(mockExecFile).toHaveBeenCalledWith(
+      expect(mockExecFileSync).toHaveBeenCalledWith(
         'taskkill',
         ['/F', '/PID', String(mockProc.pid), '/T'],
-        expect.any(Function)
+        { timeout: 5000 }
       )
+      // execFileSync must come before proc.kill to avoid orphaning children
+      expect(callOrder.indexOf('execFileSync')).toBeLessThan(callOrder.indexOf('proc.kill'))
       Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true })
     })
 
-    it('does NOT call execFile taskkill on linux', async () => {
+    it('does NOT call execFileSync taskkill on linux', async () => {
       const originalPlatform = process.platform
       Object.defineProperty(process, 'platform', { value: 'linux', configurable: true })
 
@@ -359,7 +369,7 @@ describe('agent-stream', () => {
       const id = (await createHandler({ sender: mockSender }, {})) as string
       await killHandler({ sender: mockSender }, id)
 
-      expect(mockExecFile).not.toHaveBeenCalled()
+      expect(mockExecFileSync).not.toHaveBeenCalled()
       Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true })
     })
   })
