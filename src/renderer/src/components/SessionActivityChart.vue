@@ -60,9 +60,20 @@ function last14Days(): string[] {
 
 const days = computed<string[]>(() => last14Days())
 
+// O(n) index — built once per rows update, avoids O(days×rows) nested scan in grouped
+const rowsByDay = computed<Map<string, DayRow[]>>(() => {
+  const map = new Map<string, DayRow[]>()
+  for (const row of rows.value) {
+    const bucket = map.get(row.day)
+    if (bucket) bucket.push(row)
+    else map.set(row.day, [row])
+  }
+  return map
+})
+
 const grouped = computed<DayBars[]>(() =>
   days.value.map(day => {
-    const dayRows = rows.value.filter(r => r.day === day)
+    const dayRows = rowsByDay.value.get(day) ?? []
     const completed = dayRows.find(r => r.status === 'completed')?.count ?? 0
     const blocked = dayRows.find(r => r.status === 'blocked')?.count ?? 0
     const started = dayRows.find(r => r.status === 'started')?.count ?? 0

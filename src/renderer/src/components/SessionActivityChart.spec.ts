@@ -25,9 +25,16 @@ function last14Days(refDate: Date): string[] {
   return days
 }
 
+// Mirrors the Map-based O(n) implementation in SessionActivityChart.vue
 function groupByDay(rows: DayRow[], days: string[]): DayBars[] {
+  const map = new Map<string, DayRow[]>()
+  for (const row of rows) {
+    const bucket = map.get(row.day)
+    if (bucket) bucket.push(row)
+    else map.set(row.day, [row])
+  }
   return days.map(day => {
-    const dayRows = rows.filter(r => r.day === day)
+    const dayRows = map.get(day) ?? []
     const completed = dayRows.find(r => r.statut === 'completed')?.count ?? 0
     const blocked = dayRows.find(r => r.statut === 'blocked')?.count ?? 0
     const started = dayRows.find(r => r.statut === 'started')?.count ?? 0
