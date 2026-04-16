@@ -48,7 +48,7 @@ describe('migrateDb v39 — add idx_tasks_scope index', () => {
   it('updates user_version to 40', () => {
     const db = makeMockDb({ userVersion: 38 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
   it('applies v39 + v40 when starting from v38', () => {
@@ -89,7 +89,7 @@ describe('migrateDb v40 — idx_agm_agent on agent_group_members(agent_id)', () 
   it('updates user_version to 40', () => {
     const db = makeMockDb({ userVersion: 39 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
   it('applies only v40 when starting from v39', () => {

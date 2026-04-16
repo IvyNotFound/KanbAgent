@@ -100,13 +100,13 @@ describe('migrateDb v34 — add missing DB indexes (T1852)', () => {
     expect(v34Indexes.every((s: string) => s.includes('IF NOT EXISTS'))).toBe(true)
   })
 
-  it('updates user_version to 40 (v34 + v35 + v36 + v37 + v38 + v39 + v40)', () => {
+  it('updates user_version to 40 (v34 + v35 + v36 + v37 + v38 + v39 + v40 + v41)', () => {
     const db = makeMockDb({ userVersion: 33 })
     migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
-  it('skips v34 when already at version 34 (v35, v36, v37, v38, v39, v40 run)', () => {
+  it('skips v34 when already at version 34 (v35, v36, v37, v38, v39, v40, v41 run)', () => {
     const db = makeMockDb({ userVersion: 34 })
     const applied = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     expect(applied).toBe(6)
@@ -125,6 +125,6 @@ describe('CURRENT_SCHEMA_VERSION alignment', () => {
     const db = makeMockDb({ userVersion: 0 })
     const applied = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     expect(applied).toBeGreaterThan(0)
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 })

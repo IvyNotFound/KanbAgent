@@ -176,7 +176,7 @@ describe('migrateDb — bootstrap requires BOTH permission_mode AND max_sessions
       colMap: { agents: ['id', 'name'] },
     })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(40)
+    expect(result).toBe(41)
     const calls = db.run.mock.calls.map((c: string[]) => c[0])
     expect(calls.some((s: string) => s === 'ADD COLUMN permission_mode' || s.includes('ADD COLUMN permission_mode'))).toBe(true)
   })

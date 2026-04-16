@@ -87,8 +87,8 @@ function createMockDb({
 // ── CURRENT_SCHEMA_VERSION ────────────────────────────────────────────────────
 
 describe('CURRENT_SCHEMA_VERSION', () => {
-  it('equals the last migration version (40)', () => {
-    expect(CURRENT_SCHEMA_VERSION).toBe(40)
+  it('equals the last migration version (41)', () => {
+    expect(CURRENT_SCHEMA_VERSION).toBe(41)
   })
 })
 

@@ -177,19 +177,19 @@ describe('migrateDb — bootstrap config empty values edge case', () => {
 describe('migrateDb — exact return value', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('returns 8 when eight migrations are pending (v33, v34, v35, v36, v37, v38, v39, v40)', () => {
+  it('returns 9 when nine migrations are pending (v33, v34, v35, v36, v37, v38, v39, v40, v41)', () => {
     const db = makeMockDb({
       userVersion: 32,
       colMap: { sessions: ['id', 'status', 'cost_usd', 'duration_ms', 'num_turns', 'cli_type'], agents: ['id', 'name'] },
     })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(8)
+    expect(result).toBe(9)
   })
 
-  it('returns 13 when thirteen migrations are pending (v28–v40)', () => {
+  it('returns 14 when fourteen migrations are pending (v28–v41)', () => {
     const db = makeMockDb({ userVersion: 27, colMap: { agents: ['id', 'name'], sessions: ['id', 'status'] } })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(13) // v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40
+    expect(result).toBe(14) // v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41
   })
 
   it('returns 0 exactly (not falsy) when already at CURRENT_SCHEMA_VERSION', () => {
@@ -225,9 +225,9 @@ describe('migrateDb — exact return value', () => {
       tableMap: { config: true },
     })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(17) // v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40
-    expect(result).not.toBe(15)
-    expect(result).not.toBe(18)
+    expect(result).toBe(18) // v24, v25, v26, v27, v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41
+    expect(result).not.toBe(16)
+    expect(result).not.toBe(19)
   })
 
   it('returns CURRENT_SCHEMA_VERSION for external DB (v0 + config, no permission_mode/max_sessions)', () => {

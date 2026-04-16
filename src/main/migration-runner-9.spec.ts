@@ -61,7 +61,7 @@ describe('migrateDb v35 — add rejected status to tasks CHECK constraint', () =
   beforeEach(() => vi.clearAllMocks())
 
   it('CURRENT_SCHEMA_VERSION is 39', () => {
-    expect(CURRENT_SCHEMA_VERSION).toBe(40)
+    expect(CURRENT_SCHEMA_VERSION).toBe(41)
   })
 
   it('recreates tasks table with rejected in CHECK when starting from v34', () => {
@@ -108,7 +108,7 @@ describe('migrateDb v35 — add rejected status to tasks CHECK constraint', () =
     expect(calls.some(s => s.includes('idx_tasks_status'))).toBe(true)
     expect(calls.some(s => s.includes('idx_tasks_agent_status'))).toBe(true)
 
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
   it('is idempotent — skips when CHECK already contains rejected', () => {
@@ -126,7 +126,7 @@ describe('migrateDb v35 — add rejected status to tasks CHECK constraint', () =
     expect(calls.every(s => !s.includes('RENAME TO tasks_rejected_old'))).toBe(true)
     expect(calls.every(s => !s.includes('CREATE TABLE tasks'))).toBe(true)
 
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
   it('skips FTS trigger recreation when tasks_fts does not exist', () => {
@@ -147,7 +147,7 @@ describe('migrateDb v35 — add rejected status to tasks CHECK constraint', () =
     // Should NOT recreate FTS triggers
     expect(calls.every(s => !s.includes('CREATE TRIGGER tasks_fts_ai'))).toBe(true)
 
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
   it('returns false (no-op) when tasks table does not exist', () => {
@@ -159,6 +159,6 @@ describe('migrateDb v35 — add rejected status to tasks CHECK constraint', () =
 
     const calls = db.run.mock.calls.map((c: unknown[]) => c[0] as string)
     expect(calls.every(s => !s.includes('RENAME TO tasks_rejected_old'))).toBe(true)
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 })

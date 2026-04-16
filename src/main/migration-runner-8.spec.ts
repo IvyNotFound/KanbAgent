@@ -52,7 +52,7 @@ describe('migrateDb v32 — repair sessions.cost_usd/duration_ms/num_turns on le
     expect(calls.some(s => s.includes('ADD COLUMN cost_usd'))).toBe(true)
     expect(calls.some(s => s.includes('ADD COLUMN duration_ms'))).toBe(true)
     expect(calls.some(s => s.includes('ADD COLUMN num_turns'))).toBe(true)
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
   it('is idempotent — does NOT re-add cost_usd/duration_ms/num_turns when columns already exist', () => {
@@ -65,7 +65,7 @@ describe('migrateDb v32 — repair sessions.cost_usd/duration_ms/num_turns on le
     expect(calls.every(s => !s.includes('ADD COLUMN cost_usd'))).toBe(true)
     expect(calls.every(s => !s.includes('ADD COLUMN duration_ms'))).toBe(true)
     expect(calls.every(s => !s.includes('ADD COLUMN num_turns'))).toBe(true)
-    expect(db._getVersion()).toBe(40)
+    expect(db._getVersion()).toBe(41)
   })
 
   it('returns early without error when sessions PRAGMA table_info returns empty (table missing)', () => {

@@ -318,25 +318,25 @@ describe('migrateDb — ArithmeticOperator: return value is pending.length', () 
   beforeEach(() => vi.clearAllMocks())
 
   it('return value matches exactly the number of SAVEPOINT calls made', () => {
-    // At version 27: v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40 run → 13 SAVEPOINTs → return 12
+    // At version 27: v28, v29, v30, v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41 run → 14 SAVEPOINTs → return 13
     const db = makeMockDb({ userVersion: 27, colMap: { agents: ['id', 'name'], sessions: ['id', 'status'] } })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
     const calls = db.run.mock.calls.map((c: string[]) => c[0])
     const savepointCount = calls.filter((s: string) => /^SAVEPOINT m\d+$/.test(s)).length
     // Return value must equal the number of savepoints (one per migration)
     expect(result).toBe(savepointCount)
-    expect(result).toBe(13)
+    expect(result).toBe(14)
     expect(result).not.toBe(0)
-    expect(result).not.toBe(11)
-    expect(result).not.toBe(14)
+    expect(result).not.toBe(12)
+    expect(result).not.toBe(15)
   })
 
-  it('return value is 7 (not 6 or 8) when seven migrations run (v34, v35, v36, v37, v38, v39, v40)', () => {
+  it('return value is 8 (not 7 or 9) when eight migrations run (v34, v35, v36, v37, v38, v39, v40, v41)', () => {
     const db = makeMockDb({ userVersion: 33 })
     const result = migrateDb(db as unknown as import('./migration-db-adapter').MigrationDb)
-    expect(result).toBe(7)
-    expect(result).not.toBe(6)
-    expect(result).not.toBe(8)
+    expect(result).toBe(8)
+    expect(result).not.toBe(7)
+    expect(result).not.toBe(9)
   })
 
   it('return value decreases by 1 per additional starting version', () => {

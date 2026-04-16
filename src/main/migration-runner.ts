@@ -10,6 +10,7 @@ import { runAddPreferredCliToAgentsMigration } from './migrations/v8-agent-prefe
 import { runAddRejectedStatusMigration } from './migrations/v35-rejected-status'
 import { runPurgeLocksPromptsMigration } from './migrations/v36-purge-locks-prompts'
 import { runI18nNormalizationMigration } from './migrations/v25-i18n'
+import { runAddSessionsStatusEndedIndexMigration } from './migrations/v41-sessions-status-ended-index'
 
 // ── Numbered migration system ────────────────────────────────────────────────
 
@@ -306,6 +307,9 @@ const migrations: Migration[] = [
   { version: 40, up: (db) => {
     db.run('CREATE INDEX IF NOT EXISTS idx_agm_agent ON agent_group_members(agent_id)')
   } },
+
+  // v41: add composite index sessions(status, ended_at DESC) — covers detectManuallyClosed poll (T1976)
+  { version: 41, up: (db) => { runAddSessionsStatusEndedIndexMigration(db) } },
 ]
 
 /** Current schema version — always equals the last migration's version number. */
