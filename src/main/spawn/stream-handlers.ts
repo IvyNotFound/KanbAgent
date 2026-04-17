@@ -47,6 +47,9 @@ export interface StreamHandlerOpts {
 }
 
 /** Wire readline + stderr + error + close handlers. Call once per spawn. */
+const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g
+const OPENCODE_TUI_PREFIXES = ['→ ', '$ ', '● ', '◆ ']
+
 export function attachStreamHandlers({
   proc,
   id,
@@ -71,6 +74,9 @@ export function attachStreamHandlers({
   // Token accumulator for non-Claude CLIs (Claude uses hook server instead)
   const tokenAccum: TokenCounts = { tokensIn: 0, tokensOut: 0, cacheRead: 0, cacheWrite: 0 }
 
+  // Dedup consecutive text events per session_id (opencode streams cumulative updates, T1992).
+  const lastTextBySession = new Map<string, string>()
+
   // For non-Claude CLIs: forward stderr lines in real time so the user can see diagnostic info
   // (API key errors, config issues) without waiting for process close (T1248).
   // For Claude: buffer silently, only shown via error:exit if no events received (T697).
@@ -78,11 +84,12 @@ export function attachStreamHandlers({
   if (adapter.cli !== 'claude') {
     rlStderr = createInterface({ input: proc.stderr! })
     rlStderr.on('line', (line) => {
-      const clean = line.trim()
-      if (!clean) return
-      pushStreamEvent(id, wcId, { type: 'error', text: `[stderr] ${clean}` })
+      const stripped = line.replace(ANSI_RE, '').trim()
+      if (!stripped) return
+      stderrBuffer = (stderrBuffer + '\n' + stripped).slice(-MAX_STDERR_BUFFER_SIZE)
+      if (adapter.cli === 'opencode' && OPENCODE_TUI_PREFIXES.some(p => stripped.startsWith(p))) return
+      pushStreamEvent(id, wcId, { type: 'error', text: `[stderr] ${stripped}` })
       eventsReceived++
-      stderrBuffer = (stderrBuffer + '\n' + clean).slice(-MAX_STDERR_BUFFER_SIZE)
     })
   } else {
     proc.stderr!.on('data', (chunk: Buffer) => {
@@ -140,6 +147,18 @@ export function attachStreamHandlers({
         killAgent(id)
         return
       }
+
+      // Dedup consecutive text events: skip if identical or regression of last push (T1992).
+      if (event.type === 'text' && typeof event.text === 'string') {
+        const sid = (event as { session_id?: string }).session_id ?? '__nosid__'
+        const last = lastTextBySession.get(sid) ?? ''
+        if (event.text === last || last.startsWith(event.text)) {
+          eventsReceived-- // undo the increment above — filtered event
+          continue
+        }
+        lastTextBySession.set(sid, event.text)
+      }
+
       pushStreamEvent(id, wcId, event)
 
       // T1708: normalize Claude AskUserQuestion tool_use into a synthetic ask_user event.
